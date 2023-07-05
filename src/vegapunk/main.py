@@ -1,28 +1,37 @@
-
-import numpy as np
-import copy
-import matplotlib.pyplot as plt
-from matplotlib.patches import Rectangle
-
-
-"""
+"""Finite element material patch.
 
 Classes
 -------
-
-Functions
----------
-
+FiniteElementPatch:
+    Finite element patch.
+class FiniteElementPatchGenerator
+    Finite element patch generator.
 """
+#
+#                                                                       Modules
+# =============================================================================
+# Standard
+import copy
+# Third-party
+import numpy as np
+import matplotlib.pyplot as plt
+from matplotlib.patches import Rectangle
+#
+#                                                          Authorship & Credits
+# =============================================================================
+__author__ = 'Bernardo Ferreira (bernardo_ferreira@brown.edu)'
+__credits__ = ['Bernardo Ferreira', ]
+__status__ = 'Planning'
+# =============================================================================
+#
+# =============================================================================
 class FiniteElementPatch:
     """Finite element patch.
     
-    Attributes
-    ----------
-    
     Methods
     -------
-
+    plot_deformed_patch(self)
+        Generate plot of material patch.
     """
     def __init__(self, n_dim, patch_dims, elem_type, n_elems_per_dim,
                  n_corners, corners_mapping, corners_bc, corners_coords_ref,
@@ -91,6 +100,7 @@ class FiniteElementPatch:
         self._edges_coords_def = copy.deepcopy(edges_coords_def)
     # -------------------------------------------------------------------------
     def plot_deformed_patch(self):
+        """Generate plot of material patch."""
         # Generate plot
         fig, ax = plt.subplots()
         if self._n_dim == 2:
@@ -130,14 +140,14 @@ class FiniteElementPatch:
                             [coords_plot[i, 1]
                                 for i in range(len(coords_plot))],
                             '-', color='#d62728')
-            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Set plot legend
             ax.legend(loc='center', ncol=2, numpoints=1, frameon=True,
-                        fancybox=True, facecolor='inherit',
-                        edgecolor='inherit', fontsize=10, framealpha=1.0,
-                        bbox_to_anchor=(0, 1.05, 1.0, 0.1),
-                        borderaxespad=0.0, markerscale=0.0)
-            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                      fancybox=True, facecolor='inherit', edgecolor='inherit',
+                      fontsize=10, framealpha=1.0,
+                      bbox_to_anchor=(0, 1.05, 1.0, 0.1),
+                      borderaxespad=0.0, markerscale=0.0)
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Set axes properties
             ax.set_aspect('equal', adjustable='box') 
             # Set plot properties
@@ -145,12 +155,9 @@ class FiniteElementPatch:
             fig.set_figwidth(8, forward=True)
         else:
             raise RuntimeError('Missing 3D implementation.') 
-        
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Display
         plt.show()
-    
-    
-    
-
 # =============================================================================
 class FiniteElementPatchGenerator:
     """Finite element patch generator.
@@ -189,19 +196,20 @@ class FiniteElementPatchGenerator:
 
     Methods
     -------
-    generate_deformed_patch(self, elem_type, n_elems_per_dim, corners_bc=None,\
-                            corners_lab_disp_range=None, \
-                            edges_lab_def_order=None, edges_lab_disp_amp=None)
+    generate_deformed_patch(self, elem_type, n_elems_per_dim, \
+                            corners_lab_bc=None, corners_lab_disp_range=None, \
+                            edges_lab_def_order=None, \
+                            edges_lab_disp_range=None)
         Generate finite element deformed patch.
     _build_corners_bc(self, corners_lab_bc=None)
         Build boundary conditions on patch corners.
     _build_corners_disp_range(self, corners_lab_disp_range=None, \
-                              corners_bc=None, edge_poly_orders=None)
-        Build corners displacement range.
-    _build_edge_poly_orders(self, edges_def_order)
-        Build edges deformation polynomials orders.
-    _build_edge_disp_amp(self, edges_lab_disp_amp=None)
-        Build edges displacements amplitude.
+                              corners_bc=None)
+        Build patch corners displacement range.
+    _build_edges_poly_orders(self, edges_lab_def_order)
+        Build patch edges deformation polynomials orders.
+    _build_edges_disp_range(self, edges_lab_disp_range=None)
+        Build patch edges displacements range.
     _set_corners_attributes(self)
         Set patch corners attributes.
     _set_corners_coords_ref(self)
@@ -213,18 +221,20 @@ class FiniteElementPatchGenerator:
     _get_n_edge_nodes_per_dim(self, elem_type, n_elems_per_dim)
         Get number of patch edge nodes along each dimension.
     _get_corners_random_displacements(self, corners_disp_range, \
-                                      corners_bc=None)
+                                      edges_poly_orders=None)
         Compute patch corners random displacements.
     _get_deformed_boundary_edge(self, nodes_coords_ref, left_node_def, \
                                 right_node_def, poly_order,
-                                poly_bounds_amp=None, is_plot=False)
+                                poly_bounds_range=None, is_plot=False)
     _polynomial_sampler(order, left_point, right_point, lower_bound=None, \
                         upper_bound=None, is_plot=False)
         Generate random polynomial by sampling points within given bounds.
+    _get_orthogonal_dims(self, dim)
+        Get orthogonal dimensions to given dimension.
     _rotate_coords_array(coords_array, r)
         Rotate coordinates array.
     """
-    def __init__(self, n_dim, patch_dims, n_voxels_dims):
+    def __init__(self, n_dim, patch_dims):
         """Constructor.
         
         Parameters
@@ -256,7 +266,7 @@ class FiniteElementPatchGenerator:
                                 corners_lab_bc=None,
                                 corners_lab_disp_range=None,
                                 edges_lab_def_order=None,
-                                edges_lab_disp_amp=None):
+                                edges_lab_disp_range=None):
         """Generate finite element deformed patch.
         
         Parameters
@@ -280,19 +290,18 @@ class FiniteElementPatchGenerator:
             Deformation polynomial order (item, int) for each edge label
             (key, str[int]). Edges are labeled from 1 to number of edges.
             If a single order is provided, then it is assumed for all the
-            edges. First order is assumed for unspecified edges. If None, first
+            edges. Zero order is assumed for unspecified edges. If None, zero
             order is assumed for all the edges.
-        edges_lab_disp_amp : dict, default=None
-            Displacement amplitudes (item, tuple[float](2)) for each edge
-            label (key, str[int]). Amplitudes are specified as a
-            tuple(lower, upper) where: (1) displacement amplitude is orthogonal
-            to the edge (reference configuration), (2) displacement amplitude
-            is relative to midplane defined by both limiting corners (deformed
-            configuration), and (3) positive/negative displacement corresponds
-            to outward/inward direction with respect to the patch. Edges are
-            labeled from 1 to number of edges. Null displacement amplitudes are
-            assumed for unspecified edges. If None, null displacement
-            amplitudes are set by default.
+        edges_lab_disp_range : dict, default=None
+            Displacement range (item, tuple[float](2)) for each edge
+            label (key, str[int]). Range is specified as a tuple(min, max)
+            where: (1) displacement range is orthogonal to the edge (reference
+            configuration), (2) displacement range is relative to midplane
+            defined by both limiting corners (deformed configuration), and
+            (3) positive/negative displacement corresponds to outward/inward
+            direction with respect to the patch. Edges are labeled from 1 to
+            number of edges. Null displacement range is assumed for unspecified
+            edges. If None, null displacement range is set by default.
 
         Returns
         -------
@@ -305,12 +314,11 @@ class FiniteElementPatchGenerator:
         corners_disp_range = self._build_corners_disp_range(
             corners_lab_disp_range=corners_lab_disp_range,
             corners_bc=corners_bc)
-        # Build edges deformation polynomials orders and displacement
-        # amplitudes
-        edges_poly_orders = self._build_edge_poly_orders(
+        # Build edges deformation polynomials orders and displacement range
+        edges_poly_orders = self._build_edges_poly_orders(
             edges_lab_def_order=edges_lab_def_order)
-        edges_disp_amp = self._build_edge_disp_amp(
-            edges_lab_disp_amp=edges_lab_disp_amp)
+        edges_disp_range = self._build_edges_disp_range(
+            edges_lab_disp_range=edges_lab_disp_range)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Get corners coordinates (reference configuration)
         corners_coords_ref = self._corners_coords_ref
@@ -344,8 +352,7 @@ class FiniteElementPatchGenerator:
         # Compute corners random displacements
         corners_disp, corners_disp_range = \
             self._get_corners_random_displacements(
-                corners_disp_range, corners_bc=corners_bc,
-                edges_poly_orders=edges_poly_orders)
+                corners_disp_range, edges_poly_orders=edges_poly_orders)
         # Compute corners deformed coordinates
         corners_coords_def = self._corners_coords_ref + corners_disp
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -385,8 +392,8 @@ class FiniteElementPatchGenerator:
                     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                     # Get edge deformation polynomial order
                     poly_order = edges_poly_orders[str(i)][j]
-                    # Get edge displacement amplitudes
-                    disp_amp = edges_disp_amp[str(i)][j]        
+                    # Get edge displacement range
+                    disp_amp = edges_disp_range[str(i)][j]        
                     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                     # Generate randomly deformed boundary edge node coordinates
                     # (deformed plane)
@@ -394,7 +401,7 @@ class FiniteElementPatchGenerator:
                         self._get_deformed_boundary_edge(
                             rot_nodes_coords_ref, rot_left_node_def,
                             rot_right_node_def, poly_order,
-                            poly_bounds_amp=disp_amp)
+                            poly_bounds_range=disp_amp)
                     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                     # Get edge and corners coordinates (deformed configuration)
                     # in the original space
@@ -483,6 +490,12 @@ class FiniteElementPatchGenerator:
          
         Parameters
         ----------
+        corners_lab_disp_range : dict, default=None
+            Displacement range along each dimension (item, tuple[tuple(2)]) for
+            each corner label (key, str[int]). Range is specified as
+            tuple(min, max) for each dimension. Corners are labeled from 1 to
+            number of corners. If None, a null displacement range is set by
+            default.
         corners_bc : tuple[tuple], default=None
             Boundary conditions applied to the corners of the patch. For each
             node, a tuple(n_dim) prescribes 0 (free) or 1 (fixed) for each
@@ -492,7 +505,7 @@ class FiniteElementPatchGenerator:
         -------
         corners_disp_range : numpy.ndarray(3d)
             Patch corners displacements (numpy.ndarray(n_corners, n_dim, k),
-            where k=0 (lower bound) and k=1 (upper bound)).
+            where k=0 (min) and k=1 (max)).
         """
         # Initialize corners displacement range
         corners_disp_range = np.zeros((self._n_corners, self._n_dim, 2))
@@ -526,15 +539,19 @@ class FiniteElementPatchGenerator:
                     # Loop over dimensions
                     for j in range(self._n_dim):
                         # Check displacement range
-                        if len(range_dims) != 2:
+                        if not isinstance(range_dims[j], tuple):
                             raise RuntimeError('Corner displacement range '
-                                               'must be specified as a '
-                                               'tuple(min, max).')
+                                               'must be a tuple(min, max) '
+                                               'along each dimension.')
+                        elif len(range_dims) != 2:
+                            raise RuntimeError('Corner displacement range '
+                                               'must be a tuple(min, max) '
+                                               'along each dimension.')
                         # Set corner displacement range
                         corners_disp_range[index, j, :] = range_dims[j]       
         else:
             raise RuntimeError('Invalid specification of '
-                               'corners_lab_disp_range.')          
+                               'corners_lab_disp_range.')         
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Enforce boundary conditions
         if corners_bc is not None:
@@ -545,7 +562,7 @@ class FiniteElementPatchGenerator:
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~     
         return corners_disp_range             
     # -------------------------------------------------------------------------
-    def _build_edge_poly_orders(self, edges_lab_def_order=None):
+    def _build_edges_poly_orders(self, edges_lab_def_order=None):
         """Build patch edges deformation polynomials orders.
          
         Parameters
@@ -554,7 +571,7 @@ class FiniteElementPatchGenerator:
             Deformation polynomial order (item, int) for each edge label
             (key, str[int]). Edges are labeled from 1 to number of edges.
             If a single order is provided, then it is assumed for all the
-            edges. First order is assumed for unspecified edges. If None, first
+            edges. Zero order is assumed for unspecified edges. If None, zero
             order is assumed for all the edges. 
             
         Returns
@@ -574,12 +591,12 @@ class FiniteElementPatchGenerator:
                             for i in range(self._n_dim)}
         # Build edges deformation polynomials orders
         if edges_lab_def_order is None:
-            # Set first order deformation polynomial by default
+            # Set zero order deformation polynomial by default
             for i in range(self._n_dim):
-                edge_poly_orders[str(i)] = self.n_edges_per_dim*(1,)
+                edge_poly_orders[str(i)] = self.n_edges_per_dim*(0,)
         elif isinstance(edges_lab_def_order, int):
-            # Enforce minimum of first order polynomial
-            edges_lab_def_order = np.maximum(1, edges_lab_def_order)
+            # Enforce minimum of zero order polynomial
+            edges_lab_def_order = np.max((0, edges_lab_def_order))
             # Set edges deformation polynomials orders
             for i in range(self._n_dim):
                 edge_poly_orders[str(i)] = \
@@ -603,8 +620,8 @@ class FiniteElementPatchGenerator:
                     # Enforce minimum polynomial order
                     order = np.max((0, order))
                 else:
-                    # Assume first order polynomial
-                    order = 1
+                    # Assume zero order polynomial
+                    order = 0
                 # Set edge deformation polynomial order
                 edge_poly_orders[dim][index] = order
         else:
@@ -612,28 +629,27 @@ class FiniteElementPatchGenerator:
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~     
         return edge_poly_orders
     # -------------------------------------------------------------------------
-    def _build_edge_disp_amp(self, edges_lab_disp_amp=None):
-        """Build patch edges displacements amplitude.
+    def _build_edges_disp_range(self, edges_lab_disp_range=None):
+        """Build patch edges displacements range.
          
         Parameters
         ----------
-        edges_lab_disp_amp : dict, default=None
-            Displacement amplitudes (item, tuple[float](2)) for each edge
-            label (key, str[int]). Amplitudes are specified as a
-            tuple(lower, upper) where: (1) displacement amplitude is orthogonal
-            to the edge (reference configuration), (2) displacement amplitude
-            is relative to midplane defined by both limiting corners (deformed
-            configuration), and (3) positive/negative displacement corresponds
-            to outward/inward direction with respect to the patch. Edges are
-            labeled from 1 to number of edges. Null displacement amplitudes are
-            assumed for unspecified edges. If None, null displacement
-            amplitudes are set by default.
+        edges_lab_disp_range : dict, default=None
+            Displacement range (item, tuple[float](2)) for each edge
+            label (key, str[int]). Range is specified as a tuple(min, max)
+            where: (1) displacement range is orthogonal to the edge (reference
+            configuration), (2) displacement range is relative to midplane
+            defined by both limiting corners (deformed configuration), and
+            (3) positive/negative displacement corresponds to outward/inward
+            direction with respect to the patch. Edges are labeled from 1 to
+            number of edges. Null displacement range is assumed for unspecified
+            edges. If None, null displacement range is set by default.
             
         Returns
         -------
-        edge_disp_amp : dict
+        edge_disp_range : dict
             For each dimension (key, str[int]), store the corresponding edges
-            displacement amplitudes (item, tuple[tuple[float](2)]).
+            displacement range (item, tuple[tuple(min, max)]).
         """
         # Set number of edges oriented along each dimension
         if self._n_dim == 2:
@@ -641,42 +657,43 @@ class FiniteElementPatchGenerator:
         else:
             n_edges_per_dim = 4
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        # Initialize edges displacements amplitude
-        edge_disp_amp = {str(i): n_edges_per_dim*[(),]
+        # Initialize edges displacements range
+        edge_disp_range = {str(i): n_edges_per_dim*[(),]
                          for i in range(self._n_dim)}
-        # Build edges displacements amplitude
-        if edges_lab_disp_amp is None:
-            # Set null displacement amplitude by default
+        # Build edges displacements range
+        if edges_lab_disp_range is None:
+            # Set null displacement range by default
             for i in range(self._n_dim):
-                edge_disp_amp[str(i)] = n_edges_per_dim*((0, 0),)
-        elif isinstance(edges_lab_disp_amp, dict):
+                edge_disp_range[str(i)] = n_edges_per_dim*((0, 0),)
+        elif isinstance(edges_lab_disp_range, dict):
             # Get mapping between edges labels and internal indexing
             edges_mapping = self._edges_mapping
-            # Set edges displacements amplitude
+            # Set edges displacements range
             for i in range(self._n_edges):
                 # Get edge label, dimension and internal index
                 label = str(i + 1)
                 dim = str(edges_mapping[label][0])
                 index = edges_mapping[label][1]
-                # Set edge displacement amplitude
-                if label in edges_lab_disp_amp.keys():                    
-                    # Get displacement amplitude
-                    disp_amp = edges_lab_disp_amp[label]
-                    if not isinstance(disp_amp, tuple):
-                        raise RuntimeError('Edge displacement amplitude must '
-                                           'be a tuple(lower, upper).')
+                # Set edge displacement range
+                if label in edges_lab_disp_range.keys():                    
+                    # Get displacement range
+                    disp_range = edges_lab_disp_range[label]
+                    if not isinstance(disp_range, tuple):
+                        raise RuntimeError('Edge displacement range must '
+                                           'be a tuple(min, max).')
                 else:
-                    # Assume null displacement amplitude
-                    disp_amp = (0, 0)
-                # Set edge displacement amplitude
-                edge_disp_amp[dim][index] = disp_amp
+                    # Assume null displacement range
+                    disp_range = (0, 0)
+                # Set edge displacement range
+                edge_disp_range[dim][index] = disp_range
             # Loop over dimensions
             for i in range(self._n_dim):
-                edge_disp_amp[str(i)] = tuple(edge_disp_amp[str(i)])
+                edge_disp_range[str(i)] = tuple(edge_disp_range[str(i)])
         else:
-            raise RuntimeError('Invalid specification of edges_lab_disp_amp.')
+            raise RuntimeError('Invalid specification of '
+                               'edges_lab_disp_range.')
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~     
-        return edge_disp_amp
+        return edge_disp_range
     # -------------------------------------------------------------------------
     def _set_corners_attributes(self):
         """Set patch corners attributes.""" 
@@ -784,7 +801,6 @@ class FiniteElementPatchGenerator:
         return tuple(n_edge_nodes_per_dim)   
     # -------------------------------------------------------------------------
     def _get_corners_random_displacements(self, corners_disp_range,
-                                          corners_bc=None,
                                           edges_poly_orders=None):
         """Compute patch corners random displacements.
         
@@ -792,11 +808,7 @@ class FiniteElementPatchGenerator:
         ----------
         corners_disp_range : numpy.ndarray(3d)
             Patch corners displacements (numpy.ndarray(n_corners, n_dim, k),
-            where k=0 (lower bound) and k=1 (upper bound)).
-        corners_bc : tuple[tuple], default=None
-            Boundary conditions applied to the corners of the patch. For each
-            node, a tuple(n_dim) prescribes 0 (free) or 1 (fixed) for each
-            degree of freedom.
+            where k=0 (min) and k=1 (max)).
         edges_poly_orders : dict, default=None
             For each dimension (key, str[int]), store the corresponding edges
             deformation polynomials orders (item, tuple[int]).
@@ -805,9 +817,9 @@ class FiniteElementPatchGenerator:
         -------
         corners_disp : numpy.ndarray(2d)
             Patch corners displacements (numpy.ndarray(n_corners, n_dim)).
-        corners_disp_limits : numpy.ndarray(2d)
+        corners_disp_range : numpy.ndarray(3d)
             Patch corners displacements (numpy.ndarray(n_corners, n_dim, k),
-            where k=0 (lower bound) and k=1 (upper bound)).
+            where k=0 (min) and k=1 (max)).
         """
         # Initialize corners displacements
         corners_disp = np.zeros((self._n_corners, self._n_dim))
@@ -836,45 +848,31 @@ class FiniteElementPatchGenerator:
                     if edges_poly_orders[str(i)][j] == 0:
                         # Loop over orthogonal dimensions
                         for k in orth_dims:
-                            # Get minimum displacement between both limiting
-                            # corners
-                            min_disp = np.min((corners_disp[cid_l, k],
-                                               corners_disp[cid_r, k]))
+                            # Get displacement ranges
+                            range_l = (corners_disp_range[cid_l, k, 0],
+                                       corners_disp_range[cid_l, k, 1])
+                            range_r = (corners_disp_range[cid_r, k, 0],
+                                       corners_disp_range[cid_r, k, 1])
+                            # Get displacement range intersection
+                            min_max = np.min((range_l[1], range_r[1]))
+                            max_min = np.max((range_l[0], range_r[0]))
+                            if min_max > max_min:
+                                bounds = (max_min, min_max)
+                            else:
+                                bounds = (0, 0)
+                            # Sample random displacement along dimension:
+                            # uniform distribution
+                            disp = np.random.uniform(low=bounds[0],
+                                                     high=bounds[1])
                             # Enforce the same displacement on both corners
-                            corners_disp[cid_l, k] = min_disp
-                            corners_disp[cid_r, k] = min_disp
-        
-        
-                       
-        for i in range(self._n_corners):
-            print('\nCorner: ', i + 1)
-            print('Displacement range: ')
-            for j in range(self._n_dim):
-                print('dim = ', j, ': ', corners_disp_range[i, j, :]) 
-            print('Displacement: ', corners_disp[i])
+                            corners_disp[cid_l, k] = disp
+                            corners_disp[cid_r, k] = disp
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~     
         return corners_disp, corners_disp_range
     # -------------------------------------------------------------------------
-    def _get_orthogonal_dims(self, dim):
-        """Get orthogonal dimensions to given dimension.
-        
-        Parameters
-        ----------
-        dim : int
-            Dimension.
-            
-        Returns
-        -------
-        orthogonal_dims : tuple[int]
-            Orthogonal dimensions to given dimension.
-        """
-        orthogonal_dims = \
-            tuple({i for i in range(self._n_dim)}.difference({dim,}))
-        return orthogonal_dims
-    # -------------------------------------------------------------------------
     def _get_deformed_boundary_edge(self, nodes_coords_ref, left_node_def,
                                     right_node_def, poly_order,
-                                    poly_bounds_amp=None, is_plot=False):
+                                    poly_bounds_range=None, is_plot=False):
         """Get randomly deformed boundary edge node coordinates in 2D plane.
         
         The boundary edge nodes (reference configuration) must be sorted in
@@ -902,10 +900,10 @@ class FiniteElementPatchGenerator:
         poly_order : int
             Order of random polynomial sampled to generate the deformed
             configuration of the boundary edge.
-        poly_bounds_amp : tuple[float], default=None
-            Polynomial lower (0) and upper (1) bounds amplitudes along second
-            dimension. Amplitude is relative to midplane defined by both
-            boundary edge nodes along the second dimension.
+        poly_bounds_range : tuple[float], default=None
+            Polynomial range along second dimension. Range is relative to
+            midplane defined by both boundary edge nodes along the second
+            dimension.
         is_plot : bool, default=False
             If True, plot boundary edge reference and deformed configurations.
         
@@ -927,23 +925,23 @@ class FiniteElementPatchGenerator:
             raise RuntimeError('Boundary edge nodes must be sorted in '
                                'ascending order along the first dimension.')
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        # Get reference amplitude coordinate
+        # Get reference coordinate
         ref_coord = np.mean((left_node_def[1], right_node_def[1]))
         # Compute polynomial bounds
-        if poly_bounds_amp is None:
-            # Assume null polynomial bounds amplitudes
+        if poly_bounds_range is None:
+            # Assume null polynomial bounds range
             poly_lower_bound = ref_coord
             poly_upper_bound = ref_coord
         else:
-            if not isinstance(poly_bounds_amp, tuple):
-                raise RuntimeError('Polynomial bounds amplitudes must be '
-                                   'specified as a tuple(lower, upper).')
-            elif len(poly_bounds_amp) != 2:
-                raise RuntimeError('Polynomial bounds amplitudes must be '
-                                   'specified as a tuple(lower, upper).')
-            # Compute polynomial bounds from amplitudes
-            poly_lower_bound = ref_coord + poly_bounds_amp[0]
-            poly_upper_bound = ref_coord + poly_bounds_amp[1]
+            if not isinstance(poly_bounds_range, tuple):
+                raise RuntimeError('Polynomial bounds range must be '
+                                   'specified as a tuple(min, max).')
+            elif len(poly_bounds_range) != 2:
+                raise RuntimeError('Polynomial bounds range must be '
+                                   'specified as a tuple(min, max).')
+            # Compute polynomial bounds from range
+            poly_lower_bound = ref_coord + poly_bounds_range[0]
+            poly_upper_bound = ref_coord + poly_bounds_range[1]
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Generate random polynomial
         coefficients = type(self)._polynomial_sampler(
@@ -1145,6 +1143,23 @@ class FiniteElementPatchGenerator:
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         return coefficients
     # -------------------------------------------------------------------------
+    def _get_orthogonal_dims(self, dim):
+        """Get orthogonal dimensions to given dimension.
+        
+        Parameters
+        ----------
+        dim : int
+            Dimension.
+            
+        Returns
+        -------
+        orthogonal_dims : tuple[int]
+            Orthogonal dimensions to given dimension.
+        """
+        orthogonal_dims = \
+            tuple({i for i in range(self._n_dim)}.difference({dim,}))
+        return orthogonal_dims
+    # -------------------------------------------------------------------------
     @staticmethod
     def _rotate_coords_array(coords_array, r):
         """Rotate coordinates array.
@@ -1242,9 +1257,8 @@ def rotation_tensor_from_euler_angles(euler_deg):
 
 n_dim = 2
 patch_dims = (1.0, 1.0)
-n_voxels_dims = (3, 3)
 
-loading_patch = FiniteElementPatchGenerator(n_dim, patch_dims, n_voxels_dims)
+loading_patch = FiniteElementPatchGenerator(n_dim, patch_dims)
 
 
 order = 4
@@ -1263,31 +1277,25 @@ upper_bound = 0.5
 elem_type = 'SQUAD8'
 n_elems_per_dim = (5, 5)
 
-corners_lab_bc = {'1': (0, 0),
-                  '2': (0, 1),
-                  '3': (0, 0),
-                  '4': (1, 1)}
+corners_lab_bc = None
 
-corners_lab_disp_range = {'1': (0.2, 0.2), '2': (0.2, 0.2),
-                          '2': (0.2, 0.2), '3': (0.2, 0.2),}
-
+corners_lab_disp_range = {'1': ((-0.2, 0.2), (-0.2, 0.2)),
+                          '2': ((-0.2, 0.2), (-0.2, 0.2)),
+                          '3': ((-0.2, 0.2), (-0.2, 0.2)),
+                          '4': ((-0.2, 0.2), (-0.2, 0.2))}
 
 
-edges_lab_def_order = {'1': 0, '2': 0, '3': 1, '4': 1}
-edges_lab_disp_amp = None
+
+edges_lab_def_order = {'1': 0, '2': 2, '3': 3, '4': 1}
+edges_lab_disp_range = {'2': (-0.2, 0.2), }
 
 patch = loading_patch.generate_deformed_patch(
     elem_type, n_elems_per_dim, corners_lab_bc=corners_lab_bc,
     corners_lab_disp_range=corners_lab_disp_range,
     edges_lab_def_order=edges_lab_def_order,
-    edges_lab_disp_amp=edges_lab_disp_amp)
+    edges_lab_disp_range=edges_lab_disp_range)
 
 patch.plot_deformed_patch()
 
 
-"""
-def generate_deformed_patch(self, elem_type, n_elems_per_dim,
-                                corners_bc=None, corners_lab_disp_range=None,
-                                edges_lab_def_order=None, edges_lab_disp_amp=None):
-"""
     
