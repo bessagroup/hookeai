@@ -402,8 +402,8 @@ def generate_dataset_output_data(dataset_input_data, constant_parameters={}):
         output_data = design.output_data
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Store material patch sample simulation output data
-        dataset_output_data.append((design.output_data['node_data'],
-                                    design.output_data['global_data']))
+        dataset_output_data.append((output_data['node_data'],
+                                    output_data['global_data']))
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     return dataset_output_data
 # =============================================================================
