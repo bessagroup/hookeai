@@ -44,7 +44,7 @@ def generate_material_patch_dataset(
     patch_dims_ranges=None, avg_deformation_ranges=None,
     edge_deformation_order_ranges=None, edge_deformation_magnitude_ranges=None,
     max_iter_per_patch=10, links_input_params=None,
-    is_save_simulation_data=False, is_save_plot_patch=False):
+    is_save_simulation_data=False, is_save_plot_patch=False, is_verbose=False):
     """Generate and simulate a set of deformed finite element material patches.
     
     Material patch is assumed quadrilateral (2d) or parallelepipedic (3D)
@@ -142,6 +142,8 @@ def generate_material_patch_dataset(
         Save material patch simulation files.
     is_save_plot_patch : bool, default=False
         Save plot of material patch design sample in simulation directory.
+    is_verbose : bool, default=False
+        If True, enable verbose output.
         
     Returns
     -------
@@ -157,6 +159,13 @@ def generate_material_patch_dataset(
                         global features (0, :, :). The last index is the
                         time step.
     """
+    if is_verbose:
+        print('\nGenerate and simulate set of deformed finite element '
+              'deformed material patches'
+              '\n-----------------------------------------------------'
+              '-------------------------')
+        print('\n> Setting default design space parameters...')
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Get default design space parameters
     default_parameters = get_default_design_parameters(n_dim)
     # Set default parameters
@@ -175,8 +184,14 @@ def generate_material_patch_dataset(
     if n_elems_per_dim is None:
         n_elems_per_dim = default_parameters['n_elems_per_dim']
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    if is_verbose:
+        print('\n> Building design space:')
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Initialize design space
     design_space = f3dasm.Domain()
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    if is_verbose:
+        print('  > [ input parameter] Setting material patch size...')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set input parameter: Material patch size
     #
@@ -195,6 +210,10 @@ def generate_material_patch_dataset(
                                                    upper_bound=upper_bound)
         # Add design input parameter
         design_space.add_input_space(name=name, space=parameter)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    if is_verbose:
+        print('  > [ input parameter] Setting material patch average '
+              'deformation...')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set input parameter: Material patch average deformation
     #
@@ -223,6 +242,10 @@ def generate_material_patch_dataset(
             # Add design input parameter
             design_space.add_input_space(name=name, space=parameter)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    if is_verbose:
+        print('  > [ input parameter] Setting material patch edge polynomial '
+              'deformation order...')
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set input parameter: Material patch polynomial deformation order
     #
     # Set number of edges
@@ -247,6 +270,10 @@ def generate_material_patch_dataset(
                                                  upper_bound=upper_bound)
         # Add design input parameter
         design_space.add_input_space(name=name, space=parameter)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    if is_verbose:
+        print('  > [ input parameter] Setting material patch edge polynomial '
+              'deformation magnitude...')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set input parameter: Material patch edge polynomial deformation magnitude
     #
@@ -321,6 +348,10 @@ def generate_material_patch_dataset(
     #    name='links_input_params',
     #    space=f3dasm.ConstantParameter(value=links_input_params))
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    if is_verbose:
+        print('  > [output parameter] Setting node features data... ')
+        print('  > [output parameter] Setting global features data... ')
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set output parameters:
     #
     # Set node features data                                                   # Question: How to hande a numpy.ndarray output?
@@ -329,13 +360,19 @@ def generate_material_patch_dataset(
     # Set global features data                                                 # Question: How to hande a numpy.ndarray output?
     design_space.add_output_space(name='global_data',
                                   space=f3dasm.design.parameter.Parameter())        
-    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ 
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    if is_verbose:
+        print('\n> Sampling design space input data...')
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Initialize sampler
     sampler = f3dasm.sampling.RandomUniform(design_space)
     # Generate samples (class ExperimentData)
     dataset = sampler.get_samples(numsamples=n_sample)
     # Get samples input data (class pd.DataFrame)
     dataset_input_data = dataset.get_input_data()
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    if is_verbose:
+        print('\n> Computing design space output data...')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Generate samples output data                                             
     option = ('no_f3dasm', 'f3dasm')[0]
@@ -353,6 +390,9 @@ def generate_material_patch_dataset(
         dataset.run(simulate_material_patch)                                   # Error: AttributeError: 'NoneType' object has no attribute '_dict_output'
     else:
         raise RuntimeError('Unavailable option')
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    if is_verbose:
+        print('\n> Returning design space output data...\n')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     return dataset_output_data
 # =============================================================================
@@ -397,7 +437,7 @@ def generate_dataset_output_data(dataset_input_data, constant_parameters={}):
         # Convert to Design object
         design = f3dasm.design.design.Design(design, {}, jobnumber=0)
         # Generate and simulate material patch
-        simulate_material_patch(design)
+        design = simulate_material_patch(design)
         # Get material patch sample simulation output data
         output_data = design.output_data
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -407,7 +447,7 @@ def generate_dataset_output_data(dataset_input_data, constant_parameters={}):
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     return dataset_output_data
 # =============================================================================
-def simulate_material_patch(design):
+def simulate_material_patch(design, **kwargs):
     """Generate and simulate finite element material patch design sample.
     
     Parameters
@@ -551,7 +591,9 @@ def simulate_material_patch(design):
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set material patch design sample output data
     design.set('node_data', results['node_data'])                              
-    design.set('global_data', results['global_data'])                          
+    design.set('global_data', results['global_data'])
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    return design                    
 # =============================================================================
 def get_default_design_parameters(n_dim):
     """Generate finite element material patch design space default parameters.
@@ -656,6 +698,8 @@ if __name__ == "__main__":
     is_save_simulation_data = False
     # Save plot of material patch
     is_save_plot_patch = True
+    # Enable verbose output
+    is_verbose = True
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set number of samples
     n_sample = 5
@@ -669,7 +713,8 @@ if __name__ == "__main__":
         edge_deformation_magnitude_ranges=edge_deformation_magnitude_ranges,
         links_input_params=links_input_params,
         is_save_plot_patch=is_save_plot_patch,
-        is_save_simulation_data=is_save_simulation_data)
+        is_save_simulation_data=is_save_simulation_data,
+        is_verbose=is_verbose)
     
     
     
