@@ -789,17 +789,28 @@ class FiniteElementPatchGenerator:
                                        corners_disp_range[cid_l, k, 1])
                             range_r = (corners_disp_range[cid_r, k, 0],
                                        corners_disp_range[cid_r, k, 1])
-                            # Get displacement range intersection
+                            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                            # Check displacement range intersection
                             min_max = np.min((range_l[1], range_r[1]))
                             max_min = np.max((range_l[0], range_r[0]))
                             if min_max > max_min:
+                                # If non-null intersection range, then sample
+                                # random displacement along dimension on that
+                                # range: uniform distribution
                                 bounds = (max_min, min_max)
+                                disp = np.random.uniform(low=bounds[0],
+                                                         high=bounds[1])
                             else:
-                                bounds = (0, 0)
-                            # Sample random displacement along dimension:
-                            # uniform distribution
-                            disp = np.random.uniform(low=bounds[0],
-                                                     high=bounds[1])
+                                # If null intersection range, then sample
+                                # random displacement along dimension on each
+                                # range (uniform distribution) and take the
+                                # average value
+                                disp_l = np.random.uniform(low=range_l[0],
+                                                           high=range_l[1])
+                                disp_r = np.random.uniform(low=range_r[0],
+                                                           high=range_r[1])
+                                disp = np.average((disp_l, disp_r))
+                            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~                          
                             # Enforce the same displacement on both corners
                             corners_disp[cid_l, k] = disp
                             corners_disp[cid_r, k] = disp

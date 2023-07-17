@@ -25,9 +25,7 @@ import os
 import shutil
 # Third-party
 import numpy as np
-#sys.stdout, sys.stderr = os.devnull, os.devnull
 import f3dasm
-#sys.stdout, sys.stderr = sys.__stdout__, sys.__stderr__
 # Local
 from patch_generator import FiniteElementPatchGenerator
 from simulators.links.links import LinksSimulator
@@ -634,10 +632,10 @@ if __name__ == "__main__":
                               '3': ((-0.4, 0.4), (-0.4, 0.4)),
                               '4': ((-0.4, 0.4), (-0.4, 0.4))}
     # Set range of polynomial deformation order prescribed for each edge label
-    edge_deformation_order_ranges = {'1': (1, 3),
-                                     '2': (1, 3),
-                                     '3': (1, 3),
-                                     '4': (1, 3)}
+    edge_deformation_order_ranges = {'1': (0, 0),
+                                     '2': (0, 0),
+                                     '3': (0, 0),
+                                     '4': (0, 0)}
     # Set range of polynomial deformation prescribed for each edge label
     edge_deformation_magnitude_ranges = {'1': (-0.2, 0.2),
                                          '2': (-0.2, 0.2),
