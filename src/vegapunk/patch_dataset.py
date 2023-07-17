@@ -185,6 +185,24 @@ def generate_material_patch_dataset(
         n_elems_per_dim = default_parameters['n_elems_per_dim']
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     if is_verbose:
+        print('\n> Setting input constant parameters...')
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Set input constant parameters
+    constant_parameters = {'n_dim': n_dim,
+                           'elem_type': elem_type,
+                           'n_elems_per_dim': n_elems_per_dim,
+                           'max_iter': max_iter_per_patch,
+                           'links_bin_path': links_bin_path,
+                           'strain_formulation': strain_formulation,
+                           'analysis_type': analysis_type,
+                           'filename': 'material_patch',
+                           'directory': simulation_directory,
+                           'patch_material_data': patch_material_data,
+                           'links_input_params': links_input_params,
+                           'is_save_simulation_data': is_save_simulation_data,
+                           'is_save_plot_patch': is_save_plot_patch} 
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    if is_verbose:
         print('\n> Building design space:')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Initialize design space
@@ -293,60 +311,7 @@ def generate_material_patch_dataset(
             parameter = f3dasm.ContinuousParameter(lower_bound=lower_bound,
                                                    upper_bound=upper_bound)
         # Add design input parameter
-        design_space.add_input_space(name=name, space=parameter)
-    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Set input constant parameters: Material patch generator
-    #
-    # Set number of spatial dimensions
-    design_space.add_input_space(name='n_dim',
-                           space=f3dasm.ConstantParameter(value=n_dim))
-    # Set finite element type
-    design_space.add_input_space(
-        name='elem_type',
-        space=f3dasm.CategoricalParameter(categories=[elem_type,]))
-    # Set number of finite elements per dimension
-    for i in range(n_dim):
-        design_space.add_input_space(
-            name='n_elems_' + str(i + 1),
-            space=f3dasm.ConstantParameter(value=n_elems_per_dim[i]))
-    # Set maximum number of iterations per patch
-    design_space.add_input_space(
-        name='max_iter',
-        space=f3dasm.ConstantParameter(value=max_iter_per_patch))
-    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Set input constant parameters: Material patch material data              
-    #
-    # Set material patch data                                                  # Error: Non-hashable Parameter is not accepted
-    #design_space.add_input_space(
-    #    name='patch_material_data',
-    #    space=f3dasm.ConstantParameter(value=patch_material_data))
-    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Set input constant parameters: Links simulator
-    #
-    # Set Links binary path
-    design_space.add_input_space(
-        name='links_bin_path',
-        space=f3dasm.CategoricalParameter(categories=[links_bin_path,]))
-    # Set strain formulation
-    design_space.add_input_space(
-        name='strain_formulation',
-        space=f3dasm.CategoricalParameter(categories=[strain_formulation,]))
-    # Set analysis type
-    design_space.add_input_space(
-        name='analysis_type',
-        space=f3dasm.CategoricalParameter(categories=[analysis_type,]))
-    # Set simulation filename
-    design_space.add_input_space(
-        name='filename',
-        space=f3dasm.CategoricalParameter(categories=['material_patch',]))
-    # Set simulation filename
-    design_space.add_input_space(
-        name='directory',
-        space=f3dasm.CategoricalParameter(categories=[simulation_directory,]))
-    # Set Links parameters                                                     # Error: Non-hashable Parameter is not accepted
-    #design_space.add_input_space(
-    #    name='links_input_params',
-    #    space=f3dasm.ConstantParameter(value=links_input_params))
+        design_space.add_input_space(name=name, space=parameter)  
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     if is_verbose:
         print('  > [output parameter] Setting node features data... ')
@@ -377,17 +342,12 @@ def generate_material_patch_dataset(
     # Generate samples output data                                             
     option = ('no_f3dasm', 'f3dasm')[0]
     if option == 'no_f3dasm':
-        # Group constant parameters
-        constant_parameters = {
-            'patch_material_data': patch_material_data,
-            'links_input_params': links_input_params,
-            'is_save_simulation_data': is_save_simulation_data,
-            'is_save_plot_patch': is_save_plot_patch}
         # Generate samples output data
         dataset_output_data = generate_dataset_output_data(dataset_input_data,
                                                            constant_parameters)
     elif option == 'f3dasm':
-        dataset.run(simulate_material_patch)                                   # Error: AttributeError: 'NoneType' object has no attribute '_dict_output'
+        dataset.run(simulate_material_patch, mode='sequential',
+                    kwargs=constant_parameters)                                # Error: AttributeError: 'NoneType' object has no attribute '_dict_output'
     else:
         raise RuntimeError('Unavailable option')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -437,7 +397,7 @@ def generate_dataset_output_data(dataset_input_data, constant_parameters={}):
         # Convert to Design object
         design = f3dasm.design.design.Design(design, {}, jobnumber=0)
         # Generate and simulate material patch
-        design = simulate_material_patch(design)
+        design = simulate_material_patch(design, **constant_parameters)
         # Get material patch sample simulation output data
         output_data = design.output_data
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -455,13 +415,12 @@ def simulate_material_patch(design, **kwargs):
     design : f3dasm.Design
         Material patch design sample.
     """
-    # Get number of spatial dimensions                                         # Unexpected behavior: int was converted to float
-    n_dim = int(design.get('n_dim'))
+    # Get number of spatial dimensions                                         
+    n_dim = kwargs['n_dim']
     # Get finite element type
-    elem_type = design.get('elem_type')
-    # Get number of finite elements per dimension                              # Unexpected behavior: int was converted to float
-    n_elems_per_dim = tuple([int(design.get('n_elems_' + str(i + 1)))
-                             for i in range(n_dim)])
+    elem_type = kwargs['elem_type']
+    # Get number of finite elements per dimension                              
+    n_elems_per_dim = kwargs['n_elems_per_dim']
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set material patch dimensions 
     patch_dims = tuple([design.get('patch_size_' + str(i + 1))
@@ -550,13 +509,13 @@ def simulate_material_patch(design, **kwargs):
         edges_lab_def_order=edges_lab_def_order,
         edges_lab_disp_range=edges_lab_disp_range)
     # Save plot of deformed material patch
-    is_save_plot_patch = design.get('is_save_plot_patch')
+    is_save_plot_patch = kwargs['is_save_plot_patch']
     if is_save_plot_patch and is_admissible:
         patch.plot_deformed_patch(
             is_save_plot=is_save_plot_patch,
-            save_directory=design.get('directory'),
-            plot_name=design.get('filename'),
-            is_overwrite_file=not design.get('is_save_plot_patch'))
+            save_directory=kwargs['directory'],
+            plot_name=kwargs['filename'],
+            is_overwrite_file=not is_save_plot_patch)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Initialize results
     results_keywords = ('node_data', 'global_data')
@@ -564,15 +523,14 @@ def simulate_material_patch(design, **kwargs):
     # Simulate material patch
     if is_admissible:
         # Initialize simulator
-        links_simulator = LinksSimulator(design.get('links_bin_path'),
-                                         design.get('strain_formulation'),
-                                         design.get('analysis_type'))
+        links_simulator = LinksSimulator(kwargs['links_bin_path'],
+                                         kwargs['strain_formulation'],
+                                         kwargs['analysis_type'])
         # Generate simulator input data file
         links_file_path = links_simulator.generate_input_data_file(
-            design.get('filename'), design.get('directory'), patch,
-            design.get('patch_material_data'),
-            design.get('links_input_params'),
-            is_overwrite_file=not design.get('is_save_simulation_data'))
+            kwargs['filename'], kwargs['directory'], patch,
+            kwargs['patch_material_data'], kwargs['links_input_params'],
+            is_overwrite_file=not kwargs['is_save_simulation_data'])
         # Run simulation
         is_success, links_output_directory = \
             links_simulator.run_links_simulation(links_file_path)
@@ -581,7 +539,7 @@ def simulate_material_patch(design, **kwargs):
             results = links_simulator.read_links_simulation_results(
                 links_output_directory, results_keywords)
         # Remove simulation files
-        if not design.get('is_save_simulation_data'):
+        if not kwargs['is_save_simulation_data']:
             # Remove simulator input data file
             if os.path.isfile(links_file_path):
                 os.remove(links_file_path)
