@@ -43,10 +43,14 @@ class FiniteElement:
 
     Methods
     -------
+    _available_elem_type()
+        Get available finite element types.
     _is_available_elem_type(elem_type)
         Check if finite element type is available.
     _set_elem_type_attributes(self)
-        Set finite element type attributes.    
+        Set finite element type attributes.
+    get_n_dim(self)
+        Get number of spatial dimensions.   
     get_n_edge_nodes(self)
         Get number of nodes per edge.
     get_nodes_matrix(self)
@@ -85,7 +89,8 @@ class FiniteElement:
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         return available
     # -------------------------------------------------------------------------
-    def _is_available_elem_type(self, elem_type):
+    @staticmethod
+    def _is_available_elem_type(elem_type):
         """Check if finite element type is available.
         
         Parameters
@@ -99,7 +104,7 @@ class FiniteElement:
             True if the element type is available, False otherwise.
         """
         # Check if finite element type is available
-        is_available = elem_type in type(self)._available_elem_type()
+        is_available = elem_type in FiniteElement._available_elem_type()
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         return is_available
     # -------------------------------------------------------------------------
@@ -204,6 +209,16 @@ class FiniteElement:
         self._n_edges = n_edges 
         self._n_edge_nodes = n_edge_nodes
         self._nodes_matrix = nodes_matrix
+    # -------------------------------------------------------------------------
+    def get_n_dim(self):
+        """Get number of spatial dimensions.
+        
+        Returns
+        -------
+        n_dim : int
+            Number of spatial dimensions.
+        """
+        return self._n_dim
     # -------------------------------------------------------------------------
     def get_n_nodes(self):
         """Get number of nodes.
