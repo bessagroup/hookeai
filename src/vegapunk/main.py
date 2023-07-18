@@ -2,8 +2,6 @@
 #
 #                                                                       Modules
 # =============================================================================
-# Standard
-
 # Third-party
 import numpy as np
 # Local
@@ -65,7 +63,8 @@ patch.plot_deformed_patch(is_save_plot=True, save_directory=directory)
 #                                               SET SIMULATOR AND MATERIAL DATA
 # -----------------------------------------------------------------------------
 # Set simulator
-links_bin_path = '/home/bernardoferreira/Documents/repositories/external/CM2S/LINKS/bin/LINKS_debug'
+links_bin_path = '/home/bernardoferreira/Documents/repositories/external/' \
+    'CM2S/LINKS/bin/LINKS_debug'
 strain_formulation = 'finite'
 analysis_type = 'plane_strain'
 links_simulator = LinksSimulator(links_bin_path, strain_formulation,
