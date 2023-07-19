@@ -341,7 +341,7 @@ class FiniteElementPatch:
             plt.show()
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Save figure (pdf format)
-        if is_save_plot and os.path.exists(save_directory):
+        if is_save_plot and os.path.exists(str(save_directory)):
             # Set figure path
             if plot_name is None:
                 plot_name = 'finite_element_material_patch'
