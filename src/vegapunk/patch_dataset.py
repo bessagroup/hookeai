@@ -147,9 +147,9 @@ def generate_material_patch_dataset(
         
     Returns
     -------
-    dataset_output_data : list[tuple(2)]
+    dataset_output_data : list[dict]
         Material patches simulations output data. Output data of each material
-        patch is stored in a tuple(2), where:
+        patch is stored in a dict, where:
         
         'node_data' : numpy.ndarray(3d) where each i-th row has the node \
                       label (i, 0, :) and the corresponding nodal \
@@ -368,9 +368,9 @@ def generate_dataset_output_data(dataset_input_data, constant_parameters={}):
     
     Returns
     -------
-    dataset_output_data : list[tuple(2)]
+    dataset_output_data : list[dict]
         Material patches simulations output data. Output data of each material
-        patch is stored in a tuple(2), where:
+        patch is stored in a dict, where:
         
         'node_data' : numpy.ndarray(3d) where each i-th row has the node \
                       label (i, 0, :) and the corresponding nodal \
@@ -402,8 +402,7 @@ def generate_dataset_output_data(dataset_input_data, constant_parameters={}):
         output_data = design.output_data
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Store material patch sample simulation output data
-        dataset_output_data.append((output_data['node_data'],
-                                    output_data['global_data']))
+        dataset_output_data.append(output_data)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     return dataset_output_data
 # =============================================================================
