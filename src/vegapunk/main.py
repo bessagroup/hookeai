@@ -7,6 +7,7 @@ import numpy as np
 # Local
 from patch_generator import FiniteElementPatchGenerator
 from simulators.links.links import LinksSimulator
+from gnn_patch_data import GNNPatchGraphData
 #
 #                                                          Authorship & Credits
 # =============================================================================
@@ -34,7 +35,7 @@ patch_generator = FiniteElementPatchGenerator(n_dim, patch_dims)
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Set finite element discretization
 elem_type = 'SQUAD8'
-n_elems_per_dim = (4, 4)
+n_elems_per_dim = (3, 3)
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Set corners boundary conditions
 corners_lab_bc = None
@@ -97,3 +98,24 @@ results_keywords = ('node_data', 'global_data')
 results = links_simulator.read_links_simulation_results(links_output_directory,
                                                         results_keywords,
                                                         is_verbose=True)
+#
+#                                        GNN-BASED MATERIAL PATCH FEATURES DATA
+# -----------------------------------------------------------------------------
+
+connected_nodes = patch.get_mesh_connected_nodes()
+edges_indexes_mesh = np.zeros((len(connected_nodes), 2), dtype=int)
+for i, edge in enumerate(connected_nodes):
+    edges_indexes_mesh[i, :] = (edge[0] - 1, edge[1] - 1)
+
+
+edges_indexes_mesh = GNNPatchGraphData.get_undirected_unique_edges(edges_indexes_mesh)
+
+# Get material patch reference node coordinates
+node_coord_ref = results['node_data'][:, 1:4, 0]
+
+
+gnn_patch_data = GNNPatchGraphData(n_dim=2, nodes_coords=node_coord_ref)
+
+gnn_patch_data.set_graph_edges_indexes(connect_radius=0.4, edges_indexes_mesh=edges_indexes_mesh)
+
+gnn_patch_data.plot_material_patch_graph(is_show_plot=True)
