@@ -16,7 +16,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 # Local
 from finite_element import FiniteElement
-from ioput.iostandard import make_directory, new_file_path_with_int
+from ioput.iostandard import new_file_path_with_int
 #
 #                                                          Authorship & Credits
 # =============================================================================
@@ -35,6 +35,28 @@ class FiniteElementPatch:
     
     Attributes
     ----------
+    n_dim : int
+        Number of spatial dimensions.
+    patch_dims : tuple[float]
+        Patch size in each dimension.
+    elem_type : str
+        Finite element type.
+    n_elems_per_dim : tuple[int]
+        Number of finite elements per dimension.
+    mesh_nodes_matrix : numpy.ndarray(2d or 3d)
+        Finite element mesh nodes matrix
+        (numpy.ndarray[int](n_edge_nodes_per_dim) where each element
+        corresponds to a given node position and whose value is set either
+        as the global node label or zero (if the node does not exist).
+        Nodes are labeled from 1 to n_nodes.
+    mesh_nodes_coords_ref : dict
+        Coordinates (item, numpy.ndarray(n_dim)) of each finite element
+        mesh node (key, str[int]) in the reference configuration. Nodes are
+        labeled from 1 to n_nodes.
+    mesh_boundary_nodes_disps : dict
+        Displacements (item, numpy.ndarray(n_dim)) prescribed on each
+        finite element mesh boundary node (key, str[int]). Free degrees of
+        freedom must be set as None.
     n_edge_nodes_per_dim : tuple[int]
         Number of patch edge nodes along each dimension.
     
@@ -164,6 +186,41 @@ class FiniteElementPatch:
         """
         return copy.deepcopy(self._mesh_boundary_nodes_disps)
     # -------------------------------------------------------------------------
+    def get_mesh_connected_nodes(self):
+        """Get finite element mesh connected nodes pairs.
+        
+        Returns
+        -------
+        connected_nodes : tuple[tuple(2)]
+            A set containing all pairs of nodes that are connected by a finite
+            element edge. Each connection is stored a single time as a
+            tuple(node[int], node[int]) and is independent of the corresponding
+            nodes storage order.
+        """
+        # Initialize node connectivities
+        connected_nodes = []
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Find node connectivities
+        if self._n_dim == 2:
+            # Get connectivities along first spatial dimension
+            for j in range(self._mesh_nodes_matrix.shape[1]):
+                for i in range(self._mesh_nodes_matrix.shape[0] - 1):
+                    node_1 = self._mesh_nodes_matrix[i, j]
+                    node_2 = self._mesh_nodes_matrix[i + 1, j]
+                    if node_1 != 0 and node_2 != 0:
+                        connected_nodes.append((node_1, node_2))
+            # Get connectivities along second spatial dimension
+            for i in range(self._mesh_nodes_matrix.shape[0]):
+                for j in range(self._mesh_nodes_matrix.shape[1] - 1):
+                    node_1 = self._mesh_nodes_matrix[i, j]
+                    node_2 = self._mesh_nodes_matrix[i, j + 1]
+                    if node_1 != 0 and node_2 != 0:
+                        connected_nodes.append((node_1, node_2))
+        else:
+            raise RuntimeError('Missing 3D implementation.')
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        return tuple(connected_nodes)
+    # -------------------------------------------------------------------------
     def _set_n_edge_nodes_per_dim(self):
         """Set number of patch edge nodes per dimension."""
         # Get finite element
@@ -262,9 +319,7 @@ class FiniteElementPatch:
                     [mesh_nodes_coords_ref[str(label)][1]
                      for label in mesh_nodes_labels],
                     'o', color='k')
-            ax.plot([mesh_nodes_coords_ref['1'][0],],
-                    [mesh_nodes_coords_ref['1'][1],],
-                    '-', color='k', label='Reference configuration')
+            ax.plot([], [], '-', color='k', label='Reference configuration')
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Get finite element mesh boundary nodes labels with prescribed
             # displacements

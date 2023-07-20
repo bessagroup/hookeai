@@ -36,6 +36,10 @@ class FiniteElementPatchGenerator:
     
     Attributes
     ----------
+    n_dim : int
+        Number of spatial dimensions.
+    patch_dims : tuple[float]
+        Patch size in each dimension.
     _n_corners : int
         Number of corners of the patch.
     _n_edges : int

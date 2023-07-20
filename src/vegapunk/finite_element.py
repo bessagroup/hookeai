@@ -26,6 +26,8 @@ class FiniteElement:
     
     Attributes
     ----------
+    elem_type : str
+        Finite element type.
     n_dim : int
         Number of spatial dimensions.
     n_nodes : int

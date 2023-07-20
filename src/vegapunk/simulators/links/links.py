@@ -35,6 +35,16 @@ __status__ = 'Planning'
 class LinksSimulator:
     """Finite element method simulator: Links.
     
+    Attributes
+    ----------
+    links_bin_path : str
+        Links binary absolute path.
+    strain_formulation: {'infinitesimal', 'finite'}
+        Links strain formulation.
+    analysis_type : {'plane_stress', 'plane_strain', 'axisymmetric', \
+                        'tridimensional'}
+        Links analysis type.
+            
     Methods
     -------
     _get_n_dim(self)
