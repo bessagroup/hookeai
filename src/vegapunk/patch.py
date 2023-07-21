@@ -35,29 +35,29 @@ class FiniteElementPatch:
     
     Attributes
     ----------
-    n_dim : int
+    _n_dim : int
         Number of spatial dimensions.
-    patch_dims : tuple[float]
+    _patch_dims : tuple[float]
         Patch size in each dimension.
-    elem_type : str
+    _elem_type : str
         Finite element type.
-    n_elems_per_dim : tuple[int]
+    _n_elems_per_dim : tuple[int]
         Number of finite elements per dimension.
-    mesh_nodes_matrix : numpy.ndarray(2d or 3d)
+    _mesh_nodes_matrix : numpy.ndarray(2d or 3d)
         Finite element mesh nodes matrix
         (numpy.ndarray[int](n_edge_nodes_per_dim) where each element
         corresponds to a given node position and whose value is set either
         as the global node label or zero (if the node does not exist).
         Nodes are labeled from 1 to n_nodes.
-    mesh_nodes_coords_ref : dict
+    _mesh_nodes_coords_ref : dict
         Coordinates (item, numpy.ndarray(n_dim)) of each finite element
         mesh node (key, str[int]) in the reference configuration. Nodes are
         labeled from 1 to n_nodes.
-    mesh_boundary_nodes_disps : dict
+    _mesh_boundary_nodes_disps : dict
         Displacements (item, numpy.ndarray(n_dim)) prescribed on each
         finite element mesh boundary node (key, str[int]). Free degrees of
         freedom must be set as None.
-    n_edge_nodes_per_dim : tuple[int]
+    _n_edge_nodes_per_dim : tuple[int]
         Number of patch edge nodes along each dimension.
     
     Methods

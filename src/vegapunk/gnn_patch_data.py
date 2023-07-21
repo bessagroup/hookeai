@@ -1,13 +1,11 @@
-"""Generate GNN-based material patch graph data.
+"""GNN-based material patch graph data.
 
 Classes
 -------
 GNNPatchGraphData
     GNN-based material patch graph data.
-
-Functions
----------
-
+GNNPatchFeaturesGenerator:
+    GNN-based material patch input and output features generator.
 """
 #
 #                                                                       Modules
@@ -46,74 +44,93 @@ class GNNPatchGraphData:
     node_features_matrix : numpy.ndarray(2d), default=None
         Nodes input features matrix stored as a numpy.ndarray(2d) of shape
         (n_nodes, n_features).
+    edge_features_matrix : numpy.ndarray(2d), default=None
+        Edges input features matrix stored as a numpy.ndarray(2d) of shape
+        (n_edges, n_features).
     global_features_matrix : numpy.ndarray(2d), default=None
         Global input features matrix stored as a numpy.ndarray(2d) of shape
         (1, n_features).
     node_targets_matrix : numpy.ndarray(2d), default=None
         Nodes targets matrix stored as a numpy.ndarray(2d) of shape
         (n_nodes, n_targets).
+    edge_targets_matrix : numpy.ndarray(2d), default=None
+        Edges targets matrix stored as a numpy.ndarray(2d) of shape
+        (n_nodes, n_targets).
     global_targets_matrix : numpy.ndarray(2d), default=None
         Global targets matrix stored as a numpy.ndarray(2d) of shape
         (1, n_targets).
-    edge_indexes : numpy.ndarray(2d)
+    edges_indexes : numpy.ndarray(2d)
         Edges indexes matrix stored as numpy.ndarray[int](2d) with shape
         (num_edges, 2), where the i-th edge is stored in
         edges_indexes[i, :] as (start_node_index, end_node_index).
     
     Methods
     -------
+    get_torch_data_object(self)
+        Get PyG homogeneous graph data object.
     set_graph_edges_indexes(self, connect_radius=None, \
                             edges_indexes_mesh=None)
         Set material patch graph edges indexes.
+    get_graph_edges_indexes(self)
+        Get material patch graph edges indexes.
+    set_node_features_matrix(self, node_features_matrix)
+        Set nodes input features matrix.
+    get_node_features_matrix(self)
+        Set nodes input features matrix.
+    set_edge_features_matrix(self, edge_features_matrix)
+        Set edges input features matrix.
+    get_edge_features_matrix(self)
+        Get edges input features matrix.
+    set_global_features_matrix(self, global_features_matrix)
+        Set global input features matrix.
+    get_global_features_matrix(self)
+        Get global input features matrix.  
+    set_node_targets_matrix(self, node_targets_matrix)
+        Set node targets matrix.
+    get_node_targets_matrix(self)
+        Get node targets matrix.  
+    set_edge_targets_matrix(self, edge_targets_matrix)
+        Set edge targets matrix.   
+    get_edge_targets_matrix(self)
+        Get edge targets matrix.
+    set_global_targets_matrix(self, global_targets_matrix)
+        Set global targets matrix.
+    get_global_targets_matrix(self)
+        Get global targets matrix.
     plot_material_patch_graph(self, is_show_plot=False, is_save_plot=False, \
                               save_directory=None, plot_name=None, \
                               is_overwrite_file=False)
         Generate plot of material patch graph.
     _get_edges_from_local_radius(nodes_coords, connect_radius)
         Get edges between nodes that are within a given connectivity radius.
-    get_undirected_unique_edges(edge_indexes)
+    get_undirected_unique_edges(edges_indexes)
         Get set of undirected unique edges indexes.
-    _check_edges_indexes_matrix(edge_indexes)
+    _check_edges_indexes_matrix(edges_indexes)
         Check if given edges indexes matrix is valid.
     """
-    def __init__(self, n_dim, nodes_coords=None, node_features_matrix=None,
-                 global_features_matrix=None, node_targets_matrix=None,
-                 global_targets_matrix=None):
+    def __init__(self, n_dim, nodes_coords):
         """Constructor.
         
         Parameters
         ----------
         n_dim : int
             Number of spatial dimensions.
-        nodes_coords : numpy.ndarray(2d), default=None
+        nodes_coords : numpy.ndarray(2d)
             Coordinates of nodes stored as a numpy.ndarray(2d) with shape
             (n_nodes, n_dim). Coordinates of i-th node are stored in
             nodes_coords[i, :].
-        node_features_matrix : numpy.ndarray(2d), default=None
-            Nodes input features matrix stored as a numpy.ndarray(2d) of shape
-            (n_nodes, n_features).
-        global_features_matrix : numpy.ndarray(2d), default=None
-            Global input features matrix stored as a numpy.ndarray(2d) of shape
-            (1, n_features).
-        node_targets_matrix : numpy.ndarray(2d), default=None
-            Nodes targets matrix stored as a numpy.ndarray(2d) of shape
-            (n_nodes, n_targets).
-        global_targets_matrix : numpy.ndarray(2d), default=None
-            Global targets matrix stored as a numpy.ndarray(2d) of shape
-            (1, n_targets).
         """
         self._n_dim = n_dim
-        self._node_features_matrix = node_features_matrix
-        self._global_features_matrix = global_features_matrix
-        self._node_targets_matrix = node_targets_matrix
-        self._global_targets_matrix = global_targets_matrix
-        self._nodes_coords = nodes_coords
-        if nodes_coords is None:
-            self._nodes_coords = nodes_coords
-        else:
-            self._nodes_coords = nodes_coords[:, :n_dim]
+        self._nodes_coords = nodes_coords[:, :n_dim]
         # Initialize graph edges
         self._edges_indexes=None
+        # Initialize features matrices
+        self._node_features_matrix = None
+        self._edge_features_matrix = None
+        self._global_features_matrix = None
+        self._node_targets_matrix = None
+        self._edge_targets_matrix = None
+        self._global_targets_matrix = None
     # -------------------------------------------------------------------------  
     def get_torch_data_object(self):
         """Get PyG homogeneous graph data object.
@@ -153,18 +170,6 @@ class GNNPatchGraphData:
         data.validate(raise_on_error=True)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         return data
-    # -------------------------------------------------------------------------
-    def get_graph_edges_indexes(self):
-        """Get material patch graph edges indexes.
-        
-        Returns
-        -------
-        edge_indexes : numpy.ndarray(2d)
-            Edges indexes matrix stored as numpy.ndarray[int](2d) with shape
-            (num_edges, 2), where the i-th edge is stored in
-            edges_indexes[i, :] as (start_node_index, end_node_index).
-        """
-        return copy.deepcopy(self._edges_indexes)
     # -------------------------------------------------------------------------
     def set_graph_edges_indexes(self, connect_radius=None,
                                 edges_indexes_mesh=None):
@@ -207,6 +212,150 @@ class GNNPatchGraphData:
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Set edges indexes
         self._edges_indexes = edges_indexes
+    # -------------------------------------------------------------------------
+    def get_graph_edges_indexes(self):
+        """Get material patch graph edges indexes.
+        
+        Returns
+        -------
+        edges_indexes : numpy.ndarray(2d)
+            Edges indexes matrix stored as numpy.ndarray[int](2d) with shape
+            (num_edges, 2), where the i-th edge is stored in
+            edges_indexes[i, :] as (start_node_index, end_node_index).
+        """
+        return copy.deepcopy(self._edges_indexes)
+    # -------------------------------------------------------------------------
+    def set_node_features_matrix(self, node_features_matrix):
+        """Set nodes input features matrix.
+        
+        Parameters
+        ----------
+        node_features_matrix : numpy.ndarray(2d)
+            Nodes input features matrix stored as a numpy.ndarray(2d) of shape
+            (n_nodes, n_features).
+        """
+        self._node_features_matrix = copy.deepcopy(node_features_matrix)
+    # -------------------------------------------------------------------------
+    def get_node_features_matrix(self):
+        """Set nodes input features matrix.
+        
+        Returns
+        -------
+        node_features_matrix : numpy.ndarray(2d)
+            Nodes input features matrix stored as a numpy.ndarray(2d) of shape
+            (n_nodes, n_features).
+        """
+        return copy.deepcopy(self._node_features_matrix)
+    # -------------------------------------------------------------------------
+    def set_edge_features_matrix(self, edge_features_matrix):
+        """Set edges input features matrix.
+        
+        Parameters
+        ----------
+        edge_features_matrix : numpy.ndarray(2d)
+            Edges input features matrix stored as a numpy.ndarray(2d) of shape
+            (n_edges, n_features).
+        """
+        self._edge_features_matrix = copy.deepcopy(edge_features_matrix)
+    # -------------------------------------------------------------------------
+    def get_edge_features_matrix(self):
+        """Get edges input features matrix.
+        
+        Returns
+        -------
+        edge_features_matrix : numpy.ndarray(2d)
+            Edges input features matrix stored as a numpy.ndarray(2d) of shape
+            (n_edges, n_features).
+        """
+        return copy.deepcopy(self._edge_features_matrix)
+    # -------------------------------------------------------------------------   
+    def set_global_features_matrix(self, global_features_matrix):
+        """Set global input features matrix.
+        
+        Parameters
+        ----------
+        global_features_matrix : numpy.ndarray(2d)
+            Global input features matrix stored as a numpy.ndarray(2d) of
+            shape (1, n_features).
+        """
+        self._global_features_matrix = copy.deepcopy(global_features_matrix)
+    # -------------------------------------------------------------------------    
+    def get_global_features_matrix(self):
+        """Get global input features matrix.
+        
+        Returns
+        -------
+        global_features_matrix : numpy.ndarray(2d)
+            Global input features matrix stored as a numpy.ndarray(2d) of
+            shape (1, n_features).
+        """
+        return copy.deepcopy(self._global_features_matrix)
+    # -------------------------------------------------------------------------   
+    def set_node_targets_matrix(self, node_targets_matrix):
+        """Set node targets matrix.
+        
+        Parameters
+        ----------
+        node_targets_matrix : numpy.ndarray(2d)
+            Nodes targets matrix stored as a numpy.ndarray(2d) of shape
+            (n_nodes, n_targets).
+        """
+        self._node_targets_matrix = copy.deepcopy(node_targets_matrix)
+    # -------------------------------------------------------------------------    
+    def get_node_targets_matrix(self):
+        """Get node targets matrix.
+        
+        Returns
+        -------
+        node_targets_matrix : numpy.ndarray(2d)
+            Nodes targets matrix stored as a numpy.ndarray(2d) of shape
+            (n_nodes, n_targets).
+        """
+        return copy.deepcopy(self._node_targets_matrix)
+    # -------------------------------------------------------------------------   
+    def set_edge_targets_matrix(self, edge_targets_matrix):
+        """Set edge targets matrix.
+        
+        Parameters
+        ----------
+        edge_targets_matrix : numpy.ndarray(2d)
+            Edges targets matrix stored as a numpy.ndarray(2d) of shape
+            (n_edges, n_targets).
+        """
+        self._edge_targets_matrix = copy.deepcopy(edge_targets_matrix)
+    # -------------------------------------------------------------------------    
+    def get_edge_targets_matrix(self):
+        """Get edge targets matrix.
+        
+        Returns
+        -------
+        edge_targets_matrix : numpy.ndarray(2d)
+            Edges targets matrix stored as a numpy.ndarray(2d) of shape
+            (n_edges, n_targets).
+        """
+        return copy.deepcopy(self._edge_targets_matrix)
+    # -------------------------------------------------------------------------   
+    def set_global_targets_matrix(self, global_targets_matrix):
+        """Set global targets matrix.
+        
+        Parameters
+        ----------
+        global_targets_matrix : numpy.ndarray(2d)
+            Global targets matrix stored as a numpy.ndarray(2d) of shape
+            (1, n_targets).
+        """
+        self._global_targets_matrix = copy.deepcopy(global_targets_matrix)
+    # -------------------------------------------------------------------------    
+    def get_global_targets_matrix(self):
+        """Get global targets matrix.
+        
+        Returns
+        -------
+        global_targets_matrix : numpy.ndarray(2d)
+            Global targets matrix stored as a numpy.ndarray(2d) of shape
+            (1, n_targets).
+        """
+        return copy.deepcopy(self._global_targets_matrix)
     # -------------------------------------------------------------------------
     def plot_material_patch_graph(self, is_show_plot=False, is_save_plot=False,
                                   save_directory=None, plot_name=None,
@@ -292,27 +441,26 @@ class GNNPatchGraphData:
         
         Returns
         -------
-        edge_indexes : numpy.ndarray(2d)
+        edges_indexes : numpy.ndarray(2d)
             Edges indexes matrix stored as numpy.ndarray[int](2d) with shape
             (num_edges, 2), where the i-th edge is stored in
             edges_indexes[i, :] as (start_node_index, end_node_index).
         """
-        
         # Initialize k-d tree
         kd_tree = scipy.spatial.KDTree(nodes_coords)
         # Find all edges between nodes that are at most within a given distance
         # between them
-        edge_indexes = kd_tree.query_pairs(r=connect_radius, p=2.0,
-                                           output_type='ndarray')
+        edges_indexes = kd_tree.query_pairs(r=connect_radius, p=2.0,
+                                            output_type='ndarray')
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Get undirected edges indexes
-        edge_indexes = \
-            GNNPatchGraphData.get_undirected_unique_edges(edge_indexes) 
+        edges_indexes = \
+            GNNPatchGraphData.get_undirected_unique_edges(edges_indexes) 
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        return edge_indexes
+        return edges_indexes
     # -------------------------------------------------------------------------
     @staticmethod
-    def get_undirected_unique_edges(edge_indexes):
+    def get_undirected_unique_edges(edges_indexes):
         """Get set of undirected unique edges indexes.
         
         This function processes the given matrix of edges indexes and
@@ -321,47 +469,337 @@ class GNNPatchGraphData:
         
         Parameters
         ----------
-        edge_indexes : numpy.ndarray(2d)
+        edges_indexes : numpy.ndarray(2d)
             Edges indexes matrix stored as numpy.ndarray[int](2d) with shape
             (n_edges, 2), where the i-th edge is stored in
             edges_indexes[i, :] as (start_node_index, end_node_index).
         
         Returns
         -------
-        edge_indexes : numpy.ndarray(2d)
+        edges_indexes : numpy.ndarray(2d)
             Edges indexes matrix stored as numpy.ndarray[int](2d) with shape
             (n_edges, 2), where the i-th edge is stored in
             edges_indexes[i, :] as (start_node_index, end_node_index).
         """
         # Check provided edges indexes matrix
-        GNNPatchGraphData._check_edges_indexes_matrix(edge_indexes)
+        GNNPatchGraphData._check_edges_indexes_matrix(edges_indexes)
         # Transforms all edges into undirected edges
-        edge_indexes = \
-            np.concatenate((edge_indexes, edge_indexes[:, ::-1]), axis=0)
+        edges_indexes = \
+            np.concatenate((edges_indexes, edges_indexes[:, ::-1]), axis=0)
         # Remove duplicated edges
-        edge_indexes = np.unique(edge_indexes, axis=0)
+        edges_indexes = np.unique(edges_indexes, axis=0)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        return edge_indexes
+        return edges_indexes
     # -------------------------------------------------------------------------
     @staticmethod
-    def _check_edges_indexes_matrix(edge_indexes):
+    def _check_edges_indexes_matrix(edges_indexes):
         """Check if given edges indexes matrix is valid.
         
         Parameters
         ----------
-        edge_indexes : numpy.ndarray(2d)
+        edges_indexes : numpy.ndarray(2d)
             Edges indexes matrix stored as numpy.ndarray[int](2d) with shape
-            (n_edges, 2), where the i-th edge is stored in edge_indexes[i, :]
+            (n_edges, 2), where the i-th edge is stored in edges_indexes[i, :]
             as (start_node_index, end_node_index).
         """
-        if not isinstance(edge_indexes, np.ndarray):
+        if not isinstance(edges_indexes, np.ndarray):
             raise RuntimeError('Edges indexes matrix is not a numpy.array.')
-        elif edge_indexes.dtype != int:
+        elif edges_indexes.dtype != int:
             raise RuntimeError('Edges indexes matrix is not a numpy.array '
                                'of dtype int.')
-        elif len(edge_indexes.shape) != 2:
+        elif len(edges_indexes.shape) != 2:
             raise RuntimeError('Edges indexes matrix is not a numpy.array '
                                'of shape (num_edges, 2).')
-        elif edge_indexes.shape[1] != 2:
+        elif edges_indexes.shape[1] != 2:
             raise RuntimeError('Edges indexes matrix is not a numpy.array '
                                'of shape (num_edges, 2).')
+# =============================================================================
+class GNNPatchFeaturesGenerator:
+    """GNN-based material patch input and output features generator.
+    
+    Attributes
+    ----------
+    _nodes_coords : numpy.ndarray(2d)
+        Coordinates of nodes stored as a numpy.ndarray(2d) with shape
+        (n_nodes, n_dim). Coordinates of i-th node are stored in
+        nodes_coords[i, :].
+    _nodes_coords_hist : numpy.ndarray(3d)
+        Nodes coordinates history stored as a numpy.ndarray(3d) with shape
+        (n_nodes, n_dim, n_time_steps). Coordinates of i-th node at k-th
+        time step are stored in nodes_coords[i, :, k].   
+    _edges_indexes : numpy.ndarray(2d)
+        Edges indexes matrix stored as numpy.ndarray[int](2d) with shape
+        (num_edges, 2), where the i-th edge is stored in
+        edges_indexes[i, :] as (start_node_index, end_node_index).
+    _nodes_disps_hist : numpy.ndarray(3d)
+        Nodes displacements history stored as a numpy.ndarray(3d) with
+        shape (n_nodes, n_dim, n_time_steps). Displacements of i-th node at
+        k-th time step are stored in nodes_disps_hist[i, :, k].
+    _nodes_int_forces_hist : numpy.ndarray(2d)
+        Nodes internal forces history stored as a numpy.ndarray(3d) with
+        shape (n_nodes, n_dim, n_time_steps). Internal forces of i-th node
+        at k-th time step are stored in nodes_int_forces_hist[i, :, k]. 
+            
+    Methods
+    -------
+    build_nodes features_matrix(self, features=(), n_time_steps=1)
+        Build nodes features matrix.
+    get_available_nodes_features()
+        Get available nodes features.
+    build_edges_features_matrix(self, features=(), n_time_steps=1)
+        Build edges features matrix.
+    get_available_edges_input_features()
+        Get available edges features.   
+    """
+    def __init__(self, nodes_coords_hist, edges_indexes=None,
+                 nodes_disps_hist=None, nodes_int_forces_hist=None):
+        """Constructor.
+        
+        Parameters
+        ----------
+        nodes_coords_hist : numpy.ndarray(3d)
+            Nodes coordinates history stored as a numpy.ndarray(3d) with shape
+            (n_nodes, n_dim, n_time_steps). Coordinates of i-th node at k-th
+            time step are stored in nodes_coords[i, :, k].   
+        edges_indexes : numpy.ndarray(2d), default=None
+            Edges indexes matrix stored as numpy.ndarray[int](2d) with shape
+            (num_edges, 2), where the i-th edge is stored in
+            edges_indexes[i, :] as (start_node_index, end_node_index).
+        nodes_disps_hist : numpy.ndarray(3d), default=None
+            Nodes displacements history stored as a numpy.ndarray(3d) with
+            shape (n_nodes, n_dim, n_time_steps). Displacements of i-th node at
+            k-th time step are stored in nodes_disps_hist[i, :, k].
+        nodes_int_forces_hist : numpy.ndarray(2d), default=None
+            Nodes internal forces history stored as a numpy.ndarray(3d) with
+            shape (n_nodes, n_dim, n_time_steps). Internal forces of i-th node
+            at k-th time step are stored in nodes_int_forces_hist[i, :, k]. 
+        """
+        self._nodes_coords_hist = copy.deepcopy(nodes_coords_hist)
+        self._edges_indexes = copy.deepcopy(edges_indexes)
+        self._nodes_disps_hist = copy.deepcopy(nodes_disps_hist)
+        self._nodes_int_forces_hist = copy.deepcopy(nodes_int_forces_hist)
+        # Set current nodes coordinates
+        self._nodes_coords = nodes_coords_hist[:, :, -1]
+    # -------------------------------------------------------------------------
+    def build_nodes_features_matrix(self, features=(), n_time_steps=1):
+        """Build nodes features matrix.
+        
+        Parameters
+        ----------
+        features : tuple[str]
+            Nodes features.
+        n_time_steps : int, default=1
+            Number of history time steps to account for in history-based
+            features. Defaults to the last time step only.
+        
+        Returns
+        -------
+        node_features_matrix : numpy.ndarray(2d), default=None
+            Nodes features matrix stored as a numpy.ndarray(2d) of shape
+            (n_nodes, n_features).
+        """
+        # Get number of nodes
+        n_nodes = self._nodes_coords.shape[0]
+        # Get number of spatial dimensions
+        n_dim = self._nodes_coords.shape[1]
+        # Initialize nodes features matrix
+        node_features_matrix = np.empty((n_nodes, 0))
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Get available nodes
+        available_features = type(self).get_available_nodes_features()
+        # Check features
+        for feature in features:
+            if feature not in available_features:
+                raise RuntimeError('Unavailable node feature: ' + str(feature))
+        # Check number of time steps
+        if not isinstance(n_time_steps, int) or n_time_steps < 1:
+            raise RuntimeError('Invalid number of history time steps.')
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        for feature in features:
+            if feature == 'disp_hist':
+                # Check required data
+                if self._nodes_disps_hist is None:
+                    raise RuntimeError('Nodes displacements must be set in '
+                                       'order to build feature '
+                                       + str(feature))
+                elif n_time_steps > self._nodes_disps_hist.shape[1]:
+                    raise RuntimeError('Number of time steps exceeds length '
+                                       'of feature history data: '
+                                       + str(feature))
+                # Initialize node feature matrix
+                feature_matrix = np.zeros((n_nodes, n_time_steps*n_dim))
+                # Loop over nodes
+                for i in range(n_nodes):
+                    # Loop over last time steps
+                    for j in range(n_time_steps):
+                        # Assemble node feature
+                        feature_matrix[i, j*n_dim:(j + 1)*n_dim] = \
+                            self._nodes_disps_hist[i, :n_dim,
+                                                   -n_time_steps + j]
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            elif feature == 'int_force':
+                # Check required data
+                if self._nodes_int_forces_hist is None:
+                    raise RuntimeError('Nodes displacements must be set in '
+                                       'order to build feature '
+                                       + str(feature))
+                # Initialize node feature matrix
+                feature_matrix = np.zeros((n_nodes, n_dim))
+                # Loop over nodes
+                for i in range(n_nodes):
+                    # Assemble node feature
+                    feature_matrix[i, :] = \
+                        self._nodes_int_forces_hist[i, :n_dim, -1]
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ 
+            else:
+                raise RuntimeError('Unavailable node feature: ' + str(feature))
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~     
+            # Assemble node feature
+            node_features_matrix = \
+                np.concatenate((node_features_matrix, feature_matrix), axis=1)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        return node_features_matrix
+    # -------------------------------------------------------------------------
+    @staticmethod
+    def get_available_nodes_features():
+        """Get available nodes features.
+        
+        Returns
+        -------
+        available_features : tuple[str]
+            Available nodes features.
+            
+            'disp_hist' : numpy.ndarray(1d) of shape (n_time_steps*n_dim,) \
+                          with the node displacements history.
+            
+            'int_force' : numpy.ndarray(1d) of shape (n_dim,) with the node \
+                          internal forces.
+        """
+        available_features = ('disp_hist', 'int_force')
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        return available_features
+    # -------------------------------------------------------------------------
+    def build_edges_features_matrix(self, features=(), n_time_steps=1):
+        """Build edges features matrix.
+        
+        Parameters
+        ----------
+        features : tuple[str]
+            Edges features.
+        n_time_steps : int, default=1
+            Number of history time steps to account for in history-based
+            features. Defaults to the last time step only.
+        
+        Returns
+        -------
+        edge_features_matrix : numpy.ndarray(2d), default=None
+            Edges features matrix stored as a numpy.ndarray(2d) of shape
+            (n_edges, n_features).
+        """
+        # Check required data
+        if self._edges_indexes is None:
+            raise RuntimeError('Edges indexes must be set in order to build '
+                               'edges features matrix.')
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Get number of edges
+        n_edges = self._edges_indexes.shape[0]
+        # Get number of spatial dimensions
+        n_dim = self._nodes_coords.shape[1]
+        # Initialize edges features matrix
+        edge_features_matrix = np.empty((n_edges, 0))
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Get available edges
+        available_features = type(self).get_available_edges_features()
+        # Check features
+        for feature in features:
+            if feature not in available_features:
+                raise RuntimeError('Unavailable edge feature: ' + str(feature))
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        for feature in features:
+            if feature == 'edge_vector':
+                # Initialize edge feature matrix
+                feature_matrix = np.zeros((n_edges, n_dim))
+                # Loop over edges
+                for k, (i, j) in enumerate(self._edges_indexes):
+                    # Assemble edge feature
+                    feature_matrix[k, :] = self._nodes_coords[i, :] \
+                        - self._nodes_coords[j, :]
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ 
+            elif feature == 'edge_vector_norm':
+                # Initialize edge feature matrix
+                feature_matrix = np.zeros((n_edges, 1))
+                # Loop over edges
+                for k, (i, j) in enumerate(self._edges_indexes):
+                    # Assemble edge feature
+                    feature_matrix[k, :] = np.linalg.norm(
+                        self._nodes_coords[i, :]
+                        - self._nodes_coords[j, :])
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ 
+            elif feature == 'relative_disp':
+                # Check required data
+                if self._nodes_disps_hist is None:
+                    raise RuntimeError('Nodes displacements must be set in '
+                                       'order to build feature '
+                                       + str(feature))
+                # Initialize edge feature matrix
+                feature_matrix = np.zeros((n_edges, n_dim))
+                # Loop over edges
+                for k, (i, j) in enumerate(self._edges_indexes):
+                    # Assemble edge feature
+                    feature_matrix[k, :] = \
+                        self._nodes_disps_hist[i, :n_dim, -1] \
+                        - self._nodes_disps_hist[j, :n_dim, -1]
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ 
+            elif feature == 'relative_disp_norm':
+                # Check required data
+                if self._nodes_disps_hist is None:
+                    raise RuntimeError('Nodes displacements must be set in '
+                                       'order to build feature '
+                                       + str(feature))
+                # Initialize edge feature matrix
+                feature_matrix = np.zeros((n_edges, 1))
+                # Loop over edges
+                for k, (i, j) in enumerate(self._edges_indexes):
+                    # Assemble edge feature
+                    feature_matrix[k, :] = np.linalg.norm(
+                        self._nodes_disps_hist[i, :n_dim, -1]
+                        - self._nodes_disps_hist[j, :n_dim, -1])
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            else:
+                raise RuntimeError('Unavailable edge feature: ' + str(feature))
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~     
+            # Assemble edge feature
+            edge_features_matrix = \
+                np.concatenate((edge_features_matrix, feature_matrix), axis=1)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        return edge_features_matrix
+    # -------------------------------------------------------------------------
+    @staticmethod
+    def get_available_edges_features():
+        """Get available edges features.
+        
+        Returns
+        -------
+        available_features : tuple[str]
+            Available edges features:
+            
+            'edge_vector' : numpy.ndarray(1d) of shape (n_dim,) resulting \
+                            from the difference of current coordinates \
+                            between the starting node and the end node.
+            
+            'edge_vector_norm' : float corresponding to the norm of the \
+                                 difference of current coordinates between \
+                                 the starting node and the end node.
+                                 
+            'relative_disp' : numpy.ndarray(1d) of shape (n_dim,) resulting \
+                              from the difference of current displacements \
+                              between the starting node and the end node.
+                              
+            'relative_disp_norm' : float corresponding to the norm of the \
+                                   difference of current displacements \
+                                   between the starting node and the end node.
+        """
+        available_features = ('edge_vector', 'edge_vector_norm',
+                              'relative_disp', 'relative_disp_norm')
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        return available_features

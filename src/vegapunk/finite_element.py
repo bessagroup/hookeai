@@ -26,17 +26,17 @@ class FiniteElement:
     
     Attributes
     ----------
-    elem_type : str
+    _elem_type : str
         Finite element type.
-    n_dim : int
+    _n_dim : int
         Number of spatial dimensions.
-    n_nodes : int
+    _n_nodes : int
         Number of nodes.
-    n_edges : int
+    _n_edges : int
         Number of edges.
-    n_edge_nodes : int
+    _n_edge_nodes : int
         Number of nodes per edge.
-    nodes_matrix : numpy.ndarray(2d or 3d)
+    _nodes_matrix : numpy.ndarray(2d or 3d)
         Element nodes matrix (numpy.ndarray[int](n_dim*(n_edge_nodes,))) where
         each element corresponds to a given node position and whose value is
         set either as the node label (according to adopted numbering

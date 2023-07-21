@@ -37,11 +37,11 @@ class LinksSimulator:
     
     Attributes
     ----------
-    links_bin_path : str
+    _links_bin_path : str
         Links binary absolute path.
-    strain_formulation: {'infinitesimal', 'finite'}
+    _strain_formulation: {'infinitesimal', 'finite'}
         Links strain formulation.
-    analysis_type : {'plane_stress', 'plane_strain', 'axisymmetric', \
+    _analysis_type : {'plane_stress', 'plane_strain', 'axisymmetric', \
                         'tridimensional'}
         Links analysis type.
             
@@ -281,13 +281,15 @@ class LinksSimulator:
         results_keywords : tuple[str]
             A list of results to be output among:
             
-            'node_data' : numpy.ndarray(3d) where each i-th row has the node \
-                          label (i, 0, :) and the corresponding nodal \
-                          features (i, 1:, :). The last index is the time step.
+            'node_data' : numpy.ndarray(3d) of shape \
+                        (n_nodes, n_data_dim, n_time_steps), where the i-th \
+                        node output data at the k-th time step is stored in \
+                        indexes [i, :, k].
             
-            'global_data' : numpy.ndarray(3d) where the single row has the
-                            global features (0, :, :). The last index is the
-                            time step.
+            'global_data' : numpy.ndarray(3d) of shape \
+                            (1, n_data_dim, n_time_steps) where the global \
+                            output data at the k-th time step is stored in \
+                            [0, :, k].
         is_verbose : bool, default=False
             If True, enable verbose output.
         
