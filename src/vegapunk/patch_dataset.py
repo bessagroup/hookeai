@@ -192,6 +192,8 @@ def generate_material_patch_dataset(
     constant_parameters = {'n_dim': n_dim,
                            'elem_type': elem_type,
                            'n_elems_per_dim': n_elems_per_dim,
+                           'edge_deformation_order_ranges':
+                               edge_deformation_order_ranges,
                            'max_iter': max_iter_per_patch,
                            'links_bin_path': links_bin_path,
                            'strain_formulation': strain_formulation,
@@ -291,39 +293,15 @@ def generate_material_patch_dataset(
         design_space.add_input_space(name=name, space=parameter)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     if is_verbose:
-        print('  > [ input parameter] Setting material patch edge polynomial '
-              'deformation magnitude...')
-    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Set input parameter: Material patch edge polynomial deformation magnitude
-    #
-    # Loop over edges
-    for i in range(n_edges):
-        # Set edge label
-        label = str(i + 1)
-        # Set name
-        name = 'edge_' + label + '_deformation_magnitude'
-        # Set bounds
-        lower_bound=edge_deformation_magnitude_ranges[label][0]
-        upper_bound=edge_deformation_magnitude_ranges[label][1]
-        # Set parameter
-        if np.isclose(lower_bound, upper_bound):
-            parameter = f3dasm.ConstantParameter(value=lower_bound)
-        else:
-            parameter = f3dasm.ContinuousParameter(lower_bound=lower_bound,
-                                                   upper_bound=upper_bound)
-        # Add design input parameter
-        design_space.add_input_space(name=name, space=parameter)  
-    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    if is_verbose:
         print('  > [output parameter] Setting node features data... ')
         print('  > [output parameter] Setting global features data... ')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set output parameters:
     #
-    # Set node features data                                                   # Question: How to hande a numpy.ndarray output?
+    # Set node features data                                                   # Question: How to handle a numpy.ndarray output?
     design_space.add_output_space(name='node_data',
                                   space=f3dasm.design.parameter.Parameter())
-    # Set global features data                                                 # Question: How to hande a numpy.ndarray output?
+    # Set global features data                                                 # Question: How to handle a numpy.ndarray output?
     design_space.add_output_space(name='global_data',
                                   space=f3dasm.design.parameter.Parameter())        
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -483,23 +461,9 @@ def simulate_material_patch(design, **kwargs):
         order = design.get(name)
         # Set edge polynomial deformation order
         edges_lab_def_order[label] = int(order)                                # Unexpected behavior: int was converted to float
-    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Initialize edges polynomial deformation magnitude
-    edges_lab_disp_range = {}
-    # Loop over edges
-    for label in edges_labels:
-        # Set parameter name
-        name = 'edge_' + label + '_deformation_magnitude'
-        # Get average deformation
-        avg_deformation = design.get(name)
-        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        # Get orthogonal (deformation) dimension index
-        orth_dim = int(edges_def_dimension[label]) - 1
-        # Compute edge displacement
-        disp = 0.5*avg_deformation*patch_dims[orth_dim]
-        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        # Set edge displacement
-        edges_lab_disp_range[label] = (disp, disp)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~     
+    # Get edges polynomial deformation magnitude range
+    edges_lab_disp_range = kwargs['edge_deformation_order_ranges']
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~        
     # Initialize material patch generator
     patch_generator = FiniteElementPatchGenerator(n_dim, patch_dims)
@@ -552,7 +516,7 @@ def simulate_material_patch(design, **kwargs):
     design.set('node_data', results['node_data'])                              
     design.set('global_data', results['global_data'])
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    return design                    
+    return design
 # =============================================================================
 def get_default_design_parameters(n_dim):
     """Generate finite element material patch design space default parameters.
