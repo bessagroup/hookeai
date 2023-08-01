@@ -461,9 +461,24 @@ def simulate_material_patch(design, **kwargs):
         order = design.get(name)
         # Set edge polynomial deformation order
         edges_lab_def_order[label] = int(order)                                # Unexpected behavior: int was converted to float
-    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~     
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Get edges polynomial deformation magnitude range
-    edges_lab_disp_range = kwargs['edge_deformation_order_ranges']
+    edge_deformation_order_ranges = kwargs['edge_deformation_order_ranges']
+    # Initialize edges polynomial deformation displacement range
+    edges_lab_disp_range = {}
+    # Loop over edges
+    for label in edges_labels:
+        # Get edge polynomial deformation magnitude range
+        avg_deformation_range = edge_deformation_order_ranges[label]
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Get orthogonal (deformation) dimension index
+        orth_dim = int(edges_def_dimension[label]) - 1
+        # Compute edge displacement range
+        min_disp = 0.5*avg_deformation_range[0]*patch_dims[orth_dim]
+        max_disp = 0.5*avg_deformation_range[1]*patch_dims[orth_dim]
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set edge displacement range
+        edges_lab_disp_range[label] = (min_disp, max_disp)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~        
     # Initialize material patch generator
     patch_generator = FiniteElementPatchGenerator(n_dim, patch_dims)
