@@ -137,7 +137,7 @@ class GNNPatchGraphData:
         
         Returns
         -------
-        data : torch_geometric.data.Data
+        pyg_graph : torch_geometric.data.Data
             PyG data object describing a homogeneous graph.
         """        
         # Set PyG node feature matrix
@@ -164,12 +164,12 @@ class GNNPatchGraphData:
                                dtype=torch.float)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Instantiate PyG homogeneous graph data object
-        data = torch_geometric.data.Data(x=x, edge_index=edge_index,
+        pyg_graph = torch_geometric.data.Data(x=x, edge_index=edge_index,
                                          edge_attr=edge_attr, y=y, pos=pos)
         # Validate graph data object
-        data.validate(raise_on_error=True)
+        pyg_graph.validate(raise_on_error=True)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        return data
+        return pyg_graph
     # -------------------------------------------------------------------------
     def set_graph_edges_indexes(self, connect_radius=None,
                                 edges_indexes_mesh=None):
