@@ -22,7 +22,6 @@ get_default_design_parameters(n_dim)
 #                                                                       Modules
 # =============================================================================
 # Standard
-import sys
 import os
 import shutil
 # Third-party
@@ -149,9 +148,12 @@ def generate_material_patch_dataset(
         
     Returns
     -------
-    dataset_output_data : list[dict]
-        Material patches simulations output data. Output data of each material
-        patch is stored in a dict, where:
+    dataset_simulation_data : list[dict]
+        Material patches finite element simulations output data. Output data of
+        each material patch is stored in a dict, where:
+        
+        'patch' : Instance of FiniteElementPatch, the simulated finite \
+                  element material patch.
         
         'node_data' : numpy.ndarray(3d) of shape \
                       (n_nodes, n_data_dim, n_time_steps), where the i-th \
@@ -300,12 +302,15 @@ def generate_material_patch_dataset(
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set output parameters:
     #
+    # Set material patch                                                       # Question: How to handle a general object output?
+    design_space.add_output_space(name='patch',
+                                  space=f3dasm.design.parameter.Parameter())
     # Set node features data                                                   # Question: How to handle a numpy.ndarray output?
     design_space.add_output_space(name='node_data',
                                   space=f3dasm.design.parameter.Parameter())
     # Set global features data                                                 # Question: How to handle a numpy.ndarray output?
     design_space.add_output_space(name='global_data',
-                                  space=f3dasm.design.parameter.Parameter())        
+                                  space=f3dasm.design.parameter.Parameter())
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     if is_verbose:
         print('\n> Sampling design space input data...')
@@ -324,8 +329,9 @@ def generate_material_patch_dataset(
     option = ('no_f3dasm', 'f3dasm')[0]
     if option == 'no_f3dasm':
         # Generate samples output data
-        dataset_output_data = generate_dataset_output_data(dataset_input_data,
-                                                           constant_parameters)
+        dataset_simulation_data = \
+            generate_dataset_output_data(dataset_input_data,
+                                         constant_parameters)
     elif option == 'f3dasm':
         dataset.run(simulate_material_patch, mode='sequential',
                     kwargs=constant_parameters)                                # Error: AttributeError: 'NoneType' object has no attribute '_dict_output'
@@ -335,7 +341,7 @@ def generate_material_patch_dataset(
     if is_verbose:
         print('\n> Returning design space output data...\n')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    return dataset_output_data
+    return dataset_simulation_data
 # =============================================================================
 def generate_dataset_output_data(dataset_input_data, constant_parameters={}):
     """Generate material patches simulations output data.
@@ -349,9 +355,11 @@ def generate_dataset_output_data(dataset_input_data, constant_parameters={}):
     
     Returns
     -------
-    dataset_output_data : list[dict]
+    dataset_simulation_data : list[dict]
         Material patches simulations output data. Output data of each material
         patch is stored in a dict, where:
+        
+        'patch' : Instance of FiniteElementPatch.
         
         'node_data' : numpy.ndarray(3d) of shape \
                       (n_nodes, n_data_dim, n_time_steps), where the i-th \
@@ -363,7 +371,7 @@ def generate_dataset_output_data(dataset_input_data, constant_parameters={}):
                         data at the k-th time step is stored in [0, :, k].
     """
     # Initialize material patches simulations output data
-    dataset_output_data = []
+    dataset_simulation_data = []
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Get number of material patches
     n_sample = dataset_input_data.shape[0]
@@ -384,9 +392,9 @@ def generate_dataset_output_data(dataset_input_data, constant_parameters={}):
         output_data = design.output_data
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Store material patch sample simulation output data
-        dataset_output_data.append(output_data)
+        dataset_simulation_data.append(output_data)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    return dataset_output_data
+    return dataset_simulation_data
 # =============================================================================
 def simulate_material_patch(design, **kwargs):
     """Generate and simulate finite element material patch design sample.
@@ -530,7 +538,8 @@ def simulate_material_patch(design, **kwargs):
                 shutil.rmtree(links_output_directory)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set material patch design sample output data
-    design.set('node_data', results['node_data'])                              
+    design.set('patch', patch)
+    design.set('node_data', results['node_data'])
     design.set('global_data', results['global_data'])
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     return design
@@ -644,7 +653,7 @@ if __name__ == "__main__":
     # Set number of samples
     n_sample = 5
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    dataset_output_data = generate_material_patch_dataset(
+    dataset_simulation_data = generate_material_patch_dataset(
         n_dim, links_bin_path, strain_formulation, analysis_type, elem_type,
         n_elems_per_dim, patch_material_data, simulation_directory,
         n_sample=n_sample, patch_dims_ranges=patch_dims_ranges,
