@@ -62,12 +62,30 @@ class FiniteElementPatch:
     
     Methods
     -------
-    _set_n_edge_nodes_per_dim(self):
+    get_n_dim(self)
+        Get number of spatial dimensions.
+    get_elem_type(self)
+        Get finite element type.
+    get_n_elems_per_dim(self)
+        Get number of finite elements per dimension.
+    get_n_edge_nodes_per_dim(self)
+        Get number of patch edge nodes along each dimension.
+    get_mesh_nodes_matrix(self)
+        Get finite element mesh nodes matrix.
+    get_mesh_nodes_coords_ref(self)
+        Get reference coordinates of each finite element mesh node.
+    get_mesh_boundary_nodes_disps(self)
+        Get displacements prescribed on finite element mesh boundary nodes.
+    get_elem_size_dims(self)
+        Get finite element size along each dimension.
+    get_mesh_connected_nodes(self)
+        Get finite element mesh connected nodes pairs.
+    _set_n_edge_nodes_per_dim(self)
         Set number of patch edge nodes per dimension.
-    _get_boundary_nodes_labels(self):
+    _get_boundary_nodes_labels(self)
         Get finite element mesh boundary nodes labels.
-    plot_deformed_patch(self, is_show_plot=None, is_save_plot=False,
-                        save_directory=None, plot_name=None,
+    plot_deformed_patch(self, is_show_plot=None, is_save_plot=False, \
+                        save_directory=None, plot_name=None, \
                         is_overwrite_file=False)
         Generate plot of material patch.
     """
@@ -195,6 +213,17 @@ class FiniteElementPatch:
             freedom must be set as None.
         """
         return copy.deepcopy(self._mesh_boundary_nodes_disps)
+    # -------------------------------------------------------------------------
+    def get_elem_size_dims(self):
+        """Get finite element size along each dimension.
+        
+        Returns
+        -------
+        elem_size_dims : tuple
+            Finite element size along each dimension.
+        """
+        return tuple([self._patch_dims[i]/self._n_elems_per_dim[i]
+                      for i in range(self._n_dim)])
     # -------------------------------------------------------------------------
     def get_mesh_connected_nodes(self):
         """Get finite element mesh connected nodes pairs.
