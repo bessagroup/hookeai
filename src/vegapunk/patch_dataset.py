@@ -27,6 +27,7 @@ import shutil
 # Third-party
 import numpy as np
 import f3dasm
+import tqdm
 # Local
 from patch_generator import FiniteElementPatchGenerator
 from simulators.links.links import LinksSimulator
@@ -44,8 +45,9 @@ def generate_material_patch_dataset(
     n_elems_per_dim, patch_material_data, simulation_directory, n_sample=1,
     patch_dims_ranges=None, avg_deformation_ranges=None,
     edge_deformation_order_ranges=None, edge_deformation_magnitude_ranges=None,
-    max_iter_per_patch=10, links_input_params=None,
-    is_save_simulation_data=False, is_save_plot_patch=False, is_verbose=False):
+    max_iter_per_patch=10, is_remove_failed_samples=False,
+    links_input_params=None, is_save_simulation_data=False,
+    is_save_plot_patch=False, is_verbose=False):
     """Generate and simulate a set of deformed finite element material patches.
     
     Material patch is assumed quadrilateral (2d) or parallelepipedic (3D)
@@ -137,6 +139,9 @@ def generate_material_patch_dataset(
     max_iter_per_patch : int, default=10
         Maximum number of iterations to get a geometrically admissible
         deformed patch configuration.
+    is_remove_failed_samples : bool, default=False
+        Remove failed material patches from data set. Size of resulting data
+        set is lower or equal to prescribed number of material patch samples.
     links_input_params : dict, default=None
         Links input data file parameters. If None, default parameters are set.
     is_save_simulation_data : bool, default=False
@@ -165,10 +170,8 @@ def generate_material_patch_dataset(
                         data at the k-th time step is stored in [0, :, k].
     """
     if is_verbose:
-        print('\nGenerate and simulate set of deformed finite element '
-              'deformed material patches'
-              '\n-----------------------------------------------------'
-              '-------------------------')
+        print('\nGenerate finite element material patch data set'
+              '\n-----------------------------------------------')
         print('\n> Setting default design space parameters...')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Get default design space parameters
@@ -297,8 +300,9 @@ def generate_material_patch_dataset(
         design_space.add_input_space(name=name, space=parameter)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     if is_verbose:
-        print('  > [output parameter] Setting node features data... ')
-        print('  > [output parameter] Setting global features data... ')
+        print('  > [output parameter] Setting material patch...')
+        print('  > [output parameter] Setting node features data...')
+        print('  > [output parameter] Setting global features data...')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set output parameters:
     #
@@ -313,7 +317,7 @@ def generate_material_patch_dataset(
                                   space=f3dasm.design.parameter.Parameter())
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     if is_verbose:
-        print('\n> Sampling design space input data...')
+        print('\n> Sampling design space input data...\n')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Initialize sampler
     sampler = f3dasm.sampling.RandomUniform(design_space)
@@ -322,28 +326,77 @@ def generate_material_patch_dataset(
     # Get samples input data (class pd.DataFrame)
     dataset_input_data = dataset.get_input_data()
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    if is_verbose:
-        print('\n> Computing design space output data...')
-    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Generate samples output data                                             
+    # Generate samples simulation data                                             
     option = ('no_f3dasm', 'f3dasm')[0]
     if option == 'no_f3dasm':
-        # Generate samples output data
+        # Generate samples simulation data
         dataset_simulation_data = \
             generate_dataset_output_data(dataset_input_data,
-                                         constant_parameters)
+                                         constant_parameters,
+                                         is_verbose=is_verbose)
     elif option == 'f3dasm':
         dataset.run(simulate_material_patch, mode='sequential',
                     kwargs=constant_parameters)                                # Error: AttributeError: 'NoneType' object has no attribute '_dict_output'
     else:
         raise RuntimeError('Unavailable option')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Remove failed material patch samples from data set
+    if is_remove_failed_samples:
+        # Initialize failed samples indexes
+        n_fail_ids = []
+        # Loop over data set samples
+        for i in range(len(dataset_simulation_data)):
+            # Get material patch and simulation results
+            patch = dataset_simulation_data[i]['patch']
+            node_data = dataset_simulation_data[i]['node_data']
+            # Check if failed sample
+            if patch is None or node_data is None:
+                n_fail_ids.append(i)
+        # Remove failed samples from data set
+        for i in sorted(n_fail_ids, reverse=True):
+            del dataset_simulation_data[i]
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     if is_verbose:
-        print('\n> Returning design space output data...\n')
+        # Initialize samples status counters
+        n_success = 0
+        n_fail_patch = 0
+        n_fail_simulation = 0
+        # Loop over data set samples
+        for i in range(len(dataset_simulation_data)):
+            # Get material patch and simulation results
+            patch = dataset_simulation_data[i]['patch']
+            node_data = dataset_simulation_data[i]['node_data']
+            # Increment counter according to sample status
+            if patch is None:
+                n_fail_patch += 1
+            elif patch is not None and node_data is None:
+                n_fail_simulation += 1
+            else:
+                n_success += 1
+        # Compute total number of failed samples
+        n_failure = n_fail_patch + n_fail_simulation
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        print('\n> Material patch simulation data set summary:')
+        print('\n  > Prescribed number of material patch samples: ', n_sample)
+        print('\n  > Successful material patch samples: ',
+            '{:d}/{:d} ({:>.1f}%)'.format(n_success, n_sample,
+                                            100*n_success/n_sample))
+        if n_failure > 0:
+            print('\n  > Failed material patch samples: ',
+                '{:d}/{:d} ({:>.1f}%)'.format(n_failure, n_sample,
+                                                100*n_failure/n_sample))
+            print('\n    > Non-admissible deformed configuration: ',
+                '{:d}/{:d} ({:>.1f}%)'.format(n_fail_patch, n_sample,
+                                                100*n_fail_patch/n_sample))
+            print('    > Failed finite element simulation: ',
+                '{:d}/{:d} ({:>.1f}%)'.format(n_fail_simulation, n_sample,
+                                              100*n_fail_simulation/n_sample))
+        print('')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     return dataset_simulation_data
 # =============================================================================
-def generate_dataset_output_data(dataset_input_data, constant_parameters={}):
+def generate_dataset_output_data(dataset_input_data, constant_parameters={},
+                                 is_verbose=False):
     """Generate material patches simulations output data.
     
     Parameters
@@ -352,6 +405,8 @@ def generate_dataset_output_data(dataset_input_data, constant_parameters={}):
         Material patches dataset input data.
     constant_parameters : dict, default={}
         Constant parameters required for data generation process.
+    is_verbose : bool, default=False
+        If True, enable verbose output.
     
     Returns
     -------
@@ -377,7 +432,8 @@ def generate_dataset_output_data(dataset_input_data, constant_parameters={}):
     n_sample = dataset_input_data.shape[0]
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Loop over material patches
-    for i in range(n_sample):
+    for i in tqdm.tqdm(range(n_sample), desc='> Computing material patches: ',
+                       disable=not is_verbose):
         # Get material patch design sample
         design = dataset_input_data.iloc[i].to_dict()
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -408,7 +464,7 @@ def simulate_material_patch(design, **kwargs):
     n_dim = kwargs['n_dim']
     # Get finite element type
     elem_type = kwargs['elem_type']
-    # Get number of finite elements per dimension                              
+    # Get number of finite elements per dimension
     n_elems_per_dim = kwargs['n_elems_per_dim']
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set material patch dimensions 
@@ -643,10 +699,12 @@ if __name__ == "__main__":
     links_input_params = {}
     links_input_params['number_of_increments'] = 10
     links_input_params['vtk_output'] = 'ASCII'
+    # Remove failed material patches from data set
+    is_remove_failed_samples = True
     # Save material patch simulation files
     is_save_simulation_data = False
     # Save plot of material patch
-    is_save_plot_patch = True
+    is_save_plot_patch = False
     # Enable verbose output
     is_verbose = True
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -660,10 +718,21 @@ if __name__ == "__main__":
         avg_deformation_ranges=avg_deformation_ranges,
         edge_deformation_order_ranges=edge_deformation_order_ranges,
         edge_deformation_magnitude_ranges=edge_deformation_magnitude_ranges,
+        is_remove_failed_samples = is_remove_failed_samples,
         links_input_params=links_input_params,
         is_save_plot_patch=is_save_plot_patch,
         is_save_simulation_data=is_save_simulation_data,
         is_verbose=is_verbose)
+    
+    from gnn_patch_dataset import generate_material_patch_dataset
+    
+    dataset_directory = simulation_directory
+    
+    generate_material_patch_dataset(dataset_directory, dataset_simulation_data,
+                                    sample_file_basename='gnn_patch_sample',
+                                    is_save_plot_patch=True,
+                                    is_verbose=True)
+    
     
     
     
