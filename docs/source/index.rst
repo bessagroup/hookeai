@@ -1,21 +1,12 @@
-bessapypitemplate
-=================
+Vegapunk
+========
 
 .. toctree::
-   :maxdepth: 3
-   :caption: API Documentation
+   :name: apitoc
+   :caption: API
    :hidden:
-   :glob:
-       
-   apisource/bessapypitemplate
-   apisource/modules
+
+   Code <_autosummary/vegapunk>
 
 .. include:: readme.rst
-
-Indices and tables
-==================
-
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`
   
