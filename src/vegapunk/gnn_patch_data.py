@@ -35,31 +35,31 @@ class GNNPatchGraphData:
     
     Attributes
     ----------
-    n_dim : int
+    _n_dim : int
         Number of spatial dimensions.
-    nodes_coords : numpy.ndarray(2d), default=None
+    _nodes_coords : numpy.ndarray(2d), default=None
         Coordinates of nodes stored as a numpy.ndarray(2d) with shape
         (n_nodes, n_dim). Coordinates of i-th node are stored in
         nodes_coords[i, :].
-    node_features_matrix : numpy.ndarray(2d), default=None
+    _node_features_matrix : numpy.ndarray(2d), default=None
         Nodes input features matrix stored as a numpy.ndarray(2d) of shape
         (n_nodes, n_features).
-    edge_features_matrix : numpy.ndarray(2d), default=None
+    _edge_features_matrix : numpy.ndarray(2d), default=None
         Edges input features matrix stored as a numpy.ndarray(2d) of shape
         (n_edges, n_features).
-    global_features_matrix : numpy.ndarray(2d), default=None
+    _global_features_matrix : numpy.ndarray(2d), default=None
         Global input features matrix stored as a numpy.ndarray(2d) of shape
         (1, n_features).
-    node_targets_matrix : numpy.ndarray(2d), default=None
+    _node_targets_matrix : numpy.ndarray(2d), default=None
         Nodes targets matrix stored as a numpy.ndarray(2d) of shape
         (n_nodes, n_targets).
-    edge_targets_matrix : numpy.ndarray(2d), default=None
+    _edge_targets_matrix : numpy.ndarray(2d), default=None
         Edges targets matrix stored as a numpy.ndarray(2d) of shape
         (n_nodes, n_targets).
-    global_targets_matrix : numpy.ndarray(2d), default=None
+    _global_targets_matrix : numpy.ndarray(2d), default=None
         Global targets matrix stored as a numpy.ndarray(2d) of shape
         (1, n_targets).
-    edges_indexes : numpy.ndarray(2d)
+    _edges_indexes : numpy.ndarray(2d)
         Edges indexes matrix stored as numpy.ndarray[int](2d) with shape
         (num_edges, 2), where the i-th edge is stored in
         edges_indexes[i, :] as (start_node_index, end_node_index).

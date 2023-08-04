@@ -118,6 +118,16 @@ class FiniteElementPatch:
         # Set number of patch edge nodes per dimension.
         self._set_n_edge_nodes_per_dim()
     # -------------------------------------------------------------------------
+    def get_n_dim(self):
+        """Get number of spatial dimensions.
+        
+        Returns
+        -------
+        n_dim : int
+            Number of spatial dimensions.
+        """
+        return copy.deepcopy(self._n_dim)
+    # -------------------------------------------------------------------------
     def get_elem_type(self):
         """Get finite element type.
         

@@ -15,6 +15,8 @@ generate_dataset_output_data(dataset_input_data, constant_parameters={})
     Generate material patches simulations output data.   
 simulate_material_patch(design)
     Generate and simulate finite element material patch design sample.
+get_default_design_parameters(n_dim)
+    Generate finite element material patch design space default parameters.
 """
 #
 #                                                                       Modules
