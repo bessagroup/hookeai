@@ -183,10 +183,10 @@ class GNNPatchGraphData:
             from distance-based search.
         edges_indexes_mesh : numpy.ndarray(2d), default=None
             Edges stemming from any relevant mesh representation (e.g., finite
-            element mesh) and that should be accounted for. Must be given as an
-            edges indexes matrix stored as numpy.ndarray[int](2d) with shape
-            (n_edges, 2), where the i-th edge is stored in
-            edges_indexes[i, :] as (start_node_index, end_node_index).       
+            element mesh) and that should be accounted for. Edges indexes
+            matrix stored as numpy.ndarray[int](2d) with shape (n_edges, 2),
+            where the i-th edge is stored in edges_indexes[i, :] as
+            (start_node_index, end_node_index).
         """
         # Initialize edges indexes
         edges_indexes = np.empty((0, 2), dtype=int)
@@ -458,6 +458,44 @@ class GNNPatchGraphData:
             GNNPatchGraphData.get_undirected_unique_edges(edges_indexes) 
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         return edges_indexes
+    # -------------------------------------------------------------------------
+    @staticmethod
+    def get_edges_indexes_mesh(connected_nodes):
+        """Convert set of mesh connected nodes to edges indexes matrix.
+        
+        It is assumed that nodes are labeled from 1 to n_nodes, such that
+        node 1 and node n_nodes are associated with indexes 0 and n_nodes-1,
+        respectively.
+        
+        Parameters
+        ----------
+        connected_nodes : tuple[tuple(2)]
+            A set containing all pairs of nodes that are connected by any
+            relevant mesh representation (e.g., finite element mesh). Each
+            connection is stored a single time as a tuple(node[int], node[int])
+            and is independent of the corresponding nodes storage order.
+            
+        Returns
+        -------
+        edges_indexes_mesh : numpy.ndarray(2d), default=None
+            Edges stemming from any relevant mesh representation (e.g., finite
+            element mesh) and that should be accounted for. Edges indexes
+            matrix stored as numpy.ndarray[int](2d) with shape (n_edges, 2),
+            where the i-th edge is stored in edges_indexes[i, :] as
+            (start_node_index, end_node_index).
+        """
+        # Initialize mesh edges indexes matrix
+        edges_indexes_mesh = np.zeros((len(connected_nodes), 2), dtype=int)        
+        # Loop over mesh edges
+        for i, edge in enumerate(connected_nodes):
+            # Assemble edge indexes
+            edges_indexes_mesh[i, :] = (edge[0] - 1, edge[1] - 1)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Get unidirected unique edges indexes
+        edges_indexes_mesh = \
+            GNNPatchGraphData.get_undirected_unique_edges(edges_indexes_mesh)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        return edges_indexes_mesh
     # -------------------------------------------------------------------------
     @staticmethod
     def get_undirected_unique_edges(edges_indexes):
