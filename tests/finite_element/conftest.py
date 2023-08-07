@@ -17,6 +17,11 @@ __status__ = 'Planning'
 #
 # =============================================================================
 @pytest.fixture
+def elem_type_2d():
+    """One 2D finite element type."""
+    return 'SQUAD4'
+# -----------------------------------------------------------------------------
+@pytest.fixture
 def available_elem_type():
     """Available finite element types."""
     return set(FiniteElement._available_elem_type())

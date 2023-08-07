@@ -1,4 +1,4 @@
-"""Test FiniteElement class."""
+"""Test FiniteElementPatch class."""
 #
 #                                                                       Modules
 # =============================================================================
@@ -18,6 +18,12 @@ __status__ = 'Planning'
 # =============================================================================
 #
 # =============================================================================
+def test_get_n_dim(squad4_patch):
+    """Test number of spatial dimensions getter type."""
+    elem = squad4_patch
+    assert isinstance(elem.get_n_dim(), int), \
+        'Unexpected return type.'
+# -----------------------------------------------------------------------------
 def test_get_elem_type(squad4_patch):
     """Test finite element type getter type."""
     elem = squad4_patch
@@ -53,6 +59,25 @@ def test_get_mesh_boundary_nodes_disps(squad4_patch):
     elem = squad4_patch
     assert isinstance(elem.get_mesh_boundary_nodes_disps(), dict), \
         'Unexpected return type.'
+# -----------------------------------------------------------------------------
+def test_get_elem_size_dims(squad4_patch):
+    """Test finite element size getter type."""
+    elem = squad4_patch
+    assert isinstance(elem.get_elem_size_dims(), tuple), \
+        'Unexpected return type.'
+# -----------------------------------------------------------------------------
+def test_get_mesh_connected_nodes(squad4_patch):
+    """Test finite element mesh connected nodes pairs."""
+    elem = squad4_patch
+    assert isinstance(elem.get_mesh_connected_nodes(), tuple), \
+        'Unexpected return type.' 
+    assert all([isinstance(pair, tuple) and len(pair) == 2
+                for pair in elem.get_mesh_connected_nodes()]), \
+        'At least one finite element mesh connectivity is not a pair nodes.'
+    # Missing 3D implementation
+    elem._n_dim = 3
+    with pytest.raises(RuntimeError):
+        elem.get_mesh_connected_nodes()
 # -----------------------------------------------------------------------------
 def test_get_boundary_nodes_labels(squad4_patch):
     """Test finite element mesh boundary nodes labels getter."""
