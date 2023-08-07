@@ -119,7 +119,7 @@ class FiniteElementPatchGenerator:
     _get_mesh_boundary_nodes_disps(self, edges_coords_ref, edges_coords_def, \
                                    mesh_nodes_coords_ref)
         Compute finite element patch boundary displacements.
-    _get_node_label_from_coords(self, mesh_nodes_coords_ref, node_coords)
+    _get_node_label_from_coords(mesh_nodes_coords_ref, node_coords)
         Get finite element mesh node label from coordinates.
     """
     def __init__(self, n_dim, patch_dims):
@@ -140,11 +140,10 @@ class FiniteElementPatchGenerator:
             self._n_corners = 4
             self._n_edges = 4
         else:
-            self._n_corners = 8
-            self._n_edges = 12
+            raise RuntimeError('Missing 3D implementation.')
         # Set corners attributes
-        self._set_corners_attributes()  
-        # Set patch corners coordinates (reference configuration) 
+        self._set_corners_attributes()
+        # Set patch corners coordinates (reference configuration)
         self._set_corners_coords_ref()
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Set edges attributes
@@ -414,7 +413,7 @@ class FiniteElementPatchGenerator:
             if self._n_dim == 2:
                 n_min_bc = 3
             else:
-                n_min_bc = 6
+                raise RuntimeError('Missing 3D implementation.')
             # Generate random set of minimal constraints
             random_bc = np.zeros(self._n_corners*self._n_dim, dtype=int)
             random_bc[:n_min_bc] = 1
@@ -1199,10 +1198,13 @@ class FiniteElementPatchGenerator:
         """
         # Get number of points
         n_points = coords_array.shape[0]
+        # Get number of spatial dimensions
+        n_dim = coords_array.shape[1]
         # Compute rotated coordinates array
         rot_coords_array = np.zeros_like(coords_array)
         for i in range(n_points):
-            rot_coords_array[i, :] = np.matmul(r, coords_array[i, :])
+            rot_coords_array[i, :] = np.matmul(r[:n_dim, :n_dim],
+                                               coords_array[i, :])
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         return rot_coords_array
     # -------------------------------------------------------------------------
@@ -1366,7 +1368,7 @@ class FiniteElementPatchGenerator:
                     # Compute node displacement
                     disp = coord_def - coord_ref
                     # Get node label
-                    label = self._get_node_label_from_coords(
+                    label = type(self)._get_node_label_from_coords(
                         mesh_nodes_coords_ref, coord_ref)
                     # Store node displacement
                     if str(label) not in mesh_boundary_nodes_disps.keys():
@@ -1374,7 +1376,8 @@ class FiniteElementPatchGenerator:
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~       
         return mesh_boundary_nodes_disps
     # -------------------------------------------------------------------------
-    def _get_node_label_from_coords(self, mesh_nodes_coords_ref, node_coords):
+    @staticmethod
+    def _get_node_label_from_coords(mesh_nodes_coords_ref, node_coords):
         """Get finite element mesh node label from coordinates.
         
         Parameters
