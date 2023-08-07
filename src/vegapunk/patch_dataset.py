@@ -17,6 +17,8 @@ simulate_material_patch(design)
     Generate and simulate finite element material patch design sample.
 get_default_design_parameters(n_dim)
     Generate finite element material patch design space default parameters.
+read_simulation_dataset_from_file(dataset_file_path)
+    Read material patch finite element data set from file.
 """
 #
 #                                                                       Modules
@@ -24,6 +26,7 @@ get_default_design_parameters(n_dim)
 # Standard
 import os
 import shutil
+import pickle
 # Third-party
 import numpy as np
 import f3dasm
@@ -31,6 +34,7 @@ import tqdm
 # Local
 from patch_generator import FiniteElementPatchGenerator
 from simulators.links.links import LinksSimulator
+from ioput.iostandard import new_file_path_with_int
 #
 #                                                          Authorship & Credits
 # =============================================================================
@@ -46,8 +50,9 @@ def generate_material_patch_dataset(
     patch_dims_ranges=None, avg_deformation_ranges=None,
     edge_deformation_order_ranges=None, edge_deformation_magnitude_ranges=None,
     max_iter_per_patch=10, is_remove_failed_samples=False,
-    links_input_params=None, is_save_simulation_data=False,
-    is_save_plot_patch=False, is_verbose=False):
+    links_input_params=None, is_save_simulation_dataset=False,
+    is_save_simulation_files=False, is_save_plot_patch=False,
+    is_verbose=False):
     """Generate and simulate a set of deformed finite element material patches.
     
     Material patch is assumed quadrilateral (2d) or parallelepipedic (3D)
@@ -103,8 +108,9 @@ def generate_material_patch_dataset(
         'mat_phases_descriptors': dict (constitutive model descriptors
         (item, dict) for each material phase (key, str[int])).
     simulation_directory : str
-        Directory where the Links simulations input and output data files are
-        written.
+        Directory where files associated with the generation of the material
+        patch finite element simulations dataset are written. All existent
+        files are overridden when saving new data files.
     n_sample : int, default=1
         Number of material patch samples.
     patch_dims_ranges : dict, default=None
@@ -144,8 +150,12 @@ def generate_material_patch_dataset(
         set is lower or equal to prescribed number of material patch samples.
     links_input_params : dict, default=None
         Links input data file parameters. If None, default parameters are set.
-    is_save_simulation_data : bool, default=False
-        Save material patch simulation files.
+    is_save_simulation_dataset : bool, default=False
+        Save material patch finite element simulations dataset in simulation
+        directory. Data set is stored as a pickle file as
+        'material_patch_fem_dataset.pkl'.
+    is_save_simulation_files : bool, default=False
+        Save material patch simulation files in simulation directory.
     is_save_plot_patch : bool, default=False
         Save plot of material patch design sample in simulation directory.
     is_verbose : bool, default=False
@@ -154,8 +164,8 @@ def generate_material_patch_dataset(
     Returns
     -------
     dataset_simulation_data : list[dict]
-        Material patches finite element simulations output data. Output data of
-        each material patch is stored in a dict, where:
+        Material patches finite element simulations data set. Each material
+        patch data of is stored in a dict, where:
         
         'patch' : Instance of FiniteElementPatch, the simulated finite \
                   element material patch.
@@ -209,7 +219,7 @@ def generate_material_patch_dataset(
                            'directory': simulation_directory,
                            'patch_material_data': patch_material_data,
                            'links_input_params': links_input_params,
-                           'is_save_simulation_data': is_save_simulation_data,
+                           'is_save_simulation_files': is_save_simulation_files,
                            'is_save_plot_patch': is_save_plot_patch} 
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     if is_verbose:
@@ -391,7 +401,19 @@ def generate_material_patch_dataset(
             print('    > Failed finite element simulation: ',
                 '{:d}/{:d} ({:>.1f}%)'.format(n_fail_simulation, n_sample,
                                               100*n_fail_simulation/n_sample))
-        print('')
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    if is_save_simulation_dataset:
+        if is_verbose:
+            print('\n> Saving material patch simulation data set...\n')
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set data set file name
+        dataset_file_name = 'material_patch_fem_dataset.pkl'
+        # Set data set file path
+        dataset_file_path = os.path.join(
+            os.path.normpath(simulation_directory), dataset_file_name)
+        # Save data set
+        with open(dataset_file_path, 'wb') as dataset_file:
+            pickle.dump(dataset_simulation_data, dataset_file)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     return dataset_simulation_data
 # =============================================================================
@@ -411,8 +433,8 @@ def generate_dataset_output_data(dataset_input_data, constant_parameters={},
     Returns
     -------
     dataset_simulation_data : list[dict]
-        Material patches simulations output data. Output data of each material
-        patch is stored in a dict, where:
+        Material patches finite element simulations data set. Each material
+        patch data of is stored in a dict, where:
         
         'patch' : Instance of FiniteElementPatch.
         
@@ -561,7 +583,7 @@ def simulate_material_patch(design, **kwargs):
             is_save_plot=is_save_plot_patch,
             save_directory=kwargs['directory'],
             plot_name=kwargs['filename'],
-            is_overwrite_file=not is_save_plot_patch)
+            is_overwrite_file=True)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Initialize results
     results_keywords = ('node_data', 'global_data')
@@ -576,7 +598,7 @@ def simulate_material_patch(design, **kwargs):
         links_file_path = links_simulator.generate_input_data_file(
             kwargs['filename'], kwargs['directory'], patch,
             kwargs['patch_material_data'], kwargs['links_input_params'],
-            is_overwrite_file=not kwargs['is_save_simulation_data'])
+            is_overwrite_file=not kwargs['is_save_simulation_files'])
         # Run simulation
         is_success, links_output_directory = \
             links_simulator.run_links_simulation(links_file_path)
@@ -585,7 +607,7 @@ def simulate_material_patch(design, **kwargs):
             results = links_simulator.read_links_simulation_results(
                 links_output_directory, results_keywords)
         # Remove simulation files
-        if not kwargs['is_save_simulation_data']:
+        if not kwargs['is_save_simulation_files']:
             # Remove simulator input data file
             if os.path.isfile(links_file_path):
                 os.remove(links_file_path)
@@ -653,6 +675,42 @@ def get_default_design_parameters(n_dim):
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     return default_parameters
 # =============================================================================
+def read_simulation_dataset_from_file(dataset_file_path):
+    """Read material patch finite element data set from file.
+
+    Parameters
+    ----------
+    dataset_file_path : str
+        Material patches finite element simulations data set file path.
+    
+    Returns
+    -------
+    dataset_simulation_data : list[dict]
+        Material patches finite element simulations data set. Each material
+        patch data of is stored in a dict, where:
+        
+        'patch' : Instance of FiniteElementPatch.
+        
+        'node_data' : numpy.ndarray(3d) of shape \
+                      (n_nodes, n_data_dim, n_time_steps), where the i-th \
+                      node output data at the k-th time step is stored in \
+                      indexes [i, :, k].
+        
+        'global_data' : numpy.ndarray(3d) of shape \
+                        (1, n_data_dim, n_time_steps) where the global output \
+                        data at the k-th time step is stored in [0, :, k].
+    """
+    # Check data set file path
+    if not os.path.isfile(dataset_file_path):
+        raise RuntimeError('Material patch finite element data set file '
+                           'has not been found:\n\n', dataset_file_path)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Read material patch finite element data set
+    with open(dataset_file_path, 'rb') as dataset_file:
+        dataset_simulation_data = pickle.load(dataset_file)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    return dataset_simulation_data
+# =============================================================================
 if __name__ == "__main__":
     # Mandatory parameters:
     #
@@ -701,8 +759,10 @@ if __name__ == "__main__":
     links_input_params['vtk_output'] = 'ASCII'
     # Remove failed material patches from data set
     is_remove_failed_samples = True
+    # Save material patch simulation data set
+    is_save_simulation_dataset = True
     # Save material patch simulation files
-    is_save_simulation_data = False
+    is_save_simulation_files = False
     # Save plot of material patch
     is_save_plot_patch = False
     # Enable verbose output
@@ -720,9 +780,11 @@ if __name__ == "__main__":
         edge_deformation_magnitude_ranges=edge_deformation_magnitude_ranges,
         is_remove_failed_samples = is_remove_failed_samples,
         links_input_params=links_input_params,
+        is_save_simulation_dataset=is_save_simulation_dataset,
         is_save_plot_patch=is_save_plot_patch,
-        is_save_simulation_data=is_save_simulation_data,
+        is_save_simulation_files=is_save_simulation_files,
         is_verbose=is_verbose)
+    
     
     from gnn_patch_dataset import generate_gnn_material_patch_dataset, get_gnn_material_patch_data_loader
     
