@@ -59,6 +59,18 @@ def coord_array_3d():
                      [-1.0, 2.0, 2.0]])
 # -----------------------------------------------------------------------------
 @pytest.fixture
+def corners_disp_range_2d():
+    """Generic 2D corners displacements range."""
+    corners_disp_range_2d = np.zeros((4, 2, 2))
+    corners_disp_range_2d[0, :, 0] = [0.0, 0.0]
+    corners_disp_range_2d[0, :, 1] = [1.0, 1.5]
+    corners_disp_range_2d[1, :, 0] = [-1.0, 0.5]
+    corners_disp_range_2d[1, :, 1] = [0.0, 1.0]
+    corners_disp_range_2d[2, :, 0] = [-1.0, 0.0]
+    corners_disp_range_2d[2, :, 1] = [2.0, 1.0]
+    return corners_disp_range_2d
+# -----------------------------------------------------------------------------
+@pytest.fixture
 def mesh_2d_squad4():
     """Simple 2D finite element mesh of SQUAD4."""
     patch_generator = FiniteElementPatchGenerator(n_dim=2,
