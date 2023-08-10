@@ -466,8 +466,9 @@ class FiniteElementPatchGenerator:
         Returns
         -------
         corners_disp_range : numpy.ndarray(3d)
-            Patch corners displacements (numpy.ndarray(n_corners, n_dim, k),
-            where k=0 (min) and k=1 (max)).
+            Patch corners displacements range
+            (numpy.ndarray(n_corners, n_dim, k), where k=0 (min) and k=1
+            (max)).
         """
         # Initialize corners displacement range
         corners_disp_range = np.zeros((self._n_corners, self._n_dim, 2))
@@ -526,7 +527,7 @@ class FiniteElementPatchGenerator:
     # -------------------------------------------------------------------------
     def _build_edges_poly_orders(self, edges_lab_def_order=None):
         """Build patch edges deformation polynomials orders.
-         
+
         Parameters
         ----------
         edges_lab_def_order : {int, dict}, default=None
@@ -546,7 +547,7 @@ class FiniteElementPatchGenerator:
         if self._n_dim == 2:
             n_edges_per_dim = 2
         else:
-            n_edges_per_dim = 4
+            raise RuntimeError('Missing 3D implementation.')
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Initialize edges deformation polynomials orders
         edge_poly_orders = {str(i): n_edges_per_dim*[0,]
@@ -555,8 +556,12 @@ class FiniteElementPatchGenerator:
         if edges_lab_def_order is None:
             # Set zero order deformation polynomial by default
             for i in range(self._n_dim):
-                edge_poly_orders[str(i)] = self.n_edges_per_dim*(0,)
+                edge_poly_orders[str(i)] = n_edges_per_dim*(0,)
         elif isinstance(edges_lab_def_order, int):
+            # Check edges deformation polynomial order
+            if not isinstance(edges_lab_def_order, int):
+                raise RuntimeError('Edge polynomial order must be a '
+                                   'non-negative integer.')
             # Enforce minimum of zero order polynomial
             edges_lab_def_order = np.max((0, edges_lab_def_order))
             # Set edges deformation polynomials orders
@@ -586,6 +591,9 @@ class FiniteElementPatchGenerator:
                     order = 0
                 # Set edge deformation polynomial order
                 edge_poly_orders[dim][index] = order
+            # Convert to tuple
+            for i in range(self._n_dim):
+                edge_poly_orders[str(i)] = tuple(edge_poly_orders[str(i)])
         else:
             raise RuntimeError('Invalid specification of edges_lab_def_order.')
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~     
@@ -618,7 +626,7 @@ class FiniteElementPatchGenerator:
         if self._n_dim == 2:
             n_edges_per_dim = 2
         else:
-            n_edges_per_dim = 4
+            raise RuntimeError('Missing 3D implementation.')
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Initialize edges displacements range
         edge_disp_range = {str(i): n_edges_per_dim*[(),]
@@ -746,8 +754,9 @@ class FiniteElementPatchGenerator:
         Parameters
         ----------
         corners_disp_range : numpy.ndarray(3d)
-            Patch corners displacements (numpy.ndarray(n_corners, n_dim, k),
-            where k=0 (min) and k=1 (max)).
+            Patch corners displacements range
+            (numpy.ndarray(n_corners, n_dim, k), where k=0 (min) and k=1
+            (max)).
         edges_poly_orders : dict, default=None
             For each dimension (key, str[int]), store the corresponding edges
             deformation polynomials orders (item, tuple[int]).
@@ -757,8 +766,9 @@ class FiniteElementPatchGenerator:
         corners_disp : numpy.ndarray(2d)
             Patch corners displacements (numpy.ndarray(n_corners, n_dim)).
         corners_disp_range : numpy.ndarray(3d)
-            Patch corners displacements (numpy.ndarray(n_corners, n_dim, k),
-            where k=0 (min) and k=1 (max)).
+            Patch corners displacements range
+            (numpy.ndarray(n_corners, n_dim, k), where k=0 (min) and k=1
+            (max)).
         """
         # Initialize corners displacements
         corners_disp = np.zeros((self._n_corners, self._n_dim))
@@ -1024,6 +1034,11 @@ class FiniteElementPatchGenerator:
             is set from limit control points.
         is_plot : bool, default=False
             If True, plot randomly generated polynomial.
+
+        Returns
+        -------
+        coefficients : tuple[float]
+            Polynomial coefficients sorted by increasing order terms.
         """
         # Set number of sampled internal points
         n_int = np.max((0, order - 1))
@@ -1060,7 +1075,7 @@ class FiniteElementPatchGenerator:
             matrix[i, :] = [control_points[i][0]**k for k in range(n_point)]
             rhs[i] = control_points[i][1]
         # Solve system of equations for polynomial coefficients
-        coefficients = np.linalg.solve(matrix, rhs)
+        coefficients = tuple(np.linalg.solve(matrix, rhs))
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Plot polynomial
         if is_plot:
