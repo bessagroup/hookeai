@@ -640,7 +640,8 @@ def get_default_design_parameters(n_dim):
         n_corners = 4
         n_edges = 4
     else:
-        raise RuntimeError('Missing 3D implementation.')
+        n_corners = 8
+        n_edges = 12
     # Set corners and edges labels
     corners_labels = tuple([str(i + 1) for i in range(n_corners)])
     edges_labels = tuple([str(i + 1) for i in range(n_edges)]) 

@@ -506,7 +506,7 @@ class FiniteElementPatchGenerator:
                             raise RuntimeError('Corner displacement range '
                                                'must be a tuple(min, max) '
                                                'along each dimension.')
-                        elif len(range_dims) != 2:
+                        elif len(range_dims[j]) != 2:
                             raise RuntimeError('Corner displacement range '
                                                'must be a tuple(min, max) '
                                                'along each dimension.')
@@ -558,10 +558,6 @@ class FiniteElementPatchGenerator:
             for i in range(self._n_dim):
                 edge_poly_orders[str(i)] = n_edges_per_dim*(0,)
         elif isinstance(edges_lab_def_order, int):
-            # Check edges deformation polynomial order
-            if not isinstance(edges_lab_def_order, int):
-                raise RuntimeError('Edge polynomial order must be a '
-                                   'non-negative integer.')
             # Enforce minimum of zero order polynomial
             edges_lab_def_order = np.max((0, edges_lab_def_order))
             # Set edges deformation polynomials orders

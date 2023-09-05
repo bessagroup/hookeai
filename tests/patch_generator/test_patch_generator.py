@@ -88,6 +88,29 @@ def test_build_corners_disp_range_2d(patch_generator_2d):
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     assert not errors, "Errors:\n{}".format("\n".join(errors))
 # -----------------------------------------------------------------------------
+def test_build_corners_disp_range_2d_invalid(patch_generator_2d):
+    """Test invalid patch corners displacement range generation."""
+    with pytest.raises(RuntimeError):
+        corners_lab_disp_range = 'invalid_type'
+        _ = patch_generator_2d._build_corners_disp_range(
+            corners_lab_disp_range)
+    with pytest.raises(RuntimeError):
+        corners_lab_disp_range = {'1': 'invalid_type',}
+        _ = patch_generator_2d._build_corners_disp_range(
+            corners_lab_disp_range)
+    with pytest.raises(RuntimeError):
+        corners_lab_disp_range = {'1': (0.0,),}
+        _ = patch_generator_2d._build_corners_disp_range(
+            corners_lab_disp_range)
+    with pytest.raises(RuntimeError):
+        corners_lab_disp_range = {'1': (0.0, (0.0, 1.0)),}
+        _ = patch_generator_2d._build_corners_disp_range(
+            corners_lab_disp_range)
+    with pytest.raises(RuntimeError):
+        corners_lab_disp_range = {'1': ((0.0,), (0.0, 1.0)),}
+        _ = patch_generator_2d._build_corners_disp_range(
+            corners_lab_disp_range)
+# -----------------------------------------------------------------------------
 @pytest.mark.parametrize('edges_lab_def_order, edge_poly_orders',
                          [(None, {'0': (0, 0), '1': (0, 0)}),
                           (1, {'0': (1, 1), '1': (1, 1)}),
@@ -425,3 +448,66 @@ def test_missing_3d_implementation():
         patch_generator._build_edges_disp_range()
     with pytest.raises(RuntimeError):
         patch_generator._is_admissible_geometry(edges_coords=None)
+# -----------------------------------------------------------------------------
+def test_generate_deformed_patch_2d(patch_generator_2d):
+    """Test the full generation process of a finite element deformed patch."""
+    # Set finite element discretization
+    elem_type = 'SQUAD4'
+    n_elems_per_dim = (3, 3)
+    # Set corners boundary conditions
+    corners_lab_bc = {'1': (1, 0), '3': (1, 1)}
+    # Set corners displacement range
+    corners_lab_disp_range = {'1': ((-0.1, 0.1), (-0.1, 0.1)),
+                              '2': ((-0.1, 0.1), (-0.1, 0.1)),
+                              '3': ((-0.1, 0.1), (-0.1, 0.1)),
+                              '4': ((-0.1, 0.1), (-0.1, 0.1))}
+    # Set edges polynomial deformation order and displacement range
+    edges_lab_def_order = {'1': 1, '2': 2, '3': 2, '4': 0}
+    edges_lab_disp_range = {'1': (-0.1, 0.1),
+                            '2': (-0.1, 0.1),
+                            '3': (-0.1, 0.1),
+                            '4': (-0.1, 0.1)}
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Generate randomly deformed material patch
+    is_admissible, patch = patch_generator_2d.generate_deformed_patch(
+        elem_type, n_elems_per_dim, corners_lab_bc=corners_lab_bc,
+        corners_lab_disp_range=corners_lab_disp_range,
+        edges_lab_def_order=edges_lab_def_order,
+        edges_lab_disp_range=edges_lab_disp_range, max_iter=10,
+        is_verbose=True)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    assert is_admissible and patch is not None, 'A finite element deformed ' \
+        'patch was not successfuly generated.'
+# -----------------------------------------------------------------------------
+def test_generate_deformed_patch_2d_nonadmissible(patch_generator_2d):
+    """Test handling of non-admissible finite element deformed patch."""
+    """
+    # Set finite element discretization
+    elem_type = 'SQUAD4'
+    n_elems_per_dim = (3, 3)
+    # Set corners boundary conditions
+    corners_lab_bc = None
+    # Set corners displacement range
+    corners_lab_disp_range = {'1': ((1.0, 1.0), (0.0, 0.0)),
+                              '2': ((-1.0, -1.0), (0.0, 0.0)),
+                              '3': ((-1.0, -1.0), (0.0, 0.0)),
+                              '4': ((1.0, 1.0), (0.0, 0.0))}
+    # Set edges polynomial deformation order and displacement range
+    edges_lab_def_order = {'1': 1, '2': 2, '3': 2, '4': 0}
+    edges_lab_disp_range = {'1': (-0.1, 0.1),
+                            '2': (-0.1, 0.1),
+                            '3': (-0.1, 0.1),
+                            '4': (-0.1, 0.1)}
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Generate randomly deformed material patch
+    is_admissible, patch = patch_generator_2d.generate_deformed_patch(
+        elem_type, n_elems_per_dim, corners_lab_bc=corners_lab_bc,
+        corners_lab_disp_range=corners_lab_disp_range,
+        edges_lab_def_order=edges_lab_def_order,
+        edges_lab_disp_range=edges_lab_disp_range, max_iter=10,
+        is_verbose=True)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    assert not is_admissible and patch is None, 'A non-admissible finite ' \
+        'element deformed patch was not detected.'
+    """
+    pass
