@@ -6,7 +6,8 @@
 import pytest
 import numpy as np
 # Local
-from src.vegapunk.gnn_patch_data import GNNPatchGraphData
+from src.vegapunk.gnn_patch_data import GNNPatchGraphData, \
+    GNNPatchFeaturesGenerator
 # =============================================================================
 #
 #                                                          Authorship & Credits
@@ -51,7 +52,22 @@ def gnn_patch_graph_2d(squad4_regular_mesh):
     gnn_patch_data.set_graph_edges_indexes(
         edges_indexes_mesh=edges_indexes_mesh)
     return gnn_patch_data
-
-
-
-    
+# -----------------------------------------------------------------------------
+@pytest.fixture
+def features_generator_2d(gnn_patch_graph_2d):
+    """2D GNN-based material patch features generator."""
+    n_nodes = gnn_patch_graph_2d.get_nodes_coords().shape[0]
+    edges_indexes = gnn_patch_graph_2d.get_graph_edges_indexes()
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    n_dim = 2
+    n_time_steps = 5
+    nodes_coords_hist = np.zeros((n_nodes, n_dim, n_time_steps))
+    nodes_disps_hist = np.zeros((n_nodes, n_dim, n_time_steps))
+    nodes_int_forces_hist = np.zeros((n_nodes, n_dim, n_time_steps))
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    features_generator = GNNPatchFeaturesGenerator(
+        nodes_coords_hist, edges_indexes=edges_indexes,
+        nodes_disps_hist=nodes_disps_hist,
+        nodes_int_forces_hist=nodes_int_forces_hist)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    return features_generator

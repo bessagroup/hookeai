@@ -710,6 +710,9 @@ class GNNPatchFeaturesGenerator:
         # Get available nodes
         available_features = type(self).get_available_nodes_features()
         # Check features
+        if not isinstance(features, tuple):
+            raise RuntimeError('Nodes features must be specified as a tuple '
+                               'of strings.')
         for feature in features:
             if feature not in available_features:
                 raise RuntimeError('Unavailable node feature: ' + str(feature))
@@ -742,7 +745,7 @@ class GNNPatchFeaturesGenerator:
             elif feature == 'int_force':
                 # Check required data
                 if self._nodes_int_forces_hist is None:
-                    raise RuntimeError('Nodes displacements must be set in '
+                    raise RuntimeError('Nodes internal forces must be set in '
                                        'order to build feature '
                                        + str(feature))
                 # Initialize node feature matrix
@@ -752,9 +755,6 @@ class GNNPatchFeaturesGenerator:
                     # Assemble node feature
                     feature_matrix[i, :] = \
                         self._nodes_int_forces_hist[i, :n_dim, -1]
-            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ 
-            else:
-                raise RuntimeError('Unavailable node feature: ' + str(feature))
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~     
             # Assemble node feature
             node_features_matrix = \
@@ -813,6 +813,9 @@ class GNNPatchFeaturesGenerator:
         # Get available edges
         available_features = type(self).get_available_edges_features()
         # Check features
+        if not isinstance(features, tuple):
+            raise RuntimeError('Edges features must be specified as a tuple '
+                               'of strings.')
         for feature in features:
             if feature not in available_features:
                 raise RuntimeError('Unavailable edge feature: ' + str(feature))
@@ -866,9 +869,6 @@ class GNNPatchFeaturesGenerator:
                     feature_matrix[k, :] = np.linalg.norm(
                         self._nodes_disps_hist[i, :n_dim, -1]
                         - self._nodes_disps_hist[j, :n_dim, -1])
-            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            else:
-                raise RuntimeError('Unavailable edge feature: ' + str(feature))
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~     
             # Assemble edge feature
             edge_features_matrix = \
