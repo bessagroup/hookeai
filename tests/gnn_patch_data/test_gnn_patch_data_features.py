@@ -6,7 +6,7 @@
 import pytest
 import numpy as np
 # Local
-from src.vegapunk.gnn_patch_data import GNNPatchFeaturesGenerator
+from src.vegapunk.gnn_model.gnn_patch_data import GNNPatchFeaturesGenerator
 # =============================================================================
 #
 #                                                          Authorship & Credits

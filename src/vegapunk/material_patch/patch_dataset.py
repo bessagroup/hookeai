@@ -32,7 +32,7 @@ import numpy as np
 import f3dasm
 import tqdm
 # Local
-from patch_generator import FiniteElementPatchGenerator
+from material_patch.patch_generator import FiniteElementPatchGenerator
 from simulators.links.links import LinksSimulator
 from ioput.iostandard import new_file_path_with_int
 #

@@ -7,7 +7,7 @@ import pytest
 import numpy as np
 import matplotlib.pyplot as plt
 # Local
-from src.vegapunk.patch import FiniteElementPatch
+from src.vegapunk.material_patch.patch import FiniteElementPatch
 # =============================================================================
 #
 #                                                          Authorship & Credits

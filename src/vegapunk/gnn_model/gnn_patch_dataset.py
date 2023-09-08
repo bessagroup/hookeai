@@ -18,7 +18,8 @@ import torch
 import torch_geometric.loader
 import tqdm
 # Local
-from gnn_patch_data import GNNPatchGraphData, GNNPatchFeaturesGenerator
+from gnn_model.gnn_patch_data import GNNPatchGraphData, \
+    GNNPatchFeaturesGenerator
 #
 #                                                          Authorship & Credits
 # =============================================================================

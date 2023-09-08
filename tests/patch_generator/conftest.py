@@ -6,8 +6,8 @@
 import pytest
 import numpy as np
 # Local
-from src.vegapunk.patch_generator import FiniteElementPatchGenerator, \
-    rotation_tensor_from_euler_angles
+from src.vegapunk.material_patch.patch_generator import \
+    FiniteElementPatchGenerator, rotation_tensor_from_euler_angles
 # =============================================================================
 #
 #                                                          Authorship & Credits

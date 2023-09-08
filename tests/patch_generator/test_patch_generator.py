@@ -7,8 +7,9 @@ import pytest
 import numpy as np
 import matplotlib.pyplot as plt
 # Local
-from src.vegapunk.patch_generator import FiniteElementPatchGenerator
-from tests.finite_element.conftest import elem_type_2d, available_elem_type
+from src.vegapunk.material_patch.patch_generator import \
+    FiniteElementPatchGenerator
+from tests.finite_element.conftest import available_elem_type
 # =============================================================================
 #
 #                                                          Authorship & Credits

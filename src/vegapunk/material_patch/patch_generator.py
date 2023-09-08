@@ -20,8 +20,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 import shapely.geometry
 # Local
-from patch import FiniteElementPatch
-from finite_element import FiniteElement
+from material_patch.patch import FiniteElementPatch
+from material_patch.finite_element import FiniteElement
 #
 #                                                          Authorship & Credits
 # =============================================================================

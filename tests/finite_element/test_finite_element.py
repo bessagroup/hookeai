@@ -6,7 +6,7 @@
 import pytest
 import numpy as np
 # Local
-from src.vegapunk.finite_element import FiniteElement
+from src.vegapunk.material_patch.finite_element import FiniteElement
 # =============================================================================
 #
 #                                                          Authorship & Credits

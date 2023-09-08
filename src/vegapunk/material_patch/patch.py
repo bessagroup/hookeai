@@ -15,7 +15,7 @@ import copy
 import numpy as np
 import matplotlib.pyplot as plt
 # Local
-from finite_element import FiniteElement
+from material_patch.finite_element import FiniteElement
 from ioput.iostandard import new_file_path_with_int
 #
 #                                                          Authorship & Credits

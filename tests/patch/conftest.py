@@ -5,7 +5,8 @@
 # Third-party
 import pytest
 # Local
-from src.vegapunk.patch_generator import FiniteElementPatchGenerator
+from src.vegapunk.material_patch.patch_generator import \
+    FiniteElementPatchGenerator
 # =============================================================================
 #
 #                                                          Authorship & Credits

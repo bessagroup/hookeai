@@ -8,7 +8,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import torch_geometric.data
 # Local
-from src.vegapunk.gnn_patch_data import GNNPatchGraphData
+from src.vegapunk.gnn_model.gnn_patch_data import GNNPatchGraphData
 # =============================================================================
 #
 #                                                          Authorship & Credits

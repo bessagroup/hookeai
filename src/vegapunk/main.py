@@ -5,9 +5,10 @@
 # Third-party
 import numpy as np
 # Local
-from patch_generator import FiniteElementPatchGenerator
+from material_patch.patch_generator import FiniteElementPatchGenerator
 from simulators.links.links import LinksSimulator
-from gnn_patch_data import GNNPatchGraphData, GNNPatchFeaturesGenerator
+from gnn_model.gnn_patch_data import GNNPatchGraphData, \
+    GNNPatchFeaturesGenerator
 #
 #                                                          Authorship & Credits
 # =============================================================================
