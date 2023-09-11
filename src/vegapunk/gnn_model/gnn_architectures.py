@@ -2,23 +2,24 @@
 
 Classes
 -------
-
+GraphIndependentNetwork
+    Graph Independent Network.
+    
 Functions
 ---------
 build_fnn
     Build multilayer feed-forward neural network.
+GraphIndependentNetwork(torch.nn.Module)
+    Graph Independent Network.
+GraphInteractionNetwork(torch_geometric.nn.MessagePassing)
+    Graph Interaction Network.
 """
 #
 #                                                                       Modules
 # =============================================================================
-# Standard
-
 # Third-party
-import numpy as np
 import torch
-import torch_geometric.data
-# Local
-
+import torch_geometric.nn
 #
 #                                                          Authorship & Credits
 # =============================================================================
@@ -36,9 +37,11 @@ def build_fnn(input_size, output_size,
     
     Based on: geoelements/gns/graph_network.py
     
+    Changes:
     (1) Changed output_size to mandatory argument
     (2) Changed hidden_layer_sizes to optional argument and default to []
     (3) Add check procedures for activation functions type
+    (4) Renamed variables
     
     Parameters
     ----------
@@ -92,3 +95,292 @@ def build_fnn(input_size, output_size,
         fnn.add_module("Activation-" + str(i), activation_functions[i]())
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     return fnn
+# =============================================================================
+class GraphIndependentNetwork(torch.nn.Module):
+    """Graph Independent Network.
+    
+    A Graph Network block with (1) distinct update functions for node, edge and
+    global features implemented as multilayer feed-forward neural networks
+    and (2) no aggregation functions, i.e., independent node, edges and global
+    blocks.
+    
+    Based on: geoelements/gns/graph_network.py
+    
+    TO-DO:
+    (1) Implement handling of global features
+    
+    Attributes
+    ----------
+    node_fn : torch.nn.Sequential
+        Node update function.
+    edge_fn : torch.nn.Sequential
+        Edge update function.
+    """
+    def __init__(self, n_node_in, n_node_out, n_edge_in, n_edge_out,
+                 n_hidden_layers, hidden_layer_size):
+        """Constructor.
+        
+        Parameters
+        ----------
+        n_node_in : int
+            Number of node input features.
+        n_node_out : int
+            Number of node output features.
+        n_edge_in : int
+            Number of edge input features.
+        n_edge_out : int
+            Number of edge output features.
+        n_hidden_layers : int
+            Number of hidden layers of multilayer feed-forward neural network
+            update functions.
+        hidden_layer_size : int
+            Number of neurons of hidden layers of multilayer feed-forward
+            neural network update functions.
+        """
+        # Initialize Graph Network block from base class
+        super(GraphIndependentNetwork, self).__init__()
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set node update function as multilayer feed-forward neural network
+        # with layer normalization:
+        # Build multilayer feed-forward neural network
+        fnn = build_fnn(
+            input_size=n_node_in,
+            output_size=n_node_out,
+            output_activation=torch.nn.Identity,
+            hidden_layer_sizes=n_hidden_layers*[hidden_layer_size,],
+            hidden_activation=torch.nn.ReLU)
+        # Build normalization layer
+        norm_layer = torch.nn.LayerNorm(normalized_shape=n_node_out)
+        # Set node update function
+        self.node_fn = torch.nn.Sequential(fnn, norm_layer)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set edge update function as multilayer feed-forward neural network
+        # with layer normalization:
+        # Build multilayer feed-forward neural network
+        fnn = build_fnn(
+            input_size=n_edge_in,
+            output_size=n_edge_out,
+            output_activation=torch.nn.Identity,
+            hidden_layer_sizes=n_hidden_layers*[hidden_layer_size,],
+            hidden_activation=torch.nn.ReLU)
+        # Build normalization layer
+        norm_layer = torch.nn.LayerNorm(normalized_shape=n_node_out)
+        # Set node update function
+        self.edge_fn = torch.nn.Sequential(fnn, norm_layer)
+    # -------------------------------------------------------------------------
+    def forward(self, node_features_in, edge_features_in):
+        """Forward propagation.
+        
+        Parameters
+        ----------
+        node_features_in : torch.tensor
+            Nodes features input matrix stored as a torch.tensor(2d) of shape
+            (n_nodes, n_features).
+        edge_features_in : torch.tensor
+            Edges features input matrix stored as a torch.tensor(2d) of shape
+            (n_edges, n_features).
+            
+        Returns
+        -------
+        node_features_out : torch.tensor
+            Nodes features output matrix stored as a torch.tensor(2d) of shape
+            (n_nodes, n_features).
+        edge_features_out : torch.tensor
+            Edges features output matrix stored as a torch.tensor(2d) of shape
+            (n_edges, n_features).
+        """
+        return self.node_fn(node_features_in), \
+            self.edge_fn(edge_features_in)
+# =============================================================================
+class GraphInteractionNetwork(torch_geometric.nn.MessagePassing):
+    """Graph Interaction Network.
+    
+    A Graph Network block with (1) distinct update functions for node, edge and
+    global features implemented as multilayer feed-forward neural networks
+    and (2) aggregation functions implemented as elementwise summations. Global
+    features are not used to update the edge features. Residual connections are
+    adopted between the input and output features of both nodes and edges. 
+    
+    Based on: geoelements/gns/graph_network.py
+    
+    Questions:
+    (1) Be careful with kwargs in propagate(), as they are passed to update()
+        and message().
+    
+    TO-DO:
+    (1) Implement handling of global features
+    
+    Attributes
+    ----------
+    node_fn : torch.nn.Sequential
+        Node update function.
+    edge_fn : torch.nn.Sequential
+        Edge update function.
+    """
+    def __init__(self, n_node_in, n_node_out, n_edge_in, n_edge_out,
+                 n_hidden_layers, hidden_layer_size):
+        """Constructor.
+        
+        Parameters
+        ----------
+        n_node_in : int
+            Number of node input features.
+        n_node_out : int
+            Number of node output features.
+        n_edge_in : int
+            Number of edge input features.
+        n_edge_out : int
+            Number of edge output features.
+        n_hidden_layers : int
+            Number of hidden layers of multilayer feed-forward neural network
+            update functions.
+        hidden_layer_size : int
+            Number of neurons of hidden layers of multilayer feed-forward
+            neural network update functions.
+        """
+        # Set aggregation scheme
+        aggregation = 'add'
+        # Set flow direction of message passing
+        flow = 'source_to_target'
+        # Initialize Graph Network block from base class
+        super(GraphIndependentNetwork, self).__init__(aggr=aggregation,
+                                                      flow=flow)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set node update function as multilayer feed-forward neural network
+        # with layer normalization:
+        # Build multilayer feed-forward neural network
+        fnn = build_fnn(
+            input_size=n_node_in+n_edge_out,
+            output_size=n_node_out,
+            output_activation=torch.nn.Identity,
+            hidden_layer_sizes=n_hidden_layers*[hidden_layer_size,],
+            hidden_activation=torch.nn.ReLU)
+        # Build normalization layer
+        norm_layer = torch.nn.LayerNorm(normalized_shape=n_node_out)
+        # Set node update function
+        self.node_fn = torch.nn.Sequential(fnn, norm_layer)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set edge update function as multilayer feed-forward neural network
+        # with layer normalization:
+        # Build multilayer feed-forward neural network
+        fnn = build_fnn(
+            input_size=n_edge_in+2*n_node_in,
+            output_size=n_edge_out,
+            output_activation=torch.nn.Identity,
+            hidden_layer_sizes=n_hidden_layers*[hidden_layer_size,],
+            hidden_activation=torch.nn.ReLU)
+        # Build normalization layer
+        norm_layer = torch.nn.LayerNorm(normalized_shape=n_node_out)
+        # Set node update function
+        self.edge_fn = torch.nn.Sequential(fnn, norm_layer)
+    # -------------------------------------------------------------------------
+    def forward(self, node_features_in, edge_features_in, edges_indexes):
+        """Forward propagation.
+        
+        Parameters
+        ----------
+        node_features_in : torch.tensor
+            Nodes features input matrix stored as a torch.tensor(2d) of shape
+            (n_nodes, n_features).
+        edge_features_in : torch.tensor
+            Edges features input matrix stored as a torch.tensor(2d) of shape
+            (n_edges, n_features).
+        edges_indexes : torch.tensor
+            Edges indexes matrix stored as torch.tensor(2d) with shape
+            (n_edges, 2), where the i-th edge is stored in edges_indexes[i, :]
+            as (start_node_index, end_node_index).
+        
+        Returns
+        -------
+        node_features_out : torch.tensor
+            Nodes features output matrix stored as a torch.tensor(2d) of shape
+            (n_nodes, n_features).
+        edge_features_out : torch.tensor
+            Edges features output matrix stored as a torch.tensor(2d) of shape
+            (n_edges, n_features).
+        """
+        # Save features input matrix (residual connection)
+        node_features_res = node_features_in.clone()
+        edge_features_res = edge_features_in.clone()
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Perform graph neural network message passing and update
+        node_features_out, edge_features_out = self.propagate(
+            edge_index=edges_indexes, node_features_in=node_features_in,
+            edge_features_in=edge_features_in)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Add residual connections to features output
+        node_features_out += node_features_res
+        edge_features_out += edge_features_res
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        return node_features_out, edge_features_out
+    # -------------------------------------------------------------------------
+    def message(self, node_features_in_i, node_features_in_j,
+                edge_features_in):
+        """Builds messages to node i from each edge (i, j) (edge update).
+        
+        Assumes that j is the sender node and i is the receiver node (flow
+        direction set as 'source_to_target'). For each edge (i, j), the
+        update function input features result from concatenation of the edge
+        features and the corresponding nodes features.
+        
+        Parameters
+        ----------
+        node_features_in_i : torch.tensor
+            Source node input features for each edge stored as a
+            torch.tensor(2d) of shape (n_edges, n_features). Mapping is
+            performed based on the edges indexes matrix.
+        node_features_in_j : torch.tensor
+            Receiver node input features for each edge stored as a
+            torch.tensor(2d) of shape (n_edges, n_features). Mapping is
+            performed based on the edges indexes matrix.
+        edge_features_in : torch.tensor
+            Edges features input matrix stored as a torch.tensor(2d) of shape
+            (n_edges, n_features).
+            
+        Returns
+        -------
+        edge_features_out : torch.tensor
+            Edges features output matrix stored as a torch.tensor(2d) of shape
+            (n_edges, n_features).
+        """
+        # Concatenate features for each edge
+        edge_features_in_cat = torch.cat([node_features_in_i,
+                                          node_features_in_j,
+                                          edge_features_in], dim=-1)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Update edge features
+        edge_features_out = self.edge_fn(edge_features_in_cat)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        return edge_features_out
+    # -------------------------------------------------------------------------
+    def update(self, node_features_in_aggr, node_features_in,
+               edge_features_out):
+        """Update node features.
+        
+        Parameters
+        ----------
+        node_features_in_aggr : torch.tensor
+            Nodes features input matrix resulting from message passing and
+            aggregation, stored as a torch.tensor(2d) of shape
+            (n_nodes, n_features).
+        node_features_in : torch.tensor
+            Nodes features input matrix stored as a torch.tensor(2d) of shape
+            (n_nodes, n_features).
+              
+        Returns
+        -------
+        node_features_out : torch.tensor
+            Nodes features output matrix stored as a torch.tensor(2d) of shape
+            (n_nodes, n_features).
+        edge_features_out : torch.tensor
+            Edges features output matrix stored as a torch.tensor(2d) of shape
+            (n_edges, n_features).
+        """
+        # Concatenate features for each node
+        node_features_in_cat = torch.cat([node_features_in_aggr,
+                                          node_features_in], dim=-1)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Update node features
+        node_features_out = self.node_fn(node_features_in_cat)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        return node_features_out, edge_features_out
