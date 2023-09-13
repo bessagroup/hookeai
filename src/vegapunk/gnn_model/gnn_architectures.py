@@ -178,20 +178,20 @@ class GraphIndependentNetwork(torch.nn.Module):
         
         Parameters
         ----------
-        node_features_in : torch.tensor
-            Nodes features input matrix stored as a torch.tensor(2d) of shape
+        node_features_in : torch.Tensor
+            Nodes features input matrix stored as a torch.Tensor(2d) of shape
             (n_nodes, n_features).
-        edge_features_in : torch.tensor
-            Edges features input matrix stored as a torch.tensor(2d) of shape
+        edge_features_in : torch.Tensor
+            Edges features input matrix stored as a torch.Tensor(2d) of shape
             (n_edges, n_features).
             
         Returns
         -------
-        node_features_out : torch.tensor
-            Nodes features output matrix stored as a torch.tensor(2d) of shape
+        node_features_out : torch.Tensor
+            Nodes features output matrix stored as a torch.Tensor(2d) of shape
             (n_nodes, n_features).
-        edge_features_out : torch.tensor
-            Edges features output matrix stored as a torch.tensor(2d) of shape
+        edge_features_out : torch.Tensor
+            Edges features output matrix stored as a torch.Tensor(2d) of shape
             (n_edges, n_features).
         """
         return self._node_fn(node_features_in), \
@@ -293,24 +293,24 @@ class GraphInteractionNetwork(torch_geometric.nn.MessagePassing):
         
         Parameters
         ----------
-        node_features_in : torch.tensor
-            Nodes features input matrix stored as a torch.tensor(2d) of shape
+        node_features_in : torch.Tensor
+            Nodes features input matrix stored as a torch.Tensor(2d) of shape
             (n_nodes, n_features).
-        edge_features_in : torch.tensor
-            Edges features input matrix stored as a torch.tensor(2d) of shape
+        edge_features_in : torch.Tensor
+            Edges features input matrix stored as a torch.Tensor(2d) of shape
             (n_edges, n_features).
-        edges_indexes : torch.tensor
-            Edges indexes matrix stored as torch.tensor(2d) with shape
-            (n_edges, 2), where the i-th edge is stored in edges_indexes[i, :]
+        edges_indexes : torch.Tensor
+            Edges indexes matrix stored as torch.Tensor(2d) with shape
+            (2, n_edges), where the i-th edge is stored in edges_indexes[:, i]
             as (start_node_index, end_node_index).
         
         Returns
         -------
-        node_features_out : torch.tensor
-            Nodes features output matrix stored as a torch.tensor(2d) of shape
+        node_features_out : torch.Tensor
+            Nodes features output matrix stored as a torch.Tensor(2d) of shape
             (n_nodes, n_features).
-        edge_features_out : torch.tensor
-            Edges features output matrix stored as a torch.tensor(2d) of shape
+        edge_features_out : torch.Tensor
+            Edges features output matrix stored as a torch.Tensor(2d) of shape
             (n_edges, n_features).
         """
         # Save features input matrix (residual connection)
@@ -340,22 +340,22 @@ class GraphInteractionNetwork(torch_geometric.nn.MessagePassing):
         
         Parameters
         ----------
-        node_features_in_i : torch.tensor
+        node_features_in_i : torch.Tensor
             Source node input features for each edge stored as a
-            torch.tensor(2d) of shape (n_edges, n_features). Mapping is
+            torch.Tensor(2d) of shape (n_edges, n_features). Mapping is
             performed based on the edges indexes matrix.
-        node_features_in_j : torch.tensor
+        node_features_in_j : torch.Tensor
             Receiver node input features for each edge stored as a
-            torch.tensor(2d) of shape (n_edges, n_features). Mapping is
+            torch.Tensor(2d) of shape (n_edges, n_features). Mapping is
             performed based on the edges indexes matrix.
-        edge_features_in : torch.tensor
-            Edges features input matrix stored as a torch.tensor(2d) of shape
+        edge_features_in : torch.Tensor
+            Edges features input matrix stored as a torch.Tensor(2d) of shape
             (n_edges, n_features).
             
         Returns
         -------
-        edge_features_out : torch.tensor
-            Edges features output matrix stored as a torch.tensor(2d) of shape
+        edge_features_out : torch.Tensor
+            Edges features output matrix stored as a torch.Tensor(2d) of shape
             (n_edges, n_features).
         """
         # Concatenate features for each edge
@@ -374,21 +374,21 @@ class GraphInteractionNetwork(torch_geometric.nn.MessagePassing):
         
         Parameters
         ----------
-        node_features_in_aggr : torch.tensor
+        node_features_in_aggr : torch.Tensor
             Nodes features input matrix resulting from message passing and
-            aggregation, stored as a torch.tensor(2d) of shape
+            aggregation, stored as a torch.Tensor(2d) of shape
             (n_nodes, n_features).
-        node_features_in : torch.tensor
-            Nodes features input matrix stored as a torch.tensor(2d) of shape
+        node_features_in : torch.Tensor
+            Nodes features input matrix stored as a torch.Tensor(2d) of shape
             (n_nodes, n_features).
               
         Returns
         -------
-        node_features_out : torch.tensor
-            Nodes features output matrix stored as a torch.tensor(2d) of shape
+        node_features_out : torch.Tensor
+            Nodes features output matrix stored as a torch.Tensor(2d) of shape
             (n_nodes, n_features).
-        edge_features_out : torch.tensor
-            Edges features output matrix stored as a torch.tensor(2d) of shape
+        edge_features_out : torch.Tensor
+            Edges features output matrix stored as a torch.Tensor(2d) of shape
             (n_edges, n_features).
         """
         # Concatenate features for each node
