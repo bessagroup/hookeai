@@ -1,4 +1,4 @@
-"""Graph Neural Network based material patch simulator.
+"""Graph Neural Network based material patch model.
 
 Classes
 -------
@@ -10,6 +10,7 @@ GNNMaterialPatchModel(torch.nn.Module)
 # =============================================================================
 # Standard
 import os
+import re
 # Third-party
 import torch
 import torch_geometric.nn
@@ -43,7 +44,7 @@ class GNNMaterialPatchModel(torch.nn.Module):
     _gnn_epd_model : EncodeProcessDecode
         GNN-based Encoder-Process-Decoder model.
     _device : {'cpu', 'cuda'}, default='cpu'
-        Type of device on with torch.Tensor is allocated.
+        Type of device on which torch.Tensor is allocated.
 
     Methods
     -------
@@ -84,7 +85,7 @@ class GNNMaterialPatchModel(torch.nn.Module):
         model_name : str, default='material_patch_model'
             Name of material patch model.
         device : {'cpu', 'cuda'}, default='cpu'
-            Type of device on with torch.Tensor is allocated.
+            Type of device on which torch.Tensor is allocated.
         """
         # Initialize from base class
         super(GNNMaterialPatchModel, self).__init__()
@@ -99,7 +100,11 @@ class GNNMaterialPatchModel(torch.nn.Module):
         else:
             raise RuntimeError('The material patch model directory has not '
                                'been found.')
-        self.model_name = model_name
+        if not isinstance(model_name, str):
+            raise RuntimeError('The material patch model name must be a '
+                               'string.')
+        else:
+            self.model_name = model_name
         # Set device
         if device in ('cpu', 'cuda'):
             self._device = device
@@ -197,29 +202,116 @@ class GNNMaterialPatchModel(torch.nn.Module):
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         return node_internal_forces
     # -------------------------------------------------------------------------
-    def save_model_state(self):
-        """Save material patch model state to file."""
-        # Check material patch model directory
-        if not os.path.isdir(self.model_directory):
-            raise RuntimeError('The simulator model directory has not been '
-                               'found.')
-        # Set material patch model file path
-        model_path = os.path.join(self.model_directory,
-                                  self.model_name + '.pt')
-        # Save material patch model state
-        torch.save(self.state_dict(), model_path)
-    # -------------------------------------------------------------------------
-    def load_model_state(self):
-        """Load material patch model state from file."""
+    def save_model_state(self, training_step=None):
+        """Save material patch model state to file.
+        
+        Material patch model state file is stored in model_directory with
+        basename model_name and extension '.pt' by default.
+        
+        Parameters
+        ----------
+        training_step : int, default=None
+            Training step corresponding to current material patch model state.
+            If provided, then state file basename is appended by
+            '-training_step'.
+        """
         # Check material patch model directory
         if not os.path.isdir(self.model_directory):
             raise RuntimeError('The material patch model directory has not '
-                               'been found.')
-        # Set material patch model file path
+                               'been found:\n\n' + self.model_directory)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set model state filename
+        model_state_file = self.model_name
+        # Append training step
+        if isinstance(training_step, int):
+            model_state_file += '-' + str(training_step)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set material patch model state file path
         model_path = os.path.join(self.model_directory,
-                                  self.model_name + '.pt')
+                                  model_state_file + '.pt')
         # Save material patch model state
+        torch.save(self.state_dict(), model_path)
+    # -------------------------------------------------------------------------
+    def load_model_state(self, is_latest=False, training_step=None):
+        """Load material patch model state from file.
+        
+        Material patch model state file is loaded from model_directory with
+        basename model_name and extension '.pt' by default.
+        
+        Parameters
+        ----------
+        is_latest_state : bool, default=False
+            If True, load the material patch model state file corresponding to
+            the highest training step available. Overriden if training_step is
+            provided.
+        training_step : int, default=None
+            Training step corresponding to loaded material patch model state.
+            If provided, then state file basename is appended by
+            '-training_step'.
+            
+        Returns
+        -------
+        training_step : int
+            Loaded material patch model state training step. Defaults to None
+            if training step is unknown (e.g., is_latest_state=False and
+            training_step=None).
+        """
+        # Check material patch model directory
+        if not os.path.isdir(self.model_directory):
+            raise RuntimeError('The material patch model directory has not '
+                               'been found:\n\n' + self.model_directory)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set model state filename
+        if isinstance(training_step, int):
+            # Set model state filename with training step
+            model_state_file = self.model_name + '-' + str(int(training_step))
+        elif is_latest:
+            # Get state files in material patch model directory
+            directory_list = os.listdir(self.model_directory)
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Initialize model state files training steps
+            training_steps = []
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Loop over files in material patch model directory
+            for filename in directory_list:
+                # Check if model state file corresponds to given training step
+                is_state_file = \
+                    bool(re.search(r'^' + self.model_name + r'-[0-9]+'
+                                   + r'\.pt', filename))
+                if is_state_file:
+                    # Get model state training step
+                    training_step = \
+                        int(os.path.splitext(filename)[0].split('-')[-1])
+                    # Store model state file training step
+                    training_steps.append(training_step)
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Set highest training step model state file
+            if training_steps:
+                # Set highest training step
+                training_step = max(training_steps)
+                # Set highest training step model state file
+                model_state_file = self.model_name + '-' + str(training_step)
+            else:
+                raise RuntimeError('Material patch model state files '
+                                   'corresponding to training steps have not '
+                                   'been found in directory:\n\n'
+                                   + self.model_directory)
+        else:
+            # Set model state filename
+            model_state_file = self.model_name
+            # Set training step as unknown
+            training_step = None
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set material patch model state file path
+        model_path = os.path.join(self.model_directory,
+                                  model_state_file + '.pt')
+        # Check material patch model state file
+        if not os.path.isfile(model_path):
+            raise RuntimeError('Material patch model state file has not been '
+                               'found:\n\n' + model_path)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Load material patch model state
         self.load_state_dict(torch.load(model_path,
                                         map_location=torch.device('cpu')))
-        
-        
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        return training_step
