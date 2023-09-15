@@ -198,7 +198,7 @@ def get_gnn_material_patch_data_loader(dataset_sample_files, batch_size=1,
               '\n------------------------------------------\n')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Initialize GNN-based material patch graph sample data set
-    data_set = []
+    dataset = []
     # Read GNN-based material patch graph sample data set
     for sample_file_path in tqdm.tqdm(dataset_sample_files,
                                       desc='> Loading samples: ',
@@ -208,13 +208,13 @@ def get_gnn_material_patch_data_loader(dataset_sample_files, batch_size=1,
             raise RuntimeError('GNN-based material patch graph sample file '
                                'has not been found:\n\n', sample_file_path)
         # Load sample
-        data_set.append(torch.load(sample_file_path))
+        dataset.append(torch.load(sample_file_path))
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     if is_verbose:
         print('\n> Building data loader...\n')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # GNN-based material patch data set PyG data loader
     data_loader = torch_geometric.loader.DataLoader(
-        data_set, batch_size=batch_size, shuffle=is_shuffle, **kwargs)
+        dataset, batch_size=batch_size, shuffle=is_shuffle, **kwargs)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     return data_loader
