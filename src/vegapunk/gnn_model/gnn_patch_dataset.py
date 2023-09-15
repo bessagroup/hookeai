@@ -118,12 +118,9 @@ def generate_gnn_material_patch_dataset(dataset_directory,
             edges_indexes=gnn_patch_data.get_graph_edges_indexes(),
             nodes_disps_hist=nodes_disps_hist,
             nodes_int_forces_hist=nodes_int_forces_hist)
-        # Get available nodes features
-        node_features = \
-            GNNPatchFeaturesGenerator.get_available_nodes_features()
         # Compute node features matrix
         node_features_matrix = features_generator.build_nodes_features_matrix(
-            features=node_features, n_time_steps=1)
+            features=('coord_hist', 'disp_hist'), n_time_steps=1)
         # Get available edges features
         edge_features = \
             GNNPatchFeaturesGenerator.get_available_edges_features()
@@ -134,6 +131,13 @@ def generate_gnn_material_patch_dataset(dataset_directory,
         # Set GNN-based material patch graph node and edges features
         gnn_patch_data.set_node_features_matrix(node_features_matrix)
         gnn_patch_data.set_edge_features_matrix(edge_features_matrix)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Compute node targets matrix
+        node_targets_matrix = features_generator.build_nodes_features_matrix(
+            features=('int_force',), n_time_steps=1)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set GNN-based material patch graph node targets
+        gnn_patch_data.set_node_features_matrix(node_targets_matrix)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Get PyG homogeneous graph data object
         pyg_graph = gnn_patch_data.get_torch_data_object()
