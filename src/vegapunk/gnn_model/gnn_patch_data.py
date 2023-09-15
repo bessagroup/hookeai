@@ -721,7 +721,24 @@ class GNNPatchFeaturesGenerator:
             raise RuntimeError('Invalid number of history time steps.')
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         for feature in features:
-            if feature == 'disp_hist':
+            if feature == 'coord_hist':
+                # Check required data
+                if n_time_steps > self._nodes_coords_hist.shape[1]:
+                    raise RuntimeError('Number of time steps exceeds length '
+                                       'of feature history data: '
+                                       + str(feature))
+                # Initialize node feature matrix
+                feature_matrix = np.zeros((n_nodes, n_time_steps*n_dim))
+                # Loop over nodes
+                for i in range(n_nodes):
+                    # Loop over last time steps
+                    for j in range(n_time_steps):
+                        # Assemble node feature
+                        feature_matrix[i, j*n_dim:(j + 1)*n_dim] = \
+                            self._nodes_coords_hist[i, :n_dim,
+                                                    -n_time_steps + j]
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            elif feature == 'disp_hist':
                 # Check required data
                 if self._nodes_disps_hist is None:
                     raise RuntimeError('Nodes displacements must be set in '
@@ -771,13 +788,16 @@ class GNNPatchFeaturesGenerator:
         available_features : tuple[str]
             Available nodes features.
             
-            'disp_hist' : numpy.ndarray(1d) of shape (n_time_steps*n_dim,) \
-                          with the node displacements history.
+            'coord_hist' : numpy.ndarray(1d) of shape (n_time_steps*n_dim,) \
+                           with the node coordinates history.
+                          
+            'disp_hist'  : numpy.ndarray(1d) of shape (n_time_steps*n_dim,) \
+                           with the node displacements history.
             
-            'int_force' : numpy.ndarray(1d) of shape (n_dim,) with the node \
-                          internal forces.
+            'int_force'  : numpy.ndarray(1d) of shape (n_dim,) with the node \
+                           internal forces.
         """
-        available_features = ('disp_hist', 'int_force')
+        available_features = ('coord_hist', 'disp_hist', 'int_force')
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         return available_features
     # -------------------------------------------------------------------------
