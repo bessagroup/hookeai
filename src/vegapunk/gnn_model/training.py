@@ -1,11 +1,22 @@
 """Training of Graph Neural Network based material patch model.
 
+Classes
+-------
+DistributedTrainingTools
+    PyTorch Distributed Data-Parallel Training (DDP) tools.
+
 Functions
 ---------
 train_model
     Distributed data-parallel training of GNN-based material patch model.
 train
     Train GNN-based material patch model.
+get_pytorch_loss
+    Get PyTorch loss function.
+get_pytorch_optimizer
+    Get PyTorch optimizer.
+get_learning_rate_scheduler
+    Get PyTorch optimizer learning rate scheduler.
 """
 #
 #                                                                       Modules
@@ -17,7 +28,6 @@ import os
 import torch
 # Local
 from gnn_model.gnn_material_simulator import GNNMaterialPatchModel
-from gnn_model.gnn_patch_dataset import get_gnn_material_patch_data_loader
 from ioput.iostandard import make_directory
 #
 #                                                          Authorship & Credits
@@ -53,7 +63,9 @@ def train_model(model_directory, train_args, device='cpu', world_size=None):
                                              device=device,
                                              world_size=world_size)
 # =============================================================================
-def train(rank, n_train_steps, dataset, model_init_args, opt_algorithm='Adam',
+def train(rank, n_train_steps, dataset, model_init_args, learning_rate_init,
+          opt_algorithm='adam', lr_scheduler_type=None, lr_scheduler_kwargs={},
+          loss_type='mse', loss_kwargs={},
           batch_size=1, is_sampler_shuffle=False, load_model_state=None,
           save_every=None, world_size=1, device='cpu', is_verbose=False):
     """Train GNN-based material patch model.
@@ -70,8 +82,22 @@ def train(rank, n_train_steps, dataset, model_init_args, opt_algorithm='Adam',
     model_init_args : dict
         GNN-based material patch model initialization parameters (check
         class GNNMaterialPatchModel).
-    opt_algorithm : {'Adam',}, default='Adam'
+    learning_rate_init : float
+        Initial value optimizer learning rate. Constant learning rate value if
+        no learning rate scheduler is specified (lr_scheduler_type=None).
+    opt_algorithm : {'adam',}, default='adam'
         Optimization algorithm.
+    lr_scheduler_type : {'steplr',}
+        Type of learning rate scheduler:
+        
+        'steplr'  : Step-based decay (torch.optim.lr_scheduler.SetpLR)
+
+    lr_scheduler_kwargs : dict
+        Arguments of torch.optim.lr_scheduler.LRScheduler initializer.
+    loss_type : {'mse',}
+        Loss function type.
+    loss_kwargs : dict
+        Arguments of torch.nn._Loss initializer.   
     batch_size : int, default=1
         Number of samples loaded per batch.
     is_shuffle : bool, default=False
@@ -136,10 +162,11 @@ def train(rank, n_train_steps, dataset, model_init_args, opt_algorithm='Adam',
     data_loader = DistributedTrainingTools.get_distributed_data_loader(
         dataset, batch_size=batch_size, is_sampler_shuffle=is_sampler_shuffle)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Set optimizer
-    if opt_algorithm == 'Adam':
-        # Set learning rate
-        learning_rate = None
+    # Initialize learning rate
+    learning_rate = learning_rate_init
+    learning_rate = dist_training.update_learning_rate(learning_rate)
+    # Set optimizer    
+    if opt_algorithm == 'adam':
         # Initialize optimizer, specifying the model (and submodels) parameters
         # that should be optimized. By default, model parameters gradient flag
         # is set to True, meaning that gradients with respect to the parameters
@@ -149,6 +176,17 @@ def train(rank, n_train_steps, dataset, model_init_args, opt_algorithm='Adam',
                                      lr=learning_rate)
     else:
         raise RuntimeError('Unknown optimization algorithm')
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Initialize learning rate scheduler
+    is_lr_scheduler = False
+    if lr_scheduler_type is not None:
+        is_lr_scheduler = True
+        lr_scheduler = get_learning_rate_scheduler(
+            optimizer=optimizer, scheduler_type=lr_scheduler_type,
+            **lr_scheduler_kwargs)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Initialize loss function
+    loss_function = get_pytorch_loss(loss_type, **loss_kwargs)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Initialize training flag
     is_keep_training = True
@@ -168,41 +206,65 @@ def train(rank, n_train_steps, dataset, model_init_args, opt_algorithm='Adam',
         # Synchronize all processes before starting next training step
         torch.distributed.barrier()
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        # Loop over batch graph samples
-        for pyg_graph in data_loader:
-            # Move graph sample to process ID
-            pyg_graph.to(rank)
-            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            # Compute node internal forces predictions
-            node_internal_forces = \
-                model_ddp.module.predict_internal_forces(pyg_graph)
-            # Get nodel internal forces ground-truth
-            node_internal_forces_target = pyg_graph.y
-            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            # Compute loss
-            mse_loss = torch.nn.MSELoss()
-            loss = mse_loss(node_internal_forces, node_internal_forces_target)
+        # Loop over batches
+        for py_graph_batch in data_loader:
+            # Initialize batch loss
+            loss = torch.tensor(0)
+            # Loop over graph samples
+            for pyg_graph in py_graph_batch:
+                # Move graph sample to process ID
+                pyg_graph.to(rank)
+                # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                # Compute node internal forces predictions (forward
+                # propagation). During the foward pass, PyTorch creates a
+                # computation graph for the tensors that require gradients
+                # (gradient flag set to True) to keep track of the operations
+                # on these tensors, i.e., the model parameters. In addition,
+                # PyTorch additionally stores the corresponding 'gradient
+                # functions' (mathematical operator) of the executed operations
+                # to the output tensor, stored in the .grad_fn attribute of the
+                # corresponding tensors. Tensor.grad_fn is set to None for
+                # tensors corresponding to leaf-nodes of the computation graph
+                # or for tensors with the gradient flag set to False.
+                node_internal_forces = \
+                    model_ddp.module.predict_internal_forces(pyg_graph)
+                # Get nodel internal forces ground-truth
+                node_internal_forces_target = pyg_graph.y
+                # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                # Compute and accumulate loss
+                loss += loss_function(node_internal_forces,
+                                      node_internal_forces_target)
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Initialize gradients (set to zero)
             optimizer.zero_grad()
             # Compute gradients with respect to model parameters (backward
-            # propagation). Gradients are cumulatively stored as attributes of
-            # the parameters (.grad)
+            # propagation). PyTorch backpropagates recursively through the
+            # computation graph of loss and computes the gradients with respect
+            # to the model parameters. On each Tensor, PyTorch computes the
+            # local gradients using the previously stored .grad_fn mathematical
+            # operators and combines them with the incoming gradients to
+            # compute the complete gradient (i.e., building the
+            # differentiation chain rule). The backward propagation recursive
+            # path stops when a leaf-node is reached (e.g., a model parameter),
+            # where .grad_fn is set to None. Gradients are cumulatively stored
+            # in the .grad attribute of the corresponding tensors
             loss.backward()
-            # Perform optimization step
+            # Perform optimization step. Gradients are stored in the .grad
+            # attribute of model parameters
             optimizer.step()
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            # Compute updated optimizer learning rate
-            learning_rate = None
             # Update optimizer learning rate
-            optimizer.lr = learning_rate
+            if is_lr_scheduler:
+                lr_scheduler.step()
+            # Update optimizer learning rate
+            optimizer.lr = dist_training.update_learning_rate(learning_rate)
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             if is_verbose and rank == 0:
                 print('> Training step: {:d}/{:d} | Loss: {:.8e}'.format(
                     step, n_train_steps, loss))
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Save model and optimizer current states
-            if rank == 0:
+            if rank == 0 and step % save_every == 0:
                 DistributedTrainingTools.save_training_state(
                     model_ddp=model_ddp, optimizer=optimizer,
                     training_step=step)
@@ -224,7 +286,82 @@ def train(rank, n_train_steps, dataset, model_init_args, opt_algorithm='Adam',
     # Clean-up the default distributed process group
     DistributedTrainingTools.terminate()
 # =============================================================================
-class DistributedTrainingTools():
+def get_pytorch_loss(loss_type, **kwargs):
+    """Get PyTorch loss function.
+   
+    Parameters
+    ----------
+    loss_type : {'mse',}
+        Loss function type.
+    **kwargs
+        Arguments of torch.nn._Loss initializer.
+        
+    Returns
+    -------
+    loss_function : torch.nn._Loss
+        PyTorch loss function.
+    """
+    if loss_type == 'mse':
+        loss_function = torch.nn.MSELoss(**kwargs)
+    else:
+        raise RuntimeError('Unknown or unavailable PyTorch loss function.')
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    return loss_function
+# =============================================================================
+def get_pytorch_optimizer(algorithm, params, **kwargs):
+    """Get PyTorch optimizer.
+   
+    Parameters
+    ----------
+    algorithm : {'adam',}
+        Optimization algorithm.
+    params : list
+        List of parameters (torch.Tensors) to optimize or list of dicts
+        defining parameter groups.
+    **kwargs
+        Arguments of torch.optim.Optimizer initializer.
+        
+    Returns
+    -------
+    optimizer : torch.optim.Optimizer
+        PyTorch optimizer.
+    """
+    if algorithm == 'adam':
+        optimizer = torch.optim.Adam(params, **kwargs)
+    else:
+        raise RuntimeError('Unknown or unavailable PyTorch optimizer.')
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    return optimizer
+# =============================================================================
+def get_learning_rate_scheduler(optimizer, scheduler_type='steplr', **kwargs):
+    """Get PyTorch optimizer learning rate scheduler.
+    
+    Parameters
+    ----------
+    scheduler_type : {'steplr',}
+        Type of learning rate scheduler:
+        
+        'steplr'  : Step-based decay (torch.optim.lr_scheduler.SetpLR)
+        
+    optimizer : torch.optim.Optimizer
+        PyTorch optimizer.
+    **kwargs
+        Arguments of torch.optim.lr_scheduler.LRScheduler initializer.
+    
+    Returns
+    -------
+    scheduler : torch.optim.lr_scheduler.LRScheduler
+        PyTorch optimizer learning rate scheduler.
+    """
+    if scheduler_type == 'steplr':
+        scheduler = torch.optim.lr_scheduler.SetpLR(optimizer, **kwargs)
+    else:
+        raise RuntimeError('Unknown or unavailable PyTorch optimizer '
+                           'learning rate scheduler.')
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    return scheduler
+# =============================================================================
+class DistributedTrainingTools:
     """PyTorch Distributed Data-Parallel Training (DDP) tools.
     
     Attributes
@@ -242,6 +379,8 @@ class DistributedTrainingTools():
         Initialize training distribution process.
     initialize(self, rank)
         Initialize training distribution process.
+    update_learning_rate(self, learning_rate)
+        Update optimizer learning rate.
     spawn_processes(train_function, train_args, device='cpu', world_size=None)
         Spawns processes for distributed data-parallel training.
     terminate()
@@ -297,6 +436,21 @@ class DistributedTrainingTools():
         torch.distributed.init_process_group(backend=self._backend, rank=rank,
                                              world_size=self._world_size)
     # -------------------------------------------------------------------------
+    def update_learning_rate(self, learning_rate):
+        """Update optimizer learning rate.
+        
+        Parameters
+        ----------
+        learning_rate : float
+            PyTorch optimizer learning rate.
+        
+        Returns
+        -------
+        learning_rate : float
+            Updated PyTorch optimizer learning rate.
+        """
+        return learning_rate*self._world_size
+    # -------------------------------------------------------------------------
     @staticmethod
     def spawn_processes(train_function, train_args, device='cpu',
                         world_size=None):
@@ -315,6 +469,12 @@ class DistributedTrainingTools():
             Number of processes participating in the distributed training.
             If None, then all processes available for device are allocated.
         """
+        # Set environment variables (NOT SURE HOW TO SET THESE):
+        # Set IP address of the machine that will host the process with rank 0
+        os.environ['MASTER_ADDR'] = 'localhost'
+        # Set free port of the machine that will host the process with rank 0
+        os.environ['MASTER_PORT'] = '12355'
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Get number of available processes for distributed training
         if world_size is None:
             if device == 'cpu':
