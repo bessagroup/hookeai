@@ -44,8 +44,10 @@ class GNNMaterialPatchModel(torch.nn.Module):
         Number of edge input features.
     _gnn_epd_model : EncodeProcessDecode
         GNN-based Encoder-Process-Decoder model.
-    _device : {'cpu', 'cuda'}, default='cpu'
+    _device_type : {'cpu', 'cuda'}, default='cpu'
         Type of device on which torch.Tensor is allocated.
+    _device : torch.device
+        Device on which torch.Tensor is allocated.
 
     Methods
     -------
@@ -62,7 +64,7 @@ class GNNMaterialPatchModel(torch.nn.Module):
     """
     def __init__(self, n_node_in, n_node_out, n_edge_in, n_message_steps,
                  n_hidden_layers, hidden_layer_size, model_directory,
-                 model_name='material_patch_model', device='cpu'):
+                 model_name='material_patch_model', device_type='cpu'):
         """Constructor.
         
         Parameters
@@ -85,7 +87,7 @@ class GNNMaterialPatchModel(torch.nn.Module):
             Directory where material patch model is stored.
         model_name : str, default='material_patch_model'
             Name of material patch model.
-        device : {'cpu', 'cuda'}, default='cpu'
+        device_type : {'cpu', 'cuda'}, default='cpu'
             Type of device on which torch.Tensor is allocated.
         """
         # Initialize from base class
@@ -111,8 +113,9 @@ class GNNMaterialPatchModel(torch.nn.Module):
         else:
             self.model_name = model_name
         # Set device
-        if device in ('cpu', 'cuda'):
-            self._device = device
+        self._device_type = device_type
+        if device_type in ('cpu', 'cuda'):
+            self._device = torch.device(device_type)
         else:
             RuntimeError('Invalid device type.')
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -148,7 +151,7 @@ class GNNMaterialPatchModel(torch.nn.Module):
         model_init_args['n_hidden_layers'] = self._n_hidden_layers
         model_init_args['hidden_layer_size'] = self._hidden_layer_size
         model_init_args['model_name'] = self.model_name
-        model_init_args['device'] = self._device
+        model_init_args['device_type'] = self._device_type
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Set initialization parameters file path
         model_init_file_path = os.path.join(

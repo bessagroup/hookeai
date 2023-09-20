@@ -30,7 +30,7 @@ __status__ = 'Planning'
 # =============================================================================
 #
 # =============================================================================
-def predict(predict_dir, dataset, model_directory, device='cpu',
+def predict(predict_dir, dataset, model_directory, device_type='cpu',
             is_verbose=False):
     """Make predictions with GNN-based material patch model for given dataset.
     
@@ -43,11 +43,14 @@ def predict(predict_dir, dataset, model_directory, device='cpu',
         torch_geometric.data.Data object describing a homogeneous graph.
     model_directory : str
         Directory where GNN-based material patch model is stored.
-    device : {'cpu', 'cuda'}, default='cpu'
+    device_type : {'cpu', 'cuda'}, default='cpu'
         Type of device on which torch.Tensor is allocated.
     is_verbose : bool, default=False
         If True, enable verbose output.
     """
+    # Set device
+    device = torch.device(device_type)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     if is_verbose:
         print('\nGNN-based material patch data model prediction'
               '\n----------------------------------------------\n')

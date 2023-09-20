@@ -32,7 +32,8 @@ __status__ = 'Planning'
 # =============================================================================
 #
 # =============================================================================
-def train_model(model_directory, train_args, device='cpu', world_size=None):
+def train_model(model_directory, train_args, device_type='cpu',
+                world_size=None):
     """Distributed Data-Parallel Training of GNN-based material patch model.
     
     Parameters
@@ -41,7 +42,7 @@ def train_model(model_directory, train_args, device='cpu', world_size=None):
         Directory where material patch model is stored.
     train_args : dict
         Arguments passed to model training function at the exception of rank.
-    device : {'cpu', 'cuda'}, default='cpu'
+    device_type : {'cpu', 'cuda'}, default='cpu'
         Type of device on which torch.Tensor is allocated.
     world_size : int, default=None
         Number of processes participating in the distributed training.
@@ -54,14 +55,14 @@ def train_model(model_directory, train_args, device='cpu', world_size=None):
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Spawn processes for distributed data-parallel training
     DistributedTrainingTools.spawn_processes(
-        train_function=_train, train_args=train_args, device=device,
+        train_function=_train, train_args=train_args, device_type=device_type,
         world_size=world_size)
 # =============================================================================
 def _train(rank, n_train_steps, dataset, model_init_args, learning_rate_init,
            opt_algorithm='adam', lr_scheduler_type=None,
            lr_scheduler_kwargs={}, loss_type='mse', loss_kwargs={},
            batch_size=1, is_sampler_shuffle=False, load_model_state=None,
-           save_every=None, device='cpu', world_size=1, is_verbose=False):
+           save_every=None, device_type='cpu', world_size=1, is_verbose=False):
     """Train GNN-based material patch model.
     
     Parameters
@@ -110,13 +111,16 @@ def _train(rank, n_train_steps, dataset, model_init_args, learning_rate_init,
     save_every : int, default=None
         Save GNN-based material patch model every save_every training steps.
         If None, then saves only last training step.
-    device : {'cpu', 'cuda'}, default='cpu'
+    device_type : {'cpu', 'cuda'}, default='cpu'
         Type of device on which torch.Tensor is allocated.
     world_size : int, default=1
         Number of processes participating in the distributed training.
     is_verbose : bool, default=False
         If True, enable verbose output.
     """
+    # Set device
+    device = torch.device(device_type)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     if is_verbose:
         if rank == 0:
             print('\nGNN-based material patch data model training'
@@ -298,8 +302,10 @@ class DistributedTrainingTools:
     ----------
     _world_size : int
         Number of processes participating in the distributed training.
-    _device : {'cpu', 'cuda'}, default='cpu'
+    _device_type : {'cpu', 'cuda'}, default='cpu'
         Type of device on which torch.Tensor is allocated.
+    _device : torch.device
+        Device on which torch.Tensor is allocated.
     _backend : {'gloo', 'nccl'}
         Built-in backend for distributed training.
         
@@ -324,24 +330,25 @@ class DistributedTrainingTools:
     optimizer_to(self, optimizer, rank)
         Move optimizer to process ID.
     """
-    def __init__(self, world_size=1, device='cpu'):
+    def __init__(self, world_size=1, device_type='cpu'):
         """Constructor.
         
         Parameters
         ----------
         world_size : int, default=1
             Number of processes participating in the distributed training.
-        device : {'cpu', 'cuda'}, default='cpu'
+        device_type : {'cpu', 'cuda'}, default='cpu'
             Type of device on which torch.Tensor is allocated.
         """
         self._world_size = int(world_size)
-        if device in ('cpu', 'gpu'):
-            self._device = device
+        self._device_type = device_type
+        if device_type in ('cpu', 'cuda'):
+            self._device = torch.device(device_type)
         else:
             raise RuntimeError('Invalid device for torch.Tensor allocation.')
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Set built-in backend according with type of PyTorch tensor
-        if self._device == 'gpu':
+        if self._device_type == 'cuda':
             # Set NCCL backend for distributed GPU training
             self._backend = 'nccl'
         else:
@@ -382,7 +389,7 @@ class DistributedTrainingTools:
         return learning_rate*self._world_size
     # -------------------------------------------------------------------------
     @staticmethod
-    def spawn_processes(train_function, train_args, device='cpu',
+    def spawn_processes(train_function, train_args, device_type='cpu',
                         world_size=None):
         """Spawn processes for distributed data-parallel training.
         
@@ -393,7 +400,7 @@ class DistributedTrainingTools:
             rank is the process ID and args is a tuple of arguments.
         train_args : dict
             Arguments passed to model training function.
-        device : {'cpu', 'cuda'}, default='cpu'
+        device_type : {'cpu', 'cuda'}, default='cpu'
             Type of device on which torch.Tensor is allocated.
         world_size : int, default=None
             Number of processes participating in the distributed training.
@@ -407,9 +414,9 @@ class DistributedTrainingTools:
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Get number of available processes for distributed training
         if world_size is None:
-            if device == 'cpu':
+            if device_type == 'cpu':
                 n_process = os.cpu_count()
-            elif device == 'gpu':
+            elif device_type == 'cuda':
                 n_process = torch.cuda.device_count()
             else:
                 RuntimeError('Invalid device type.')
