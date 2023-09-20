@@ -30,7 +30,7 @@ __status__ = 'Planning'
 # =============================================================================
 #
 # =============================================================================
-def predict(predict_dir, dataset, model_init_args, device='cpu',
+def predict(predict_dir, dataset, model_directory, device='cpu',
             is_verbose=False):
     """Make predictions with GNN-based material patch model for given dataset.
     
@@ -41,9 +41,8 @@ def predict(predict_dir, dataset, model_init_args, device='cpu',
     dataset : torch_geometric.data.Dataset
         GNN-based material patch data set. Each sample corresponds to a
         torch_geometric.data.Data object describing a homogeneous graph.
-    model_init_args : dict
-        GNN-based material patch model initialization parameters (check
-        class GNNMaterialPatchModel).
+    model_directory : str
+        Directory where GNN-based material patch model is stored.
     device : {'cpu', 'cuda'}, default='cpu'
         Type of device on which torch.Tensor is allocated.
     is_verbose : bool, default=False
@@ -53,6 +52,10 @@ def predict(predict_dir, dataset, model_init_args, device='cpu',
         print('\nGNN-based material patch data model prediction'
               '\n----------------------------------------------\n')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Check model directory
+    if not os.path.exists(model_directory):
+        raise RuntimeError('The material patch model directory has not '
+                           'been found:\n\n' + model_directory)
     # Check prediction directory
     if not os.path.exists(predict_dir):
         raise RuntimeError('The model prediction directory has not been '
@@ -61,22 +64,19 @@ def predict(predict_dir, dataset, model_init_args, device='cpu',
     if is_verbose:
         print('\n> Loading GNN-based material patch model...\n')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Initialize GNN-based material patch model
-    model = GNNMaterialPatchModel(
-        n_node_in=model_init_args['n_node_in'],
-        n_node_out=model_init_args['n_node_out'],
-        n_edge_in=model_init_args['n_edge_in'],
-        n_message_steps=model_init_args['n_message_steps'],
-        n_hidden_layers=model_init_args['n_hidden_layers'],
-        hidden_layer_size=model_init_args['hidden_layer_size'],
-        model_directory=model_init_args['model_directory'],
-        model_name=model_init_args['model_name'],
-        device=device)
+    # Load GNN-based material patch model class initialization parameters
+    model_init_file_path = os.path.join(model_directory,
+                                        'model_init_args' + '.pkl')
+    if not os.path.isfile(model_init_file_path):
+        raise RuntimeError('The material patch model class initialization '
+                           'parameters file has not been found:\n\n'
+                           + model_init_file_path)
+    else:
+        model_init_args = pickle.load(model_init_file_path)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Check model directory
-    if not os.path.exists(model.model_directory):
-        raise RuntimeError('The material patch model directory has not '
-                           'been found:\n\n' + model.model_directory)
+    # Initialize GNN-based material patch model
+    model = GNNMaterialPatchModel(**model_init_args)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Load GNN-based material patch model state (state file corresponding to
     # the highest training step available in model directory)
     _ = model.load_model_state(is_latest=True)
