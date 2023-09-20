@@ -10,12 +10,21 @@ get_pytorch_optimizer
     Get PyTorch optimizer.
 get_learning_rate_scheduler
     Get PyTorch optimizer learning rate scheduler.
+save_training_state
+    Save model and optimizer states at given training step.
+load_training_state
+    Load model and optimizer states from available training data.
+save_loss_history
+    Save training process loss history record.
+load_loss_history
+    Load training process loss history record.
 """
 #
 #                                                                       Modules
 # =============================================================================
 # Standard
 import os
+import pickle
 # Third-party
 import torch
 # Local
@@ -136,6 +145,8 @@ def train_model(n_train_steps, dataset, model_init_args, learning_rate_init,
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Initialize loss function
     loss_function = get_pytorch_loss(loss_type, **loss_kwargs)
+    # Initialize loss history
+    loss_history = []
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Initialize training flag
     is_keep_training = True
@@ -147,6 +158,9 @@ def train_model(n_train_steps, dataset, model_init_args, learning_rate_init,
         # Load GNN-based material patch model state
         loaded_step = load_training_state(model, opt_algorithm, optimizer,
                                           load_model_state)
+        # Load loss history
+        loss_history = load_loss_history(model, loss_type,
+                                         training_step=loaded_step)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Update training step counter
         step = int(loaded_step)
@@ -208,6 +222,9 @@ def train_model(n_train_steps, dataset, model_init_args, learning_rate_init,
                 print('> Training step: {:d}/{:d} | Loss: {:.8e}'.format(
                     step, n_train_steps, loss))
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Save training step loss
+            loss_history.append(loss)
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Save model and optimizer current states
             if step % save_every == 0:
                 save_training_state(model=model, optimizer=optimizer,
@@ -224,6 +241,8 @@ def train_model(n_train_steps, dataset, model_init_args, learning_rate_init,
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Save model and optimizer final states
     save_training_state(model=model, optimizer=optimizer, training_step=step)
+    # Save loss history
+    save_loss_history(model, n_train_steps, loss_type, loss_history)
 # =============================================================================
 def get_pytorch_loss(loss_type, **kwargs):
     """Get PyTorch loss function.
@@ -322,8 +341,8 @@ def save_training_state(model, optimizer, training_step):
     model.save_model_state(training_step=training_step)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set optimizer state file path
-    optimizer_path = os.path.join(model.module.model_directory,
-                                  model.module.model_name
+    optimizer_path = os.path.join(model.model_directory,
+                                  model.model_name
                                   + '_optim-' + str(training_step) + '.pt')
     # Save optimizer state
     optimizer_state = dict(state=optimizer.state_dict(),
@@ -364,8 +383,7 @@ def load_training_state(model, opt_algorithm, optimizer, load_model_state):
             training_step=int(load_model_state))
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set optimizer state file path
-    optimizer_path = os.path.join(model.module.model_directory,
-                                  model.module.model_name
+    optimizer_path = os.path.join(model.model_directory, model.model_name
                                   + '_optim-' + str(loaded_step) + '.pt')
     # Load optimizer state
     if not os.path.isfile(optimizer_path):
@@ -384,4 +402,84 @@ def load_training_state(model, opt_algorithm, optimizer, load_model_state):
         optimizer.load_state_dict(optimizer_state['state'])
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     return loaded_step
+# =============================================================================
+def save_loss_history(model, n_train_steps, loss_type, loss_history):
+    """Save training process loss history record.
+    
+    Overwrites existing loss history record file.
+    
+    Parameters
+    ----------
+    model : torch.nn.Module
+        Model.
+    n_train_steps : int
+        Number of training steps.
+    loss_type : {'mse',}, default='mse'
+        Loss function type:
         
+        'mse'  : MSE (torch.nn.MSELoss)
+
+    loss_history : list[float]
+        Training process loss history.
+    """
+    # Set loss history record file path
+    loss_record_path = os.path.join(model.model_directory,
+                                    'loss_history_record' + '.pkl')
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Build loss history record
+    loss_history_record = {}
+    loss_history_record['n_train_steps'] = n_train_steps
+    loss_history_record['loss_type'] = loss_type
+    loss_history_record['loss_history'] = loss_history
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Save loss history record
+    with open(loss_record_path, 'wb') as loss_record_file:
+        pickle.dump(loss_history_record, loss_record_file)
+# =============================================================================
+def load_loss_history(model, loss_type, training_step):
+    """Load training process loss history record.
+    
+    Overwrites existing loss history record file.
+    
+    Parameters
+    ----------
+    model : torch.nn.Module
+        Model.
+    loss_type : {'mse',}, default='mse'
+        Loss function type:
+        
+        'mse'  : MSE (torch.nn.MSELoss)
+        
+    training_step : int
+        Training step to which loss history is loaded (included).
+
+    Returns
+    -------
+    loss_history : list[float]
+        Training process loss history.
+    """
+    # Set loss history record file path
+    loss_record_path = os.path.join(model.model_directory,
+                                    'loss_history_record' + '.pkl')
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Load training process loss history
+    if os.path.isfile(loss_record_path):
+        # Load loss history record
+        loss_history_record = pickle.load(loss_history_record)
+        # Check consistency between loss history type and current training
+        # process loss type
+        history_loss_type = loss_history_record['loss_type']
+        if history_loss_type != loss_type:
+            raise RuntimeError('Loss history type (' + str(history_loss_type)
+                               + ') is not consistent with current training '
+                               'process loss type (' + str(loss_type) + ').')
+        # Load loss history up to training step
+        loss_history = \
+            list(loss_history_record['loss_history'][:training_step + 1])
+    else:
+        # Build loss history with None entries if loss history record file
+        # cannot be found
+        loss_history = (training_step + 1)*[None,]
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    return loss_history
+    
