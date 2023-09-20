@@ -85,7 +85,7 @@ def _train(rank, n_train_steps, dataset, model_init_args, learning_rate_init,
         GNN-based material patch data set. Each sample corresponds to a
         torch_geometric.data.Data object describing a homogeneous graph.
     model_init_args : dict
-        GNN-based material patch model initialization parameters (check
+        GNN-based material patch model class initialization parameters (check
         class GNNMaterialPatchModel).
     learning_rate_init : float
         Initial value optimizer learning rate. Constant learning rate value if
@@ -431,7 +431,7 @@ def save_training_state(model, optimizer, training_step):
     """
     # Save GNN-based material patch model
     model.save_model_state(training_step=training_step)
-    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set optimizer state file path
     optimizer_path = os.path.join(model.module.model_directory,
                                   model.module.model_name
