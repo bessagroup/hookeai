@@ -11,6 +11,7 @@ GNNMaterialPatchModel(torch.nn.Module)
 # Standard
 import os
 import re
+import pickle
 # Third-party
 import torch
 import torch_geometric.nn
@@ -94,6 +95,10 @@ class GNNMaterialPatchModel(torch.nn.Module):
         self._n_node_in = n_node_in
         self._n_node_out = n_node_out
         self._n_edge_in = n_edge_in
+        # Set architecture parameters
+        self._n_message_steps = n_message_steps
+        self._n_hidden_layers = n_hidden_layers
+        self._hidden_layer_size = hidden_layer_size
         # Set material patch model directory and name
         if os.path.isdir(model_directory):
             self.model_directory = model_directory
@@ -111,6 +116,9 @@ class GNNMaterialPatchModel(torch.nn.Module):
         else:
             RuntimeError('Invalid device type.')
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Save model initialization parameters
+        self._save_model_init_args()
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Initialize GNN-based Encoder-Process-Decoder model
         self._gnn_epd_model = \
             EncodeProcessDecode(n_message_steps=n_message_steps,
@@ -123,6 +131,31 @@ class GNNMaterialPatchModel(torch.nn.Module):
     def forward(self):
         """Forward propagation."""
         pass
+    # -------------------------------------------------------------------------
+    def _save_model_init_args(self):
+        """Save material patch model class initialization parameters."""
+        # Check material patch model directory
+        if not os.path.isdir(self.model_directory):
+            raise RuntimeError('The material patch model directory has not '
+                               'been found:\n\n' + self.model_directory)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Build initialization parameters
+        model_init_args = {}
+        model_init_args['n_node_in'] = self._n_node_in
+        model_init_args['n_node_out'] = self._n_node_out
+        model_init_args['n_edge_in'] = self._n_edge_in
+        model_init_args['n_message_steps'] = self._n_message_steps
+        model_init_args['n_hidden_layers'] = self._n_hidden_layers
+        model_init_args['hidden_layer_size'] = self._hidden_layer_size
+        model_init_args['model_name'] = self.model_name
+        model_init_args['device'] = self._device
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set initialization parameters file path
+        model_init_file_path = os.path.join(
+            self.model_directory, 'model_init_args' + '.pkl')
+        # Save initialization parameters
+        with open(model_init_file_path, 'wb') as init_file:
+            pickle.dump(model_init_args, init_file)
     # -------------------------------------------------------------------------
     def _get_features_from_input_graph(self, input_graph):
         """Get features from material patch input graph.
