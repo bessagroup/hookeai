@@ -4,13 +4,11 @@ Functions
 ---------
 train_model
     Training of GNN-based material patch model.
-_train
-    Train GNN-based material patch model.
-_get_pytorch_loss
+get_pytorch_loss
     Get PyTorch loss function.
-_get_pytorch_optimizer
+get_pytorch_optimizer
     Get PyTorch optimizer.
-_get_learning_rate_scheduler
+get_learning_rate_scheduler
     Get PyTorch optimizer learning rate scheduler.
 """
 #
@@ -22,8 +20,6 @@ import os
 import torch
 # Local
 from gnn_model.gnn_material_simulator import GNNMaterialPatchModel
-from gnn_model.ddpt_tools import DistributedTrainingTools
-from ioput.iostandard import make_directory
 #
 #                                                          Authorship & Credits
 # =============================================================================
@@ -31,54 +27,15 @@ __author__ = 'Bernardo Ferreira (bernardo_ferreira@brown.edu)'
 __credits__ = ['Bernardo Ferreira', ]
 __status__ = 'Planning'
 # =============================================================================
-#
-# =============================================================================
-def train_model(model_directory, train_args, device='cpu', is_ddpt=False,
-                world_size=None):
+def train_model(n_train_steps, dataset, model_init_args, learning_rate_init,
+                opt_algorithm='adam', lr_scheduler_type=None,
+                lr_scheduler_kwargs={}, loss_type='mse', loss_kwargs={},
+                batch_size=1, is_sampler_shuffle=False, load_model_state=None,
+                save_every=None, device_type='cpu', is_verbose=False):
     """Training of GNN-based material patch model.
     
     Parameters
     ----------
-    model_directory : str
-        Directory where material patch model is stored.
-    train_args : dict
-        Arguments passed to model training function at the exception of rank.
-    device : {'cpu', 'cuda'}, default='cpu'
-        Type of device on which torch.Tensor is allocated.
-    is_ddpt : bool, default=False
-        Perform distributed data-parallel training if True, False otherwise.
-    world_size : int, default=None
-        Number of processes participating in the distributed training.
-        If None, then all processes available for device are allocated.
-        Only used if is_ddpt=True. 
-    """
-    # Create directory where material patch model training files are stored
-    if not os.path.exists(model_directory):
-        make_directory(model_directory, is_overwrite=False)
-    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Launch training of GNN-based material patch model
-    if is_ddpt:
-        # Spawn processes for distributed data-parallel training
-        DistributedTrainingTools.spawn_processes(
-            train_function=_train, train_args=train_args, device=device,
-            world_size=world_size)
-    else:
-        # Call model training function
-        _train(rank=0, **train_args)
-# =============================================================================
-def _train(rank, n_train_steps, dataset, model_init_args, learning_rate_init,
-           opt_algorithm='adam', lr_scheduler_type=None,
-           lr_scheduler_kwargs={}, loss_type='mse', loss_kwargs={},
-           batch_size=1, is_sampler_shuffle=False, load_model_state=None,
-           save_every=None, device='cpu', is_ddpt=False, world_size=1,
-           is_verbose=False):
-    """Train GNN-based material patch model.
-    
-    Parameters
-    ----------
-    rank : int
-        Process ID (between 0 and world_size-1). Automatically set to 0 when
-        not distributed data-parallel training.
     n_train_steps : int
         Number of training steps.
     dataset : torch_geometric.data.Dataset
@@ -120,24 +77,17 @@ def _train(rank, n_train_steps, dataset, model_init_args, learning_rate_init,
     save_every : int, default=None
         Save GNN-based material patch model every save_every training steps.
         If None, then saves only last training step.
-    device : {'cpu', 'cuda'}, default='cpu'
+    device_type : {'cpu', 'cuda'}, default='cpu'
         Type of device on which torch.Tensor is allocated.
-    is_ddpt : bool, default=False
-        Perform distributed data-parallel training if True, False otherwise.
-    world_size : int, default=1
-        Number of processes participating in the distributed training.
     is_verbose : bool, default=False
         If True, enable verbose output.
     """
-    # Set rank 0 when not distributed data-parallel training
-    if not is_ddpt: rank = 0
+    # Set device
+    device = torch.device(device_type)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     if is_verbose:
-        if rank == 0:
-            print('\nGNN-based material patch data model training'
-                  '\n--------------------------------------------\n')
-        print('\n> Rank ' + str(rank) + '/' + str(world_size - 1)
-              + ': Starting training process...')
+        print('\nGNN-based material patch data model training'
+              '\n--------------------------------------------\n')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Initialize GNN-based material patch model
     model = GNNMaterialPatchModel(
@@ -150,51 +100,20 @@ def _train(rank, n_train_steps, dataset, model_init_args, learning_rate_init,
         model_directory=model_init_args['model_directory'],
         model_name=model_init_args['model_name'],
         device=device)
-    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Distributed data-parallel training initialization
-    if is_ddpt:
-        # Check rank
-        if rank < 0 or rank >= world_size:
-            raise RuntimeError('Process ID (rank) must be contained between '
-                               '0 and world_size-1. Current world_size: '
-                                + str(world_size))
-        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        # Initialize training distribution tools
-        dist_training = DistributedTrainingTools(world_size=world_size,
-                                                 device=device)
-        # Initialize training distribution process
-        dist_training.initialize(rank=rank)
-        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        # Wrap model for distributed data-parallel training
-        model_ddp = DistributedTrainingTools.wrap_model(model)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~  
-    # Move model to process ID, set model in training mode, and get model
-    # parameters
-    if is_ddpt:
-        model_ddp.to(device=rank)
-        model_ddp.train()
-        model_parameters = model_ddp.parameters(recurse=True)
-    else:
-        model.to(device=rank)
-        model.train()
-        model_parameters = model.parameters(recurse=True)
+    # Move model to process ID
+    model.to(device=device)
+    # Set model in training mode
+    model.train()
+    # Get model parameters
+    model_parameters = model.parameters(recurse=True)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Get data loader for training process
-    if is_ddpt:
-        # Get data loader for distributed data-parallel training
-        data_loader = DistributedTrainingTools.get_distributed_data_loader(
-            dataset, batch_size=batch_size,
-            is_sampler_shuffle=is_sampler_shuffle)
-    else:
-        # Set data loader
-        data_loader = torch.utils.data.DataLoader(
-            dataset=dataset, batch_size=batch_size, shuffle=is_sampler_shuffle)
+    # Set data loader
+    data_loader = torch.utils.data.DataLoader(
+        dataset=dataset, batch_size=batch_size, shuffle=is_sampler_shuffle)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Initialize learning rate
     learning_rate = learning_rate_init
-    # Update learning rate (account for distributed data-parallel training)
-    if is_ddpt:
-        learning_rate = dist_training.update_learning_rate(learning_rate)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set optimizer    
     if opt_algorithm == 'adam':
@@ -211,12 +130,12 @@ def _train(rank, n_train_steps, dataset, model_init_args, learning_rate_init,
     is_lr_scheduler = False
     if lr_scheduler_type is not None:
         is_lr_scheduler = True
-        lr_scheduler = _get_learning_rate_scheduler(
+        lr_scheduler = get_learning_rate_scheduler(
             optimizer=optimizer, scheduler_type=lr_scheduler_type,
             **lr_scheduler_kwargs)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Initialize loss function
-    loss_function = _get_pytorch_loss(loss_type, **loss_kwargs)
+    loss_function = get_pytorch_loss(loss_type, **loss_kwargs)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Initialize training flag
     is_keep_training = True
@@ -225,22 +144,15 @@ def _train(rank, n_train_steps, dataset, model_init_args, learning_rate_init,
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Load GNN-based material patch model state
     if load_model_state == 'last' or isinstance(load_model_state, int):
-        if is_ddpt:
-            # Load GNN-based material patch model state (in-place update)
-            loaded_step = dist_training.load_training_state(
-                rank, model_ddp, optimizer, load_model_state)
-        else:
-            loaded_step = load_training_state(model, opt_algorithm, optimizer,
-                                              load_model_state)
+        # Load GNN-based material patch model state
+        loaded_step = load_training_state(model, opt_algorithm, optimizer,
+                                          load_model_state)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Update training step counter
         step = int(loaded_step)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Loop over training iterations
     while is_keep_training:
-        # Synchronize all processes before starting next training step
-        if is_ddpt: torch.distributed.barrier()
-        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Loop over batches
         for py_graph_batch in data_loader:
             # Initialize batch loss
@@ -248,7 +160,7 @@ def _train(rank, n_train_steps, dataset, model_init_args, learning_rate_init,
             # Loop over graph samples
             for pyg_graph in py_graph_batch:
                 # Move graph sample to process ID
-                if is_ddpt: pyg_graph.to(rank)
+                pyg_graph.to(device)
                 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                 # Compute node internal forces predictions (forward
                 # propagation). During the foward pass, PyTorch creates a
@@ -261,12 +173,8 @@ def _train(rank, n_train_steps, dataset, model_init_args, learning_rate_init,
                 # corresponding tensors. Tensor.grad_fn is set to None for
                 # tensors corresponding to leaf-nodes of the computation graph
                 # or for tensors with the gradient flag set to False.
-                if is_ddpt:
-                    node_internal_forces = \
-                        model_ddp.module.predict_internal_forces(pyg_graph)
-                else:
-                    node_internal_forces = \
-                        model.predict_internal_forces(pyg_graph)
+                node_internal_forces = \
+                    model.predict_internal_forces(pyg_graph)
                 # Get nodel internal forces ground-truth
                 node_internal_forces_target = pyg_graph.y
                 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -295,25 +203,15 @@ def _train(rank, n_train_steps, dataset, model_init_args, learning_rate_init,
             # Update optimizer learning rate
             if is_lr_scheduler:
                 lr_scheduler.step()
-            # Update learning rate (account for distributed data-parallel
-            # training)
-            if is_ddpt:
-                optimizer.lr = \
-                    dist_training.update_learning_rate(learning_rate)
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            if is_verbose and rank == 0:
+            if is_verbose:
                 print('> Training step: {:d}/{:d} | Loss: {:.8e}'.format(
                     step, n_train_steps, loss))
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Save model and optimizer current states
-            if rank == 0 and step % save_every == 0:
-                if is_ddpt:
-                    DistributedTrainingTools.save_training_state(
-                        model_ddp=model_ddp, optimizer=optimizer,
-                        training_step=step)
-                else:
-                    save_training_state(model=model, optimizer=optimizer,
-                                        training_step=step)
+            if step % save_every == 0:
+                save_training_state(model=model, optimizer=optimizer,
+                                    training_step=step)
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Check training process completion
             if step >= n_train_steps:
@@ -325,18 +223,9 @@ def _train(rank, n_train_steps, dataset, model_init_args, learning_rate_init,
             step += 1
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Save model and optimizer final states
-    if rank == 0:
-        if is_ddpt:
-            DistributedTrainingTools.save_training_state(
-                model_ddp=model_ddp, optimizer=optimizer, training_step=step)
-        else:
-            save_training_state(model=model, optimizer=optimizer,
-                                training_step=step)
-    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Clean-up the default distributed process group
-    if is_ddpt: DistributedTrainingTools.terminate()
+    save_training_state(model=model, optimizer=optimizer, training_step=step)
 # =============================================================================
-def _get_pytorch_loss(loss_type, **kwargs):
+def get_pytorch_loss(loss_type, **kwargs):
     """Get PyTorch loss function.
    
     Parameters
@@ -361,7 +250,7 @@ def _get_pytorch_loss(loss_type, **kwargs):
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     return loss_function
 # =============================================================================
-def _get_pytorch_optimizer(algorithm, params, **kwargs):
+def get_pytorch_optimizer(algorithm, params, **kwargs):
     """Get PyTorch optimizer.
    
     Parameters
@@ -389,7 +278,7 @@ def _get_pytorch_optimizer(algorithm, params, **kwargs):
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     return optimizer
 # =============================================================================
-def _get_learning_rate_scheduler(optimizer, scheduler_type='steplr', **kwargs):
+def get_learning_rate_scheduler(optimizer, scheduler_type='steplr', **kwargs):
     """Get PyTorch optimizer learning rate scheduler.
     
     Parameters
