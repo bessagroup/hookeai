@@ -60,7 +60,9 @@ class GNNMaterialPatchModel(torch.nn.Module):
     save_model_state(self)
         Save material patch model state to file.
     load_model_state(self)
-        Load material patch model state from file. 
+        Load material patch model state from file.
+    _check_state_file(self, filename)
+        Check if file is model training step state file. 
     """
     def __init__(self, n_node_in, n_node_out, n_edge_in, n_message_steps,
                  n_hidden_layers, hidden_layer_size, model_directory,
@@ -268,7 +270,8 @@ class GNNMaterialPatchModel(torch.nn.Module):
         # Save material patch model state
         torch.save(self.state_dict(), model_path)
     # -------------------------------------------------------------------------
-    def load_model_state(self, is_latest=False, training_step=None):
+    def load_model_state(self, is_latest=False, training_step=None,
+                         is_remove_posterior=True):
         """Load material patch model state from file.
         
         Material patch model state file is loaded from model_directory with
@@ -284,6 +287,9 @@ class GNNMaterialPatchModel(torch.nn.Module):
             Training step corresponding to loaded material patch model state.
             If provided, then state file basename is appended by
             '-training_step'.
+        is_remove_posterior : bool, default=True
+            Remove material patch model state files corresponding to training
+            steps posterior to the loaded state file.
             
         Returns
         -------
@@ -301,6 +307,20 @@ class GNNMaterialPatchModel(torch.nn.Module):
         if isinstance(training_step, int):
             # Set model state filename with training step
             model_state_file = self.model_name + '-' + str(int(training_step))
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Delete model training step state files posterior to loaded
+            # training step
+            if is_remove_posterior:
+                # Get state files in material patch model directory
+                directory_list = os.listdir(self.model_directory)
+                # Loop over files in material patch model directory
+                for filename in directory_list:
+                    # Check if file is model training step state file
+                    is_state_file, step = self._check_state_file(filename)
+                    # Delete model training step state file posterior to loaded
+                    # training step
+                    if is_state_file and step > training_step:
+                        os.remove(filename)
         elif is_latest:
             # Get state files in material patch model directory
             directory_list = os.listdir(self.model_directory)
@@ -310,16 +330,11 @@ class GNNMaterialPatchModel(torch.nn.Module):
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Loop over files in material patch model directory
             for filename in directory_list:
-                # Check if model state file corresponds to given training step
-                is_state_file = \
-                    bool(re.search(r'^' + self.model_name + r'-[0-9]+'
-                                   + r'\.pt', filename))
+                # Check if file is model training step state file
+                is_state_file, step = self._check_state_file(filename)
+                # Store model state file training step
                 if is_state_file:
-                    # Get model state training step
-                    training_step = \
-                        int(os.path.splitext(filename)[0].split('-')[-1])
-                    # Store model state file training step
-                    training_steps.append(training_step)
+                    training_steps.append(step)
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Set highest training step model state file
             if training_steps:
@@ -351,3 +366,35 @@ class GNNMaterialPatchModel(torch.nn.Module):
                                         map_location=torch.device('cpu')))
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         return training_step
+    # -------------------------------------------------------------------------
+    def _check_state_file(self, filename):
+        """Check if file is model training step state file.
+        
+        Material patch model training step state file is assumed to be stored
+        in model_directory with basename model_name-training_step and
+        extension '.pt'.
+        
+        Parameters
+        ----------
+        filename : str
+            File name.
+        
+        Returns
+        -------
+        is_state_file : bool
+            True if model training step state file, False otherwise.
+        training_step : {None, int}
+            Training step corresponding to model state file if
+            is_state_file=True, None otherwise.
+        """
+        # Check if file is model training step  state file
+        is_state_file = bool(re.search(r'^' + self.model_name + r'-[0-9]+'
+                                       + r'\.pt', filename))
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        if is_state_file:
+            # Get model state training step
+            training_step = int(os.path.splitext(filename)[0].split('-')[-1])
+        else:
+            training_step = None
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        return is_state_file, training_step  
