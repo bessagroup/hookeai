@@ -236,7 +236,8 @@ def _train(rank, n_train_steps, dataset, model_init_args, learning_rate_init,
                 node_internal_forces = \
                     model_ddp.module.predict_internal_forces(pyg_graph)
                 # Get nodel internal forces ground-truth
-                node_internal_forces_target = pyg_graph.y
+                node_internal_forces_target = \
+                    model.get_output_features_from_graph(pyg_graph)
                 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                 # Compute and accumulate loss
                 loss += loss_function(node_internal_forces,

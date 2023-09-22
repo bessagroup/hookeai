@@ -99,16 +99,7 @@ def train_model(n_train_steps, dataset, model_init_args, learning_rate_init,
               '\n--------------------------------------------\n')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Initialize GNN-based material patch model
-    model = GNNMaterialPatchModel(
-        n_node_in=model_init_args['n_node_in'],
-        n_node_out=model_init_args['n_node_out'],
-        n_edge_in=model_init_args['n_edge_in'],
-        n_message_steps=model_init_args['n_message_steps'],
-        n_hidden_layers=model_init_args['n_hidden_layers'],
-        hidden_layer_size=model_init_args['hidden_layer_size'],
-        model_directory=model_init_args['model_directory'],
-        model_name=model_init_args['model_name'],
-        device=device)
+    model = GNNMaterialPatchModel(**model_init_args)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~  
     # Move model to process ID
     model.to(device=device)
@@ -165,6 +156,9 @@ def train_model(n_train_steps, dataset, model_init_args, learning_rate_init,
         # Update training step counter
         step = int(loaded_step)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Get model data normalization
+    is_data_normalization = model.is_data_normalization
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Loop over training iterations
     while is_keep_training:
         # Loop over batches
@@ -187,10 +181,12 @@ def train_model(n_train_steps, dataset, model_init_args, learning_rate_init,
                 # corresponding tensors. Tensor.grad_fn is set to None for
                 # tensors corresponding to leaf-nodes of the computation graph
                 # or for tensors with the gradient flag set to False.
-                node_internal_forces = \
-                    model.predict_internal_forces(pyg_graph)
+                node_internal_forces = model.predict_internal_forces(
+                    pyg_graph, is_normalized=is_data_normalization)
                 # Get node internal forces ground-truth
-                node_internal_forces_target = pyg_graph.y
+                node_internal_forces_target = \
+                    model.get_output_features_from_graph(
+                        pyg_graph, is_normalized=is_data_normalization)
                 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                 # Compute and accumulate loss
                 loss += loss_function(node_internal_forces,
