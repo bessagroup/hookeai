@@ -1,10 +1,17 @@
 """GNN-based material patch data set.
 
+Classes
+-------
+GNNMaterialPatchDataset(torch.utils.data.Dataset)
+    GNN-based material patch data set.
+
 Functions
 ---------
-generate_gnn_material_patch_dataset
-    Generate GNN-based material patch data set.
-get_gnn_material_patch_data_loader
+generate_dataset_samples_files
+    Generate GNN-based material patch data set samples files.
+split_dataset
+    Randomly split data set into non-overlapping parts.
+get_pyg_data_loader
     Get GNN-based material patch data set PyG data loader.
 """
 #
@@ -29,16 +36,17 @@ __status__ = 'Planning'
 # =============================================================================
 #
 # =============================================================================
-def generate_gnn_material_patch_dataset(dataset_directory,
-    dataset_simulation_data, sample_file_basename='gnn_patch_sample',
-    is_save_plot_patch=False, is_verbose=False):
-    """Generate GNN-based material patch data set.
+def generate_dataset_samples_files(dataset_directory, dataset_simulation_data,
+                                   sample_file_basename='gnn_patch_sample',
+                                   is_save_plot_patch=False, is_verbose=False):
+    """Generate GNN-based material patch data set samples files.
 
     Parameters
     ----------
     dataset_directory : str
-        Directory where the GNN-based material patch data set is stored.
-        All existent files are overridden when saving sample data files.
+        Directory where the GNN-based material patch data set is stored (all
+        data set samples files). All existent files are overridden when saving
+        sample data files.
     dataset_simulation_data : list[dict]
         Material patches finite element simulations output data. Output data of
         each material patch is stored in a dict, where:
@@ -65,8 +73,11 @@ def generate_gnn_material_patch_dataset(dataset_directory,
         
     Returns
     -------
+    dataset_directory : str
+        Directory where the GNN-based material patch data set is stored (all
+        data set samples files).
     dataset_sample_files : list[str]
-        GNN-based material patch data set samples file paths. Each sample file
+        GNN-based material patch data set samples files paths. Each sample file
         contains a torch_geometric.data.Data object describing a homogeneous
         graph.
     """
@@ -166,19 +177,228 @@ def generate_gnn_material_patch_dataset(dataset_directory,
     if is_verbose:
         print('\n> Data set directory: ', dataset_directory, '\n')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ 
-    return dataset_sample_files
+    return dataset_directory, dataset_sample_files
 # =============================================================================
-def get_gnn_material_patch_data_loader(dataset_sample_files, batch_size=1,
-                                       is_shuffle=False, is_verbose=False,
-                                       **kwargs):
+class GNNMaterialPatchDataset(torch.utils.data.Dataset):
+    """GNN-based material patch data set.
+    
+    Attributes
+    ----------
+    _dataset_directory : str
+        Directory where the GNN-based material patch data set is stored
+        (all data set samples files).
+    _dataset_sample_files : list[str]
+        GNN-based material patch data set samples files paths. Each sample file
+        contains a torch_geometric.data.Data object describing a homogeneous
+        graph.
+    _is_store_dataset : bool, default=False
+        If True, then the GNN-based material patch data set samples are loaded
+        and stored in attribute dataset_samples_data. If False, the dataset
+        object holds solely the samples data files paths and load the
+        corresponding files when accessing a given sample data.
+    
+    Methods
+    -------
+    __len__(self):
+        Return size of data set (number of samples).
+    __getitem__(self, index)
+        Return data set sample from corresponding index.
+    update_dataset_directory(self, dataset_directory, is_reload_data=False)
+        Update directory where GNN-based material patch data set is stored.
+    """
+    def __init__(self, dataset_directory, dataset_sample_files,
+                 is_store_dataset=False):
+        """Constructor.
+        
+        Parameters 
+        ----------
+        dataset_directory : str
+            Directory where the GNN-based material patch data set is stored
+            (all data set samples files).
+        dataset_sample_files : list[str]
+            GNN-based material patch data set samples file paths. Each sample
+            file contains a torch_geometric.data.Data object describing a
+            homogeneous graph.
+        is_store_dataset : bool, default=False
+            If True, then the GNN-based material patch data set samples are
+            loaded and stored in attribute dataset_samples_data. If False,
+            the dataset object holds solely the samples data files paths and
+            load the corresponding files when accessing a given sample data.
+        """
+        # Initialize data set from base class
+        super(GNNMaterialPatchDataset, self).__init__()
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set data set directory
+        if not os.path.isdir(dataset_directory):
+            raise RuntimeError('The GNN-based material patch data set '
+                               'directory has not been found:\n\n'
+                               + dataset_directory)
+        else:
+            self._dataset_directory = dataset_directory
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Check data set sample files
+        for file_path in dataset_sample_files:
+            # Check if sample file exists
+            if not os.path.isfile(file_path):
+                raise RuntimeError('GNN-based material patch data set sample '
+                                   'file has not been found:\n\n' + file_path)
+            elif os.path.dirname(file_path) \
+                    != os.path.normpath(dataset_directory):
+                raise RuntimeError('GNN-based material patch data set sample '
+                                   'file is not in dataset directory:\n\n'
+                                   + dataset_directory)
+        # Store data set samples file paths
+        self._dataset_sample_files = dataset_sample_files
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set data set sample data storange flag
+        self._is_store_dataset = is_store_dataset
+        # Load data set sample files data
+        self._dataset_samples = []
+        if is_store_dataset:
+            # Loop over sample files
+            for file_path in dataset_sample_files:
+                # Load sample
+                self._dataset_samples.append(torch.load(file_path))       
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    def __len__(self):
+        """Return size of data set (number of samples).
+        
+        Returns
+        -------
+        n_sample : int
+            Data set size (number of samples).
+        """
+        return len(self._dataset_sample_files)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    def __getitem__(self, index):
+        """Return data set sample from corresponding index.
+        
+        Parameters
+        ----------
+        index : int
+            Index of returned data set sample (index must be in [0, n_sample]).
+            
+        Returns
+        -------
+        pyg_graph : torch_geometric.data.Data
+            Data set sample defined as a PyG data object describing a
+            homogeneous graph.
+        """
+        # Get data set sample
+        if self._is_store_dataset:
+            pyg_graph = self._dataset_samples[index].clone()
+        else:
+            pyg_graph = torch.load(self._dataset_sample_files[index])
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        return pyg_graph
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    def update_dataset_directory(self, dataset_directory,
+                                 is_reload_data=False):
+        """Update directory where GNN-based material patch data set is stored.
+        
+        Stored data set samples files paths directory is updated according
+        with new directory.
+        
+        Parameters
+        ----------
+        dataset_directory : str
+            Directory where the GNN-based material patch data set is stored
+            (all data set samples files).
+        is_reload_data : bool, default=False
+            Reload and store data set samples in attribute
+            dataset_samples_data. Only effective if is_store_dataset=True.
+        """
+        # Set new data set directory
+        if not os.path.isdir(dataset_directory):
+            raise RuntimeError('The new GNN-based material patch data set '
+                               'directory has not been found:\n\n'
+                               + dataset_directory)
+        else:
+            self._dataset_directory = dataset_directory
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Loop over samples files
+        for i, file_path in enumerate(self._dataset_sample_files):
+            # Set new sample file path (update directory)
+            new_file_path = os.path.join(os.path.dirname(dataset_directory),
+                                         os.path.basename(file_path))
+            # Update sample file path
+            if not os.path.isfile(new_file_path):
+                raise RuntimeError('GNN-based material patch data set sample '
+                                   'file is not in new dataset directory:\n\n'
+                                   + dataset_directory)
+            else:
+                self._dataset_sample_files[i] = new_file_path
+                # Reload sample data
+                if self._is_store_dataset and is_reload_data:
+                    self._dataset_samples[i] = torch.load(file_path)
+# =============================================================================
+def split_dataset(dataset, split_sizes, seed=None):
+    """Randomly split data set into non-overlapping parts.
+    
+    Parameters
+    ----------
+    dataset : torch.utils.data.Dataset
+        Data set.
+    split_sizes : dict
+        Size (item, float) for each data set split part name (key, str), where
+        size is a fraction contained between 0 and 1. The sum of all sizes must
+        equal 1.
+    seed : int
+        Seed for random data set split generator.
+    
+    Returns
+    -------
+    dataset_split : dict
+        Split data set part (item, torch.utils.data.Dataset) for each data set
+        split part name (key, str).
+    """
+    # Initialize data set split parts names and sizes
+    parts_names = []
+    parts_sizes = []
+    # Assemble data set split parts names and sizes
+    for key, val in split_sizes.items():
+        # Check if part size is valid
+        if val < 0.0 or val > 1.0:
+            raise RuntimeError(f'Part size must be contained between 0 and 1. '
+                               f'Check part (size): {key} ({val})')
+        # Assemble part name and size
+        parts_names.append(str(key))
+        parts_sizes.append(val)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Check if split sizes are valid
+    if not np.isclose(np.sum(parts_sizes), 1.0):
+        raise RuntimeError('Sum of part split sizes must equal 1. '
+                           f'Current sum: {np.sum(parts_sizes):.2f}')
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Set random split generator
+    if seed is not None:
+        generator = torch.Generator().manual_seed(seed)
+    else:
+        generator = torch.Generator()
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Randomly split data set into non-overlapping parts
+    subsets_list = torch.utils.data.random_split(dataset, parts_sizes,
+                                                 generator=generator)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Build data set split parts
+    dataset_split = {}
+    for i, part in enumerate(parts_names):
+        dataset_split[str(part)] = subsets_list[i]
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~    
+    return dataset_split
+# =============================================================================
+def get_pyg_data_loader(dataset, batch_size=1, is_shuffle=False,
+                        is_verbose=False, **kwargs):
     """Get GNN-based material patch data set PyG data loader.
     
     Parameters
     ----------
-    dataset_sample_files : list[str]
-        GNN-based material patch data set samples file paths. Each sample file
-        contains a torch_geometric.data.Data object describing a homogeneous
-        graph.
+    dataset : {GNNMaterialPatchDataset, list[str]}
+        GNN-based material patch data set. Each sample corresponds to a
+        torch_geometric.data.Data object describing a homogeneous graph.
+        Accepts GNNMaterialPatchDataset or a list of data set samples files
+        paths, where each sample file contains a torch_geometric.data.Data
+        object describing a homogeneous graph.
     batch_size : int, default=1
         Number of samples loaded per batch.
     is_shuffle : bool, default=False
@@ -197,18 +417,17 @@ def get_gnn_material_patch_data_loader(dataset_sample_files, batch_size=1,
         print('\nBuild GNN-based material patch data loader'
               '\n------------------------------------------\n')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Initialize GNN-based material patch graph sample data set
-    dataset = []
-    # Read GNN-based material patch graph sample data set
-    for sample_file_path in tqdm.tqdm(dataset_sample_files,
-                                      desc='> Loading samples: ',
-                                      disable=not is_verbose):
-        # Check sample file
-        if not os.path.isfile(sample_file_path):
-            raise RuntimeError('GNN-based material patch graph sample file '
-                               'has not been found:\n\n', sample_file_path)
-        # Load sample
-        dataset.append(torch.load(sample_file_path))
+    # Build data set from list of data set samples files paths
+    if isinstance(dataset, list):
+        # Get data set samples files paths
+        dataset_sample_files = dataset[:]
+        # Get data set directory
+        dataset_directory = \
+            os.path.normpath(os.path.dirname(dataset_sample_files[0]))
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Build data set
+        dataset = GNNMaterialPatchDataset(
+            dataset_directory, dataset_sample_files, is_store_dataset=False)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     if is_verbose:
         print('\n> Building data loader...\n')

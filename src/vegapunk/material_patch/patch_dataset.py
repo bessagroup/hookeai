@@ -787,16 +787,16 @@ if __name__ == "__main__":
         is_verbose=is_verbose)
     
     
-    from gnn_patch_dataset import generate_gnn_material_patch_dataset, get_gnn_material_patch_data_loader
+    from gnn_model.gnn_patch_dataset import generate_dataset_samples_files, get_pyg_data_loader
     
     dataset_directory = simulation_directory
     
-    dataset_samples_files = generate_gnn_material_patch_dataset(
+    dataset_directory, dataset_samples_files = generate_dataset_samples_files(
         dataset_directory, dataset_simulation_data,
         sample_file_basename='gnn_patch_sample', is_save_plot_patch=True,
         is_verbose=True)
     
-    data_loader = get_gnn_material_patch_data_loader(dataset_samples_files,
+    data_loader = get_pyg_data_loader(dataset_samples_files,
                                                      batch_size=1,
                                                      is_verbose=is_verbose)
     
