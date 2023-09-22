@@ -10,6 +10,8 @@ save_sample_results
     Save model prediction results for given sample.
 load_sample_results
     Load model prediction results for given sample.
+compute_sample_prediction_loss
+    Compute loss of sample node internal forces prediction.
 """
 #
 #                                                                       Modules
@@ -141,30 +143,14 @@ def predict(predict_dir, dataset, model_directory, is_compute_loss=True,
             # Compute node internal forces predictions (forward propagation)
             node_internal_forces = model.predict_internal_forces(pyg_graph)
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Check if node internal forces ground-truth is available
+            is_ground_truth_available = \
+                model.get_output_features_from_graph(pyg_graph) is not None
             # Compute loss if node internal forces ground-truth is available
-            if node_internal_forces_target is not None:
+            if is_ground_truth_available:
                 # Compute loss according with model data normalization
-                if is_data_normalization:
-                    # Get model data scaler
-                    scaler_node_out = \
-                        model.get_fitted_data_scaler('node_features_out')
-                    # Get normalized node internal forces predictions
-                    norm_node_internal_forces = \
-                        scaler_node_out.transform(node_internal_forces)
-                    # Get normalized node internal forces ground-truth
-                    norm_node_internal_forces_target = \
-                        model.get_output_features_from_graph(
-                            pyg_graph, is_normalized=is_data_normalization)
-                    # Compute sample loss
-                    loss = loss_function(norm_node_internal_forces,
-                                         norm_node_internal_forces_target)
-                else:
-                    # Get node internal forces ground-truth
-                    node_internal_forces_target = \
-                        model.get_output_features_from_graph(pyg_graph)
-                    # Compute sample loss
-                    loss = loss_function(node_internal_forces,
-                                         node_internal_forces_target)
+                loss = compute_sample_prediction_loss(
+                    pyg_graph, model, loss_function, node_internal_forces)
                 # Assemble sample loss
                 loss_samples.append(loss)
             else:
@@ -267,3 +253,53 @@ def load_sample_results(sample_prediction_path):
         sample_results = pickle.load(sample_prediction_file)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     return sample_results
+# =============================================================================
+def compute_sample_prediction_loss(pyg_graph, model, loss_function,
+                                   node_internal_forces):
+    """Compute loss of sample node internal forces prediction.
+    
+    Loss is computed according with model training data normalization.
+    
+    Parameters
+    ----------
+    pyg_graph : torch_geometric.data.Data
+        Material patch homogeneous graph.
+    model : GNNMaterialPatchModel
+        GNN-based material patch model.
+    loss_function : torch.nn._Loss
+        PyTorch loss function.
+    node_internal_forces : torch.Tensor
+        Predicted nodes internal forces matrix stored as a torch.Tensor(2d) of
+        shape (n_nodes, n_dim).
+    
+    Returns
+    -------
+    loss : float
+        Loss of sample node internal forces prediction.
+    """
+    # Get model data normalization
+    is_data_normalization = model.is_data_normalization
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Compute loss according with model data normalization
+    if is_data_normalization:
+        # Get model data scaler
+        scaler_node_out = model.get_fitted_data_scaler('node_features_out')
+        # Get normalized node internal forces predictions
+        norm_node_internal_forces = \
+            scaler_node_out.transform(node_internal_forces)
+        # Get normalized node internal forces ground-truth
+        norm_node_internal_forces_target = \
+            model.get_output_features_from_graph(
+                pyg_graph, is_normalized=is_data_normalization)
+        # Compute sample loss (normalized data)
+        loss = loss_function(norm_node_internal_forces,
+                             norm_node_internal_forces_target)
+    else:
+        # Get node internal forces ground-truth
+        node_internal_forces_target = \
+            model.get_output_features_from_graph(pyg_graph)
+        # Compute sample loss
+        loss = loss_function(node_internal_forces,
+                             node_internal_forces_target)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    return loss
