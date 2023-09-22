@@ -50,9 +50,9 @@ class GNNMaterialPatchModel(torch.nn.Module):
         Type of device on which torch.Tensor is allocated.
     _device : torch.device
         Device on which torch.Tensor is allocated.
-    is_data_normalization : bool
-        If True, then input and output features are normalized, False
-        otherwise. Data scalers need to be fitted with fit_data_scalers()
+    is_data_normalization : bool, default=False
+        If True, then input and output features are normalized for training
+        False otherwise. Data scalers need to be fitted with fit_data_scalers()
         and are stored as model attributes.
     _data_scalers : dict
         Data scaler (item, sklearn.preprocessing.StandardScaler) for each
@@ -110,9 +110,9 @@ class GNNMaterialPatchModel(torch.nn.Module):
         model_name : str, default='material_patch_model'
             Name of material patch model.
         is_data_normalization : bool, default=False
-            If True, then input and output features are normalized, False
-            otherwise. Data scalers need to be fitted with fit_data_scalers()
-            and are stored as model attributes.
+            If True, then input and output features are normalized for
+            training, False otherwise. Data scalers need to be fitted with
+            fit_data_scalers() and are stored as model attributes.
         device_type : {'cpu', 'cuda'}, default='cpu'
             Type of device on which torch.Tensor is allocated.
         """
