@@ -7,7 +7,9 @@ predict
 make_predictions_subdir
     Create model predictions subdirectory.
 save_sample_results
-    Save model prediction results for given sample. 
+    Save model prediction results for given sample.
+load_sample_results
+    Load model prediction results for given sample.
 """
 #
 #                                                                       Modules
@@ -20,6 +22,7 @@ import torch
 import tqdm
 # Local
 from gnn_model.gnn_material_simulator import GNNMaterialPatchModel
+from gnn_model.training import get_pytorch_loss
 from ioput.iostandard import make_directory
 #
 #                                                          Authorship & Credits
@@ -30,7 +33,8 @@ __status__ = 'Planning'
 # =============================================================================
 #
 # =============================================================================
-def predict(predict_dir, dataset, model_directory, device_type='cpu',
+def predict(predict_dir, dataset, model_directory, is_compute_loss=True,
+            loss_type='mse', loss_kwargs={}, device_type='cpu',
             is_verbose=False):
     """Make predictions with GNN-based material patch model for given dataset.
     
@@ -41,6 +45,20 @@ def predict(predict_dir, dataset, model_directory, device_type='cpu',
     dataset : GNNMaterialPatchDataset
         GNN-based material patch data set. Each sample corresponds to a
         torch_geometric.data.Data object describing a homogeneous graph.
+    is_compute_loss : bool, default=True
+        If True, computes predictions average loss. The computation of the
+        predictions loss is restricted to data set samples for which the
+        ground-truth is available from the corresponding
+        torch_geometric.data.Data object, being set to None otherwise. Each
+        sample prediction loss is stored in the corresponding prediction
+        results file.
+    loss_type : {'mse',}, default='mse'
+        Loss function type:
+        
+        'mse'  : MSE (torch.nn.MSELoss)
+        
+    loss_kwargs : dict, default={}
+        Arguments of torch.nn._Loss initializer.    
     model_directory : str
         Directory where GNN-based material patch model is stored.
     device_type : {'cpu', 'cuda'}, default='cpu'
@@ -54,6 +72,7 @@ def predict(predict_dir, dataset, model_directory, device_type='cpu',
     if is_verbose:
         print('\nGNN-based material patch data model prediction'
               '\n----------------------------------------------\n')
+        print(f'\n> Data set size: {len(dataset)} \n')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Check model directory
     if not os.path.exists(model_directory):
@@ -75,7 +94,8 @@ def predict(predict_dir, dataset, model_directory, device_type='cpu',
                            'parameters file has not been found:\n\n'
                            + model_init_file_path)
     else:
-        model_init_args = pickle.load(model_init_file_path)
+        with open(model_init_file_path, 'rb') as model_init_file:
+            model_init_args = pickle.load(model_init_file)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Initialize GNN-based material patch model
     model = GNNMaterialPatchModel(**model_init_args)
@@ -95,6 +115,13 @@ def predict(predict_dir, dataset, model_directory, device_type='cpu',
     # Set data loader
     data_loader = torch.utils.data.DataLoader(dataset=dataset)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Initialize predictions loss computation
+    if is_compute_loss:
+        # Initialize loss function
+        loss_function = get_pytorch_loss(loss_type, **loss_kwargs)
+        # Initialize samples losses
+        loss_samples = []
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     if is_verbose:
         print('\n> Starting predictions computation...\n')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -111,15 +138,37 @@ def predict(predict_dir, dataset, model_directory, device_type='cpu',
             # Compute node internal forces predictions (forward propagation)
             node_internal_forces = model.predict_internal_forces(pyg_graph)
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Compute loss if node internal forces ground-truth is available
+            node_internal_forces_target = pyg_graph.y
+            if node_internal_forces_target is not None:
+                # Compute sample loss
+                loss = loss_function(node_internal_forces,
+                                     node_internal_forces_target)
+                # Assemble sample loss
+                loss_samples.append(loss)
+            else:
+                # Set sample loss to None if ground-truth is unavailable
+                loss = None
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Build sample results
             results = {}
             results['node_internal_forces'] = node_internal_forces
+            results['node_internal_forces_loss'] = (loss_type, loss)
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Save sample predictions results
             save_sample_results(results_dir=predict_subdir,
                                 sample_id=i, sample_results=results)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     if is_verbose:
+        # Compute samples average loss
+        if is_compute_loss:
+            # Compute samples average loss
+            average_loss = torch.mean(loss_samples)
+            # Display average loss
+            print('\n> Node internal forces predictions average loss: '
+                  f'{average_loss:.8e} ({loss_type}, {len(loss_samples)} '
+                  f'samples.')
+        # Display prediction results directory 
         print('\n> Prediction results directory: ', predict_subdir, '\n')
 # =============================================================================
 def make_predictions_subdir(predict_dir, model_name):
@@ -173,3 +222,27 @@ def save_sample_results(results_dir, sample_id, sample_results):
     # Save sample prediction results
     with open(sample_path, 'wb') as sample_file:
         pickle.dump(sample_results, sample_file)
+# =============================================================================
+def load_sample_results(sample_prediction_path):
+    """Load model prediction results for given sample.
+    
+    Parameters
+    ----------
+    sample_prediction_path : str
+        Sample prediction results file path.
+        
+    Returns
+    -------
+    sample_results : dict
+        Sample prediction results.
+    """
+    # Check sample prediction results file
+    if not os.path.isfile(sample_prediction_path):
+        raise RuntimeError('Sample prediction results file has not been '
+                           'found:\n\n' + sample_prediction_path)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Load sample prediction results
+    with open(sample_prediction_path, 'rb') as sample_prediction_file:
+        sample_results = pickle.load(sample_prediction_file)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    return sample_results
