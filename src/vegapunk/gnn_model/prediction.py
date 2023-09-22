@@ -38,7 +38,7 @@ def predict(predict_dir, dataset, model_directory, device_type='cpu',
     ----------
     predict_dir : str
         Directory where model predictions results are stored.
-    dataset : torch_geometric.data.Dataset
+    dataset : GNNMaterialPatchDataset
         GNN-based material patch data set. Each sample corresponds to a
         torch_geometric.data.Data object describing a homogeneous graph.
     model_directory : str

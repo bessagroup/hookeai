@@ -72,7 +72,7 @@ def _train(rank, n_train_steps, dataset, model_init_args, learning_rate_init,
         not distributed data-parallel training.
     n_train_steps : int
         Number of training steps.
-    dataset : torch_geometric.data.Dataset
+    dataset : GNNMaterialPatchDataset
         GNN-based material patch data set. Each sample corresponds to a
         torch_geometric.data.Data object describing a homogeneous graph.
     model_init_args : dict

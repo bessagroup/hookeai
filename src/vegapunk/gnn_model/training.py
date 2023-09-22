@@ -47,7 +47,7 @@ def train_model(n_train_steps, dataset, model_init_args, learning_rate_init,
     ----------
     n_train_steps : int
         Number of training steps.
-    dataset : torch_geometric.data.Dataset
+    dataset : GNNMaterialPatchDataset
         GNN-based material patch data set. Each sample corresponds to a
         torch_geometric.data.Data object describing a homogeneous graph.
     model_init_args : dict
@@ -189,7 +189,7 @@ def train_model(n_train_steps, dataset, model_init_args, learning_rate_init,
                 # or for tensors with the gradient flag set to False.
                 node_internal_forces = \
                     model.predict_internal_forces(pyg_graph)
-                # Get nodel internal forces ground-truth
+                # Get node internal forces ground-truth
                 node_internal_forces_target = pyg_graph.y
                 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                 # Compute and accumulate loss
