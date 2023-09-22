@@ -465,7 +465,8 @@ def load_loss_history(model, loss_type, training_step):
     # Load training process loss history
     if os.path.isfile(loss_record_path):
         # Load loss history record
-        loss_history_record = pickle.load(loss_history_record)
+        with open(loss_record_path, 'rb') as loss_record_file:
+            loss_history_record = pickle.load(loss_record_file)
         # Check consistency between loss history type and current training
         # process loss type
         history_loss_type = loss_history_record['loss_type']
