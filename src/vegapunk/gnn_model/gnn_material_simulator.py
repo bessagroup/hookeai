@@ -16,6 +16,8 @@ import pickle
 import torch
 import torch_geometric.nn
 import torch_geometric.data
+import tqdm
+import sklearn
 # Local
 from gnn_model.gnn_epd_model import EncodeProcessDecode
 #
@@ -48,13 +50,22 @@ class GNNMaterialPatchModel(torch.nn.Module):
         Type of device on which torch.Tensor is allocated.
     _device : torch.device
         Device on which torch.Tensor is allocated.
+    is_data_normalization : bool
+        If True, then input and output features are normalized, False
+        otherwise. Data scalers need to be fitted with fit_data_scalers()
+        and are stored as model attributes.
+    _data_scalers : dict
+        Data scaler (item, sklearn.preprocessing.StandardScaler) for each
+        feature data (key, str).
 
     Methods
     -------
     forward(self)
         Forward propagation.
-    _get_features_from_input_graph(self, input_graph)
-        Get features from material patch input graph.
+    get_input_features_from_graph(self, graph, is_normalized=False)
+        Get input features from material patch graph.
+    get_output_features_from_graph(self, graph, is_normalized=False)
+        Get output features from material patch graph.
     predict_internal_forces(self, input_graph)
         Predict material patch internal forces.
     save_model_state(self)
@@ -62,11 +73,20 @@ class GNNMaterialPatchModel(torch.nn.Module):
     load_model_state(self)
         Load material patch model state from file.
     _check_state_file(self, filename)
-        Check if file is model training step state file. 
+        Check if file is model training step state file.
+    _init_data_scalers(self)
+        Initialize model data scalers.
+    fit_data_scalers(self, dataset, is_verbose=False)
+        Fit model data scalers.
+    get_fitted_data_scaler(self, features_type)
+        Get fitted model data scalers.
+    _check_normalized_return(self)
+        Check if model data normalization is available.
     """
     def __init__(self, n_node_in, n_node_out, n_edge_in, n_message_steps,
                  n_hidden_layers, hidden_layer_size, model_directory,
-                 model_name='material_patch_model', device_type='cpu'):
+                 model_name='material_patch_model',
+                 is_data_normalization=False, device_type='cpu'):
         """Constructor.
         
         Parameters
@@ -89,6 +109,10 @@ class GNNMaterialPatchModel(torch.nn.Module):
             Directory where material patch model is stored.
         model_name : str, default='material_patch_model'
             Name of material patch model.
+        is_data_normalization : bool, default=False
+            If True, then input and output features are normalized, False
+            otherwise. Data scalers need to be fitted with fit_data_scalers()
+            and are stored as model attributes.
         device_type : {'cpu', 'cuda'}, default='cpu'
             Type of device on which torch.Tensor is allocated.
         """
@@ -114,6 +138,8 @@ class GNNMaterialPatchModel(torch.nn.Module):
                                'string.')
         else:
             self.model_name = model_name
+        # Set normalization flag
+        self.is_data_normalization = is_data_normalization
         # Set device
         self._device_type = device_type
         if device_type in ('cpu', 'cuda'):
@@ -132,6 +158,10 @@ class GNNMaterialPatchModel(torch.nn.Module):
                                 n_edge_in=n_edge_in,
                                 n_hidden_layers=n_hidden_layers,
                                 hidden_layer_size=hidden_layer_size)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Initialize data scalers
+        if self.is_data_normalization:
+            self._init_data_scalers()
     # -------------------------------------------------------------------------
     def forward(self):
         """Forward propagation."""
@@ -162,13 +192,16 @@ class GNNMaterialPatchModel(torch.nn.Module):
         with open(model_init_file_path, 'wb') as init_file:
             pickle.dump(model_init_args, init_file)
     # -------------------------------------------------------------------------
-    def _get_features_from_input_graph(self, input_graph):
-        """Get features from material patch input graph.
+    def get_input_features_from_graph(self, graph, is_normalized=False):
+        """Get input features from material patch graph.
         
         Parameters
         ----------
-        input_graph : torch_geometric.data.Data
+        graph : torch_geometric.data.Data
             Material patch homogeneous graph.
+        is_normalized : bool, default=False
+            If True, get normalized input features from material patch graph,
+            False otherwise.
         
         Returns
         -------
@@ -184,38 +217,94 @@ class GNNMaterialPatchModel(torch.nn.Module):
             as (start_node_index, end_node_index).
         """
         # Check consistency with simulator
-        if input_graph.num_node_features() != self._n_node_in:
+        if graph.num_node_features() != self._n_node_in:
             raise RuntimeError('Input graph and simulator number of node '
                                'features are not consistent.')
-        if input_graph.num_edge_features() != self._n_edge_in:
+        if graph.num_edge_features() != self._n_edge_in:
             raise RuntimeError('Input graph and simulator number of edge '
                                'features are not consistent.')
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        # Get features from material patch input graph
-        if isinstance(input_graph.x, torch.Tensor):
-            node_features_in = input_graph.x.clone()
+        # Get features from material patch graph
+        if isinstance(graph.x, torch.Tensor):
+            node_features_in = graph.x.clone()
         else:
             node_features_in = None
-        if isinstance(input_graph.edge_attr, torch.Tensor):
-            edge_features_in = input_graph.edge_attr.clone()
+        if isinstance(graph.edge_attr, torch.Tensor):
+            edge_features_in = graph.edge_attr.clone()
         else:
             edge_features_in = None
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        # Get material patch input graph edges indexes
-        if isinstance(input_graph.edge_index, torch.Tensor):
-            edges_indexes = input_graph.edge_index.clone()
+        # Get material patch graph edges indexes
+        if isinstance(graph.edge_index, torch.Tensor):
+            edges_indexes = graph.edge_index.clone()
         else:
             edges_indexes = None
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Normalize input features data
+        if is_normalized:
+            # Check model data normalization
+            self._check_normalized_return()
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Get fitted data scalers for input features
+            scaler_node_in = self.get_fitted_data_scaler('node_features_in')
+            scaler_edge_in = self.get_fitted_data_scaler('edge_features_in')
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Normalize data
+            if node_features_in is not None:
+                node_features_in = scaler_node_in.transform(node_features_in)
+            if edge_features_in is not None:
+                edge_features_in = scaler_edge_in.transform(edge_features_in)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         return node_features_in, edge_features_in, edges_indexes
     # -------------------------------------------------------------------------
-    def predict_internal_forces(self, input_graph):
+    def get_output_features_from_graph(self, graph, is_normalized=False):
+        """Get output features from material patch graph.
+        
+        Parameters
+        ----------
+        graph : torch_geometric.data.Data
+            Material patch homogeneous graph.
+        is_normalized : bool, default=False
+            If True, get normalized output features from material patch graph,
+            False otherwise.
+        
+        Returns
+        -------
+        node_features_out : torch.Tensor
+            Nodes features output matrix stored as a torch.Tensor(2d) of shape
+            (n_nodes, n_features).
+        """
+        # Get features from material patch graph
+        if isinstance(graph.y, torch.Tensor):
+            node_features_out = graph.y.clone()
+        else:
+            node_features_out = None
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~  
+        # Normalize output features data
+        if is_normalized:
+            # Check model data normalization
+            self._check_normalized_return()
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Get fitted data scalers for output features
+            scaler_node_out = self.get_fitted_data_scaler('node_features_out')
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Normalize data
+            if node_features_out is not None:
+                node_features_out = \
+                    scaler_node_out.transform(node_features_out)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        return node_features_out
+    # -------------------------------------------------------------------------
+    def predict_internal_forces(self, input_graph, is_normalized=False):
         """Predict material patch internal forces.
         
         Parameters
         ----------
         input_graph : torch_geometric.data.Data
             Material patch homogeneous graph.
+        is_normalized : bool, default=False
+            If True, get normalized output features from material patch graph,
+            False otherwise.
             
         Returns
         -------
@@ -227,16 +316,29 @@ class GNNMaterialPatchModel(torch.nn.Module):
         if not isinstance(input_graph, torch_geometric.data.Data):
             raise RuntimeError('Material patch input graph must be instance '
                                'of torch_geometric.data.Data.')
+        # Check model data normalization
+        if is_normalized:
+            self._check_normalized_return()
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Get features from material patch input graph
         node_features_in, edge_features_in, edges_indexes = \
-            self._get_features_from_input_graph(input_graph)
+            self.get_input_features_from_graph(
+                input_graph, is_normalized=self.is_data_normalization)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Predict material patch internal forces
         node_internal_forces = \
             self._gnn_epd_model(node_features_in=node_features_in,
                                 edge_features_in=edge_features_in,
                                 edges_indexes=edges_indexes)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Denormalize output features data
+        if self.is_data_normalization and not is_normalized:
+            # Get fitted data scalers for output features
+            scaler_node_out = self.get_fitted_data_scaler('node_features_out')
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Denormalize data
+            node_internal_forces = \
+                scaler_node_out.inverse_transform(node_internal_forces)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         return node_internal_forces
     # -------------------------------------------------------------------------
@@ -397,4 +499,122 @@ class GNNMaterialPatchModel(torch.nn.Module):
         else:
             training_step = None
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        return is_state_file, training_step  
+        return is_state_file, training_step
+    # -------------------------------------------------------------------------
+    def _init_data_scalers(self):
+        """Initialize model data scalers."""
+        self._data_scalers = {}
+        self._data_scalers['node_features_in'] = None
+        self._data_scalers['edge_features_in'] = None
+        self._data_scalers['node_features_out'] = None
+    # -------------------------------------------------------------------------
+    def fit_data_scalers(self, dataset, is_verbose=False):
+        """Fit model data scalers.
+        
+        Data scalars are set a standard scalers where features are normalized
+        by removing the mean and scaling to unit variance.
+        
+        Calling this method turns on model data normalization.
+        
+        Parameters
+        ----------
+        dataset : GNNMaterialPatchDataset
+            GNN-based material patch data set. Each sample corresponds to a
+            torch_geometric.data.Data object describing a homogeneous graph.
+        is_verbose : bool, default=False
+            If True, enable verbose output.
+        """
+        if is_verbose:
+            print('\nFitting GNN-based material patch model data scalers'
+                  '\n---------------------------------------------------\n')
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set model data normalization
+        self.is_data_normalization = True
+        # Initialize data scalers
+        self._init_data_scalers()
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Instantiate data scalers
+        scaler_node_in = sklearn.preprocessing.StandardScaler()
+        scaler_edge_in = sklearn.preprocessing.StandardScaler()
+        scaler_node_out = sklearn.preprocessing.StandardScaler()
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set data loader
+        data_loader = torch.utils.data.DataLoader(dataset=dataset)
+        # Loop over graph samples
+        for pyg_graph in tqdm.tqdm(data_loader,
+                                   desc='> Processing data samples: ',
+                                   disable=not is_verbose):
+            # Get features from material patch input graph
+            node_features_in, edge_features_in, _ = \
+                self.get_input_features_from_graph(pyg_graph)  
+            node_features_out = \
+                self.get_output_features_from_graph(pyg_graph)
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Process sample to fit data scaler: node input features
+            if scaler_node_in is not None:
+                if node_features_in is not None:
+                    scaler_node_in.partial_fit(node_features_in)
+            else:
+                scaler_node_in = None
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Process sample to fit data scaler: edge input features
+            if scaler_edge_in is not None:
+                if edge_features_in is not None:
+                    scaler_edge_in.partial_fit(edge_features_in)
+            else:
+                scaler_edge_in = None
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Process sample to fit data scaler: node output features
+            if scaler_node_out is not None:
+                if node_features_out is not None:
+                    scaler_node_out.partial_fit(node_features_out)
+            else:
+                scaler_node_out = None
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        if is_verbose:
+            print('\n> Setting fitted standard scalers...\n')
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set fitted data scalers
+        self._data_scalers['node_features_in'] = scaler_node_in
+        self._data_scalers['edge_features_in'] = scaler_edge_in
+        self._data_scalers['node_features_out'] = scaler_node_out
+    # -------------------------------------------------------------------------
+    def get_fitted_data_scaler(self, features_type):
+        """Get fitted model data scalers.
+        
+        Parameters
+        ----------
+        features_type : str
+            Features for which data scaler is required:
+            
+            'node_features_in'  : Node features input matrix
+            
+            'edge_features_in'  : Edge features input matrix
+            
+            'node_features_out' : Node features output matrix
+
+        Returns
+        -------
+        data_scaler : sklearn.preprocessing.StandardScaler
+            Fitted data scaler.
+        """
+        # Get fitted data scaler
+        if features_type not in self._data_scalers.keys():
+            raise RuntimeError(f'Unknown data scaler for {features_type}.')
+        elif self._data_scalers[features_type] is None:
+            raise RuntimeError(f'Data scaler for {features_type} has not '
+                               'been fitted. Fit data scalers by calling '
+                               'method fit_data_scalers() before training '
+                               'or predicting with the model.')
+        else:
+            data_scaler = self._data_scalers[features_type]
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        return data_scaler
+    # -------------------------------------------------------------------------
+    def _check_normalized_return(self):
+        """Check if model data normalization is available."""
+        if not self.is_data_normalization:
+            raise RuntimeError('Data scalers for model features have not '
+                               'been fitted. Fit data scalers by calling '
+                               'method fit_data_scalers() before training '
+                               'or predicting with the model.')
