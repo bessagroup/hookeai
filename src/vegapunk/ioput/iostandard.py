@@ -20,7 +20,7 @@ import shutil
 # =============================================================================
 __author__ = 'Bernardo Ferreira (bernardo_ferreira@brown.edu)'
 __credits__ = ['Bernardo Ferreira', ]
-__status__ = 'Planning'
+__status__ = 'Alpha'
 # =============================================================================
 def make_directory(directory, is_overwrite=False):
     """Create a directory.

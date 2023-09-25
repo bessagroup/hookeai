@@ -27,7 +27,7 @@ from material_patch.finite_element import FiniteElement
 # =============================================================================
 __author__ = 'Bernardo Ferreira (bernardo_ferreira@brown.edu)'
 __credits__ = ['Bernardo Ferreira', ]
-__status__ = 'Planning'
+__status__ = 'Alpha'
 # =============================================================================
 #
 # =============================================================================

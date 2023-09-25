@@ -22,7 +22,7 @@ from ioput.iostandard import new_file_path_with_int
 # =============================================================================
 __author__ = 'Bernardo Ferreira (bernardo_ferreira@brown.edu)'
 __credits__ = ['Bernardo Ferreira', ]
-__status__ = 'Planning'
+__status__ = 'Alpha'
 # =============================================================================
 #
 # =============================================================================
