@@ -25,8 +25,10 @@ load_loss_history
 # Standard
 import os
 import pickle
+import random
 # Third-party
 import torch
+import numpy as np
 # Local
 from gnn_model.gnn_material_simulator import GNNMaterialPatchModel
 #
@@ -40,7 +42,8 @@ def train_model(n_train_steps, dataset, model_init_args, learning_rate_init,
                 opt_algorithm='adam', lr_scheduler_type=None,
                 lr_scheduler_kwargs={}, loss_type='mse', loss_kwargs={},
                 batch_size=1, is_sampler_shuffle=False, load_model_state=None,
-                save_every=None, device_type='cpu', is_verbose=False):
+                save_every=None, device_type='cpu', seed=None,
+                is_verbose=False):
     """Training of GNN-based material patch model.
     
     Parameters
@@ -88,9 +91,19 @@ def train_model(n_train_steps, dataset, model_init_args, learning_rate_init,
         If None, then saves only last training step.
     device_type : {'cpu', 'cuda'}, default='cpu'
         Type of device on which torch.Tensor is allocated.
+    seed : int, default=None
+        Seed used to initialize the random number generators of Python and
+        other libraries (e.g., NumPy, PyTorch) for all devices to preserve
+        reproducibility. Does also set workers seed in PyTorch data loaders.
     is_verbose : bool, default=False
         If True, enable verbose output.
     """
+    # Set random number generators initialization for reproducibility
+    if isinstance(seed, int):
+        random.seed(seed)
+        np.random.seed(seed)
+        generator = torch.Generator().manual_seed(seed)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set device
     device = torch.device(device_type)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -109,8 +122,13 @@ def train_model(n_train_steps, dataset, model_init_args, learning_rate_init,
     model_parameters = model.parameters(recurse=True)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set data loader
-    data_loader = torch.utils.data.DataLoader(
-        dataset=dataset, batch_size=batch_size, shuffle=is_sampler_shuffle)
+    if isinstance(seed, int):
+        data_loader = torch.utils.data.DataLoader(
+            dataset=dataset, batch_size=batch_size, worker_init_fn=seed_worker,
+            generator=generator)
+    else:
+        data_loader = torch.utils.data.DataLoader(
+            dataset=dataset, batch_size=batch_size, shuffle=is_sampler_shuffle)        
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Initialize learning rate
     learning_rate = learning_rate_init
@@ -479,4 +497,17 @@ def load_loss_history(model, loss_type, training_step):
         loss_history = (training_step + 1)*[None,]
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     return loss_history
+# =============================================================================
+def seed_worker(worker_id):
+    """Set workers seed in PyTorch data loaders to preserve reproducibility.
     
+    Taken from: https://pytorch.org/docs/stable/notes/randomness.html
+    
+    Parameters
+    ----------
+    worker_id : int
+        Worker ID.
+    """
+    worker_seed = torch.initial_seed() % 2**32
+    np.random.seed(worker_seed)
+    random.seed(worker_seed)

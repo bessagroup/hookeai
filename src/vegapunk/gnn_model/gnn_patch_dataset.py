@@ -343,7 +343,7 @@ def split_dataset(dataset, split_sizes, seed=None):
         Size (item, float) for each data set split part name (key, str), where
         size is a fraction contained between 0 and 1. The sum of all sizes must
         equal 1.
-    seed : int
+    seed : int, default=None
         Seed for random data set split generator.
     
     Returns

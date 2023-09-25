@@ -19,12 +19,14 @@ compute_sample_prediction_loss
 # Standard
 import os
 import pickle
+import random
 # Third-party
 import torch
 import tqdm
+import numpy as np
 # Local
 from gnn_model.gnn_material_simulator import GNNMaterialPatchModel
-from gnn_model.training import get_pytorch_loss
+from gnn_model.training import get_pytorch_loss, seed_worker
 from ioput.iostandard import make_directory
 #
 #                                                          Authorship & Credits
@@ -36,7 +38,7 @@ __status__ = 'Planning'
 #
 # =============================================================================
 def predict(predict_dir, dataset, model_directory, is_compute_loss=True,
-            loss_type='mse', loss_kwargs={}, device_type='cpu',
+            loss_type='mse', loss_kwargs={}, device_type='cpu', seed=None,
             is_verbose=False):
     """Make predictions with GNN-based material patch model for given dataset.
     
@@ -65,9 +67,19 @@ def predict(predict_dir, dataset, model_directory, is_compute_loss=True,
         Directory where GNN-based material patch model is stored.
     device_type : {'cpu', 'cuda'}, default='cpu'
         Type of device on which torch.Tensor is allocated.
+    seed : int, default=None
+        Seed used to initialize the random number generators of Python and
+        other libraries (e.g., NumPy, PyTorch) for all devices to preserve
+        reproducibility. Does also set workers seed in PyTorch data loaders.
     is_verbose : bool, default=False
         If True, enable verbose output.
     """
+    # Set random number generators initialization for reproducibility
+    if isinstance(seed, int):
+        random.seed(seed)
+        np.random.seed(seed)
+        generator = torch.Generator().manual_seed(seed)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set device
     device = torch.device(device_type)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -118,7 +130,11 @@ def predict(predict_dir, dataset, model_directory, is_compute_loss=True,
     predict_subdir = make_predictions_subdir(predict_dir, model.model_name)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set data loader
-    data_loader = torch.utils.data.DataLoader(dataset=dataset)
+    if isinstance(seed, int):
+        data_loader = torch.utils.data.DataLoader(
+            dataset=dataset, worker_init_fn=seed_worker, generator=generator)
+    else:
+        data_loader = torch.utils.data.DataLoader(dataset=dataset)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Initialize predictions loss computation
     if is_compute_loss:
