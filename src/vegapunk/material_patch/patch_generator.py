@@ -54,17 +54,13 @@ class FiniteElementPatchGenerator:
         For each dimension (key, str[int]), store the edges
         (item, tuple[tuple]) oriented along that dimension in the reference
         configuration. Each edge is stored as tuple[int](2) containing the
-        indexes of the two corresponding corners (sorted in asceding order of
+        indexes of the two corresponding corners. Corners are stored such that
+        (sorted in asceding order of
         coordinate).
-    _edges_euler_angles_per_dim : dict
-        For each dimension (key, str[int]), store the corresponding edges
-        deformation plans orientations (item, tuple[numpy.ndarray(2d)]). For
-        each edge, the deformation plans orientations are stored as a
-        numpy.ndarray[float](n_def_plans, 3), where each orientation is defined
-        by the the Euler angles (degrees) sorted according to Bunge convention
-        (Z1-X2-Z3). Axis colinear with the edge always points towards the
-        positive coordinate, while the orthogonal axis is always positive
-        towards the outside of the patch.
+    _orth_edge_dir : dict
+        2D: For each dimension (key, str[int]), stores the edges
+        (item, tuple[tuple]) outward orthogonal edge direction euler angles
+        with respect to edge connectivities order.
     _edges_mapping : dict
         For each edge label (key, str[int]), store the edge orientation
         dimension and internal index consistent with `_edges_per_dim`
@@ -184,13 +180,11 @@ class FiniteElementPatchGenerator:
             Displacement range (item, tuple[float](2)) for each edge
             label (key, str[int]). Edges are labeled from 1 to number of edges.
             Range is specified as a tuple(min, max) where: (1) displacement
-            range is orthogonal to the edge (reference configuration),
-            (2) displacement range is relative to midplane defined by both
-            limiting corners (deformed configuration), and
-            (3) positive/negative displacement corresponds to outward/inward
-            direction with respect to the patch. Null displacement range is
-            assumed for unspecified edges. If None, null displacement range is
-            set by default.
+            range is orthogonal and relative to the edge (defined by limiting
+            corner nodes in the deformed configuration), (2) positive/negative
+            displacement corresponds to outward/inward direction with respect
+            to the patch. Null displacement range is assumed for unspecified
+            edges. If None, null displacement range is set by default.
         max_iter : int, default=10
             Maximum number of iterations to get a geometrically admissible
             deformed patch configuration.
@@ -226,7 +220,6 @@ class FiniteElementPatchGenerator:
         corners_coords_ref = self._corners_coords_ref
         # Get edges attributes
         edges_per_dim = self._edges_per_dim
-        edges_euler_angles_per_dim = self._edges_euler_angles_per_dim
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Get number of patch edge nodes along each dimension
         n_edge_nodes_per_dim = self._get_n_edge_nodes_per_dim(elem_type,
@@ -239,14 +232,14 @@ class FiniteElementPatchGenerator:
             # Initialize edges nodes coordinates along dimension
             edges_coords_ref[str(i)] = []
             # Loop over edges
-            for (cid_l, cid_r) in edges_per_dim[str(i)]:
+            for (cid_init, cid_end) in edges_per_dim[str(i)]:
                 # Build edge nodes coordinates assuming a regular
                 # discretization (evenly spaced nodes)
                 coords = np.zeros((n_edge_nodes, self._n_dim))
                 # Loop over dimensions
                 for j in range(self._n_dim):
-                    coords[:, j] = np.linspace(corners_coords_ref[cid_l, j],
-                                               corners_coords_ref[cid_r, j],
+                    coords[:, j] = np.linspace(corners_coords_ref[cid_init, j],
+                                               corners_coords_ref[cid_end, j],
                                                num=n_edge_nodes)
                 # Store edge nodes coordinates
                 edges_coords_ref[str(i)].append(coords)
@@ -281,34 +274,28 @@ class FiniteElementPatchGenerator:
                 edges_coords_def[str(i)] = []
                 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                 # Loop over edges
-                for j, (cid_l, cid_r) in enumerate(edges_per_dim[str(i)]):
+                for j, (cid_init, cid_end) in enumerate(edges_per_dim[str(i)]):
                     # Get edge nodes coordinates (reference configuration)
                     nodes_coords_ref = edges_coords_ref[str(i)][j]
                     # Get edge corners coordinates (deformed configuration)
-                    left_node_def = corners_coords_def[cid_l, :]
-                    right_node_def = corners_coords_def[cid_r, :]
+                    init_node_def = corners_coords_def[cid_init, :]
+                    end_node_def = corners_coords_def[cid_end, :]
                     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-                    # Get edge deformation planes orientation (Euler angles,
-                    # Bunge convention)
-                    euler_degs = edges_euler_angles_per_dim[str(i)][j]
-                    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-                    # Loop over edge deformation planes
-                    for k in range(euler_degs.shape[0]):
-                        # Get edge deformation plane orientation (Euler angles,
-                        # Bunge convention)
-                        euler_deg = tuple(euler_degs[k, :])
-                        # Get edge rotation matrix to the deformation plane
-                        rotation = rotation_tensor_from_euler_angles(
-                            euler_deg)[:self._n_dim, :self._n_dim]
+                    # Generate deformed configuration    
+                    if self._n_dim == 2:
+                        # Get rotation matrix defining deformed edge local
+                        # coordinates (deformation plane)
+                        rotation = self.rotation_tensor_deformed_edge(
+                            i, j, init_node_def, end_node_def)[:self._n_dim,
+                                                               :self._n_dim]
                         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-                        # Rotate edge and corners coordinates to deformation
-                        # plane
+                        # Rotate edge and corners coordinates to edge local
+                        # coordinates (deformation plane)
                         rot_nodes_coords_ref = \
                             type(self)._rotate_coords_array(nodes_coords_ref,
                                                             rotation)
-                        rot_left_node_def = np.matmul(rotation, left_node_def)
-                        rot_right_node_def = np.matmul(rotation,
-                                                       right_node_def)
+                        rot_init_node_def = np.matmul(rotation, init_node_def)
+                        rot_end_node_def = np.matmul(rotation, end_node_def)                        
                         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                         # Get edge deformation polynomial order
                         poly_order = edges_poly_orders[str(i)][j]
@@ -316,24 +303,27 @@ class FiniteElementPatchGenerator:
                         disp_amp = edges_disp_range[str(i)][j]        
                         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                         # Generate randomly deformed boundary edge node
-                        # coordinates (deformed plane)
+                        # coordinates in the edge local coordinates
+                        # (deformation plane)
                         rot_nodes_coords_def, rot_nodes_disp = \
                             self._get_deformed_boundary_edge(
-                                rot_nodes_coords_ref, rot_left_node_def,
-                                rot_right_node_def, poly_order,
+                                rot_nodes_coords_ref, rot_init_node_def,
+                                rot_end_node_def, poly_order,
                                 poly_bounds_range=disp_amp)
                         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                         # Get edge and corners coordinates (deformed
-                        # configuration) in the original space
+                        # configuration) in the original coordinates space
                         nodes_coords_def = type(self)._rotate_coords_array(
                             rot_nodes_coords_def, np.transpose(rotation))
-                        left_node_def = np.matmul(np.transpose(rotation),
-                                                left_node_def)
-                        right_node_def = np.matmul(np.transpose(rotation),
-                                                right_node_def)
+                        init_node_def = np.matmul(np.transpose(rotation),
+                                                  init_node_def)
+                        end_node_def = np.matmul(np.transpose(rotation),
+                                                 end_node_def)
                         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                         # Store edge nodes coordinates (deformed configuration)
                         edges_coords_def[str(i)].append(nodes_coords_def)
+                    else:
+                        raise RuntimeError('Missing 3D implementation.')
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~   
             # Check whether patch deformation is geometrically admissible
             is_admissible = self._is_admissible_geometry(edges_coords_def)
@@ -604,13 +594,11 @@ class FiniteElementPatchGenerator:
             Displacement range (item, tuple[float](2)) for each edge
             label (key, str[int]). Edges are labeled from 1 to number of edges.
             Range is specified as a tuple(min, max) where: (1) displacement
-            range is orthogonal to the edge (reference configuration),
-            (2) displacement range is relative to midplane defined by both
-            limiting corners (deformed configuration), and
-            (3) positive/negative displacement corresponds to outward/inward
-            direction with respect to the patch. Null displacement range is
-            assumed for unspecified edges. If None, null displacement range is
-            set by default.
+            range is orthogonal and relative to the edge (defined by limiting
+            corner nodes in the deformed configuration), (2) positive/negative
+            displacement corresponds to outward/inward direction with respect
+            to the patch. Null displacement range is assumed for unspecified
+            edges. If None, null displacement range is set by default.
             
         Returns
         -------
@@ -698,12 +686,11 @@ class FiniteElementPatchGenerator:
             # Set edges connectities with respect to corners
             edges_per_dim = {'0': ((0, 1), (3, 2)),
                              '1': ((0, 3), (1, 2))}
-            # Set edges deformation plans orientations (Euler angles (degrees)
-            # sorted according to Bunge convention (Z1-X2-Z3))
-            edges_euler_angles_per_dim = {'0': (np.array([[0, -180, 0],]),
-                                                np.array([[0, 0, 0],])),
-                                          '1': (np.array([[-90, 0, 0],]),
-                                                np.array([[90, -180, 0],]))}
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Set outward orthogonal edge direction euler angles with respect
+            # to edge connectivities order
+            orth_edge_dir = {'0': ((-90, 0, 0), (90, 0, 0)),
+                             '1': ((90, 0, 0), (-90, 0, 0))}
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Set mapping between edges labels and internal indexing
             edges_mapping = {'1': ('0', 0), '2': ('0', 1),
@@ -712,7 +699,7 @@ class FiniteElementPatchGenerator:
             raise RuntimeError('Missing 3D implementation.')     
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         self._edges_per_dim = edges_per_dim
-        self._edges_euler_angles_per_dim = edges_euler_angles_per_dim
+        self._orth_edge_dir = orth_edge_dir
         self._edges_mapping = edges_mapping
     # -------------------------------------------------------------------------
     def _get_n_edge_nodes_per_dim(self, elem_type, n_elems_per_dim): 
@@ -787,17 +774,17 @@ class FiniteElementPatchGenerator:
                 # Get orthogonal dimensions
                 orth_dims = self._get_orthogonal_dims(i)
                 # Loop over edges
-                for j, (cid_l, cid_r) in enumerate(
+                for j, (cid_init, cid_end) in enumerate(
                         self._edges_per_dim[str(i)]):
                     # If edge zero order deformation polynomial
                     if edges_poly_orders[str(i)][j] == 0:
                         # Loop over orthogonal dimensions
                         for k in orth_dims:
                             # Get displacement ranges
-                            range_l = (corners_disp_range[cid_l, k, 0],
-                                       corners_disp_range[cid_l, k, 1])
-                            range_r = (corners_disp_range[cid_r, k, 0],
-                                       corners_disp_range[cid_r, k, 1])
+                            range_l = (corners_disp_range[cid_init, k, 0],
+                                       corners_disp_range[cid_init, k, 1])
+                            range_r = (corners_disp_range[cid_end, k, 0],
+                                       corners_disp_range[cid_end, k, 1])
                             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                             # Check displacement range intersection
                             min_max = np.min((range_l[1], range_r[1]))
@@ -821,8 +808,8 @@ class FiniteElementPatchGenerator:
                                 disp = np.average((disp_l, disp_r))
                             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~                          
                             # Enforce the same displacement on both corners
-                            corners_disp[cid_l, k] = disp
-                            corners_disp[cid_r, k] = disp
+                            corners_disp[cid_init, k] = disp
+                            corners_disp[cid_end, k] = disp
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~     
         return corners_disp, corners_disp_range
     # -------------------------------------------------------------------------
@@ -1190,6 +1177,55 @@ class FiniteElementPatchGenerator:
             tuple({i for i in range(self._n_dim)}.difference({dim,}))
         return orthogonal_dims
     # -------------------------------------------------------------------------
+    def rotation_tensor_deformed_edge(self, edge_dim, edge_index,
+                                      init_coord, end_coord):
+        """Set rotation tensor defining deformed edge local coordinates.
+        
+        Parameters
+        ----------
+        edge_dim : int
+            Dimension along which edge is oriented in the reference
+            configuration.
+        edge_index : int
+            Edge index with respect to edges oriented along the corresponding
+            dimension.
+        init_coord : np.ndarray(2d)
+            Coordinates of edge initial corner in the deformed configuration.
+        edge_coord : np.ndarray(2d)
+            Coordinates of edge ending corner in the deformed configuration.
+            
+        Returns
+        -------
+        rotation : numpy.ndarray (2d)
+            Rotation tensor (for given rotation angle theta, active
+            transformation (- theta) and passive transformation (+ theta)).
+        """
+        # Initialize rotation tensor
+        rotation = np.zeros((3, 3))
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Compute edge direction unit vector
+        edge_dir = np.array(end_coord) - np.array(init_coord)
+        edge_dir = (1.0/np.linalg.norm(edge_dir))*edge_dir
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Build rotation tensor for suitable passive transformation (basis
+        # rotation)
+        if self._n_dim == 2:
+            # Get outward orthogonal rotation euler angles
+            rotation_angle = self._orth_edge_dir[str(edge_dim)][edge_index]
+            # Compute corresponding rotation tensor
+            rotation = \
+                rotation_tensor_from_euler_angles(rotation_angle)[:2, :2]
+            # Compute edge orthogonal direction unit vector 
+            orth_dir = np.matmul(rotation, edge_dir)
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Build rotation tensor 
+            rotation[0, 0:2] = edge_dir
+            rotation[1, 0:2] = orth_dir
+        else:
+            raise RuntimeError('Missing 3D implementation.')
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~        
+        return rotation
+    # -------------------------------------------------------------------------
     @staticmethod
     def _rotate_coords_array(coords_array, r):
         """Rotate coordinates array.
@@ -1483,4 +1519,3 @@ def rotation_tensor_from_euler_angles(euler_deg):
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Return
     return r
-    
