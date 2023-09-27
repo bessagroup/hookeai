@@ -106,8 +106,8 @@ class FiniteElementPatchGenerator:
         Check whether simulation of patch is physically admissible.
     _get_orthogonal_dims(self, dim)
         Get orthogonal dimensions to given dimension.
-    _rotation_tensor_deformed_edge(self, edge_dim, edge_index, init_coord, \
-                                   end_coord)
+    _rotation_tensor_deformed_edge(self, edge_dim, edge_index, init_node_def, \
+                                   end_node_def)
         Set rotation tensor to deformed boundary edge local coordinates.
     _transform_to_edge_local_coordinates(self, init_node_def, end_node_def, \
                                          nodes_coords_ref, \
@@ -1214,7 +1214,7 @@ class FiniteElementPatchGenerator:
         return orthogonal_dims
     # -------------------------------------------------------------------------
     def _rotation_tensor_deformed_edge(self, edge_dim, edge_index,
-                                       init_coord, end_coord):
+                                       init_node_def, end_node_def):
         """Set rotation tensor to deformed boundary edge local coordinates.
         
         Parameters
@@ -1225,10 +1225,12 @@ class FiniteElementPatchGenerator:
         edge_index : int
             Edge index with respect to edges oriented along the corresponding
             dimension.
-        init_coord : np.ndarray(2d)
-            Coordinates of edge initial corner in the deformed configuration.
-        edge_coord : np.ndarray(2d)
-            Coordinates of edge ending corner in the deformed configuration.
+        init_node_def : numpy.ndarray(2d)
+            Boundary edge initial corner node coordinates (deformed
+            configuration) stored as numpy.ndarray(n_dim).
+        end_node_def : numpy.ndarray(2d)
+            Boundary edge ending corner node coordinates (deformed
+            configuration) stored as numpy.ndarray(n_dim).
             
         Returns
         -------
@@ -1240,7 +1242,7 @@ class FiniteElementPatchGenerator:
         rotation = np.zeros((3, 3))
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Compute edge direction unit vector
-        edge_dir = np.array(end_coord) - np.array(init_coord)
+        edge_dir = np.array(end_node_def) - np.array(init_node_def)
         edge_dir = (1.0/np.linalg.norm(edge_dir))*edge_dir
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Build rotation tensor for suitable passive transformation (basis
@@ -1272,32 +1274,34 @@ class FiniteElementPatchGenerator:
         ----------
         init_node_def : numpy.ndarray(2d)
             Boundary edge initial corner node coordinates (deformed
-            configuration).
+            configuration) stored as numpy.ndarray(n_dim).
         end_node_def : numpy.ndarray(2d)
             Boundary edge ending corner node coordinates (deformed
-            configuration).
+            configuration) stored as numpy.ndarray(n_dim).
         nodes_coords_ref : numpy.ndarray(2d)
             Boundary edge nodes coordinates (reference configuration) stored as
-            numpy.ndarray(n_edge_nodes, 2).
+            numpy.ndarray(n_edge_nodes, n_dim).
         translation : numpy.ndarray(1d), default=None
             Translation from patch coordinates to deformed boundary edge local
-            coordinates.
+            coordinates stored as numpy.ndarray(n_dim).
         rotation : numpy.ndarray(2d), default=None
             Rotation tensor from patch coordinates to deformed boundary edge
-            local coordinates.
+            local coordinates stored as numpy.ndarray(n_dim, n_dim).
             
         Returns
         -------
         local_init_node_def : numpy.ndarray(1d)
             Boundary edge initial corner node coordinates (deformed
-            configuration) in deformed boundary edge local coordinates.
+            configuration) in deformed boundary edge local coordinates stored
+            as numpy.ndarray(n_dim).
         local_end_node_def : numpy.ndarray(1d)
             Boundary edge ending corner node coordinates (deformed
-            configuration) in deformed boundary edge local coordinates.
+            configuration) in deformed boundary edge local coordinates stored
+            as numpy.ndarray(n_dim).
         local_nodes_coords_ref : numpy.ndarray(2d)
             Boundary edge nodes coordinates (reference configuration) in
             deformed boundary edge local coordinates stored as
-            numpy.ndarray(n_edge_nodes, 2).
+            numpy.ndarray(n_edge_nodes, n_dim).
         """
         # Set default translation and rotation
         if translation is None:
@@ -1324,21 +1328,22 @@ class FiniteElementPatchGenerator:
         
         Parameters
         ----------
-        nodes_coords_def : numpy.ndarray(2d)
-            Boundary edge nodes coordinates (deformed configuration) stored as
-            numpy.ndarray(n_edge_nodes, 2).
+        local_nodes_coords_def : numpy.ndarray(2d)
+            Boundary edge nodes coordinates (deformed configuration) in
+            deformed boundary edge local coordinates and stored as
+            numpy.ndarray(n_edge_nodes, n_dim).
         translation : numpy.ndarray(1d), default=None
             Translation from deformed boundary edge local coordinates to patch
-            coordinates.
+            coordinates stored as numpy.ndarray(n_dim).
         rotation : numpy.ndarray(2d), default=None
             Rotation tensor from deformed boundary edge local coordinates to
-            patch coordinates.
+            patch coordinates stored as numpy.ndarray(n_dim, n_dim).
             
         Returns
         -------
         nodes_coords_def : numpy.ndarray(2d)
             Boundary edge nodes coordinates (deformed configuration) stored as
-            numpy.ndarray(n_edge_nodes, 2).
+            numpy.ndarray(n_edge_nodes, n_dim).
         """
         # Set default translation and rotation
         if translation is None:
