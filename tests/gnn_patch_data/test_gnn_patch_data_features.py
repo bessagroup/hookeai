@@ -76,6 +76,13 @@ def test_build_nodes_features_matrix_invalid(features_generator_2d):
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Test unsufficient history data
     with pytest.raises(RuntimeError):
+        features = ('coord_hist',)
+        n_time_steps = features_generator_2d._nodes_coords_hist.shape[1] + 1
+        _ = features_generator_2d.build_nodes_features_matrix(
+            features=features, n_time_steps=n_time_steps)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Test unsufficient history data
+    with pytest.raises(RuntimeError):
         features = ('disp_hist',)
         n_time_steps = features_generator_2d._nodes_disps_hist.shape[1] + 1
         _ = features_generator_2d.build_nodes_features_matrix(

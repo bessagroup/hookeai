@@ -8,7 +8,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 # Local
 from src.vegapunk.material_patch.patch_generator import \
-    FiniteElementPatchGenerator
+    FiniteElementPatchGenerator, rotation_tensor_from_euler_angles
 from tests.finite_element.conftest import available_elem_type
 # =============================================================================
 #
@@ -293,6 +293,128 @@ def test_get_elem_node_index(patch_generator_2d, elem_type, n_elems_per_dim,
         global_index) == local_index, 'Element node local index was not ' \
             'correctly identified.'
 # -----------------------------------------------------------------------------
+def test_rotation_tensors(patch_generator_2d):
+    """Test computation of rotation tensors."""
+    # Initialize errors
+    errors = []
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Set orthonormality checks
+    is_ort_1 = lambda rotation: \
+        np.allclose(np.matmul(rotation, rotation.T), np.eye(rotation.shape[0]))
+    is_ort_2 = lambda rotation: \
+        np.allclose(np.matmul(rotation.T, rotation), np.eye(rotation.shape[0]))
+    is_ort_3 = lambda rotation: np.isclose(np.linalg.det(rotation), 1)
+    # Set determinant check
+    is_det_1 = lambda rotation: np.isclose(np.abs(np.linalg.det(rotation)), 1)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Set boundary edge initial corner node coordinates
+    init_node_def = np.array([0.5, 1.0])
+    # Set boundary edge ending corner node coordinates
+    end_node_def = np.array([2.5, 0.5])
+    # Compute rotation tensor
+    rotation = patch_generator_2d._rotation_tensor_deformed_edge(
+        edge_dim=0, edge_index=0, init_node_def=init_node_def,
+        end_node_def=end_node_def)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    if not (is_ort_1(rotation) and is_ort_2(rotation) and is_det_1(rotation)):
+        errors.append('Invalid rotation tensor.')
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Set euler angles (degrees)
+    euler_deg = (90, -45, 150)
+    # Compute rotation tensor
+    rotation = rotation_tensor_from_euler_angles(euler_deg)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    if not (is_ort_1(rotation) and is_ort_2(rotation) and is_det_1(rotation)):
+        errors.append('Rotation tensor is not orthonormal.')
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    assert not errors, "Errors:\n{}".format("\n".join(errors))        
+# -----------------------------------------------------------------------------
+def test_transform_to_edge_local_coordinates_2d(patch_generator_2d,
+                                                coord_array_2d):
+    """Test transformation to deformed edge local coordinates."""
+    # Initialize errors
+    errors = []
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Set boundary edge initial corner node coordinates
+    init_node_def = np.array([0.5, 1.0])
+    # Set boundary edge ending corner node coordinates
+    end_node_def = np.array([2.5, 0.5])
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Set translation
+    translation = np.array([1.0, 2.0])
+    # Set rotation
+    theta = np.pi/6
+    rotation = np.array([[np.cos(theta), -np.sin(theta)],
+                         [np.sin(theta), np.cos(theta)]])
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Test transformation with translation and rotation
+    local_init_node_def, local_end_node_def, local_nodes_coords_ref = \
+        patch_generator_2d._transform_to_edge_local_coordinates(
+            init_node_def=init_node_def, end_node_def=end_node_def,
+            nodes_coords_ref=coord_array_2d, translation=translation,
+            rotation=rotation)
+    if not isinstance(local_init_node_def, np.ndarray) \
+            and not local_init_node_def.shape == init_node_def.shape:
+        errors.append('Invalid deformed boundary edge local coordinates of '
+                      'initial corner node.')
+    if not isinstance(local_end_node_def, np.ndarray) \
+            and not local_end_node_def.shape == end_node_def.shape:
+        errors.append('Invalid deformed boundary edge local coordinates of '
+                      'ending corner node.')
+    if not isinstance(local_nodes_coords_ref, np.ndarray) \
+            and not local_nodes_coords_ref.shape == coord_array_2d.shape:
+        errors.append('Invalid deformed boundary edge local coordinates of '
+                      'boundary edge nodes coordinates.')
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Test transformation without translation or rotation
+    local_init_node_def, local_end_node_def, local_nodes_coords_ref = \
+        patch_generator_2d._transform_to_edge_local_coordinates(
+            init_node_def=init_node_def, end_node_def=end_node_def,
+            nodes_coords_ref=coord_array_2d, translation=None, rotation=None)
+    if not np.allclose(local_init_node_def, init_node_def):
+        errors.append('Unexpected deformed boundary edge local coordinates of '
+                      'initial corner node.')
+    if not np.allclose(local_end_node_def, end_node_def):
+        errors.append('Unexpected deformed boundary edge local coordinates of '
+                      'ending corner node.')
+    if not np.allclose(local_nodes_coords_ref, coord_array_2d):
+        errors.append('Unexpected deformed boundary edge local coordinates of '
+                      'boundary edge nodes coordinates.')
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    assert not errors, "Errors:\n{}".format("\n".join(errors))
+# -----------------------------------------------------------------------------
+def test_transform_from_edge_local_coordinates_2d(patch_generator_2d,
+                                                  coord_array_2d):
+    """Test transformation from deformed edge local coordinates."""
+    # Initialize errors
+    errors = []
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Set translation
+    translation = np.array([1.0, 2.0])
+    # Set rotation
+    theta = np.pi/6
+    rotation = np.array([[np.cos(theta), -np.sin(theta)],
+                         [np.sin(theta), np.cos(theta)]])
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Test transformation with translation and rotation
+    nodes_coords_def = \
+        patch_generator_2d._transform_from_edge_local_coordinates(
+            local_nodes_coords_def=coord_array_2d, translation=translation,
+            rotation=rotation)
+    if not isinstance(nodes_coords_def, np.ndarray) \
+            and not nodes_coords_def.shape == coord_array_2d.shape:
+        errors.append('Invalid boundary edge nodes coordinates.')
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Test transformation without translation or rotation
+    nodes_coords_def = \
+        patch_generator_2d._transform_from_edge_local_coordinates(
+            local_nodes_coords_def=coord_array_2d, translation=None,
+            rotation=None)
+    if not np.allclose(nodes_coords_def, coord_array_2d):
+        errors.append('Unexpected deformed boundary edge nodes coordinates.')
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    assert not errors, "Errors:\n{}".format("\n".join(errors))
+# -----------------------------------------------------------------------------
 @pytest.mark.parametrize('poly_order, poly_bounds_range',
                          [(0, (-0.1, 0.2)),
                           (1, (-0.2, -0.1)),
@@ -449,6 +571,10 @@ def test_missing_3d_implementation():
         patch_generator._build_edges_disp_range()
     with pytest.raises(RuntimeError):
         patch_generator._is_admissible_simulation(edges_coords_def=None)
+    with pytest.raises(RuntimeError):
+        patch_generator._rotation_tensor_deformed_edge(
+            edge_dim=None, edge_index=None, init_node_def=np.array([0.0, 0.0]),
+            end_node_def=np.array([1.0, 0.0]))  
 # -----------------------------------------------------------------------------
 def test_generate_deformed_patch_2d(patch_generator_2d):
     """Test the full generation process of a finite element deformed patch."""
