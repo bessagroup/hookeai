@@ -448,7 +448,7 @@ def test_missing_3d_implementation():
     with pytest.raises(RuntimeError):
         patch_generator._build_edges_disp_range()
     with pytest.raises(RuntimeError):
-        patch_generator._is_admissible_geometry(edges_coords=None)
+        patch_generator._is_admissible_simulation(edges_coords_def=None)
 # -----------------------------------------------------------------------------
 def test_generate_deformed_patch_2d(patch_generator_2d):
     """Test the full generation process of a finite element deformed patch."""
@@ -482,7 +482,6 @@ def test_generate_deformed_patch_2d(patch_generator_2d):
 # -----------------------------------------------------------------------------
 def test_generate_deformed_patch_2d_nonadmissible(patch_generator_2d):
     """Test handling of non-admissible finite element deformed patch."""
-    """
     # Set finite element discretization
     elem_type = 'SQUAD4'
     n_elems_per_dim = (3, 3)
@@ -510,5 +509,3 @@ def test_generate_deformed_patch_2d_nonadmissible(patch_generator_2d):
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     assert not is_admissible and patch is None, 'A non-admissible finite ' \
         'element deformed patch was not detected.'
-    """
-    pass

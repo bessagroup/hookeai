@@ -102,10 +102,20 @@ class FiniteElementPatchGenerator:
     _polynomial_sampler(order, left_point, right_point, lower_bound=None, \
                         upper_bound=None, is_plot=False)
         Generate random polynomial by sampling points within given bounds.
-    _is_admissible_geometry(self, edges_coords)
-        Check whether patch is geometrically admissible.
+    _is_admissible_simulation(self, edges_coords)
+        Check whether simulation of patch is physically admissible.
     _get_orthogonal_dims(self, dim)
         Get orthogonal dimensions to given dimension.
+    _rotation_tensor_deformed_edge(self, edge_dim, edge_index, init_coord, \
+                                   end_coord)
+        Set rotation tensor to deformed boundary edge local coordinates.
+    _transform_to_edge_local_coordinates(self, init_node_def, end_node_def, \
+                                         nodes_coords_ref, \
+                                         translation = None, rotation = None)
+        Transform from patch coordinates to deformed edge local coordinates.
+    _transform_from_edge_local_coordinates(self, local_nodes_coords_def, \
+                                           translation=None, rotation=None)
+        Transform from deformed edge local coordinates to patch coordinates.
     _rotate_coords_array(coords_array, r)
         Rotate coordinates array.
     _generate_finite_element_mesh(self, elem_type, n_elems_per_dim)
@@ -283,19 +293,22 @@ class FiniteElementPatchGenerator:
                     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                     # Generate deformed configuration    
                     if self._n_dim == 2:
-                        # Get rotation matrix defining deformed edge local
-                        # coordinates (deformation plane)
-                        rotation = self.rotation_tensor_deformed_edge(
+                        # Get rotation tensor from patch coordinates to
+                        # deformed boundary edge local coordinates
+                        rotation = self._rotation_tensor_deformed_edge(
                             i, j, init_node_def, end_node_def)[:self._n_dim,
                                                                :self._n_dim]
+                        # Get translation from patch coordinates to deformed
+                        # boundary edge local coordinates
+                        translation = np.matmul(rotation, init_node_def)
                         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-                        # Rotate edge and corners coordinates to edge local
-                        # coordinates (deformation plane)
-                        rot_nodes_coords_ref = \
-                            type(self)._rotate_coords_array(nodes_coords_ref,
-                                                            rotation)
-                        rot_init_node_def = np.matmul(rotation, init_node_def)
-                        rot_end_node_def = np.matmul(rotation, end_node_def)                        
+                        # Transform from patch coordinates to deformed edge
+                        # local coordinates
+                        local_init_node_def, local_end_node_def, \
+                            local_nodes_coords_ref = \
+                            self._transform_to_edge_local_coordinates(
+                                init_node_def, end_node_def, nodes_coords_ref,
+                                translation, rotation)                                               
                         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                         # Get edge deformation polynomial order
                         poly_order = edges_poly_orders[str(i)][j]
@@ -305,28 +318,32 @@ class FiniteElementPatchGenerator:
                         # Generate randomly deformed boundary edge node
                         # coordinates in the edge local coordinates
                         # (deformation plane)
-                        rot_nodes_coords_def, rot_nodes_disp = \
+                        local_nodes_coords_def, local_nodes_disp = \
                             self._get_deformed_boundary_edge(
-                                rot_nodes_coords_ref, rot_init_node_def,
-                                rot_end_node_def, poly_order,
-                                poly_bounds_range=disp_amp)
+                                local_nodes_coords_ref, local_init_node_def,
+                                local_end_node_def, poly_order,
+                                poly_bounds_range=disp_amp)                        
                         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-                        # Get edge and corners coordinates (deformed
-                        # configuration) in the original coordinates space
-                        nodes_coords_def = type(self)._rotate_coords_array(
-                            rot_nodes_coords_def, np.transpose(rotation))
-                        init_node_def = np.matmul(np.transpose(rotation),
-                                                  init_node_def)
-                        end_node_def = np.matmul(np.transpose(rotation),
-                                                 end_node_def)
+                        # Get translation from deformed boundary edge local
+                        # coordinates to patch coordinates
+                        translation = -init_node_def
+                        # Get rotation tensor from deformed boundary edge local
+                        # coordinates to patch coordinates
+                        rotation = np.transpose(rotation)
+                        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                        # Transform from deformed edge local coordinates to
+                        # patch coordinates
+                        nodes_coords_def = \
+                            self._transform_from_edge_local_coordinates(
+                                local_nodes_coords_def, translation, rotation)
                         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                         # Store edge nodes coordinates (deformed configuration)
                         edges_coords_def[str(i)].append(nodes_coords_def)
                     else:
                         raise RuntimeError('Missing 3D implementation.')
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~   
-            # Check whether patch deformation is geometrically admissible
-            is_admissible = self._is_admissible_geometry(edges_coords_def)
+            # Check whether simulation of patch is physically admissible
+            is_admissible = self._is_admissible_simulation(edges_coords_def)
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ 
             if is_verbose:
                 print('    > Is admissible deformation? ', is_admissible)  
@@ -818,12 +835,12 @@ class FiniteElementPatchGenerator:
                                     poly_bounds_range=None, is_plot=False):
         """Get randomly deformed boundary edge node coordinates in 2D plane.
         
-        The boundary edge nodes (reference configuration) must be sorted in
-        ascending order along the first dimension, taken as the edge
-        'reference' direction.
+        The boundary edge nodes (reference configuration) must be sorted
+        along the first dimension (either ascending or descending order).
         
         The deformed configuration of the boundary edge is computed by sampling
-        a random polynomial along the second dimension.
+        a random polynomial along the second dimension of the deformed boundary
+        edge local coordinates.
         
         The boundary edge nodes are then projected to the deformed
         configuration and the corresponding displacements are computed based on
@@ -862,11 +879,25 @@ class FiniteElementPatchGenerator:
         if left_node_def[0] >= right_node_def[0]:
             raise RuntimeError('Invalid boundary edge limit nodes coordinates '
                                'along first dimension.')
-        # Check if boundary edge nodes are sorted along first dimension
-        is_sorted = lambda arr: np.all(arr[:-1] <= arr[1:])
-        if not is_sorted(nodes_coords_ref[:, 0]):
-            raise RuntimeError('Boundary edge nodes must be sorted in '
-                               'ascending order along the first dimension.')
+        # Check if boundary edge nodes coordinates in the reference
+        # configuration are sorted
+        is_sorted_ascend = lambda arr: np.all(arr[:-1] <= arr[1:])
+        is_sorted_descend = lambda arr: np.all(arr[:-1] >= arr[1:])
+        if not is_sorted_ascend(nodes_coords_ref[:, 0]) \
+                and not is_sorted_descend(nodes_coords_ref[:, 0]):
+            raise RuntimeError('Boundary edge nodes coordinates must be '
+                               'sorted in ascending or descending order along '
+                               'the first dimension.')
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Initialize flip boundary edge nodes order flag
+        is_flipped = False
+        # Check if boundary edge nodes are sorted in ascending order along
+        # first dimension
+        if not is_sorted_ascend(nodes_coords_ref[:, 0]):
+            # Set flip boundary edge nodes order flag
+            is_flipped = True
+            # Flip boundary edge nodes order (reference configuration)
+            nodes_coords_ref = np.flipud(nodes_coords_ref.copy())
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Get reference coordinate
         ref_coord = np.mean((left_node_def[1], right_node_def[1]))
@@ -969,6 +1000,11 @@ class FiniteElementPatchGenerator:
             nodes_coords_def[i, :] = \
                 np.array([x1, polynomial(x1, coefficients)])
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Revert boundary edge nodes to original order (reference
+        # configuration)
+        if is_flipped:
+            nodes_coords_ref = np.flipud(nodes_coords_ref)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~        
         # Compute boundary edge nodes displacements
         nodes_disp = nodes_coords_def - nodes_coords_ref
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -990,7 +1026,7 @@ class FiniteElementPatchGenerator:
                     'o', color='#d62728')
             # Set axes properties
             ax.set(xlabel='x', ylabel='y')
-            ax.set_aspect('equal', adjustable='box')       
+            ax.set_aspect('equal', adjustable='box')
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         return nodes_coords_def, nodes_disp
     # -------------------------------------------------------------------------
@@ -1091,21 +1127,22 @@ class FiniteElementPatchGenerator:
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         return coefficients
     # -------------------------------------------------------------------------
-    def _is_admissible_geometry(self, edges_coords):
-        """Check whether patch is geometrically admissible.
+    def _is_admissible_simulation(self, edges_coords_def):
+        """Check whether simulation of patch is physically admissible.
         
         Parameters
         ----------
-        edges_coords : dict[list[numpy.ndarray(2d)]]
+        edges_coords_def : dict[list[numpy.ndarray(2d)]]
             For each dimension (key, str[int]), store the corresponding edges
-            coordinates (item, list[numpy.ndarray(2d)]). Each edge coordinates
-            are stored as a numpy.ndarray(n_edge_nodes, n_dim). Corner nodes
-            are assumed part of the edge.
+            coordinates (item, list[numpy.ndarray(2d)]) (deformed
+            configuration). Each edge coordinates are stored as a
+            numpy.ndarray(n_edge_nodes, n_dim). Corner nodes are assumed part
+            of the edge.
             
         Returns
         -------
         is_admissible : bool
-            If True, the patch is geometrically admissible.
+            If True, the patch simulation is physically admissible.
         """
         if self._n_dim == 2:
             # Initialize polygon coordinates
@@ -1124,36 +1161,35 @@ class FiniteElementPatchGenerator:
                     # Get edge corners
                     corners = self._edges_per_dim[dim][index]
                     # Check if target edge
-                    is_target_edge = \
-                        set(target) == set(self._edges_per_dim[dim][index])
+                    is_target_edge = set(target) == set(corners)
                     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                     # Append edge 
                     if is_target_edge:
                         # Get edge nodes coordinates
-                        edge_coords = edges_coords[dim][index]
+                        edge_coords = edges_coords_def[dim][index]                        
                         # Set nodes sorting
-                        is_ascending = target == corners
+                        is_flip = target != corners
                         # Sort edge nodes according to clockwise order
-                        if is_ascending:
-                            edge_coords = edge_coords[
-                                np.argsort(edge_coords[:, int(dim)])]
-                        else:
-                            edge_coords = edge_coords[
-                                np.argsort(edge_coords[:, int(dim)])][::-1, :]
+                        if is_flip:
+                            edge_coords = np.flipud(edge_coords)
                         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                         # Append edge nodes to polygon coordinates
                         coords_array = np.append(coords_array,
                                                  edge_coords[:-1, :], axis=0)
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            # Close polygon
+            # Close polygon coordinates
             coords_array = np.append(coords_array, coords_array[0:1, :],
                                      axis=0)
-            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Generate polygon
             polygon = shapely.geometry.Polygon(coords_array)
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            # Check if material patch is geometricaly admissible
-            is_admissible = polygon.is_valid
+            # Check if polygon geometry is valid
+            is_geometry_valid = polygon.is_valid
+            # Check if polygon is sorted counter-clockwise
+            is_counterclockwise = polygon.exterior.is_ccw
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Set whether simulation of patch is physically admissible
+            is_admissible = is_geometry_valid and is_counterclockwise
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         else:
             raise RuntimeError('Missing 3D implementation.')
@@ -1177,9 +1213,9 @@ class FiniteElementPatchGenerator:
             tuple({i for i in range(self._n_dim)}.difference({dim,}))
         return orthogonal_dims
     # -------------------------------------------------------------------------
-    def rotation_tensor_deformed_edge(self, edge_dim, edge_index,
-                                      init_coord, end_coord):
-        """Set rotation tensor defining deformed edge local coordinates.
+    def _rotation_tensor_deformed_edge(self, edge_dim, edge_index,
+                                       init_coord, end_coord):
+        """Set rotation tensor to deformed boundary edge local coordinates.
         
         Parameters
         ----------
@@ -1225,6 +1261,98 @@ class FiniteElementPatchGenerator:
             raise RuntimeError('Missing 3D implementation.')
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~        
         return rotation
+    # -------------------------------------------------------------------------
+    def _transform_to_edge_local_coordinates(self, init_node_def, end_node_def,
+                                             nodes_coords_ref,
+                                             translation = None,
+                                             rotation = None):
+        """Transform from patch coordinates to deformed edge local coordinates.
+        
+        Parameters
+        ----------
+        init_node_def : numpy.ndarray(2d)
+            Boundary edge initial corner node coordinates (deformed
+            configuration).
+        end_node_def : numpy.ndarray(2d)
+            Boundary edge ending corner node coordinates (deformed
+            configuration).
+        nodes_coords_ref : numpy.ndarray(2d)
+            Boundary edge nodes coordinates (reference configuration) stored as
+            numpy.ndarray(n_edge_nodes, 2).
+        translation : numpy.ndarray(1d), default=None
+            Translation from patch coordinates to deformed boundary edge local
+            coordinates.
+        rotation : numpy.ndarray(2d), default=None
+            Rotation tensor from patch coordinates to deformed boundary edge
+            local coordinates.
+            
+        Returns
+        -------
+        local_init_node_def : numpy.ndarray(1d)
+            Boundary edge initial corner node coordinates (deformed
+            configuration) in deformed boundary edge local coordinates.
+        local_end_node_def : numpy.ndarray(1d)
+            Boundary edge ending corner node coordinates (deformed
+            configuration) in deformed boundary edge local coordinates.
+        local_nodes_coords_ref : numpy.ndarray(2d)
+            Boundary edge nodes coordinates (reference configuration) in
+            deformed boundary edge local coordinates stored as
+            numpy.ndarray(n_edge_nodes, 2).
+        """
+        # Set default translation and rotation
+        if translation is None:
+            translation = np.zeros(self._n_dim)
+        if rotation is None:
+            rotation = np.eye(self._n_dim)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Transform boundary edge initial and ending nodes to deformed edge
+        # local coordinates    
+        local_init_node_def = np.matmul(rotation, init_node_def) - translation
+        local_end_node_def = np.matmul(rotation, end_node_def) - translation
+        # Transform boundary nodes coordinates to deformed edge local
+        # coordinates 
+        local_nodes_coords_ref = \
+            type(self)._rotate_coords_array(nodes_coords_ref, rotation) \
+            -1.0*np.tile(translation, (nodes_coords_ref.shape[0], 1))
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        return local_init_node_def, local_end_node_def, local_nodes_coords_ref
+    # -------------------------------------------------------------------------
+    def _transform_from_edge_local_coordinates(self, local_nodes_coords_def,
+                                               translation=None,
+                                               rotation=None):
+        """Transform from deformed edge local coordinates to patch coordinates.
+        
+        Parameters
+        ----------
+        nodes_coords_def : numpy.ndarray(2d)
+            Boundary edge nodes coordinates (deformed configuration) stored as
+            numpy.ndarray(n_edge_nodes, 2).
+        translation : numpy.ndarray(1d), default=None
+            Translation from deformed boundary edge local coordinates to patch
+            coordinates.
+        rotation : numpy.ndarray(2d), default=None
+            Rotation tensor from deformed boundary edge local coordinates to
+            patch coordinates.
+            
+        Returns
+        -------
+        nodes_coords_def : numpy.ndarray(2d)
+            Boundary edge nodes coordinates (deformed configuration) stored as
+            numpy.ndarray(n_edge_nodes, 2).
+        """
+        # Set default translation and rotation
+        if translation is None:
+            translation = np.zeros(self._n_dim)
+        if rotation is None:
+            rotation = np.eye(self._n_dim)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Transform boundary nodes deformed edge local coordinates to patch
+        # coordinates
+        nodes_coords_def = \
+            type(self)._rotate_coords_array(local_nodes_coords_def, rotation) \
+            -1.0*np.tile(translation, (local_nodes_coords_def.shape[0], 1))
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        return nodes_coords_def
     # -------------------------------------------------------------------------
     @staticmethod
     def _rotate_coords_array(coords_array, r):

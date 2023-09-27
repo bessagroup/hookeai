@@ -2,6 +2,8 @@
 #
 #                                                                       Modules
 # =============================================================================
+# Standard
+import sys
 # Third-party
 import numpy as np
 # Local
@@ -60,7 +62,10 @@ is_admissible, patch = patch_generator.generate_deformed_patch(
     edges_lab_disp_range=edges_lab_disp_range,
     is_verbose=True)
 # Plot randomly deformed material patch
-patch.plot_deformed_patch(is_save_plot=True, save_directory=directory)
+if is_admissible:
+    patch.plot_deformed_patch(is_save_plot=True, save_directory=directory)
+else:
+    sys.exit(1)
 #
 #                                               SET SIMULATOR AND MATERIAL DATA
 # -----------------------------------------------------------------------------
