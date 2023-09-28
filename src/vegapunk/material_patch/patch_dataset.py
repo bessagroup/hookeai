@@ -27,6 +27,8 @@ read_simulation_dataset_from_file(dataset_file_path)
 import os
 import shutil
 import pickle
+import time
+import datetime
 # Third-party
 import numpy as np
 import f3dasm
@@ -183,6 +185,7 @@ def generate_material_patch_dataset(
         print('\nGenerate material patch simulation data set'
               '\n-------------------------------------------')
         print('\n> Setting default design space parameters...')
+        start_time_sec = time.time()
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Get default design space parameters
     default_parameters = get_default_design_parameters(n_dim)
@@ -416,7 +419,10 @@ def generate_material_patch_dataset(
             pickle.dump(dataset_simulation_data, dataset_file)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     if is_verbose:
-        print('\n> Data set directory: ', simulation_directory, '\n')
+        print('\n> Data set directory: ', simulation_directory)
+        total_time_sec = time.time() - start_time_sec
+        print(f'\n> Total generation time (s): '
+              f'{str(datetime.timedelta(seconds=int(total_time_sec)))}\n')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     return dataset_simulation_data
 # =============================================================================
