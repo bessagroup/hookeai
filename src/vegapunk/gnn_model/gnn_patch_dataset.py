@@ -9,6 +9,8 @@ Functions
 ---------
 generate_dataset_samples_files
     Generate GNN-based material patch data set samples files.
+get_dataset_sample_files_from_dir
+    Get GNN-based material patch data set samples files from directory.
 split_dataset
     Randomly split data set into non-overlapping parts.
 get_pyg_data_loader
@@ -21,6 +23,7 @@ get_pyg_data_loader
 import os
 import time
 import datetime
+import re
 # Third-party
 import numpy as np
 import torch
@@ -185,6 +188,50 @@ def generate_dataset_samples_files(dataset_directory, dataset_simulation_data,
               f'{str(datetime.timedelta(seconds=int(total_time_sec)))}\n')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ 
     return dataset_directory, dataset_sample_files
+# =============================================================================
+def get_dataset_sample_files_from_dir(dataset_directory, sample_file_basename):
+    """Get GNN-based material patch data set samples files from directory.
+    
+    Parameters
+    ----------
+    dataset_directory : str
+        Directory where the GNN-based material patch data set is stored (all
+        data set samples files).
+    sample_file_basename : str
+        Basename of GNN-based material patch data set sample file. The basename
+        is appended with sample index.
+        
+    Returns
+    -------
+    dataset_sample_files : list[str]
+        GNN-based material patch data set samples files paths. Each sample file
+        contains a torch_geometric.data.Data object describing a homogeneous
+        graph.
+    """
+    # Check GNN-based material patch data set directory
+    if not os.path.isdir(dataset_directory):
+        raise RuntimeError('The GNN-based material patch data set directory '
+                           'has not been found:\n\n' + dataset_directory)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Initialize GNN-based material patch data set samples files paths
+    dataset_sample_files = []
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Get files in GNN-based material patch data set directory
+    directory_list = os.listdir(dataset_directory)
+    # Loop over files
+    for filename in directory_list:
+        # Check if file is GNN-based material patch data set samples file
+        is_sample_file = bool(re.search(r'^' + sample_file_basename
+                                        + r'_[0-9]+' + r'\.pt', filename))
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Append sample file path
+        if is_sample_file:
+            dataset_sample_files.append(filename)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Sort GNN-based material patch data set samples
+    dataset_sample_files = sorted(dataset_sample_files)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    return dataset_sample_files
 # =============================================================================
 class GNNMaterialPatchDataset(torch.utils.data.Dataset):
     """GNN-based material patch data set.
