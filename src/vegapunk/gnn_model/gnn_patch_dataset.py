@@ -138,12 +138,12 @@ def generate_dataset_samples_files(dataset_directory, dataset_simulation_data,
             nodes_disps_hist=nodes_disps_hist,
             nodes_int_forces_hist=nodes_int_forces_hist)
         # Compute node features matrix
+        node_features = ('coord_hist', 'disp_hist')
         node_features_matrix = features_generator.build_nodes_features_matrix(
-            features=('coord_hist', 'disp_hist'), n_time_steps=1)
-        # Get available edges features
-        edge_features = \
-            GNNPatchFeaturesGenerator.get_available_edges_features()
+            features=node_features, n_time_steps=1)
         # Compute edge features matrix
+        edge_features = ('edge_vector', 'edge_vector_norm', 'relative_disp',
+                         'relative_disp_norm')
         edge_features_matrix = features_generator.build_edges_features_matrix(
             features=edge_features, n_time_steps=1)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

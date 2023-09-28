@@ -153,6 +153,9 @@ class GNNPatchGraphData:
                 dtype=torch.long)
         # Set PyG edge feature matrix
         edge_attr = None
+        if self._edge_features_matrix is not None:
+            edge_attr = torch.tensor(copy.deepcopy(self._edge_features_matrix),
+                                     dtype=torch.float)
         # Set PyG ground-truth labels
         y = None
         if self._node_targets_matrix is not None:
@@ -854,8 +857,8 @@ class GNNPatchFeaturesGenerator:
                 # Loop over edges
                 for k, (i, j) in enumerate(self._edges_indexes):
                     # Assemble edge feature
-                    feature_matrix[k, :] = self._nodes_coords[i, :] \
-                        - self._nodes_coords[j, :]
+                    feature_matrix[k, :] = self._nodes_coords[i, :n_dim] \
+                        - self._nodes_coords[j, :n_dim]
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ 
             elif feature == 'edge_vector_norm':
                 # Initialize edge feature matrix
@@ -864,8 +867,8 @@ class GNNPatchFeaturesGenerator:
                 for k, (i, j) in enumerate(self._edges_indexes):
                     # Assemble edge feature
                     feature_matrix[k, :] = np.linalg.norm(
-                        self._nodes_coords[i, :]
-                        - self._nodes_coords[j, :])
+                        self._nodes_coords[i, :n_dim]
+                        - self._nodes_coords[j, :n_dim])
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ 
             elif feature == 'relative_disp':
                 # Check required data
