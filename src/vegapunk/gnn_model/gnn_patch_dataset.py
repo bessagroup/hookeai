@@ -24,6 +24,7 @@ import os
 import time
 import datetime
 import re
+import pickle
 # Third-party
 import numpy as np
 import torch
@@ -257,6 +258,12 @@ class GNNMaterialPatchDataset(torch.utils.data.Dataset):
         Return size of data set (number of samples).
     __getitem__(self, index)
         Return data set sample from corresponding index.
+    get_dataset_directory(self)
+        Get directory where the GNN-based material patch data set is stored.
+    get_dataset_sample_files(self)
+        Get GNN-based material patch data set samples files paths.
+    save_dataset(self)
+        Save GNN-based material patch data set to file.
     update_dataset_directory(self, dataset_directory, is_reload_data=False)
         Update directory where GNN-based material patch data set is stored.
     """
@@ -313,7 +320,7 @@ class GNNMaterialPatchDataset(torch.utils.data.Dataset):
             for file_path in dataset_sample_files:
                 # Load sample
                 self._dataset_samples.append(torch.load(file_path))       
-    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # -------------------------------------------------------------------------
     def __len__(self):
         """Return size of data set (number of samples).
         
@@ -323,7 +330,7 @@ class GNNMaterialPatchDataset(torch.utils.data.Dataset):
             Data set size (number of samples).
         """
         return len(self._dataset_sample_files)
-    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # -------------------------------------------------------------------------
     def __getitem__(self, index):
         """Return data set sample from corresponding index.
         
@@ -345,7 +352,49 @@ class GNNMaterialPatchDataset(torch.utils.data.Dataset):
             pyg_graph = torch.load(self._dataset_sample_files[index])
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         return pyg_graph
-    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # -------------------------------------------------------------------------
+    def get_dataset_directory(self):
+        """Get directory where the GNN-based material patch data set is stored.
+        
+        Returns
+        -------
+        dataset_directory : str
+            Directory where the GNN-based material patch data set is stored
+            (all data set samples files).
+        """
+        return self._dataset_directory
+    # -------------------------------------------------------------------------
+    def get_dataset_sample_files(self):
+        """Get GNN-based material patch data set samples files paths.
+        
+        Returns
+        -------
+        dataset_sample_files : list[str]
+            GNN-based material patch data set samples files paths. Each sample
+            file contains a torch_geometric.data.Data object describing a
+            homogeneous graph.
+        """
+        return self._dataset_sample_files
+    # -------------------------------------------------------------------------
+    def save_dataset(self):
+        """Save GNN-based material patch data set to file.
+        
+        GNN-based material patch data set is stored in dataset_directory as a
+        pickle file named 'material_patch_graph_dataset.pkl'.
+        """
+        # Check data set directory
+        if not os.path.isdir(self._dataset_directory):
+            raise RuntimeError('The GNN-based material patch data set '
+                               'directory has not been found:\n\n'
+                               + self._dataset_directory)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set GNN-based material patch data set file path
+        dataset_path = os.path.join(self._dataset_directory,
+                                    'material_patch_graph_dataset' + '.pkl')
+        # Save GNN-based material patch data set
+        with open(dataset_path, 'wb') as dataset_file:
+            pickle.dump(self, dataset_file)
+    # -------------------------------------------------------------------------
     def update_dataset_directory(self, dataset_directory,
                                  is_reload_data=False):
         """Update directory where GNN-based material patch data set is stored.
