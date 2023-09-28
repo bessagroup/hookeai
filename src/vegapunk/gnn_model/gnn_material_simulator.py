@@ -489,7 +489,7 @@ class GNNMaterialPatchModel(torch.nn.Module):
             Training step corresponding to model state file if
             is_state_file=True, None otherwise.
         """
-        # Check if file is model training step  state file
+        # Check if file is model training step state file
         is_state_file = bool(re.search(r'^' + self.model_name + r'-[0-9]+'
                                        + r'\.pt', filename))
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
