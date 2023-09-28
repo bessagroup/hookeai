@@ -15,7 +15,7 @@ __author__ = 'Bernardo Ferreira (bernardo_ferreira@brown.edu)'
 __credits__ = ['Bernardo Ferreira', ]
 __status__ = 'Planning'
 # =============================================================================
-def dataset(dataset_type, is_verbose=False):
+def generate_dataset(dataset_type, is_verbose=False):
     """Generate material patch simulation data sets.
     
     Parameters
@@ -199,4 +199,4 @@ if __name__ == "__main__":
     dataset_type = available_dataset_types[0]
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Generate material patch simulation data set
-    dataset(dataset_type, is_verbose=True)
+    generate_dataset(dataset_type, is_verbose=True)
