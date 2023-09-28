@@ -66,8 +66,8 @@ def generate_dataset_samples_files(dataset_directory, dataset_simulation_data,
         Basename of GNN-based material patch data set sample file. The basename
         is appended with sample index.
     is_save_plot_patch : bool, default=False
-        Save plot of each material patch design sample in the same directory
-        where the GNN-based material patch data set is stored.
+        Save plot of each material patch graph in the same directory where the
+        GNN-based material patch data set is stored.
     is_verbose : bool, default=False
         If True, enable verbose output.
         
@@ -106,7 +106,7 @@ def generate_dataset_samples_files(dataset_directory, dataset_simulation_data,
         nodes_int_forces_hist=node_data[:, 7:10, :]
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Get material patch reference node coordinates
-        node_coord_ref = nodes_coords_hist[:, 1:4, 0]
+        node_coord_ref = nodes_coords_hist[:, 0:3, 0]
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Instantiate GNN-based material patch graph data
         gnn_patch_data = GNNPatchGraphData(n_dim=patch.get_n_dim(),
@@ -169,7 +169,8 @@ def generate_dataset_samples_files(dataset_directory, dataset_simulation_data,
             # Set sample plot name
             sample_file_name = sample_file_basename + '_plot_' + str(i)
             # Save sample plot
-            patch.plot_deformed_patch(is_save_plot=is_save_plot_patch,
+            gnn_patch_data.plot_material_patch_graph(
+                is_save_plot=is_save_plot_patch,
                 save_directory=dataset_directory,
                 plot_name=sample_file_name,
                 is_overwrite_file=True)
