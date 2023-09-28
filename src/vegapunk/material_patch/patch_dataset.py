@@ -153,7 +153,7 @@ def generate_material_patch_dataset(
     is_save_simulation_dataset : bool, default=False
         Save material patch finite element simulations dataset in simulation
         directory. Data set is stored as a pickle file as
-        'material_patch_fem_dataset.pkl'.
+        'material_patch_fem_dataset.pkl'. Existing data set file is overriden.
     is_save_simulation_files : bool, default=False
         Save material patch simulation files in simulation directory.
     is_save_plot_patch : bool, default=False
@@ -180,8 +180,8 @@ def generate_material_patch_dataset(
                         data at the k-th time step is stored in [0, :, k].
     """
     if is_verbose:
-        print('\nGenerate finite element material patch data set'
-              '\n-----------------------------------------------')
+        print('\nGenerate material patch simulation data set'
+              '\n-------------------------------------------')
         print('\n> Setting default design space parameters...')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Get default design space parameters
@@ -206,21 +206,21 @@ def generate_material_patch_dataset(
         print('\n> Setting input constant parameters...')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set input constant parameters
-    constant_parameters = {'n_dim': n_dim,
-                           'elem_type': elem_type,
-                           'n_elems_per_dim': n_elems_per_dim,
-                           'edge_deformation_order_ranges':
-                               edge_deformation_order_ranges,
-                           'max_iter': max_iter_per_patch,
-                           'links_bin_path': links_bin_path,
-                           'strain_formulation': strain_formulation,
-                           'analysis_type': analysis_type,
-                           'filename': 'material_patch',
-                           'directory': simulation_directory,
-                           'patch_material_data': patch_material_data,
-                           'links_input_params': links_input_params,
-                           'is_save_simulation_files': is_save_simulation_files,
-                           'is_save_plot_patch': is_save_plot_patch} 
+    constant_parameters = {
+        'n_dim': n_dim,
+        'elem_type': elem_type,
+        'n_elems_per_dim': n_elems_per_dim,
+        'edge_deformation_order_ranges': edge_deformation_order_ranges,
+        'max_iter': max_iter_per_patch,
+        'links_bin_path': links_bin_path,
+        'strain_formulation': strain_formulation,
+        'analysis_type': analysis_type,
+        'sample_basename': 'material_patch',
+        'directory': simulation_directory,
+        'patch_material_data': patch_material_data,
+        'links_input_params': links_input_params,
+        'is_save_simulation_files': is_save_simulation_files,
+        'is_save_plot_patch': is_save_plot_patch} 
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     if is_verbose:
         print('\n> Building design space:')
@@ -311,8 +311,8 @@ def generate_material_patch_dataset(
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     if is_verbose:
         print('  > [output parameter] Setting material patch...')
-        print('  > [output parameter] Setting node features data...')
-        print('  > [output parameter] Setting global features data...')
+        print('  > [output parameter] Setting node data...')
+        print('  > [output parameter] Setting global data...')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set output parameters:
     #
@@ -404,7 +404,7 @@ def generate_material_patch_dataset(
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     if is_save_simulation_dataset:
         if is_verbose:
-            print('\n> Saving material patch simulation data set...\n')
+            print('\n> Saving material patch simulation data set...')
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Set data set file name
         dataset_file_name = 'material_patch_fem_dataset.pkl'
@@ -414,6 +414,9 @@ def generate_material_patch_dataset(
         # Save data set
         with open(dataset_file_path, 'wb') as dataset_file:
             pickle.dump(dataset_simulation_data, dataset_file)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    if is_verbose:
+        print('\n> Data set directory: ', simulation_directory, '\n')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     return dataset_simulation_data
 # =============================================================================
@@ -463,7 +466,7 @@ def generate_dataset_output_data(dataset_input_data, constant_parameters={},
         design.update(constant_parameters)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Convert to Design object
-        design = f3dasm.design.design.Design(design, {}, jobnumber=0)
+        design = f3dasm.design.design.Design(design, {}, jobnumber=i)
         # Generate and simulate material patch
         design = simulate_material_patch(design, **constant_parameters)
         # Get material patch sample simulation output data
@@ -482,6 +485,9 @@ def simulate_material_patch(design, **kwargs):
     design : f3dasm.Design
         Material patch design sample.
     """
+    # Get material patch design sample ID
+    sample_id = design.job_number
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Get number of spatial dimensions                                         
     n_dim = kwargs['n_dim']
     # Get finite element type
@@ -582,7 +588,7 @@ def simulate_material_patch(design, **kwargs):
         patch.plot_deformed_patch(
             is_save_plot=is_save_plot_patch,
             save_directory=kwargs['directory'],
-            plot_name=kwargs['filename'],
+            plot_name=kwargs['sample_basename'] + f'_{sample_id}',
             is_overwrite_file=True)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Initialize results
@@ -596,9 +602,9 @@ def simulate_material_patch(design, **kwargs):
                                          kwargs['analysis_type'])
         # Generate simulator input data file
         links_file_path = links_simulator.generate_input_data_file(
-            kwargs['filename'], kwargs['directory'], patch,
-            kwargs['patch_material_data'], kwargs['links_input_params'],
-            is_overwrite_file=not kwargs['is_save_simulation_files'])
+            kwargs['sample_basename'] + f'_{sample_id}', kwargs['directory'],
+            patch, kwargs['patch_material_data'], kwargs['links_input_params'],
+            is_overwrite_file=True)
         # Run simulation
         is_success, links_output_directory = \
             links_simulator.run_links_simulation(links_file_path)
