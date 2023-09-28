@@ -621,6 +621,8 @@ class GNNPatchFeaturesGenerator:
     
     Attributes
     ----------
+    _n_dim : int
+        Number of spatial dimensions.
     _nodes_coords : numpy.ndarray(2d)
         Coordinates of nodes stored as a numpy.ndarray(2d) with shape
         (n_nodes, n_dim). Coordinates of i-th node are stored in
@@ -653,12 +655,14 @@ class GNNPatchFeaturesGenerator:
     get_available_edges_input_features()
         Get available edges features.   
     """
-    def __init__(self, nodes_coords_hist, edges_indexes=None,
+    def __init__(self, n_dim, nodes_coords_hist, edges_indexes=None,
                  nodes_disps_hist=None, nodes_int_forces_hist=None):
         """Constructor.
         
         Parameters
         ----------
+        n_dim : int
+            Number of spatial dimensions.
         nodes_coords_hist : numpy.ndarray(3d)
             Nodes coordinates history stored as a numpy.ndarray(3d) with shape
             (n_nodes, n_dim, n_time_steps). Coordinates of i-th node at k-th
@@ -676,12 +680,15 @@ class GNNPatchFeaturesGenerator:
             shape (n_nodes, n_dim, n_time_steps). Internal forces of i-th node
             at k-th time step are stored in nodes_int_forces_hist[i, :, k]. 
         """
-        self._nodes_coords_hist = copy.deepcopy(nodes_coords_hist)
+        self._n_dim = n_dim
+        self._nodes_coords_hist = \
+            copy.deepcopy(nodes_coords_hist)[:, :n_dim, :]
         self._edges_indexes = copy.deepcopy(edges_indexes)
-        self._nodes_disps_hist = copy.deepcopy(nodes_disps_hist)
-        self._nodes_int_forces_hist = copy.deepcopy(nodes_int_forces_hist)
+        self._nodes_disps_hist = copy.deepcopy(nodes_disps_hist)[:, :n_dim, :]
+        self._nodes_int_forces_hist = \
+            copy.deepcopy(nodes_int_forces_hist)[:, :n_dim, :]
         # Set current nodes coordinates
-        self._nodes_coords = nodes_coords_hist[:, :, -1]
+        self._nodes_coords = nodes_coords_hist[:, :n_dim, -1]
     # -------------------------------------------------------------------------
     def build_nodes_features_matrix(self, features=(), n_time_steps=1):
         """Build nodes features matrix.
@@ -703,7 +710,7 @@ class GNNPatchFeaturesGenerator:
         # Get number of nodes
         n_nodes = self._nodes_coords.shape[0]
         # Get number of spatial dimensions
-        n_dim = self._nodes_coords.shape[1]
+        n_dim = self._n_dim
         # Initialize nodes features matrix
         node_features_matrix = np.empty((n_nodes, 0))
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -826,7 +833,7 @@ class GNNPatchFeaturesGenerator:
         # Get number of edges
         n_edges = self._edges_indexes.shape[0]
         # Get number of spatial dimensions
-        n_dim = self._nodes_coords.shape[1]
+        n_dim = self._n_dim
         # Initialize edges features matrix
         edge_features_matrix = np.empty((n_edges, 0))
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

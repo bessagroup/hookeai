@@ -132,6 +132,7 @@ def generate_dataset_samples_files(dataset_directory, dataset_simulation_data,
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Instantiate GNN-based material patch features generator
         features_generator = GNNPatchFeaturesGenerator(
+            n_dim=patch.get_n_dim(),
             nodes_coords_hist=nodes_coords_hist,
             edges_indexes=gnn_patch_data.get_graph_edges_indexes(),
             nodes_disps_hist=nodes_disps_hist,
