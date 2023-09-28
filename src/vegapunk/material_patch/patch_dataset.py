@@ -136,12 +136,12 @@ def generate_material_patch_dataset(
         Range of polynomial deformation (item, tuple[float](2)) prescribed
         for each edge label (key, str[int]). Edges are labeled from 1 to number
         of edges. The edge deformation is orthogonal to the corresponding
-        dimension and its magnitude is relative to the material patch size
-        along that deformation dimension, measured from the midplane between
-        the two limiting corner nodes. The range is specified as a
-        tuple(lower_bound, upper_bound) and where positive/negative values are
-        associated with tension/compression. Range defaults to (0, 0) if not
-        specified along a given dimension.
+        direction (defined by limiting corner nodes in the deformed
+        configuration) and its magnitude is relative to the material patch size
+        orthogonal to its dimension in the reference configuration. The range
+        is specified as a tuple(lower_bound, upper_bound) and where
+        positive/negative values are associated with tension/compression. Range
+        defaults to (0, 0) if not specified along a given dimension.
     max_iter_per_patch : int, default=10
         Maximum number of iterations to get a geometrically admissible
         deformed patch configuration.
