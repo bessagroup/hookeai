@@ -4,7 +4,7 @@ Classes
 -------
 GNNPatchGraphData
     GNN-based material patch graph data.
-GNNPatchFeaturesGenerator:
+GNNPatchFeaturesGenerator
     GNN-based material patch input and output features generator.
 """
 #

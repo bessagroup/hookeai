@@ -155,7 +155,7 @@ def generate_dataset_samples_files(dataset_directory, dataset_simulation_data,
             features=('int_force',), n_time_steps=1)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Set GNN-based material patch graph node targets
-        gnn_patch_data.set_node_features_matrix(node_targets_matrix)
+        gnn_patch_data.set_node_targets_matrix(node_targets_matrix)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Get PyG homogeneous graph data object
         pyg_graph = gnn_patch_data.get_torch_data_object()
