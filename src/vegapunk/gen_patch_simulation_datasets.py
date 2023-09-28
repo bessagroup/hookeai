@@ -46,7 +46,7 @@ def generate_dataset(sim_dataset_type, simulation_directory, is_verbose=False):
         n_dim = 2
         # Set finite element discretization
         elem_type = 'SQUAD4'
-        n_elems_per_dim = (4, 4)
+        n_elems_per_dim = (1, 1)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Set patch material data
         patch_material_data = set_patch_material_data(
@@ -183,7 +183,7 @@ def set_default_saving_options():
         Save plot of material patch design sample in simulation directory.
     """
     is_save_simulation_dataset = True
-    is_save_simulation_files = False
+    is_save_simulation_files = True
     is_remove_failed_samples = True
     is_save_plot_patch = True
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

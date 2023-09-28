@@ -10,7 +10,7 @@ import numpy as np
 # Local
 from material_patch.patch_dataset import read_simulation_dataset_from_file
 from gnn_model.gnn_patch_dataset import generate_dataset_samples_files, \
-    get_dataset_sample_files_from_dir, GNNMaterialPatchDataset
+    get_dataset_sample_files_from_dir, GNNMaterialPatchDataset, split_dataset
 #
 #                                                          Authorship & Credits
 # =============================================================================
@@ -60,7 +60,12 @@ def generate_dataset(sim_dataset_type, simulation_directory, dataset_directory,
     # Initialize GNN-based material patch data set
     dataset = GNNMaterialPatchDataset(dataset_directory, dataset_samples_files)
     # Save GNN-based material patch data set to file
-    dataset.save_dataset()
+    dataset.save_dataset()    
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Randomly split data set into training, validation and testing
+    split_sizes = {'training': 0.6, 'validation': 0.2, 'testing': 0.2}
+    # Split data set
+    dataset_split = split_dataset(dataset, split_sizes)
 # =============================================================================
 def set_default_saving_options():
     """Set default files and directories storage options.
