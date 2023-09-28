@@ -19,6 +19,8 @@ get_pyg_data_loader
 # =============================================================================
 # Standard
 import os
+import time
+import datetime
 # Third-party
 import numpy as np
 import torch
@@ -37,7 +39,7 @@ __status__ = 'Planning'
 #
 # =============================================================================
 def generate_dataset_samples_files(dataset_directory, dataset_simulation_data,
-                                   sample_file_basename='gnn_patch_sample',
+                                   sample_file_basename='material_patch_graph',
                                    is_save_plot_patch=False, is_verbose=False):
     """Generate GNN-based material patch data set samples files.
 
@@ -62,7 +64,7 @@ def generate_dataset_samples_files(dataset_directory, dataset_simulation_data,
         'global_data' : numpy.ndarray(3d) of shape \
                         (1, n_data_dim, n_time_steps) where the global output \
                         data at the k-th time step is stored in [0, :, k].
-    sample_file_basename : str, default='gnn_patch_sample'
+    sample_file_basename : str, default='material_patch_graph'
         Basename of GNN-based material patch data set sample file. The basename
         is appended with sample index.
     is_save_plot_patch : bool, default=False
@@ -84,6 +86,7 @@ def generate_dataset_samples_files(dataset_directory, dataset_simulation_data,
     if is_verbose:
         print('\nGenerate GNN-based material patch data set'
               '\n------------------------------------------\n')
+        start_time_sec = time.time()
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Get number of samples
     n_sample = len(dataset_simulation_data)
@@ -167,7 +170,7 @@ def generate_dataset_samples_files(dataset_directory, dataset_simulation_data,
         # Save GNN-based material patch graph sample plot
         if is_save_plot_patch:
             # Set sample plot name
-            sample_file_name = sample_file_basename + '_plot_' + str(i)
+            sample_file_name = sample_file_basename + '_' + str(i) + '_plot'
             # Save sample plot
             gnn_patch_data.plot_material_patch_graph(
                 is_save_plot=is_save_plot_patch,
@@ -176,7 +179,10 @@ def generate_dataset_samples_files(dataset_directory, dataset_simulation_data,
                 is_overwrite_file=True)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     if is_verbose:
-        print('\n> Data set directory: ', dataset_directory, '\n')
+        print('\n> Data set directory: ', dataset_directory)
+        total_time_sec = time.time() - start_time_sec
+        print(f'\n> Total generation time (s): '
+              f'{str(datetime.timedelta(seconds=int(total_time_sec)))}\n')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ 
     return dataset_directory, dataset_sample_files
 # =============================================================================

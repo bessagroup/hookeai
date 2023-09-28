@@ -594,7 +594,7 @@ def simulate_material_patch(design, **kwargs):
         patch.plot_deformed_patch(
             is_save_plot=is_save_plot_patch,
             save_directory=kwargs['directory'],
-            plot_name=kwargs['sample_basename'] + f'_{sample_id}',
+            plot_name=kwargs['sample_basename'] + f'_{sample_id}_plot',
             is_overwrite_file=True)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Initialize results
