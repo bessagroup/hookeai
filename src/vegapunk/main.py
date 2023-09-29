@@ -19,10 +19,12 @@ if __name__ == "__main__":
         'gen_material_patch_data/src/vegapunk/'
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Generate datasets    
-    os.system('python3 ' + os.path.join(vegapunk_dir,
-                                        'gen_patch_simulation_datasets.py'))
-    os.system('python3 ' + os.path.join(vegapunk_dir,
-                                        'gen_gnn_patch_datasets.py'))
+    os.system('python3 '
+              + os.path.join(vegapunk_dir,
+                             'user_scripts/gen_patch_simulation_datasets.py'))
+    os.system('python3 '
+              + os.path.join(vegapunk_dir,
+                             'user_scripts/gen_gnn_patch_datasets.py'))
 
 
 
