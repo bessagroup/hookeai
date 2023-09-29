@@ -66,7 +66,7 @@ def features_generator_2d(gnn_patch_graph_2d):
     nodes_int_forces_hist = np.zeros((n_nodes, n_dim, n_time_steps))
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     features_generator = GNNPatchFeaturesGenerator(
-        nodes_coords_hist, edges_indexes=edges_indexes,
+        n_dim, nodes_coords_hist, edges_indexes=edges_indexes,
         nodes_disps_hist=nodes_disps_hist,
         nodes_int_forces_hist=nodes_int_forces_hist)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
