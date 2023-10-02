@@ -2,21 +2,20 @@
 
 Classes
 -------
-GraphIndependentNetwork
-    Graph Independent Network.
-    
-Functions
----------
-build_fnn
-    Build multilayer feed-forward neural network.
 GraphIndependentNetwork(torch.nn.Module)
     Graph Independent Network.
 GraphInteractionNetwork(torch_geometric.nn.MessagePassing)
     Graph Interaction Network.
+ 
+Functions
+---------
+build_fnn
+    Build multilayer feed-forward neural network.
 """
 #
 #                                                                       Modules
 # =============================================================================
+from collections import OrderedDict
 # Third-party
 import torch
 import torch_geometric.nn
@@ -34,14 +33,6 @@ def build_fnn(input_size, output_size,
               hidden_layer_sizes=[],
               hidden_activation=torch.nn.ReLU):
     """Build multilayer feed-forward neural network.
-    
-    Based on: geoelements/gns/graph_network.py
-    
-    Changes:
-    (1) Changed output_size to mandatory argument
-    (2) Changed hidden_layer_sizes to optional argument and default to []
-    (3) Add check procedures for activation functions type
-    (4) Renamed variables
     
     Parameters
     ----------
@@ -73,11 +64,11 @@ def build_fnn(input_size, output_size,
     n_layer = len(layer_sizes) - 1
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set hidden and output layers unit activation functions
-    if not isinstance(hidden_activation, torch.nn.Module):
+    if not callable(hidden_activation):
         raise RuntimeError('Hidden unit activation function must be derived '
                            'from torch.nn.Module class.')
     activation_functions = [hidden_activation for i in range(n_layer - 1)]
-    if not isinstance(output_activation, torch.nn.Module):
+    if not callable(output_activation):
         raise RuntimeError('Output unit activation function must be derived '
                            'from torch.nn.Module class.')
     activation_functions.append(output_activation)
@@ -89,8 +80,8 @@ def build_fnn(input_size, output_size,
     for i in range(n_layer):
         # Set layer linear transformation
         fnn.add_module("Layer-" + str(i),
-                       torch.nn.Linear(layer_sizes[i], layer_sizes[i + 1]),
-                       bias=True)
+                       torch.nn.Linear(layer_sizes[i], layer_sizes[i + 1],
+                                       bias=True))
         # Set layer unit activation function
         fnn.add_module("Activation-" + str(i), activation_functions[i]())
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -103,11 +94,6 @@ class GraphIndependentNetwork(torch.nn.Module):
     global features implemented as multilayer feed-forward neural networks
     and (2) no aggregation functions, i.e., independent node, edges and global
     blocks.
-    
-    Based on: geoelements/gns/graph_network.py
-    
-    TO-DO:
-    (1) Implement handling of global features
     
     Attributes
     ----------
@@ -157,7 +143,9 @@ class GraphIndependentNetwork(torch.nn.Module):
         # Build normalization layer
         norm_layer = torch.nn.LayerNorm(normalized_shape=n_node_out)
         # Set node update function
-        self._node_fn = torch.nn.Sequential(fnn, norm_layer)
+        self._node_fn = torch.nn.Sequential()
+        self._node_fn.add_module('FNN', fnn)
+        self._node_fn.add_module('Norm-Layer', norm_layer)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Set edge update function as multilayer feed-forward neural network
         # with layer normalization:
@@ -169,9 +157,11 @@ class GraphIndependentNetwork(torch.nn.Module):
             hidden_layer_sizes=n_hidden_layers*[hidden_layer_size,],
             hidden_activation=torch.nn.ReLU)
         # Build normalization layer
-        norm_layer = torch.nn.LayerNorm(normalized_shape=n_node_out)
-        # Set node update function
-        self._edge_fn = torch.nn.Sequential(fnn, norm_layer)
+        norm_layer = torch.nn.LayerNorm(normalized_shape=n_edge_out)
+        # Set edge update function
+        self._edge_fn = torch.nn.Sequential()
+        self._edge_fn.add_module('FNN', fnn)
+        self._edge_fn.add_module('Norm-Layer', norm_layer)
     # -------------------------------------------------------------------------
     def forward(self, node_features_in, edge_features_in):
         """Forward propagation.
@@ -203,17 +193,7 @@ class GraphInteractionNetwork(torch_geometric.nn.MessagePassing):
     A Graph Network block with (1) distinct update functions for node, edge and
     global features implemented as multilayer feed-forward neural networks
     and (2) aggregation functions implemented as elementwise summations. Global
-    features are not used to update the edge features. Residual connections are
-    adopted between the input and output features of both nodes and edges.
-    
-    Based on: geoelements/gns/graph_network.py
-    
-    Questions:
-    (1) Be careful with kwargs in propagate(), as they are passed to update()
-        and message().
-    
-    TO-DO:
-    (1) Implement handling of global features
+    features are not used to update the edge features.
     
     Attributes
     ----------
@@ -257,7 +237,7 @@ class GraphInteractionNetwork(torch_geometric.nn.MessagePassing):
         # Set flow direction of message passing
         flow = 'source_to_target'
         # Initialize Graph Network block from base class
-        super(GraphIndependentNetwork, self).__init__(aggr=aggregation,
+        super(GraphInteractionNetwork, self).__init__(aggr=aggregation,
                                                       flow=flow)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Set node update function as multilayer feed-forward neural network
@@ -272,7 +252,9 @@ class GraphInteractionNetwork(torch_geometric.nn.MessagePassing):
         # Build normalization layer
         norm_layer = torch.nn.LayerNorm(normalized_shape=n_node_out)
         # Set node update function
-        self._node_fn = torch.nn.Sequential(fnn, norm_layer)
+        self._node_fn = torch.nn.Sequential()
+        self._node_fn.add_module('FNN', fnn)
+        self._node_fn.add_module('Norm-Layer', norm_layer)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Set edge update function as multilayer feed-forward neural network
         # with layer normalization:
@@ -284,9 +266,11 @@ class GraphInteractionNetwork(torch_geometric.nn.MessagePassing):
             hidden_layer_sizes=n_hidden_layers*[hidden_layer_size,],
             hidden_activation=torch.nn.ReLU)
         # Build normalization layer
-        norm_layer = torch.nn.LayerNorm(normalized_shape=n_node_out)
+        norm_layer = torch.nn.LayerNorm(normalized_shape=n_edge_out)
         # Set node update function
-        self._edge_fn = torch.nn.Sequential(fnn, norm_layer)
+        self._edge_fn = torch.nn.Sequential()
+        self._edge_fn.add_module('FNN', fnn)
+        self._edge_fn.add_module('Norm-Layer', norm_layer)
     # -------------------------------------------------------------------------
     def forward(self, node_features_in, edge_features_in, edges_indexes):
         """Forward propagation.
@@ -313,19 +297,15 @@ class GraphInteractionNetwork(torch_geometric.nn.MessagePassing):
             Edges features output matrix stored as a torch.Tensor(2d) of shape
             (n_edges, n_features).
         """
-        # Save features input matrix (residual connection)
-        node_features_res = node_features_in.clone()
-        edge_features_res = edge_features_in.clone()
-        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Perform graph neural network message-passing step (message,
-        # aggregation, update)
-        node_features_out, edge_features_out = self.propagate(
+        # aggregation, update) and get updated node features
+        node_features_out = self.propagate(
             edge_index=edges_indexes, node_features_in=node_features_in,
             edge_features_in=edge_features_in)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        # Add residual connections to features output
-        node_features_out += node_features_res
-        edge_features_out += edge_features_res
+        # Get updated edge features
+        edge_features_out = self._edge_features_out
+        self._edge_features_out = None
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         return node_features_out, edge_features_out
     # -------------------------------------------------------------------------
@@ -366,10 +346,12 @@ class GraphInteractionNetwork(torch_geometric.nn.MessagePassing):
         # Update edge features
         edge_features_out = self._edge_fn(edge_features_in_cat)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Store updated edges features
+        self._edge_features_out = edge_features_out
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         return edge_features_out
     # -------------------------------------------------------------------------
-    def update(self, node_features_in_aggr, node_features_in,
-               edge_features_out):
+    def update(self, node_features_in_aggr, node_features_in):
         """Update node features.
         
         Parameters
@@ -387,9 +369,6 @@ class GraphInteractionNetwork(torch_geometric.nn.MessagePassing):
         node_features_out : torch.Tensor
             Nodes features output matrix stored as a torch.Tensor(2d) of shape
             (n_nodes, n_features).
-        edge_features_out : torch.Tensor
-            Edges features output matrix stored as a torch.Tensor(2d) of shape
-            (n_edges, n_features).
         """
         # Concatenate features for each node
         node_features_in_cat = torch.cat([node_features_in_aggr,
@@ -398,4 +377,4 @@ class GraphInteractionNetwork(torch_geometric.nn.MessagePassing):
         # Update node features
         node_features_out = self._node_fn(node_features_in_cat)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        return node_features_out, edge_features_out
+        return node_features_out
