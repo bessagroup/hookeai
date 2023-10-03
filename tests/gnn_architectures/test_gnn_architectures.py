@@ -26,9 +26,61 @@ __status__ = 'Planning'
 def test_build_fnn(input_size, output_size, output_activation,
                    hidden_layer_sizes, hidden_activation):
     """Test building of multilayer feed-forward neural network."""
+    # Initialize errors
+    errors = []
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Build multilayer feed-forward neural network
     fnn = build_fnn(input_size, output_size, output_activation,
                     hidden_layer_sizes, hidden_activation)
-    assert isinstance(fnn, torch.nn.Sequential)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Get feed-forward neural network layers
+    layers = [layer for layer in fnn.named_children() if 'Layer-' in layer[0]]
+    activations = [layer for layer in fnn.named_children()
+                   if 'Activation-' in layer[0]]
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Check number of layers
+    if len(layers) != len(hidden_layer_sizes) + 1:
+        errors.append('Number of layers was not properly set.')
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Loop over layers
+    for i, layer in enumerate(layers):
+        # Check input layer features              
+        if i == 0:
+            if layer[1].in_features != input_size:
+                errors.append('Number of input features of input layer was '
+                              'not properly set.')  
+            if len(layers) == 1:
+                if layer[1].out_features != output_size:
+                    errors.append('Number of ouput features of input layer '
+                                  'was not properly set.')
+            else:
+                if layer[1].out_features != hidden_layer_sizes[0]:
+                    errors.append('Number of ouput features of input layer '
+                                  'was not properly set.')
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Check output layer features
+        elif i == len(layers) - 1:
+            if layer[1].in_features != hidden_layer_sizes[-1]:
+                errors.append('Number of input features of output layer was '
+                              'not properly set.')
+            if layer[1].out_features != output_size:
+                errors.append('Number of output features of output layer was '
+                              'not properly set.')
+            if not isinstance(activations[i][1], output_activation):
+                errors.append('Output unit activation function was not '
+                              'properly set.')
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Check hidden layer features
+        else:
+            if layer[1].in_features != hidden_layer_sizes[i - 1] \
+                    or layer[1].out_features != hidden_layer_sizes[i]:
+                errors.append('Number of input/output features of hidden '
+                              'layer was not properly set.')
+            if not isinstance(activations[i][1], hidden_activation):
+                errors.append('Hidden unit activation function was not '
+                              'properly set.')
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    assert not errors, "Errors:\n{}".format("\n".join(errors))
 # -----------------------------------------------------------------------------
 @pytest.mark.parametrize('input_size, output_size, output_activation,'
                          'hidden_layer_sizes, hidden_activation',
@@ -71,8 +123,8 @@ def test_graph_independent_network_init(n_node_in, n_node_out, n_edge_in,
             # Check feed-forward neural network
             if name == 'FNN':
                 # Get feed-forward neural network layers
-                layers = [module for module in module.named_children()
-                          if 'Layer-' in module[0]]                
+                layers = [layer for layer in module.named_children()
+                          if 'Layer-' in layer[0]]                
                 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                 # Check number of layers
                 if len(layers) != n_hidden_layers + 1:
@@ -195,8 +247,8 @@ def test_graph_interaction_network_init(n_node_in, n_node_out, n_edge_in,
             # Check feed-forward neural network
             if name == 'FNN':
                 # Get feed-forward neural network layers
-                layers = [module for module in module.named_children()
-                          if 'Layer-' in module[0]]                
+                layers = [layer for layer in module.named_children()
+                          if 'Layer-' in layer[0]]
                 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                 # Check number of layers
                 if len(layers) != n_hidden_layers + 1:

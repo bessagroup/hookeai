@@ -47,7 +47,8 @@ class EncodeProcessDecode(torch.nn.Module):
         Forward propagation.
     """
     def __init__(self, n_message_steps, n_node_in, n_node_out, n_edge_in,
-                 n_hidden_layers, hidden_layer_size):
+                 n_hidden_layers, hidden_layer_size, is_node_res_connect=False,
+                 is_edge_res_connect=False):
         """Constructor.
         
         Parameters
@@ -66,6 +67,14 @@ class EncodeProcessDecode(torch.nn.Module):
         hidden_layer_size : int
             Number of neurons of hidden layers of multilayer feed-forward
             neural network update functions.
+        is_node_res_connect : bool, default=False
+            Add residual connections in Processor between nodes input and
+            output features if True, False otherwise. Number of input and
+            output features must match to process residual connections.
+        is_edge_res_connect : bool, default=False
+            Add residual connections in Processor between edges input and
+            output features if True, False otherwise. Number of input and
+            output features must match to process residual connections.
         """
         # Initialize from base class
         super(EncodeProcessDecode, self).__init__()
@@ -84,7 +93,9 @@ class EncodeProcessDecode(torch.nn.Module):
                                     n_edge_in=hidden_layer_size,
                                     n_edge_out=hidden_layer_size,
                                     n_hidden_layers=n_hidden_layers,
-                                    hidden_layer_size=hidden_layer_size)
+                                    hidden_layer_size=hidden_layer_size,
+                                    is_node_res_connect=is_node_res_connect,
+                                    is_edge_res_connect=is_edge_res_connect)
         # Set GNN-based material patch model decoder
         self._decoder = Decoder(n_node_in=hidden_layer_size,
                                 n_node_out=n_node_out,
@@ -165,7 +176,8 @@ class Processor(torch_geometric.nn.MessagePassing):
         Forward propagation.
     """
     def __init__(self, n_message_steps, n_node_in, n_node_out, n_edge_in,
-                 n_edge_out, n_hidden_layers, hidden_layer_size):
+                 n_edge_out, n_hidden_layers, hidden_layer_size,
+                 is_node_res_connect=False, is_edge_res_connect=False):
         """Constructor.
         
         Parameters
@@ -186,9 +198,42 @@ class Processor(torch_geometric.nn.MessagePassing):
         hidden_layer_size : int
             Number of neurons of hidden layers of multilayer feed-forward
             neural network update functions.
+        is_node_res_connect : bool, default=False
+            Add residual connections between nodes input and output features
+            if True, False otherwise. Number of input and output features must
+            match to process residual connections.
+        is_edge_res_connect : bool, default=False
+            Add residual connections between edges input and output features
+            if True, False otherwise. Number of input and output features must
+            match to process residual connections.
         """
         # Initialize from base class
         super(Processor, self).__init__()
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Check number of message-passing steps
+        if n_message_steps < 1:
+            raise RuntimeError('Number of message-passing steps must be at '
+                               'least 1.')
+        elif n_message_steps > 1 and (n_node_in != n_node_out
+                                      or n_edge_in != n_edge_out):
+            raise RuntimeError('Number of node/edge input and output features '
+                               'must match to process multiple '
+                               'message-passing steps in sequence.')
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set node residual connections
+        if is_node_res_connect and n_node_in != n_node_out:
+            raise RuntimeError('Number of node input and output features '
+                               'must match to process residual '
+                               'connections.')
+        else:
+            self._is_node_res_connect = is_node_res_connect
+        # Set edge residual connections
+        if is_edge_res_connect and n_edge_in != n_edge_out:
+            raise RuntimeError('Number of edge input and output features '
+                               'must match to process residual '
+                               'connections.')
+        else:
+            self._is_edge_res_connect = is_edge_res_connect
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Set sequence of identical Graph Interaction Networks
         self._processor = torch.nn.ModuleList(
@@ -215,6 +260,7 @@ class Processor(torch_geometric.nn.MessagePassing):
             Edges indexes matrix stored as torch.Tensor(2d) with shape
             (2, n_edges), where the i-th edge is stored in edges_indexes[:, i]
             as (start_node_index, end_node_index).
+
         
         Returns
         -------
@@ -231,11 +277,23 @@ class Processor(torch_geometric.nn.MessagePassing):
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Loop over message-passing steps
         for gnn_model in self._processor:
+            # Save features matrix (residual connection)
+            if self._is_node_res_connect:
+                node_features_res = node_features_out.clone()
+            if self._is_edge_res_connect:
+                edge_features_res = edge_features_out.clone()
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Perform graph neural network message-passing step
             node_features_out, edge_features_out = \
                 gnn_model(node_features_in=node_features_out,
                           edge_features_in=edge_features_out,
                           edges_indexes=edges_indexes)
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Add residual connections to features output
+            if self._is_node_res_connect:
+                node_features_out += node_features_res
+            if self._is_edge_res_connect:
+                edge_features_out += edge_features_res
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         return node_features_out, edge_features_out
 # =============================================================================
@@ -278,6 +336,7 @@ class Decoder(torch.nn.Module):
         # Set decoding feed-forward neural network
         self._node_fn = build_fnn(
             input_size=n_node_in, output_size=n_node_out,
+            output_activation=torch.nn.Identity,
             hidden_layer_sizes=n_hidden_layers*[hidden_layer_size,],
             hidden_activation=torch.nn.ReLU)
     # -------------------------------------------------------------------------
@@ -296,4 +355,4 @@ class Decoder(torch.nn.Module):
             Nodes features output matrix stored as a torch.Tensor(2d) of shape
             (n_nodes, n_features).
         """
-        return self._node_fn(node_features_in=node_features_in)
+        return self._node_fn(node_features_in)
