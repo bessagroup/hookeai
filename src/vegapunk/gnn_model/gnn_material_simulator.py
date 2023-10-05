@@ -16,8 +16,9 @@ import pickle
 import torch
 import torch_geometric.nn
 import torch_geometric.data
+import torch_geometric.loader
 import tqdm
-import sklearn
+import sklearn.preprocessing
 # Local
 from gnn_model.gnn_epd_model import EncodeProcessDecode
 #
@@ -78,6 +79,8 @@ class GNNMaterialPatchModel(torch.nn.Module):
         Initialize model data scalers.
     fit_data_scalers(self, dataset, is_verbose=False)
         Fit model data scalers.
+    get_fitted_data_scaler(self, features_type)
+        Get fitted model data scalers.
     get_fitted_data_scaler(self, features_type)
         Get fitted model data scalers.
     _check_normalized_return(self)
@@ -145,7 +148,7 @@ class GNNMaterialPatchModel(torch.nn.Module):
         if device_type in ('cpu', 'cuda'):
             self._device = torch.device(device_type)
         else:
-            RuntimeError('Invalid device type.')
+            raise RuntimeError('Invalid device type.')
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Save model initialization parameters
         self._save_model_init_args()
@@ -160,12 +163,36 @@ class GNNMaterialPatchModel(torch.nn.Module):
                                 hidden_layer_size=hidden_layer_size)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Initialize data scalers
+        self._data_scalers = None
         if self.is_data_normalization:
             self._init_data_scalers()
     # -------------------------------------------------------------------------
-    def forward(self):
-        """Forward propagation."""
-        pass
+    def forward(self, graph, is_normalized=False):
+        """Forward propagation.
+        
+        Parameters
+        ----------
+        graph : torch_geometric.data.Data
+            Material patch homogeneous graph.
+        is_normalized : bool, default=False
+            If True, get normalized output features from material patch graph,
+            False otherwise.
+            
+        Returns
+        -------
+        node_internal_forces : torch.Tensor
+            Nodes internal forces matrix stored as a torch.Tensor(2d) of shape
+            (n_nodes, n_dim).
+        """
+        # Check input graph
+        if not isinstance(graph, torch_geometric.data.Data):
+            raise RuntimeError('Input graph is not torch_geometric.data.Data.')
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Predict material patch internal forces
+        node_internal_forces = self.predict_internal_forces(
+            graph, is_normalized=is_normalized)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        return node_internal_forces 
     # -------------------------------------------------------------------------
     def _save_model_init_args(self):
         """Save material patch model class initialization parameters."""
@@ -182,7 +209,9 @@ class GNNMaterialPatchModel(torch.nn.Module):
         model_init_args['n_message_steps'] = self._n_message_steps
         model_init_args['n_hidden_layers'] = self._n_hidden_layers
         model_init_args['hidden_layer_size'] = self._hidden_layer_size
+        model_init_args['model_directory'] = self.model_directory
         model_init_args['model_name'] = self.model_name
+        model_init_args['is_data_normalization'] = self.is_data_normalization
         model_init_args['device_type'] = self._device_type
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Set initialization parameters file path
@@ -216,11 +245,15 @@ class GNNMaterialPatchModel(torch.nn.Module):
             (2, n_edges), where the i-th edge is stored in edges_indexes[:, i]
             as (start_node_index, end_node_index).
         """
+        # Check input graph
+        if not isinstance(graph, torch_geometric.data.Data):
+            raise RuntimeError('Input graph is not torch_geometric.data.Data.')
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Check consistency with simulator
-        if graph.num_node_features() != self._n_node_in:
+        if graph.num_node_features != self._n_node_in:
             raise RuntimeError('Input graph and simulator number of node '
                                'features are not consistent.')
-        if graph.num_edge_features() != self._n_edge_in:
+        if graph.num_edge_features != self._n_edge_in:
             raise RuntimeError('Input graph and simulator number of edge '
                                'features are not consistent.')
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -242,18 +275,14 @@ class GNNMaterialPatchModel(torch.nn.Module):
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Normalize input features data
         if is_normalized:
-            # Check model data normalization
-            self._check_normalized_return()
-            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            # Get fitted data scalers for input features
-            scaler_node_in = self.get_fitted_data_scaler('node_features_in')
-            scaler_edge_in = self.get_fitted_data_scaler('edge_features_in')
-            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            # Normalize data
             if node_features_in is not None:
-                node_features_in = scaler_node_in.transform(node_features_in)
+                node_features_in = self.data_scaler_transform(
+                    tensor=node_features_in, features_type='node_features_in',
+                    mode='normalize')
             if edge_features_in is not None:
-                edge_features_in = scaler_edge_in.transform(edge_features_in)
+                edge_features_in = self.data_scaler_transform(
+                    tensor=edge_features_in, features_type='edge_features_in',
+                    mode='normalize')
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         return node_features_in, edge_features_in, edges_indexes
     # -------------------------------------------------------------------------
@@ -274,6 +303,10 @@ class GNNMaterialPatchModel(torch.nn.Module):
             Nodes features output matrix stored as a torch.Tensor(2d) of shape
             (n_nodes, n_features).
         """
+        # Check input graph
+        if not isinstance(graph, torch_geometric.data.Data):
+            raise RuntimeError('Input graph is not torch_geometric.data.Data.')
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Get features from material patch graph
         if isinstance(graph.y, torch.Tensor):
             node_features_out = graph.y.clone()
@@ -281,17 +314,12 @@ class GNNMaterialPatchModel(torch.nn.Module):
             node_features_out = None
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~  
         # Normalize output features data
-        if is_normalized:
-            # Check model data normalization
-            self._check_normalized_return()
-            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            # Get fitted data scalers for output features
-            scaler_node_out = self.get_fitted_data_scaler('node_features_out')
-            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            # Normalize data
+        if is_normalized:                
             if node_features_out is not None:
-                node_features_out = \
-                    scaler_node_out.transform(node_features_out)
+                node_features_out = self.data_scaler_transform(
+                    tensor=node_features_out,
+                    features_type='node_features_out',
+                    mode='normalize')
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         return node_features_out
     # -------------------------------------------------------------------------
@@ -333,12 +361,11 @@ class GNNMaterialPatchModel(torch.nn.Module):
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Denormalize output features data
         if self.is_data_normalization and not is_normalized:
-            # Get fitted data scalers for output features
-            scaler_node_out = self.get_fitted_data_scaler('node_features_out')
-            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            # Denormalize data
-            node_internal_forces = \
-                scaler_node_out.inverse_transform(node_internal_forces)
+            if node_internal_forces is not None:
+                node_internal_forces = self.data_scaler_transform(
+                    tensor=node_internal_forces,
+                    features_type='node_features_out',
+                    mode='denormalize')
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         return node_internal_forces
     # -------------------------------------------------------------------------
@@ -422,7 +449,7 @@ class GNNMaterialPatchModel(torch.nn.Module):
                     # Delete model training step state file posterior to loaded
                     # training step
                     if is_state_file and step > training_step:
-                        os.remove(filename)
+                        os.remove(os.path.join(self.model_directory, filename))
         elif is_latest:
             # Get state files in material patch model directory
             directory_list = os.listdir(self.model_directory)
@@ -539,14 +566,16 @@ class GNNMaterialPatchModel(torch.nn.Module):
         scaler_node_out = sklearn.preprocessing.StandardScaler()
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Set data loader
-        data_loader = torch.utils.data.DataLoader(dataset=dataset)
+        data_loader = \
+            torch_geometric.loader.dataloader.DataLoader(dataset=dataset)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Loop over graph samples
         for pyg_graph in tqdm.tqdm(data_loader,
                                    desc='> Processing data samples: ',
-                                   disable=not is_verbose):
+                                   disable=not is_verbose):            
             # Get features from material patch input graph
             node_features_in, edge_features_in, _ = \
-                self.get_input_features_from_graph(pyg_graph)  
+                self.get_input_features_from_graph(pyg_graph)
             node_features_out = \
                 self.get_output_features_from_graph(pyg_graph)
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -611,9 +640,68 @@ class GNNMaterialPatchModel(torch.nn.Module):
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         return data_scaler
     # -------------------------------------------------------------------------
+    def data_scaler_transform(self, tensor, features_type, mode='normalize'):
+        """Perform data scaling operation on features PyTorch tensor.
+        
+        Parameters
+        ----------
+        tensor : torch.Tensor
+            Features PyTorch tensor.
+        features_type : str
+            Features for which data scaler is required:
+            
+            'node_features_in'  : Node features input matrix
+            
+            'edge_features_in'  : Edge features input matrix
+            
+            'node_features_out' : Node features output matrix
+
+        mode : {'normalize', 'denormalize'}, default=normalize
+            Data scaling transformation type.
+            
+        Returns
+        -------
+        transformed_tensor : torch.Tensor
+            Transformed features PyTorch tensor.
+        """
+        # Check model data normalization
+        self._check_normalized_return()
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Check input features tensor
+        if not isinstance(tensor, torch.Tensor):
+            raise RuntimeError('Input tensor is not torch.Tensor.')
+        # Get input features tensor data type
+        input_dtype = tensor.dtype
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Get fitted data scaler for input features
+        data_scaler = self.get_fitted_data_scaler(features_type)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Perform data scaling normalization/denormalization
+        if mode == 'normalize':
+            transformed_tensor = data_scaler.transform(tensor)
+        elif mode == 'denormalize':
+            transformed_tensor = data_scaler.inverse_transform(tensor)
+        else:
+            raise RuntimeError('Invalid data scaling transformation type.')
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Enforce same data type of input features tensor
+        transformed_tensor = torch.tensor(transformed_tensor,
+                                          dtype=input_dtype)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Check transformed features tensor
+        if not isinstance(transformed_tensor, torch.Tensor):
+            raise RuntimeError('Transformed tensor is not torch.Tensor.')        
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        return transformed_tensor
+    # -------------------------------------------------------------------------
     def _check_normalized_return(self):
         """Check if model data normalization is available."""
-        if not self.is_data_normalization:
+        if not self.is_data_normalization or self._data_scalers is None:
+            raise RuntimeError('Data scalers for model features have not '
+                               'been fitted. Fit data scalers by calling '
+                               'method fit_data_scalers() before training '
+                               'or predicting with the model.')
+        if all([x is None for x in self._data_scalers.values()]):
             raise RuntimeError('Data scalers for model features have not '
                                'been fitted. Fit data scalers by calling '
                                'method fit_data_scalers() before training '
