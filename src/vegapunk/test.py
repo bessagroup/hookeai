@@ -214,10 +214,10 @@ P = Polygon(points)
 import matplotlib.pyplot as plt
 
 x,y = P.exterior.coords.xy
-plt.plot(x,y)
-plt.axis('equal')
-plt.grid()
-plt.show()
+#plt.plot(x,y)
+#plt.axis('equal')
+#plt.grid()
+#plt.show()
 
 print(type(P.exterior))
 print(P.exterior)
@@ -228,3 +228,264 @@ print('is counterclockwise?', P.exterior.is_ccw)
 points = np.flipud(points)
 P1 = Polygon(points)
 print('is counterclockwise?', P1.exterior.is_ccw)
+
+
+
+class TestClass():
+    
+    def __init__(self, x):
+        self._x = x
+        
+    def method(self):
+        y = self._x
+        self._x = None
+        return y
+    
+x = torch.rand(2, 3)
+test_class = TestClass(x)
+y = test_class.method()
+
+print(y)
+
+"""
+collator = torch_geometric.loader.dataloader.Collater(follow_batch=None, exclude_keys=None)
+data_loader = torch.utils.data.DataLoader(dataset=dataset, collate_fn=collator)
+"""
+
+class TorchStandardScaler:
+    """PyTorch tensor standardization data scaler.
+    
+    Attributes
+    ----------
+    _n_features : int
+        Number of features to standardize.
+    _mean : torch.Tensor
+        Features standardization mean tensor stored as a torch.Tensor with
+        shape (n_features,).
+    _std : torch.Tensor
+        Features standardization standard deviation tensor stored as a
+        torch.Tensor with shape (n_features,).
+    
+    Methods
+    -------
+    set_mean(self, mean)
+        Set features standardization mean tensor.
+    set_std(self, std)
+        Set features standardization standard deviation tensor.    
+    fit(self, tensor)
+        Fit features standardization mean and standard deviation tensors.
+    transform(self, tensor)
+        Standardize features tensor.
+    inverse_transform(self, tensor)
+        Destandardize features tensor.
+    _check_std(self, std)
+        Check features standardization standard deviation tensor.
+    """
+    def __init__(self, n_features, mean=None, std=None):
+        """Constructor.
+        
+        Parameters
+        ----------
+        n_features : int
+            Number of features to standardize.
+        mean : torch.Tensor, default=None
+            Features standardization mean tensor stored as a torch.Tensor with
+            shape (n_features,).
+        std : torch.Tensor, default=None
+            Features standardization standard deviation tensor stored as a
+            torch.Tensor with shape (n_features,).
+        """
+        self._n_features = n_features
+        if mean is not None:
+            self._mean = self._check_mean(mean)
+        if std is not None:
+            self._std = self._check_std(std)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    def set_mean(self, mean):
+        """Set features standardization mean tensor.
+        
+        Parameters
+        ----------
+        mean : torch.Tensor
+            Features standardization mean tensor stored as a torch.Tensor with
+            shape (n_features,).
+        """
+        self._mean = self._check_mean(mean)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    def set_std(self, std):
+        """Set features standardization standard deviation tensor.
+        
+        Parameters
+        ----------
+        std : torch.Tensor
+            Features standardization standard deviation tensor stored as a
+            torch.Tensor with shape (n_features,).
+        """
+        self._std = self._check_std(std)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    def fit(self, tensor, is_bessel=False):
+        """Fit features standardization mean and standard deviation tensors.
+        
+        Parameters
+        ----------
+        tensor : torch.Tensor
+            Features PyTorch tensor stored as torch.Tensor with shape
+            (n_samples, n_features).
+        is_bessel : bool, default=False
+            Apply Bessel's correction to compute standard deviation, False
+            otherwise.
+        """
+        if not isinstance(tensor, torch.Tensor):
+            raise RuntimeError('Features tensor is not a torch.Tensor.')
+        elif len(tensor.shape) != 2:
+            raise RuntimeError('Features tensor is not a torch.Tensor with '
+                               'shape (n_samples, n_features).')
+        elif tensor.shape[1] != self._n_features:
+            raise RuntimeError('Features tensor is not consistent with data'
+                               'scaler number of features.')
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        self._mean = torch.mean(tensor, dim=0)
+        self._std = torch.std(tensor, dim=0, unbiased=is_bessel)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    def transform(self, tensor):
+        """Standardize features tensor.
+        
+        Parameters
+        ----------
+        tensor : torch.Tensor
+            Features PyTorch tensor stored as torch.Tensor with shape
+            (n_samples, n_features).
+            
+        Returns
+        -------
+        transformed_tensor : torch.Tensor
+            Standardized features PyTorch tensor stored as torch.Tensor with
+            shape (n_samples, n_features).
+        """
+        # Get number of samples
+        n_samples = tensor.shape[0]
+        # Build mean and standard deviation tensors for standardization
+        mean = torch.tile(self._mean, (n_samples, 1))
+        std = torch.tile(self._std, (n_samples, 1))
+        # Standardize features tensor
+        transformed_tensor = torch.div(tensor - mean, std)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        return transformed_tensor
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    def inverse_transform(self, tensor):
+        """Destandardize features tensor.
+        
+        Parameters
+        ----------
+        tensor : torch.Tensor
+            Standardized features PyTorch tensor stored as torch.Tensor with
+            shape (n_samples, n_features).
+            
+        Returns
+        -------
+        transformed_tensor : torch.Tensor
+            Features PyTorch tensor stored as torch.Tensor with shape
+            (n_samples, n_features).
+        """
+        # Get number of samples
+        n_samples = tensor.shape[0]
+        # Build mean and standard deviation tensors for standardization
+        mean = torch.tile(self._mean, (n_samples, 1))
+        std = torch.tile(self._std, (n_samples, 1))
+        # Destandardize features tensor
+        transformed_tensor = torch.mul(tensor, std) + mean
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        return transformed_tensor
+    # -------------------------------------------------------------------------
+    def _check_mean(self, mean):
+        """Check features standardization mean tensor.
+        
+        Parameters
+        ----------
+        mean : torch.Tensor
+            Features standardization mean tensor stored as a torch.Tensor with
+            shape (n_features,).
+            
+        Returns
+        -------
+        mean : torch.Tensor
+            Features standardization mean tensor stored as a torch.Tensor with
+            shape (n_features,).
+        """
+        # Check features standardization mean tensor
+        if not isinstance(mean, torch.Tensor):
+            raise RuntimeError('Features standardization mean tensor is not a'
+                                'torch.Tensor.')
+        elif len(mean):
+            raise RuntimeError('Features standardization mean tensor is not a '
+                               'torch.Tensor(1d) with shape (n_features,).')
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        return mean
+    # -------------------------------------------------------------------------
+    def _check_std(self, std):
+        """Check features standardization standard deviation tensor.
+        
+        Parameters
+        ----------
+        std : torch.Tensor
+            Features standardization standard deviation tensor stored as a
+            torch.Tensor with shape (n_features,).
+            
+        Returns
+        -------
+        std : torch.Tensor
+            Features standardization standard deviation tensor stored as a
+            torch.Tensor with shape (n_features,).
+        """
+        # Check features standardization mean tensor
+        if not isinstance(std, torch.Tensor):
+            raise RuntimeError('Features standardization standard deviation '
+                               'tensor is not a torch.Tensor.')
+        elif len(std):
+            raise RuntimeError('Features standardization standard deviation '
+                               'tensor is not a torch.Tensor(1d) with shape '
+                               '(n_features,).')
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        return std
+
+
+
+
+
+
+print('\n\n')
+data = torch.tensor([[0, 0], [0, 0], [1, 1], [1, 1]]).float()
+print(data.shape)
+
+
+foo = TorchStandardScaler(data.shape[1])
+foo.fit(data)
+
+
+
+print(f"mean {foo._mean}, std {foo._std}")
+data = foo.transform(data)
+
+print(data)
+
+data = foo.inverse_transform(data)
+
+print(data)
+
+
+data = [[0, 0], [0, 0], [1, 1], [1, 1]]
+scaler = StandardScaler()
+print(scaler.fit(data))
+
+print(scaler.transform(data))
+print(scaler.transform([[2, 2]]))
+
+
+print(scaler.mean_)
+print(np.sqrt(scaler.var_))
+
+mean = torch.tensor(scaler.mean_)
+std = torch.sqrt(torch.tensor(scaler.var_))
+
+print(mean)
+print(std)

@@ -80,8 +80,8 @@ def batch_graph_patch_data_2d():
         nodes_coords = np.random.rand(n_nodes, n_dim)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Set number of node input and output features
-        n_node_in = 5
-        n_node_out = 2
+        n_node_in = 2
+        n_node_out = 5
         # Set number of edge input features
         n_edge_in = 3
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -120,5 +120,38 @@ def gnn_material_simulator(tmp_path):
                            hidden_layer_size=2, model_directory=tmp_path,
                            model_name='material_patch_model',
                            is_data_normalization=False)
+    # Build GNN-based material patch model
+    model = GNNMaterialPatchModel(**model_init_args)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    return GNNMaterialPatchModel(**model_init_args)
+    return model
+# -----------------------------------------------------------------------------
+@pytest.fixture
+def gnn_material_simulator_norm(tmp_path, batch_graph_patch_data_2d):
+    """GNN-based material patch model with data normalization."""
+    # Pick material patch graph data
+    graph_data = batch_graph_patch_data_2d[0]
+    # Get material patch graph input features matrices
+    node_features_in = graph_data.get_node_features_matrix()
+    edge_features_in = graph_data.get_edge_features_matrix()
+    # Get number of node input and output features
+    n_node_in = node_features_in.shape[1]
+    n_node_out = graph_data.get_node_targets_matrix().shape[1]
+    # Get number of edge input features
+    n_edge_in = edge_features_in.shape[1]
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Build GNN-based material patch model
+    model_init_args = dict(n_node_in=n_node_in, n_node_out=n_node_out,
+                           n_edge_in=n_edge_in, n_message_steps=2,
+                           n_hidden_layers=2, hidden_layer_size=2,
+                           model_directory=str(tmp_path),
+                           is_data_normalization=True)
+    model = GNNMaterialPatchModel(**model_init_args)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Build dataset
+    dataset = [gnn_patch_data.get_torch_data_object()
+               for gnn_patch_data in batch_graph_patch_data_2d]
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Fit model data scalers
+    model.fit_data_scalers(dataset)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    return model

@@ -4,6 +4,11 @@ Classes
 -------
 GNNMaterialPatchModel(torch.nn.Module)
     GNN-based material patch model.
+    
+Functions
+---------
+graph_standard_partial_fit
+    Perform batch fitting of standardization data scalers.
 """
 #
 #                                                                       Modules
@@ -561,44 +566,22 @@ class GNNMaterialPatchModel(torch.nn.Module):
         self._init_data_scalers()
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Instantiate data scalers
-        scaler_node_in = sklearn.preprocessing.StandardScaler()
-        scaler_edge_in = sklearn.preprocessing.StandardScaler()
-        scaler_node_out = sklearn.preprocessing.StandardScaler()
+        scaler_node_in = TorchStandardScaler(n_features=self._n_node_in)
+        scaler_edge_in = TorchStandardScaler(n_features=self._n_edge_in)
+        scaler_node_out = TorchStandardScaler(n_features=self._n_node_out)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        # Set data loader
-        data_loader = \
-            torch_geometric.loader.dataloader.DataLoader(dataset=dataset)
-        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        # Loop over graph samples
-        for pyg_graph in tqdm.tqdm(data_loader,
-                                   desc='> Processing data samples: ',
-                                   disable=not is_verbose):            
-            # Get features from material patch input graph
-            node_features_in, edge_features_in, _ = \
-                self.get_input_features_from_graph(pyg_graph)
-            node_features_out = \
-                self.get_output_features_from_graph(pyg_graph)
-            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            # Process sample to fit data scaler: node input features
-            if scaler_node_in is not None:
-                if node_features_in is not None:
-                    scaler_node_in.partial_fit(node_features_in)
-            else:
-                scaler_node_in = None
-            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            # Process sample to fit data scaler: edge input features
-            if scaler_edge_in is not None:
-                if edge_features_in is not None:
-                    scaler_edge_in.partial_fit(edge_features_in)
-            else:
-                scaler_edge_in = None
-            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            # Process sample to fit data scaler: node output features
-            if scaler_node_out is not None:
-                if node_features_out is not None:
-                    scaler_node_out.partial_fit(node_features_out)
-            else:
-                scaler_node_out = None
+        # Get scaling parameters and fit data scalers: node input features
+        mean, std = graph_standard_partial_fit(
+            dataset, features_type='node_features_in')
+        scaler_node_in.set_mean_and_std(mean, std)        
+        # Get scaling parameters and fit data scalers: edge input features
+        mean, std = graph_standard_partial_fit(
+            dataset, features_type='edge_features_in')
+        scaler_edge_in.set_mean_and_std(mean, std)
+        # Get scaling parameters and fit data scalers: node output features
+        mean, std = graph_standard_partial_fit(
+            dataset, features_type='node_features_out')
+        scaler_node_out.set_mean_and_std(mean, std)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         if is_verbose:
             print('\n> Setting fitted standard scalers...\n')
@@ -690,7 +673,11 @@ class GNNMaterialPatchModel(torch.nn.Module):
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Check transformed features tensor
         if not isinstance(transformed_tensor, torch.Tensor):
-            raise RuntimeError('Transformed tensor is not torch.Tensor.')        
+            raise RuntimeError('Transformed tensor is not torch.Tensor.') 
+        elif not torch.equal(torch.tensor(transformed_tensor.size()),
+                             torch.tensor(tensor.size())):
+            raise RuntimeError('Input and transformed tensors do not have '
+                               'the same shape.')
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         return transformed_tensor
     # -------------------------------------------------------------------------
@@ -706,3 +693,340 @@ class GNNMaterialPatchModel(torch.nn.Module):
                                'been fitted. Fit data scalers by calling '
                                'method fit_data_scalers() before training '
                                'or predicting with the model.')
+# =============================================================================            
+class TorchStandardScaler:
+    """PyTorch tensor standardization data scaler.
+    
+    Attributes
+    ----------
+    _n_features : int
+        Number of features to standardize.
+    _mean : torch.Tensor
+        Features standardization mean tensor stored as a torch.Tensor with
+        shape (n_features,).
+    _std : torch.Tensor
+        Features standardization standard deviation tensor stored as a
+        torch.Tensor with shape (n_features,).
+    
+    Methods
+    -------
+    set_mean(self, mean)
+        Set features standardization mean tensor.
+    set_std(self, std)
+        Set features standardization standard deviation tensor.    
+    fit(self, tensor)
+        Fit features standardization mean and standard deviation tensors.
+    transform(self, tensor)
+        Standardize features tensor.
+    inverse_transform(self, tensor)
+        Destandardize features tensor.
+    _check_mean(self, mean):
+        Check features standardization mean tensor.
+    _check_std(self, std)
+        Check features standardization standard deviation tensor.
+    _check_tensor(self, tensor):
+        Check features tensor to be transformed.
+    """
+    def __init__(self, n_features, mean=None, std=None):
+        """Constructor.
+        
+        Parameters
+        ----------
+        n_features : int
+            Number of features to standardize.
+        mean : torch.Tensor, default=None
+            Features standardization mean tensor stored as a torch.Tensor with
+            shape (n_features,).
+        std : torch.Tensor, default=None
+            Features standardization standard deviation tensor stored as a
+            torch.Tensor with shape (n_features,).
+        """
+        if not isinstance(n_features, int) or n_features <= 0:
+            raise RuntimeError('Number of features is not positive int.')
+        else:
+            self._n_features = n_features
+        if mean is not None:
+            self._mean = self._check_mean(mean)
+        else:
+            self._mean = None
+        if std is not None:
+            self._std = self._check_std(std)
+        else:
+             self._std = None
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    def set_mean(self, mean):
+        """Set features standardization mean tensor.
+        
+        Parameters
+        ----------
+        mean : torch.Tensor
+            Features standardization mean tensor stored as a torch.Tensor with
+            shape (n_features,).
+        """
+        self._mean = self._check_mean(mean)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    def set_std(self, std):
+        """Set features standardization standard deviation tensor.
+        
+        Parameters
+        ----------
+        std : torch.Tensor
+            Features standardization standard deviation tensor stored as a
+            torch.Tensor with shape (n_features,).
+        """
+        self._std = self._check_std(std)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    def set_mean_and_std(self, mean, std):
+        """Set features standardization mean and standard deviation tensors.
+        
+        Parameters
+        ----------
+        mean : torch.Tensor
+            Features standardization mean tensor stored as a torch.Tensor with
+            shape (n_features,).
+        std : torch.Tensor
+            Features standardization standard deviation tensor stored as a
+            torch.Tensor with shape (n_features,).
+        """
+        self._mean = self._check_mean(mean)
+        self._std = self._check_std(std)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    def fit(self, tensor, is_bessel=True):
+        """Fit features standardization mean and standard deviation tensors.
+        
+        Parameters
+        ----------
+        tensor : torch.Tensor
+            Features PyTorch tensor stored as torch.Tensor with shape
+            (n_samples, n_features).
+        is_bessel : bool, default=False
+            Apply Bessel's correction to compute standard deviation, False
+            otherwise.
+        """
+        # Check features tensor
+        self._check_tensor(tensor)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set standardization mean and standard deviation
+        self._mean = self._check_mean(torch.mean(tensor, dim=0))
+        self._std = self._check_std(torch.std(tensor, dim=0,
+                                              unbiased=is_bessel))
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    def transform(self, tensor):
+        """Standardize features tensor.
+        
+        Parameters
+        ----------
+        tensor : torch.Tensor
+            Features PyTorch tensor stored as torch.Tensor with shape
+            (n_samples, n_features).
+            
+        Returns
+        -------
+        transformed_tensor : torch.Tensor
+            Standardized features PyTorch tensor stored as torch.Tensor with
+            shape (n_samples, n_features).
+        """
+        # Check features tensor
+        self._check_tensor(tensor)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Get number of samples
+        n_samples = tensor.shape[0]
+        # Build mean and standard deviation tensors for standardization
+        mean = torch.tile(self._mean, (n_samples, 1))
+        std = torch.tile(self._std, (n_samples, 1))
+        # Standardize features tensor
+        transformed_tensor = torch.div(tensor - mean, std)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Check transformed tensor
+        if not torch.equal(torch.tensor(transformed_tensor.size()),
+                           torch.tensor(tensor.size())):
+            raise RuntimeError('Input and transformed tensors do not have the '
+                               'same shape.')
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        return transformed_tensor
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    def inverse_transform(self, tensor):
+        """Destandardize features tensor.
+        
+        Parameters
+        ----------
+        tensor : torch.Tensor
+            Standardized features PyTorch tensor stored as torch.Tensor with
+            shape (n_samples, n_features).
+            
+        Returns
+        -------
+        transformed_tensor : torch.Tensor
+            Features PyTorch tensor stored as torch.Tensor with shape
+            (n_samples, n_features).
+        """
+        # Check features tensor
+        self._check_tensor(tensor)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Get number of samples
+        n_samples = tensor.shape[0]
+        # Build mean and standard deviation tensors for standardization
+        mean = torch.tile(self._mean, (n_samples, 1))
+        std = torch.tile(self._std, (n_samples, 1))
+        # Destandardize features tensor
+        transformed_tensor = torch.mul(tensor, std) + mean
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Check transformed tensor
+        if not torch.equal(torch.tensor(transformed_tensor.size()),
+                           torch.tensor(tensor.size())):
+            raise RuntimeError('Input and transformed tensors do not have the '
+                               'same shape.')
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        return transformed_tensor
+    # -------------------------------------------------------------------------
+    def _check_mean(self, mean):
+        """Check features standardization mean tensor.
+        
+        Parameters
+        ----------
+        mean : torch.Tensor
+            Features standardization mean tensor stored as a torch.Tensor with
+            shape (n_features,).
+            
+        Returns
+        -------
+        mean : torch.Tensor
+            Features standardization mean tensor stored as a torch.Tensor with
+            shape (n_features,).
+        """
+        # Check features standardization mean tensor
+        if not isinstance(mean, torch.Tensor):
+            raise RuntimeError('Features standardization mean tensor is not a '
+                                'torch.Tensor.')
+        elif len(mean) != self._n_features:
+            raise RuntimeError('Features standardization mean tensor is not a '
+                               'torch.Tensor(1d) with shape (n_features,).')
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        return mean
+    # -------------------------------------------------------------------------
+    def _check_std(self, std):
+        """Check features standardization standard deviation tensor.
+        
+        Parameters
+        ----------
+        std : torch.Tensor
+            Features standardization standard deviation tensor stored as a
+            torch.Tensor with shape (n_features,).
+            
+        Returns
+        -------
+        std : torch.Tensor
+            Features standardization standard deviation tensor stored as a
+            torch.Tensor with shape (n_features,).
+        """
+        # Check features standardization standard deviation tensor
+        if not isinstance(std, torch.Tensor):
+            raise RuntimeError('Features standardization standard deviation '
+                               'tensor is not a torch.Tensor.')
+        elif len(std) != self._n_features:
+            raise RuntimeError('Features standardization standard deviation '
+                               'tensor is not a torch.Tensor(1d) with shape '
+                               '(n_features,).')
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        return std
+    # -------------------------------------------------------------------------
+    def _check_tensor(self, tensor):
+        """Check features tensor to be transformed.
+        
+        Parameters
+        ----------
+        tensor : torch.Tensor
+            Standardized features PyTorch tensor stored as torch.Tensor with
+            shape (n_samples, n_features).
+        """
+        if not isinstance(tensor, torch.Tensor):
+            raise RuntimeError('Features tensor is not a torch.Tensor.')
+        elif len(tensor.shape) != 2:
+            raise RuntimeError('Features tensor is not a torch.Tensor with '
+                               'shape (n_samples, n_features).')
+        elif tensor.shape[1] != self._n_features:
+            raise RuntimeError('Features tensor is not consistent with data'
+                               'scaler number of features.')
+# =============================================================================
+def graph_standard_partial_fit(dataset, features_type, is_verbose=False):
+    """Perform batch fitting of standardization data scalers.
+    
+    Parameters
+    ----------
+    dataset : GNNMaterialPatchDataset
+        GNN-based material patch data set. Each sample corresponds to a
+        torch_geometric.data.Data object describing a homogeneous graph.
+    features_type : str
+        Features for which data scaler is required:
+        
+        'node_features_in'  : Node features input matrix
+        
+        'edge_features_in'  : Edge features input matrix
+        
+        'node_features_out' : Node features output matrix
+    
+    is_verbose : bool, default=False
+        If True, enable verbose output.
+    
+    Returns
+    -------
+    mean : torch.Tensor
+        Features standardization mean tensor stored as a torch.Tensor with
+        shape (n_features,).
+    std : torch.Tensor
+        Features standardization standard deviation tensor stored as a
+        torch.Tensor with shape (n_features,).
+    """
+    # Instantiate data scaler
+    data_scaler = sklearn.preprocessing.StandardScaler()
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Set data loader
+    data_loader = \
+        torch_geometric.loader.dataloader.DataLoader(dataset=dataset)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Loop over graph samples
+    for pyg_graph in tqdm.tqdm(data_loader,
+                               desc='> Processing data samples: ',
+                               disable=not is_verbose):
+        # Check sample graph type
+        if not isinstance(pyg_graph, torch_geometric.data.Data):
+            raise RuntimeError('Material patch sample graph must be instance '
+                               'of torch_geometric.data.Data.')
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Get features tensor
+        if features_type == 'node_features_in':
+            features_tensor = pyg_graph.x
+        elif features_type == 'edge_features_in':
+            features_tensor = pyg_graph.edge_attr
+        elif features_type == 'node_features_out':
+            features_tensor = pyg_graph.y
+        else:
+            raise RuntimeError('Unknown features type.')   
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Process sample to fit data scaler
+        if isinstance(features_tensor, torch.Tensor):
+            data_scaler.partial_fit(features_tensor.clone())
+        else:
+            raise RuntimeError('Sample features tensor is not torch.Tensor.')
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Get fitted mean and standard deviation tensors
+    mean = torch.tensor(data_scaler.mean_)
+    std = torch.sqrt(torch.tensor(data_scaler.var_))
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Check features standardization mean tensor
+    if not isinstance(mean, torch.Tensor):
+        raise RuntimeError('Features standardization mean tensor is not a '
+                           'torch.Tensor.')
+    elif len(mean) != features_tensor.shape[1]:
+        raise RuntimeError('Features standardization mean tensor is not a '
+                           'torch.Tensor(1d) with shape (n_features,).')
+    # Check features standardization standard deviation tensor
+    if not isinstance(std, torch.Tensor):
+        raise RuntimeError('Features standardization standard deviation '
+                            'tensor is not a torch.Tensor.')
+    elif len(std) != features_tensor.shape[1]:
+        raise RuntimeError('Features standardization standard deviation '
+                           'tensor is not a torch.Tensor(1d) with shape '
+                           '(n_features,).')
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    return mean, std

@@ -8,9 +8,9 @@ import pickle
 # Third-party
 import pytest
 import torch
-import sklearn.preprocessing
 # Local
-from src.vegapunk.gnn_model.gnn_material_simulator import GNNMaterialPatchModel
+from src.vegapunk.gnn_model.gnn_material_simulator import \
+    GNNMaterialPatchModel, TorchStandardScaler, graph_standard_partial_fit
 # =============================================================================
 #
 #                                                          Authorship & Credits
@@ -104,7 +104,7 @@ def test_material_patch_model_init_invalid(n_node_in, n_node_out, n_edge_in,
                                            hidden_layer_size, model_name,
                                            is_data_normalization, device_type,
                                            tmp_path):
-    """Test GNN-based material patch model constructor."""
+    """Test detection of invalid GNN-based material patch model constructor."""
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set model directory
     model_directory = str(tmp_path)
@@ -310,10 +310,10 @@ def test_get_output_features_from_graph_invalid(graph_patch_data_2d, tmp_path):
                            is_data_normalization=False)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     with pytest.raises(RuntimeError):
-        # Test invalid input graph
+        # Test invalid output graph
         model = GNNMaterialPatchModel(**model_init_args)
-        _, _, _ = model.get_input_features_from_graph('invalid_type',
-                                                      is_normalized=False)
+        _, _, _ = model.get_output_features_from_graph('invalid_type',
+                                                       is_normalized=False)
 # -----------------------------------------------------------------------------
 def test_fit_data_scalers(batch_graph_patch_data_2d, tmp_path):
     """Test fitting of GNN-based material patch model data scalers."""
@@ -346,15 +346,15 @@ def test_fit_data_scalers(batch_graph_patch_data_2d, tmp_path):
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Check fitted data scalers
     if not isinstance(model.get_fitted_data_scaler('node_features_in'),
-                      sklearn.preprocessing.StandardScaler):
+                      TorchStandardScaler):
         errors.append('Model data scaler for node input features was not '
                       'properly fitted.')
     if not isinstance(model.get_fitted_data_scaler('edge_features_in'),
-                      sklearn.preprocessing.StandardScaler):
+                      TorchStandardScaler):
         errors.append('Model data scaler for edge input features was not '
                       'properly fitted.')
     if not isinstance(model.get_fitted_data_scaler('node_features_out'),
-                      sklearn.preprocessing.StandardScaler):
+                      TorchStandardScaler):
         errors.append('Model data scaler for node output features was not '
                       'properly fitted.')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -375,6 +375,61 @@ def test_get_fitted_data_scaler_invalid(tmp_path):
     with pytest.raises(RuntimeError):
         # Test unfitted data scaler
         _ = model.get_fitted_data_scaler(features_type='node_features_in')
+# -----------------------------------------------------------------------------
+def test_data_scaler_transform(gnn_material_simulator_norm,
+                               batch_graph_patch_data_2d):
+    """Test data scaling operation on features PyTorch tensor."""
+    # Initialize errors
+    errors = []
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Set GNN-based material patch model with data normalization
+    model = gnn_material_simulator_norm
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Pick material patch graph data
+    graph_data = batch_graph_patch_data_2d[0]
+    # Get PyG homogeneous graph data object
+    pyg_graph = graph_data.get_torch_data_object()
+    # Get material patch graph feature matrices
+    node_features_in, edge_features_in, _ = \
+        model.get_input_features_from_graph(pyg_graph)
+    node_features_out = model.get_output_features_from_graph(pyg_graph)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Aggregate features tensors for testing
+    feature_tensors = {'node_features_in': node_features_in,
+                       'edge_features_in': edge_features_in,
+                       'node_features_out': node_features_out}
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Loop over features tensors
+    for features_type, features_tensor in feature_tensors.items():
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Normalize graph feature matrix
+        norm_features_tensor = model.data_scaler_transform(
+            tensor=features_tensor, features_type=features_type,
+            mode='normalize')
+        # Check transformed features tensor
+        if not isinstance(norm_features_tensor, torch.Tensor):
+            errors.append('Transformed tensor is not torch.Tensor.')
+        elif not torch.equal(torch.tensor(norm_features_tensor.size()),
+                             torch.tensor(features_tensor.size())):
+            errors.append('Input and transformed tensors do not have the same '
+                          'shape.')
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Denormalize graph feature matrix
+        denorm_features_tensor = model.data_scaler_transform(
+            tensor=norm_features_tensor, features_type=features_type,
+            mode='denormalize')
+        # Check transformed features tensor
+        if not isinstance(denorm_features_tensor, torch.Tensor):
+            errors.append('Transformed tensor is not torch.Tensor.')
+        elif not torch.equal(torch.tensor(denorm_features_tensor.size()),
+                             torch.tensor(norm_features_tensor.size())):
+            errors.append('Input and transformed tensors do not have the same '
+                          'shape.')
+        elif not torch.allclose(denorm_features_tensor, features_tensor):
+            errors.append('Tensor denormalization did not recover original '
+                          'tensor.')
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    assert not errors, "Errors:\n{}".format("\n".join(errors))
 # -----------------------------------------------------------------------------
 def test_check_normalized_return(tmp_path):
     """Test detection of unfitted model data scalers."""
@@ -746,8 +801,218 @@ def test_model_forward_propagation_invalid(batch_graph_patch_data_2d, tmp_path,
         # Fit model data scalers
         model.fit_data_scalers(dataset)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Predict internal forces
     with pytest.raises(RuntimeError):
         # Requesting normalized output when model data scalars have not been
         # fitted
         _ = model(pyg_graph, is_normalized=is_normalized)
+    with pytest.raises(RuntimeError):
+        # Invalid input graph
+        _ = model('invalid_input_graph', is_normalized=is_normalized)
+# -----------------------------------------------------------------------------
+@pytest.mark.parametrize('n_features, mean, std',
+                         [(5, None, None),
+                          (3, torch.rand(3), None),
+                          (2, None, torch.rand(2)),
+                          (4, torch.rand(4), torch.rand(4))
+                          ])
+def test_torch_standard_scaler_init(n_features, mean, std):
+    """Test PyTorch tensor standardization data scaler constructor."""
+    # Initialize errors
+    errors = []
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Build PyTorch tensor standardization data scaler
+    data_scaler = TorchStandardScaler(n_features, mean=mean, std=std)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Check attributes
+    if data_scaler._n_features != n_features:
+        errors.append('PyTorch tensor standardization data scaler number of '
+                      'features was not properly set.')        
+    if (mean is not None and not torch.allclose(data_scaler._mean, mean)) \
+            or (mean is None and data_scaler._mean is not None):
+        errors.append('PyTorch tensor standardization data scaler features '
+                      'mean was not properly set.')
+    if (std is not None and not torch.allclose(data_scaler._std, std)) \
+            or (std is None and data_scaler._std is not None):
+        errors.append('PyTorch tensor standardization data scaler features '
+                      'standard deviation was not properly set.')
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    assert not errors, "Errors:\n{}".format("\n".join(errors))
+# -----------------------------------------------------------------------------
+@pytest.mark.parametrize('n_features, mean, std',
+                         [('invalid_n_features', None, None),
+                          (-1, None, None),
+                          (2, 3.0, None),
+                          (2, torch.rand(3), None),
+                          (2, None, 3.0),
+                          (2, None, torch.rand(3)),
+                          ])
+def test_torch_standard_scaler_init_invalid(n_features, mean, std):
+    """Test detection of PyTorch tensor data scaler invalid constructor."""
+    with pytest.raises(RuntimeError):
+        # Test invalid number of features, mean or standard deviation
+        _ = TorchStandardScaler(n_features, mean=mean, std=std)
+# -----------------------------------------------------------------------------
+@pytest.mark.parametrize('n_features, mean, std',
+                         [(1, torch.rand(1), torch.rand(1)),
+                          (2, torch.rand(2), torch.rand(2)),
+                          (3, torch.rand(3), torch.rand(3)),
+                          ])
+def test_torch_standard_scaler_setters(n_features, mean, std):
+    """Test PyTorch tensor standardization data scaler setters."""
+    # Initialize errors
+    errors = []
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Build PyTorch tensor standardization data scaler
+    data_scaler = TorchStandardScaler(n_features)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Set standardization mean tensor
+    data_scaler.set_mean(mean)
+    if not torch.allclose(data_scaler._mean, mean):
+        errors.append('PyTorch tensor standardization data scaler features '
+                      'mean was not properly set.')
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Set standardization standard deviation tensor
+    data_scaler.set_std(std)
+    if not torch.allclose(data_scaler._std, std):
+        errors.append('PyTorch tensor standardization data scaler features '
+                      'standard deviation was not properly set.')
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Set standardization mean and standard deviation tensor
+    data_scaler.set_mean_and_std(mean, std)
+    if not torch.allclose(data_scaler._mean, mean) \
+            or not torch.allclose(data_scaler._std, std):
+        errors.append('PyTorch tensor standardization data scaler features '
+                      'mean and/or standard deviation was not properly set.')
+# -----------------------------------------------------------------------------
+@pytest.mark.parametrize('n_features, tensor, is_bessel',
+                         [(1, torch.rand(2, 1), True),
+                          (2, torch.rand(3, 2), False),
+                          (3, torch.rand(1, 3), True),
+                          ])
+def test_torch_standard_scaler_fit(n_features, tensor, is_bessel):
+    """Test PyTorch tensor standardization data scaler fitting."""
+    # Initialize errors
+    errors = []
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Build PyTorch tensor standardization data scaler
+    data_scaler = TorchStandardScaler(n_features)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Fit standardization mean and standard deviation tensor
+    data_scaler.fit(tensor, is_bessel=is_bessel)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    if not isinstance(data_scaler._mean, torch.Tensor):
+        raise RuntimeError('Features standardization mean tensor is not a '
+                           'torch.Tensor.')
+    elif len(data_scaler._mean) != data_scaler._n_features:
+        raise RuntimeError('Features standardization mean tensor is not a '
+                           'torch.Tensor(1d) with shape (n_features,).')
+    if not isinstance(data_scaler._std, torch.Tensor):
+        raise RuntimeError('Features standardization standard deviation '
+                           'tensor is not a torch.Tensor.')
+    elif len(data_scaler._std) != data_scaler._n_features:
+        raise RuntimeError('Features standardization standard deviation '
+                           'tensor is not a torch.Tensor(1d) with shape '
+                           '(n_features,).')
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    assert not errors, "Errors:\n{}".format("\n".join(errors))
+# -----------------------------------------------------------------------------
+@pytest.mark.parametrize('n_features, tensor, is_bessel',
+                         [(1, 'invalid_tensor', True),
+                          (2, torch.rand(3, 2, 1), False),
+                          (3, torch.rand(1, 4), True),
+                          ])
+def test_torch_standard_scaler_fit_invalid(n_features, tensor, is_bessel):
+    """Test detection of invalid PyTorch data scaler fitting."""
+    # Build PyTorch tensor standardization data scaler
+    data_scaler = TorchStandardScaler(n_features)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    with pytest.raises(RuntimeError):
+        # Test invalid features tensor
+        data_scaler.fit(tensor, is_bessel=is_bessel)
+# -----------------------------------------------------------------------------
+@pytest.mark.parametrize('n_features, tensor',
+                         [(1, 'invalid_tensor'),
+                          (2, torch.rand(3, 2, 1)),
+                          (3, torch.rand(1, 4)),
+                          ])
+def test_torch_standard_scaler_transform_invalid(n_features, tensor):
+    """Test detection of invalid PyTorch tensor data scaler transform."""
+    # Build PyTorch tensor standardization data scaler
+    data_scaler = TorchStandardScaler(n_features)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    with pytest.raises(RuntimeError):
+        # Test invalid features tensor
+        _ = data_scaler.transform(tensor)
+# -----------------------------------------------------------------------------
+@pytest.mark.parametrize('n_features, tensor',
+                         [(1, 'invalid_tensor'),
+                          (2, torch.rand(3, 2, 1)),
+                          (3, torch.rand(1, 4)),
+                          ])
+def test_torch_standard_scaler_inverse_transform_invalid(n_features, tensor):
+    """Test detection of invalid PyTorch data scaler inverse transform."""
+    # Build PyTorch tensor standardization data scaler
+    data_scaler = TorchStandardScaler(n_features)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    with pytest.raises(RuntimeError):
+        # Test invalid features tensor
+        _ = data_scaler.inverse_transform(tensor)
+# -----------------------------------------------------------------------------
+@pytest.mark.parametrize('features_type',
+                         ['node_features_in',
+                          'edge_features_in',
+                          'node_features_out',
+                          ])
+def test_graph_standard_partial_fit(batch_graph_patch_data_2d, features_type):
+    """Test batch fitting of standardization data scalers."""
+    # Initialize errors
+    errors = []
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Build dataset
+    dataset = [gnn_patch_data.get_torch_data_object()
+               for gnn_patch_data in batch_graph_patch_data_2d]
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Get scaling parameters and fit data scalers
+    mean, std = graph_standard_partial_fit(
+        dataset, features_type=features_type, is_verbose=True)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Check features standardization mean tensor
+    if not isinstance(mean, torch.Tensor):
+        raise RuntimeError('Features standardization mean tensor is not a '
+                           'torch.Tensor.')
+    # Check features standardization standard deviation tensor
+    if not isinstance(std, torch.Tensor):
+        raise RuntimeError('Features standardization standard deviation '
+                            'tensor is not a torch.Tensor.')
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    assert not errors, "Errors:\n{}".format("\n".join(errors))
+# -----------------------------------------------------------------------------
+@pytest.mark.parametrize('features_type',
+                         ['node_features_in',
+                          'edge_features_in',
+                          'node_features_out',
+                          ])
+def test_graph_standard_partial_fit_invalid(batch_graph_patch_data_2d,
+                                            features_type):
+    """Test detection of invalid inputs to batch fitting of data scalers."""
+    # Build dataset
+    dataset = [gnn_patch_data.get_torch_data_object()
+               for gnn_patch_data in batch_graph_patch_data_2d]
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    with pytest.raises(RuntimeError):
+        # Test invalid sample graph type
+        test_dataset = dataset[:]
+        test_dataset[0] = 'invalid_sample_type'
+        # Get scaling parameters and fit data scalers
+        mean, std = graph_standard_partial_fit(
+            test_dataset, features_type=features_type, is_verbose=True)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    with pytest.raises(RuntimeError):
+        # Test missing sample features tensor
+        test_dataset = dataset[:]
+        test_dataset[0].x = None
+        test_dataset[0].edge_attr = None
+        test_dataset[0].y = None
+        # Get scaling parameters and fit data scalers
+        mean, std = graph_standard_partial_fit(
+            test_dataset, features_type=features_type, is_verbose=True)
