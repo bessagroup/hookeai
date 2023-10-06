@@ -50,6 +50,14 @@ class GNNMaterialPatchModel(torch.nn.Module):
         Number of node output features.
     _n_edge_in : int
         Number of edge input features.
+    _n_message_steps : int
+        Number of message-passing steps.
+    _n_hidden_layers : int
+        Number of hidden layers of multilayer feed-forward neural network
+        update functions.
+    _hidden_layer_size : int
+        Number of neurons of hidden layers of multilayer feed-forward
+        neural network update functions.
     _gnn_epd_model : EncodeProcessDecode
         GNN-based Encoder-Process-Decoder model.
     _device_type : {'cpu', 'cuda'}, default='cpu'
@@ -66,8 +74,12 @@ class GNNMaterialPatchModel(torch.nn.Module):
 
     Methods
     -------
+    init_model_from_file(model_directory)
+        Initialize GNN-based material patch model from initialization file.
     forward(self)
         Forward propagation.
+    save_model_init_file(self)
+        Save material patch model class initialization attributes.
     get_input_features_from_graph(self, graph, is_normalized=False)
         Get input features from material patch graph.
     get_output_features_from_graph(self, graph, is_normalized=False)
@@ -155,9 +167,6 @@ class GNNMaterialPatchModel(torch.nn.Module):
         else:
             raise RuntimeError('Invalid device type.')
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        # Save model initialization parameters
-        self._save_model_init_args()
-        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Initialize GNN-based Encoder-Process-Decoder model
         self._gnn_epd_model = \
             EncodeProcessDecode(n_message_steps=n_message_steps,
@@ -171,6 +180,49 @@ class GNNMaterialPatchModel(torch.nn.Module):
         self._data_scalers = None
         if self.is_data_normalization:
             self._init_data_scalers()
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Save model initialization file
+        self.save_model_init_file()
+    # -------------------------------------------------------------------------
+    @staticmethod
+    def init_model_from_file(model_directory):
+        """Initialize GNN-based material patch model from initialization file.
+        
+        Initialization file is assumed to be stored in the material patch model
+        directory under the name model_init_file.pkl.
+        
+        Parameters
+        ----------
+        model_directory : str
+            Directory where material patch model is stored.
+        """
+        # Check material patch model directory
+        if not os.path.isdir(model_directory):
+            raise RuntimeError('The material patch model directory has not '
+                               'been found:\n\n' + model_directory)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Get model initialization file path from model directory
+        model_init_file_path = os.path.join(model_directory,
+                                            'model_init_file' + '.pkl')
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Load model initialization attributes from file
+        if not os.path.isfile(model_init_file_path):
+            raise RuntimeError('The material patch model initialization file '
+                               'has not been found:\n\n'
+                                + model_init_file_path)
+        else:
+            with open(model_init_file_path, 'rb') as model_init_file:
+                model_init_attributes = pickle.load(model_init_file)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Initialize GNN-based material patch model
+        model_init_args = model_init_attributes['model_init_args']
+        model = GNNMaterialPatchModel(**model_init_args)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set model data scalers
+        model_data_scalers = model_init_attributes['model_data_scalers']
+        model._data_scalers = model_data_scalers
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        return model
     # -------------------------------------------------------------------------
     def forward(self, graph, is_normalized=False):
         """Forward propagation.
@@ -199,12 +251,26 @@ class GNNMaterialPatchModel(torch.nn.Module):
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         return node_internal_forces 
     # -------------------------------------------------------------------------
-    def _save_model_init_args(self):
-        """Save material patch model class initialization parameters."""
+    def save_model_init_file(self):
+        """Save material patch model initialization file.
+        
+        Initialization file is stored in the material patch model directory
+        under the name model_init_file.pkl.
+        
+        Initialization file contains a dictionary model_init_attributes that
+        includes:
+        
+        'model_init_args' - Model initialization parameters
+        
+        'model_data_scalers' - Model fitted data scalers
+        """
         # Check material patch model directory
         if not os.path.isdir(self.model_directory):
             raise RuntimeError('The material patch model directory has not '
                                'been found:\n\n' + self.model_directory)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Initialize material patch model initialization attributes
+        model_init_attributes = {}
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Build initialization parameters
         model_init_args = {}
@@ -219,12 +285,17 @@ class GNNMaterialPatchModel(torch.nn.Module):
         model_init_args['is_data_normalization'] = self.is_data_normalization
         model_init_args['device_type'] = self._device_type
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        # Set initialization parameters file path
+        # Assemble initialization parameters
+        model_init_attributes['model_init_args'] = model_init_args
+        # Assemble model data scalers
+        model_init_attributes['model_data_scalers'] = self._data_scalers
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set model initialization file path
         model_init_file_path = os.path.join(
-            self.model_directory, 'model_init_args' + '.pkl')
-        # Save initialization parameters
+            self.model_directory, 'model_init_file' + '.pkl')
+        # Save model initialization file
         with open(model_init_file_path, 'wb') as init_file:
-            pickle.dump(model_init_args, init_file)
+            pickle.dump(model_init_attributes, init_file)
     # -------------------------------------------------------------------------
     def get_input_features_from_graph(self, graph, is_normalized=False):
         """Get input features from material patch graph.
@@ -590,6 +661,9 @@ class GNNMaterialPatchModel(torch.nn.Module):
         self._data_scalers['node_features_in'] = scaler_node_in
         self._data_scalers['edge_features_in'] = scaler_edge_in
         self._data_scalers['node_features_out'] = scaler_node_out
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Update model initialization file with fitted data scalers
+        self.save_model_init_file()
     # -------------------------------------------------------------------------
     def get_fitted_data_scaler(self, features_type):
         """Get fitted model data scalers.
@@ -667,9 +741,8 @@ class GNNMaterialPatchModel(torch.nn.Module):
         else:
             raise RuntimeError('Invalid data scaling transformation type.')
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        # Enforce same data type of input features tensor
-        transformed_tensor = torch.tensor(transformed_tensor,
-                                          dtype=input_dtype)
+        # Enforce same data type of input features tensor 
+        transformed_tensor = transformed_tensor.to(input_dtype)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Check transformed features tensor
         if not isinstance(transformed_tensor, torch.Tensor):

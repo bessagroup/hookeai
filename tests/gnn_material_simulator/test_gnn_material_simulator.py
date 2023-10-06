@@ -65,13 +65,12 @@ def test_material_patch_model_init(n_node_in, n_node_out, n_edge_in,
         errors.append('One or more attributes of GNN-based material patch '
                       'model class were not properly set.')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Check GNN-based material patch model class initialization parameters
-    # storage
+    # Check GNN-based material patch model initialization attributes storage
     model_init_file_path = os.path.join(model_directory,
-                                        'model_init_args' + '.pkl')
+                                        'model_init_file' + '.pkl')
     with open(model_init_file_path, 'rb') as model_init_file:
-        loaded_init_args = pickle.load(model_init_file)
-    if loaded_init_args != model_init_args:
+        model_init_attributes = pickle.load(model_init_file)
+    if model_init_attributes['model_init_args'] != model_init_args:
         errors.append('GNN-based material patch model class initialization '
                       'parameters were not properly recovered.')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -136,14 +135,58 @@ def test_material_patch_model_init_invalid(n_node_in, n_node_out, n_edge_in,
         test_init_args['device_type'] = 'unknown_device_type'
         model = GNNMaterialPatchModel(**test_init_args)
 # -----------------------------------------------------------------------------
-def test_save_init_args_invalid(tmp_path):
-    """Test detection of failed save of model initialization parameters."""
+def test_init_from_file(gnn_material_simulator_norm):
+    """Test GNN-based material patch model from initialization file."""
+    # Initialize errors
+    errors = []
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Get model directory
+    model_directory = gnn_material_simulator_norm.model_directory
+    # Save material patch model initialization file
+    gnn_material_simulator_norm.save_model_init_file()
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Initialize GNN-based material patch model from initialization file
+    model = GNNMaterialPatchModel.init_model_from_file(model_directory)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Check initialized model
+    if not isinstance(model, GNNMaterialPatchModel):
+        errors.append('GNN-based material patch model was not successfully '
+                      'initialized from initialization file')
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Check if original and initialized model from file share the same
+    # attributes 
+    if vars(model).keys() != vars(gnn_material_simulator_norm).keys():
+        errors.append('Original and initialized model from file do not share '
+                      'the same attributes.')
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    assert not errors, "Errors:\n{}".format("\n".join(errors))
+# -----------------------------------------------------------------------------
+def test_init_from_file_invalid(gnn_material_simulator_norm):
+    """Test detection of invalid model constructor from initialization file."""
+    # Get model directory
+    model_directory = gnn_material_simulator_norm.model_directory
+    # Save material patch model initialization file
+    gnn_material_simulator_norm.save_model_init_file()
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    with pytest.raises(RuntimeError):
+        # Test detection of unexistent model directory
+        _ = GNNMaterialPatchModel.init_model_from_file('unknown_directory')
+    with pytest.raises(RuntimeError):
+        # Remove model initialization files
+        model_init_file_path = os.path.join(model_directory,
+                                            'model_init_file' + '.pkl')
+        os.remove(model_init_file_path)
+        # Test detection of unexistent model initialization file
+        _ = GNNMaterialPatchModel.init_model_from_file(model_directory)
+# -----------------------------------------------------------------------------
+def test_save_model_file_invalid(tmp_path):
+    """Test detection of failed save of model initialization file."""
     # Set GNN-based material patch model initialization parameters
     model_init_args = dict(n_node_in=2, n_node_out=5, n_edge_in=3,
-                        n_message_steps=2, n_hidden_layers=2,
-                        hidden_layer_size=2, model_directory=str(tmp_path),
-                        model_name='material_patch_model',
-                        is_data_normalization=True)
+                           n_message_steps=2, n_hidden_layers=2,
+                           hidden_layer_size=2, model_directory=str(tmp_path),
+                           model_name='material_patch_model',
+                           is_data_normalization=True)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Build GNN-based material patch model
     model = GNNMaterialPatchModel(**model_init_args)
@@ -151,7 +194,7 @@ def test_save_init_args_invalid(tmp_path):
     with pytest.raises(RuntimeError):
         # Test detection of unexistent material patch model directory
         model.model_directory = 'unknown_dir'
-        model._save_model_init_args()
+        model.save_model_init_file()
 # -----------------------------------------------------------------------------
 def test_get_input_features_from_graph(graph_patch_data_2d, tmp_path):
     """Test extraction of input features from material patch graph.

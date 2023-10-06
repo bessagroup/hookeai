@@ -489,3 +489,17 @@ std = torch.sqrt(torch.tensor(scaler.var_))
 
 print(mean)
 print(std)
+
+
+class TestClassInit():
+    def __init__(self, x):
+        self.x = x
+    
+    
+    def init_from_call(x):
+        return TestClassInit(x)
+    
+test_class = TestClassInit.init_from_call(10)
+
+print(type(test_class))
+print(test_class.x)

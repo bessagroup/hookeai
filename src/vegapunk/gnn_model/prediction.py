@@ -100,19 +100,8 @@ def predict(predict_dir, dataset, model_directory, is_compute_loss=True,
     if is_verbose:
         print('\n> Loading GNN-based material patch model...\n')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Load GNN-based material patch model class initialization parameters
-    model_init_file_path = os.path.join(model_directory,
-                                        'model_init_args' + '.pkl')
-    if not os.path.isfile(model_init_file_path):
-        raise RuntimeError('The material patch model class initialization '
-                           'parameters file has not been found:\n\n'
-                           + model_init_file_path)
-    else:
-        with open(model_init_file_path, 'rb') as model_init_file:
-            model_init_args = pickle.load(model_init_file)
-    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Initialize GNN-based material patch model
-    model = GNNMaterialPatchModel(**model_init_args)
+    model = GNNMaterialPatchModel.init_model_from_file(model_directory)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Load GNN-based material patch model state (state file corresponding to
     # the highest training step available in model directory)
