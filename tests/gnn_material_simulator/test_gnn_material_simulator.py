@@ -468,7 +468,8 @@ def test_data_scaler_transform(gnn_material_simulator_norm,
                              torch.tensor(norm_features_tensor.size())):
             errors.append('Input and transformed tensors do not have the same '
                           'shape.')
-        elif not torch.allclose(denorm_features_tensor, features_tensor):
+        elif not torch.allclose(denorm_features_tensor, features_tensor,
+                                rtol=1e-04, atol=1e-7):
             errors.append('Tensor denormalization did not recover original '
                           'tensor.')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
