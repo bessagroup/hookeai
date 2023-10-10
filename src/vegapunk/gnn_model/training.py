@@ -100,6 +100,7 @@ def train_model(n_train_steps, dataset, model_init_args, learning_rate_init,
     """
     # Set random number generators initialization for reproducibility
     if isinstance(seed, int):
+        torch.manual_seed(seed)
         random.seed(seed)
         np.random.seed(seed)
         generator = torch.Generator().manual_seed(seed)
@@ -417,17 +418,20 @@ def load_training_state(model, opt_algorithm, optimizer, load_model_state):
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     return loaded_step
 # =============================================================================
-def save_loss_history(model, n_train_steps, loss_type, loss_history):
+def save_loss_history(model, total_n_train_steps, loss_type, loss_history):
     """Save training process loss history record.
     
+    Loss history record file is stored in model_directory under the name
+    loss_history_record.pkl by default.
+        
     Overwrites existing loss history record file.
     
     Parameters
     ----------
     model : torch.nn.Module
         Model.
-    n_train_steps : int
-        Number of training steps.
+    total_n_train_steps : int
+        Total number of training steps prescribed for training process.
     loss_type : {'mse',}, default='mse'
         Loss function type:
         
@@ -442,18 +446,19 @@ def save_loss_history(model, n_train_steps, loss_type, loss_history):
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Build loss history record
     loss_history_record = {}
-    loss_history_record['n_train_steps'] = n_train_steps
+    loss_history_record['total_n_train_steps'] = int(total_n_train_steps)
     loss_history_record['loss_type'] = loss_type
-    loss_history_record['loss_history'] = loss_history
+    loss_history_record['loss_history'] = list(loss_history)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Save loss history record
     with open(loss_record_path, 'wb') as loss_record_file:
         pickle.dump(loss_history_record, loss_record_file)
 # =============================================================================
-def load_loss_history(model, loss_type, training_step):
+def load_loss_history(model, loss_type, training_step=None):
     """Load training process loss history record.
     
-    Overwrites existing loss history record file.
+    Loss history record file is stored in model_directory under the name
+    loss_history_record.pkl by default.
     
     Parameters
     ----------
@@ -464,8 +469,9 @@ def load_loss_history(model, loss_type, training_step):
         
         'mse'  : MSE (torch.nn.MSELoss)
         
-    training_step : int
-        Training step to which loss history is loaded (included).
+    training_step : int, default=None
+        Training step to which loss history is loaded (included), with the
+        first training step being 0. If None, then loads the full loss history.
 
     Returns
     -------
@@ -488,13 +494,31 @@ def load_loss_history(model, loss_type, training_step):
             raise RuntimeError('Loss history type (' + str(history_loss_type)
                                + ') is not consistent with current training '
                                'process loss type (' + str(loss_type) + ').')
-        # Load loss history up to training step
-        loss_history = \
-            list(loss_history_record['loss_history'][:training_step + 1])
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Check loss history
+        if not isinstance(loss_history_record['loss_history'], list):
+            raise RuntimeError('Loaded loss history is not a list[float].')
+        # Load loss history
+        if training_step is None or (
+                training_step + 1 == len(loss_history_record['loss_history'])):
+            loss_history = loss_history_record['loss_history']
+        else:
+            if training_step + 1 > len(loss_history_record['loss_history']):
+                raise RuntimeError('Target training step is beyond available '
+                                   'loss history.')
+            else:
+                loss_history = \
+                    loss_history_record['loss_history'][:training_step + 1]
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     else:
         # Build loss history with None entries if loss history record file
         # cannot be found
-        loss_history = (training_step + 1)*[None,]
+        if training_step is None:
+            raise RuntimeError('Training process loss history file has not '
+                               'been found and loaded training step is '
+                               'unknown.')
+        else:
+            loss_history = (training_step + 1)*[None,]
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     return loss_history
 # =============================================================================
