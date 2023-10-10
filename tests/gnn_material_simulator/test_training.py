@@ -11,8 +11,11 @@ import pytest
 import torch
 import numpy as np
 # Local
+from src.vegapunk.gnn_model.gnn_material_simulator import \
+    GNNMaterialPatchModel
 from src.vegapunk.gnn_model.training import \
-    save_loss_history, load_loss_history, seed_worker
+    save_training_state, load_training_state, save_loss_history, \
+    load_loss_history, seed_worker
 # =============================================================================
 #
 #                                                          Authorship & Credits
@@ -72,15 +75,27 @@ def test_save_and_load_loss_history(gnn_material_simulator,
                                     loss_history, training_step,
                                     target_load_history):
     """Test saving and loading of training process loss history."""
+    # Initialize errors
+    errors = []
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Save training process loss history
     save_loss_history(gnn_material_simulator, total_n_train_steps, loss_type,
                       loss_history)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Set loss history record file path
+    loss_record_path = os.path.join(gnn_material_simulator.model_directory,
+                                    'loss_history_record' + '.pkl')
+    # Check loss history record file
+    if not os.path.isfile(loss_record_path):
+        errors.append('Loss history record file has not been found.')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Load training process loss history
     loaded_loss_history = load_loss_history(gnn_material_simulator, loss_type,
                                             training_step=training_step)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    assert np.allclose(loaded_loss_history, target_load_history)
+    # Check loaded loss history
+    if not np.allclose(loaded_loss_history, target_load_history):
+        errors.append('Loss history was not properly recovered from file.')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Remove loss history record file
     loss_record_path = os.path.join(gnn_material_simulator.model_directory,
@@ -92,7 +107,11 @@ def test_save_and_load_loss_history(gnn_material_simulator,
         loaded_loss_history = \
             load_loss_history(gnn_material_simulator, loss_type,
                               training_step=training_step)
-        assert loaded_loss_history == (training_step + 1)*[None,]
+        if not loaded_loss_history == (training_step + 1)*[None,]:
+            errors.append('Loss history was not properly set in the absence '
+                          'of loss history record file.')
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    assert not errors, "Errors:\n{}".format("\n".join(errors))
 # -----------------------------------------------------------------------------
 def test_invalid_load_loss_history(gnn_material_simulator):
     """Test invalid loading of training process loss history."""
@@ -127,3 +146,145 @@ def test_invalid_load_loss_history(gnn_material_simulator):
     with pytest.raises(RuntimeError):
         _ = load_loss_history(gnn_material_simulator, loss_type,
                               training_step=None)
+# -----------------------------------------------------------------------------
+@pytest.mark.parametrize('opt_algorithm', ['adam',])
+def test_save_and_load_model_state(tmp_path, opt_algorithm):
+    """Test saving and loading of model and optimizer states."""
+    # Initialize errors
+    errors = []
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Set GNN-based material patch model initialization parameters
+    model_init_args = dict(n_node_in=2, n_node_out=5, n_edge_in=3,
+                           n_message_steps=2, n_hidden_layers=2,
+                           hidden_layer_size=2, model_directory=str(tmp_path),
+                           model_name='material_patch_model',
+                           is_data_normalization=True)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Initialize model and optimizer saved training step states
+    saved_model_states = []
+    saved_optimizer_states = []
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Set number of training steps
+    n_train_steps = 5
+    # Loop over training steps
+    for step in range(n_train_steps):
+        # Build GNN-based material patch model (reinitializing parameters to
+        # emulate parameters update)
+        model = GNNMaterialPatchModel(**model_init_args)
+        # Initialize optimizer (reinitializing parameters to emulate parameters
+        # update)
+        if opt_algorithm == 'adam':
+            optimizer = torch.optim.Adam(model.parameters(recurse=True))
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Save model and optimizer states at given training step
+        save_training_state(model, optimizer, step)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Store model state
+        saved_model_states.append(model.state_dict())
+        # Store optimizer state
+        saved_optimizer_states.append(optimizer.state_dict())
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set model state state file path
+        model_state_path = os.path.join(model.model_directory, model.model_name
+                                        + '-' + str(step) + '.pt')
+        # Check model state file
+        if not os.path.isfile(model_state_path):
+            errors.append('Model state file has not been found.')
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set optimizer state file path
+        optimizer_state_path = \
+            os.path.join(model.model_directory, model.model_name
+                        + '_optim-' + str(step) + '.pt')
+        # Check optimizer state file
+        if not os.path.isfile(optimizer_state_path):
+            errors.append('Optimizer state file has not been found.')
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ 
+        # Build GNN-based material patch model (reinitializing parameters to
+        # emulate parameters update)
+        model = GNNMaterialPatchModel(**model_init_args)
+        # Initialize optimizer
+        if opt_algorithm == 'adam':
+            optimizer = torch.optim.Adam(model.parameters(recurse=True))
+        # Load model and optimizer states
+        loaded_step = load_training_state(model, opt_algorithm, optimizer,
+                                          load_model_state=step)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ 
+        # Check loaded model state training step
+        if loaded_step != step:
+            errors.append('Training step was not properly recovered from '
+                          'file.')
+        # Check model state parameters
+        if str(saved_model_states[step]) != str(model.state_dict()):
+            errors.append('Training step model state was not properly '
+                          'recovered from file.')
+        # Check optimizer state parameters
+        if str(saved_optimizer_states[step]) != str(optimizer.state_dict()):
+            errors.append('Training step optimizer state was not properly '
+                          'recovered from file.')
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Load model and optimizer states
+    loaded_step = load_training_state(model, opt_algorithm, optimizer,
+                                      load_model_state='last')
+    # Check loaded model state training step
+    if loaded_step != 4:
+        errors.append('Last training step was not properly recovered from '
+                      'file.')
+    # Check model state parameters
+    if str(saved_model_states[4]) != str(model.state_dict()):
+        errors.append('Last training step model state was not properly '
+                      'recovered from file.')
+    # Check optimizer state parameters
+    if str(saved_optimizer_states[4]) != str(optimizer.state_dict()):
+        errors.append('Last training step optimizer state was not properly '
+                      'recovered from file.')
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Load model and optimizer states
+    loaded_step = load_training_state(model, opt_algorithm, optimizer,
+                                      load_model_state=2)
+    # Check loaded model state training step
+    if loaded_step != 2:
+        errors.append('Old training step was not properly recovered from '
+                      'file.')
+    # Check model state parameters
+    if str(saved_model_states[2]) != str(model.state_dict()):
+        errors.append('Old training step model state was not properly '
+                      'recovered from file.')
+    # Check optimizer state parameters
+    if str(saved_optimizer_states[2]) != str(optimizer.state_dict()):
+        errors.append('Old training step optimizer state was not properly '
+                      'recovered from file.')    
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    assert not errors, "Errors:\n{}".format("\n".join(errors))
+# -----------------------------------------------------------------------------
+@pytest.mark.parametrize('opt_algorithm', ['adam',])
+def test_invalid_load_model_state(gnn_material_simulator, opt_algorithm):
+    """Test invalid loading of model and optimizer states."""
+    # Set GNN-based material patch model
+    model = gnn_material_simulator
+    # Initialize optimizer
+    if opt_algorithm == 'adam':
+        optimizer = torch.optim.Adam(model.parameters(recurse=True))
+    # Set training step
+    training_step = 0
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Save model and optimizer states at given training step
+    save_training_state(model, optimizer, training_step)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Test detection of unknown optimizer
+    with pytest.raises(RuntimeError):
+         _ = load_training_state(model, 'unknown_optimizer', optimizer,
+                                 load_model_state=training_step)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Remove optimizer state file path
+    optimizer_state_path = os.path.join(model.model_directory,
+                                        model.model_name + '_optim-'
+                                        + str(training_step) + '.pt')
+    os.remove(optimizer_state_path)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~     
+    # Test loading unexistent optimizer state file
+    with pytest.raises(RuntimeError):
+         _ = load_training_state(model, opt_algorithm, optimizer,
+                                 load_model_state=0)
+    
+    
+

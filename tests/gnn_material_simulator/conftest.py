@@ -155,3 +155,13 @@ def gnn_material_simulator_norm(tmp_path, batch_graph_patch_data_2d):
     model.fit_data_scalers(dataset)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     return model
+# -----------------------------------------------------------------------------
+@pytest.fixture
+def pytorch_optimizer_adam(gnn_material_simulator):
+    """PyTorch Adam optimizer for GNN-based material patch model parameters."""
+    # Set GNN-based material patch model
+    model = gnn_material_simulator
+    # Set Adam optimizer for model parameters
+    optimizer = torch.optim.Adam(model.parameters(recurse=True))
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    return optimizer

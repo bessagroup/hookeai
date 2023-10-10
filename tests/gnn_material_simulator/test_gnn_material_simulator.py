@@ -179,7 +179,26 @@ def test_init_from_file_invalid(gnn_material_simulator_norm):
         # Test detection of unexistent model initialization file
         _ = GNNMaterialPatchModel.init_model_from_file(model_directory)
 # -----------------------------------------------------------------------------
-def test_save_model_file_invalid(tmp_path):
+def test_save_model_init_file(tmp_path):
+    """Test save of model initialization file."""
+    # Set GNN-based material patch model initialization parameters
+    model_init_args = dict(n_node_in=2, n_node_out=5, n_edge_in=3,
+                           n_message_steps=2, n_hidden_layers=2,
+                           hidden_layer_size=2, model_directory=str(tmp_path),
+                           model_name='material_patch_model',
+                           is_data_normalization=True)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Build GNN-based material patch model
+    model = GNNMaterialPatchModel(**model_init_args)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Save model initialization file
+    model.save_model_init_file()
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    assert os.path.isfile(os.path.join(model.model_directory,
+                                       'model_init_file' + '.pkl')), \
+        'GNN-based material patch model initialization file was not saved.'
+# -----------------------------------------------------------------------------
+def test_save_model_init_file_invalid(tmp_path):
     """Test detection of failed save of model initialization file."""
     # Set GNN-based material patch model initialization parameters
     model_init_args = dict(n_node_in=2, n_node_out=5, n_edge_in=3,
@@ -612,10 +631,10 @@ def test_save_and_load_model_state(tmp_path):
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set GNN-based material patch model initialization parameters
     model_init_args = dict(n_node_in=2, n_node_out=5, n_edge_in=3,
-                        n_message_steps=2, n_hidden_layers=2,
-                        hidden_layer_size=2, model_directory=str(tmp_path),
-                        model_name='material_patch_model',
-                        is_data_normalization=True)
+                           n_message_steps=2, n_hidden_layers=2,
+                           hidden_layer_size=2, model_directory=str(tmp_path),
+                           model_name='material_patch_model',
+                           is_data_normalization=True)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Build GNN-based material patch model
     model = GNNMaterialPatchModel(**model_init_args)
