@@ -343,6 +343,10 @@ def get_learning_rate_scheduler(optimizer, scheduler_type='steplr', **kwargs):
 def save_training_state(model, optimizer, training_step):
     """Save model and optimizer states at given training step.
     
+    Material patch model state file is stored in model_directory under the
+    name < model_name >.pt or < model_name >-< training_step >.pt if
+    training_step is known.
+    
     Parameters
     ----------
     model : torch.nn.Module
@@ -366,6 +370,13 @@ def save_training_state(model, optimizer, training_step):
 # =============================================================================
 def load_training_state(model, opt_algorithm, optimizer, load_model_state):
     """Load model and optimizer states from available training data.
+    
+    Material patch model state file is stored in model_directory under the
+    name < model_name >.pt or < model_name >-< training_step >.pt if
+    training_step is known.
+
+    Optimizer state file is stored in model_directory under the name
+    < model_name >_optim-< training_step >.pt by default.
     
     Both model and optimizer are updated 'in-place' with loaded state data.
     

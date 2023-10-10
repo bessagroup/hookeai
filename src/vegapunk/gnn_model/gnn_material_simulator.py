@@ -448,15 +448,16 @@ class GNNMaterialPatchModel(torch.nn.Module):
     def save_model_state(self, training_step=None):
         """Save material patch model state to file.
         
-        Material patch model state file is stored in model_directory with
-        basename model_name and extension '.pt' by default.
+        Material patch model state file is stored in model_directory under the
+        name < model_name >.pt or < model_name >-< training_step >.pt if
+        training_step is known.
         
         Parameters
         ----------
         training_step : int, default=None
             Training step corresponding to current material patch model state.
             If provided, then state file basename is appended by
-            '-training_step'.
+            '-< training_step >'.
         """
         # Check material patch model directory
         if not os.path.isdir(self.model_directory):
@@ -479,8 +480,9 @@ class GNNMaterialPatchModel(torch.nn.Module):
                          is_remove_posterior=True):
         """Load material patch model state from file.
         
-        Material patch model state file is loaded from model_directory with
-        basename model_name and extension '.pt' by default.
+        Material patch model state file is stored in model_directory under the
+        name < model_name >.pt or < model_name >-< training_step >.pt if
+        training_step is known.
         
         Parameters
         ----------
@@ -491,7 +493,7 @@ class GNNMaterialPatchModel(torch.nn.Module):
         training_step : int, default=None
             Training step corresponding to loaded material patch model state.
             If provided, then state file basename is appended by
-            '-training_step'.
+            '-< training_step >'.
         is_remove_posterior : bool, default=True
             Remove material patch model state files corresponding to training
             steps posterior to the loaded state file.
@@ -575,9 +577,9 @@ class GNNMaterialPatchModel(torch.nn.Module):
     def _check_state_file(self, filename):
         """Check if file is model training step state file.
         
-        Material patch model training step state file is assumed to be stored
-        in model_directory with basename model_name-training_step and
-        extension '.pt'.
+        Material patch model training step state file is stored in
+        model_directory under the name
+        < model_name >-< training_step >.pt by default.
         
         Parameters
         ----------
