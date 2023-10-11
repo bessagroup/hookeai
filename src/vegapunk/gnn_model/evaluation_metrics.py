@@ -4,6 +4,8 @@ Functions
 ---------
 plot_training_loss_history
     Plot model training process loss history (loss vs training steps).
+plot_xy_data
+    Plot data in xy axes.
 """
 #
 #                                                                       Modules
@@ -14,6 +16,7 @@ import os
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
+import cycler
 # Local
 
 #
@@ -32,8 +35,11 @@ def plot_training_loss_history(loss_history, loss_type=None,
     
     Parameters
     ----------
-    loss_history : list[float]
-        Training process loss history.
+    loss_history : dict
+        One or more training processes loss histories, where each loss history
+        (key, str) is stored as a list of loss values for each training step
+        (item, list). Dictionary keys are taken as labels for the corresponding
+        training processes loss histories.
     loss_type : str, default=None
         Loss type. If provided, then loss type is added to the y-axis label.
     total_n_train_steps : int, default=0
@@ -52,16 +58,30 @@ def plot_training_loss_history(loss_history, loss_type=None,
         otherwise.
     """
     # Check loss history
-    if not isinstance(loss_history, list):
-        raise RuntimeError('Loss history is not a list[float].')
+    if not isinstance(loss_history, dict):
+        raise RuntimeError('Loss history is not a dict.')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Set data
-    x = tuple([*range(0, len(loss_history))])
-    y = tuple(loss_history)
+    # Get number of training processes
+    n_loss_history = len(loss_history.keys())
+    # Get maximum number of training steps
+    max_n_train_steps = max([len(x) for x in loss_history.values()])
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Initialize data array and data labels
+    data_xy = np.full((max(max_n_train_steps, total_n_train_steps),
+                       2*n_loss_history), fill_value=None)
+    data_labels = []
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Loop over training processes
+    for i, (key, val) in enumerate(loss_history.items()):
+        # Assemble loss history
+        data_xy[:len(val), 2*i] = tuple([*range(0, len(val))])
+        data_xy[:len(val), 2*i + 1] = tuple(val)
+        # Assemble data label
+        data_labels.append(key)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set axes limits
-    x_lims = (0, max(len(loss_history), total_n_train_steps))
-    y_lims = (0, None)
+    x_lims = (0, max_n_train_steps)
+    y_lims = (None, None)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set axes labels
     x_label = 'Training steps'
@@ -71,12 +91,13 @@ def plot_training_loss_history(loss_history, loss_type=None,
         y_label = f'Loss ({loss_type})'
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set title
-    title = 'Training loss history'    
+    title = 'Training loss history'
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Plot loss history
-    figure, _ = plot_1d_function(x, y, x_lims=x_lims, y_lims=y_lims,
-                                 title=title, x_label=x_label, y_label=y_label,
-                                 is_latex=True)
+    figure, _ = plot_xy_data(data_xy, data_labels=data_labels, x_lims=x_lims,
+                             y_lims=y_lims, title=title, x_label=x_label,
+                             y_label=y_label, y_scale='log',
+                             x_tick_format='int', is_latex=True)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Display figure
     if is_stdout_display:
@@ -106,18 +127,20 @@ def plot_training_loss_history(loss_history, loss_type=None,
     # Close plot
     plt.close(figure)
 # =============================================================================
-def plot_1d_function(x, y, x_lims=(None, None), y_lims=(None, None),
-                     title=None, x_label=None, y_label=None, color='k',
-                     linestyle='-', marker=None, label=None, vlines=None,
-                     is_latex=False):
-    """Plot 1d function.
+def plot_xy_data(data_xy, data_labels=None, x_lims=(None, None),
+                 y_lims=(None, None), title=None, x_label=None, y_label=None,
+                 x_scale='linear', y_scale='linear', x_tick_format=None,
+                 y_tick_format=None, is_latex=False):
+    """Plot data in xy axes.
 
     Parameters
     ----------
-    x : array-like
-        x-axis data.
-    y : array-like
-        y-axis data.
+    data_xy : np.ndarray(2d)
+        Data array where the plot data is stored columnwise such that the i-th
+        dataset (x_i, y_i) is stored in columns (2*i, 2*i + 1), respectively.
+    data_labels : list, default=None
+        Labels of datasets (x_i, y_i) provided in data_xy and sorted
+        accordingly. If None, then no labels are displayed.
     x_lims : tuple, default=(None, None)
         x-axis limits in data coordinates.
     y_lims : tuple, default=(None, None)
@@ -128,20 +151,18 @@ def plot_1d_function(x, y, x_lims=(None, None), y_lims=(None, None),
         x-axis label.
     y_label : str, default=None
         y-axis label.
-    color : str, default='k'
-        Line color.
-    linestyle : str, default='-'
-        Line style.
-    marker : str, default=None
-        Marker style.
-    label : str, default=None
-        Data label.
-    vlines : tuple, default=None
-        Vertical lines to be plotted. Tuple is to be structured as
-        (vl_coords, vl_colors, vl_alphas), where vl_coords, vl_colors and
-        vl_alphas are tuples containing vertical lines' data coordinates,
-        colors and transparencies, respectively. If vl_colors and vl_alphas are
-        specified as a single value, then it is adopted for all vertical lines.
+    x_scale : str {'linear', 'log'}, default='linear'
+        x-axis scale. If None or invalid format, then default scale is set.
+        Scale 'log' overrides any x-axis ticks formatting.
+    y_scale : str {'linear', 'log'}, default='linear'
+        y-axis scale. If None or invalid format, then default scale is set.
+        Scale 'log' overrides any y-axis ticks formatting.
+    x_tick_format : {'int', 'float', 'exp'}, default=None
+        x-axis ticks formatting. If None or invalid format, then default
+        formatting is set.
+    y_tick_format : {'int', 'float', 'exp'}, default=None
+        y-axis ticks formatting. If None or invalid format, then default
+        formatting is set.
     is_latex : bool, default=False
         If True, then render all strings in LaTeX.
 
@@ -152,17 +173,43 @@ def plot_1d_function(x, y, x_lims=(None, None), y_lims=(None, None),
     axes : Matplotlib Axes
         Axes.
     """
-    # Create figure
-    figure = plt.figure()
-    # Set figure size (inches) - stdout print purpose
-    figure.set_figheight(6, forward=True)
-    figure.set_figwidth(6, forward=True)
+    # Check data
+    if data_xy.shape[1] % 2 != 0:
+        raise RuntimeError('Data array must have an even number of columns, '
+                           'two for each dataset (x_i, y_i).')
+    else:
+        # Get number of datasets
+        n_datasets = int(data_xy.shape[1]/2)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Check datasets labels
+    if data_labels is not None:
+        if len(data_labels) != n_datasets:
+            raise RuntimeError('Number of dataset labels is not consistent '
+                               'with number of datasets.')
+    else:
+        data_labels = n_datasets*[None,]
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Set default color cycle
+    cycler_color = cycler.cycler('color',['#4477AA', '#EE6677', '#228833',
+                                          '#CCBB44', '#66CCEE', '#AA3377',
+                                          '#BBBBBB', '#000000'])
+    # Set default linestyle cycle
+    cycler_linestyle = cycler.cycler('linestyle',['-','--','-.'])
+    # Set default cycler
+    default_cycler = cycler_linestyle*cycler_color
+    plt.rc('axes', prop_cycle = default_cycler)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set LaTeX font
     if is_latex:
         # Default LaTeX Computer Modern Roman
         plt.rc('text',usetex=True)
         plt.rc('font',**{'family':'serif','serif':['Computer Modern Roman']})
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Create figure
+    figure = plt.figure()
+    # Set figure size (inches) - stdout print purpose
+    figure.set_figheight(6, forward=True)
+    figure.set_figwidth(6, forward=True)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Create axes
     axes = figure.add_subplot(1,1,1)
@@ -171,25 +218,50 @@ def plot_1d_function(x, y, x_lims=(None, None), y_lims=(None, None),
     # Set axes labels
     axes.set_xlabel(x_label, fontsize=12, labelpad=10)
     axes.set_ylabel(y_label, fontsize=12, labelpad=10)
-    # Configure grid
-    axes.grid(linestyle='-', linewidth=0.5, color='0.5', zorder=-20)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Plot function
-    axes.plot(x, y, color=color, ls=linestyle, marker=marker, label=label)
+    # Set axes scales
+    if x_scale in ('linear', 'log'):
+        axes.set_xscale(x_scale)
+    if y_scale in ('linear', 'log'):
+        axes.set_yscale(y_scale)
+    # Set tick formatting functions
+    def intTickFormat(x, pos):
+        return '${:2d}$'.format(int(x))
+    def floatTickFormat(x, pos):
+        return '${:3.1f}$'.format(x)
+    def expTickFormat(x, pos):
+        return '${:7.2e}$'.format(x)
+    tick_formats = {'int': intTickFormat, 'float': floatTickFormat,
+                    'exp': expTickFormat}
+    # Set axes tick formats
+    if x_scale != 'log' and x_tick_format in ('int', 'float', 'exp'):
+        axes.xaxis.set_major_formatter(
+            ticker.FuncFormatter(tick_formats[x_tick_format]))
+    if y_scale != 'log' and y_tick_format in ('int', 'float', 'exp'):
+        axes.yaxis.set_major_formatter(
+            ticker.FuncFormatter(tick_formats[y_tick_format]))
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Configure grid major lines
+    axes.grid(which='major', axis='both', linestyle='-', linewidth=0.5,
+              color='0.5', zorder=-20)
+    # Configure grid minor lines
+    axis_option = {'log-log': 'both', 'log-linear': 'x', 'linear-log': 'y'}
+    xy_scale = f'{x_scale}-{y_scale}'
+    if xy_scale in axis_option.keys():
+        axes.grid(which='minor', axis=axis_option[xy_scale], linestyle='-',
+                  linewidth=0.5, color='0.5', zorder=-20)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Loop over datasets
+    for i in range(n_datasets):
+        # Plot dataset
+        axes.plot(data_xy[:, 2*i], data_xy[:, 2*i + 1],
+                  label=data_labels[i])
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set legend
-    if label != None:
-        axes.legend(loc='upper left')
-    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    if vlines is not None:
-        # Unzip vertical lines
-        vl_coords, vl_colors, vl_alphas = vlines
-        # Convert to tuples
-        vl_coords = convert_to_tuple(vl_coords)
-        vl_colors = convert_to_tuple(vl_colors, n_copy=len(vl_coords))
-        vl_alphas = convert_to_tuple(vl_alphas, n_copy=len(vl_coords))
-        # Loop over vertical lines
-        for i, vline in enumerate(vl_coords):
-            axes.axvline(x=vline, color=vl_colors[i], alpha=vl_alphas[i])
+    if data_labels is not None:
+        axes.legend(loc='upper left', frameon=True, fancybox=True,
+                    facecolor='inherit', edgecolor='inherit', fontsize=10,
+                    framealpha=1.0)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set axes limits
     axes.set_xlim(x_lims)
@@ -197,29 +269,3 @@ def plot_1d_function(x, y, x_lims=(None, None), y_lims=(None, None),
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Return figure and axes handlers
     return figure, axes
-# =============================================================================
-def convert_to_tuple(x, n_copy=1):
-    """Convert object to tuple.
-
-    Parameters
-    ----------
-    x : int, str, float, list, tuple, set
-        Object to be converted to tuple.
-    n_copy : int, default=1
-        If x is int, str or float, then the tuple is populated with n_copy
-        copies of x.
-
-    Returns
-    -------
-    tuple_conversion : tuple
-        Tuple conversion.
-    """
-    if isinstance(x, (int, float, str)):
-        tuple_conversion = n_copy*(x,)
-    elif isinstance(x, (list, tuple, set)):
-        tuple_conversion = tuple(x)
-    else:
-        raise RuntimeError(f'A {type(x)} object cannnot be converted to '
-                           'tuple.')
-    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    return tuple_conversion
