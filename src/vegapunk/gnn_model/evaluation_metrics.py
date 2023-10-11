@@ -31,13 +31,13 @@ def plot_training_loss_history(loss_history, loss_type=None,
                                filename='training_loss_history',
                                save_dir=None, is_save_fig=False,
                                is_stdout_display=False):
-    """Plot model training process loss history (loss vs training steps).
+    """Plot model training process loss history.
     
     Parameters
     ----------
     loss_history : dict
         One or more training processes loss histories, where each loss history
-        (key, str) is stored as a list of loss values for each training step
+        (key, str) is stored as a list of training steps loss values
         (item, list). Dictionary keys are taken as labels for the corresponding
         training processes loss histories.
     loss_type : str, default=None
@@ -98,6 +98,110 @@ def plot_training_loss_history(loss_history, loss_type=None,
                              y_lims=y_lims, title=title, x_label=x_label,
                              y_label=y_label, y_scale='log',
                              x_tick_format='int', is_latex=True)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Display figure
+    if is_stdout_display:
+        plt.show()
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Save figure
+    if is_save_fig:
+        # Set figure directory
+        if save_dir is None:
+            save_dir = os.getcwd()
+        else:
+            if not os.path.isdir(save_dir):
+                raise RuntimeError('The provided directory has not been found:'
+                                   '\n\n' + save_dir)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set figure path
+        filepath = os.path.join(save_dir, f'{str(filename)}.pdf')
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set figure size (inches)
+        figure.set_figheight(3.6, forward=False)
+        figure.set_figwidth(3.6, forward=False)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Save figure
+        figure.savefig(filepath, transparent=False, dpi=300,
+                       bbox_inches='tight')
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Close plot
+    plt.close(figure)
+# =============================================================================
+def plot_training_loss_and_lr_history(loss_history, lr_history, loss_type=None,
+                                      lr_type=None, total_n_train_steps=0,
+                                      filename='training_loss_and_lr_history',
+                                      save_dir=None, is_save_fig=False,
+                                      is_stdout_display=False):
+    """Plot model training process loss and learning rate histories.
+    
+    Parameters
+    ----------
+    loss_history : list[float]
+        Training process loss history stored as a list of training steps loss
+        values.
+    lr_history : list[float]
+        Training process learning rate history stored as a list of training
+        steps learning rate values.
+    loss_type : str, default=None
+        Loss type. If provided, then loss type is added to the y-axis label.
+    lr_type : str, default=None
+        Learning rate scheduler type. If provided, then learning rate scheduler
+        type is added to the y-axis label.    
+    total_n_train_steps : int, default=0
+        Total number of training steps prescribed for training process. If
+        provided, then it sets the x-axis upper limit if greater than number
+        of steps in loss history.
+    filename : str, default='training_loss_history'
+        Figure name.
+    save_dir : str, default=None
+        Directory where figure is saved. If None, then figure is saved in
+        current working directory.
+    is_save_fig : bool, default=False
+        Save figure.
+    is_stdout_display : bool, default=False
+        True if displaying figure to standard output device, False
+        otherwise.
+    """
+    # Check loss history
+    if not isinstance(loss_history, list):
+        raise RuntimeError('Loss history is not a list[float].')
+    # Check learning rate history
+    if not isinstance(lr_history, list):
+        raise RuntimeError('Learning rate history is not a list[float].')
+    elif len(lr_history) != len(loss_history):
+        raise RuntimeError('Number of training steps of learning rate history '
+                           'is not consistent with loss history.')
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Set data arrays
+    x = tuple([*range(0, len(loss_history))])
+    data_xy1 = np.column_stack((x, tuple(loss_history)))
+    data_xy2 = np.column_stack((x, tuple(lr_history)))
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Set axes limits
+    x_lims = (0, max(len(loss_history), total_n_train_steps))
+    y1_lims = (None, None)
+    y2_lims = (None, None)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Set axes labels
+    x_label = 'Training steps'
+    if loss_type is None:
+        y1_label = 'Loss'
+    else:
+        y1_label = f'Loss ({loss_type})'
+    if lr_type is None:
+        y2_label = 'Learning rate'
+    else:
+        y2_label = f'Learning rate ({lr_type})'
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Set title
+    title = 'Training loss and learning rate history'    
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Plot loss and learning rate history
+    figure, _ = plot_xy2_data(data_xy1, data_xy2, x_lims=x_lims,
+                              y1_lims=y1_lims, y2_lims=y2_lims, title=title,
+                              x_label=x_label, y1_label=y1_label,
+                              y2_label=y2_label, y1_scale='log',
+                              x_tick_format='int', is_latex=True)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Display figure
     if is_stdout_display:
@@ -266,6 +370,159 @@ def plot_xy_data(data_xy, data_labels=None, x_lims=(None, None),
     # Set axes limits
     axes.set_xlim(x_lims)
     axes.set_ylim(y_lims)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Return figure and axes handlers
+    return figure, axes
+# =============================================================================
+def plot_xy2_data(data_xy1, data_xy2, x_lims=(None, None),
+                  y1_lims=(None, None), y2_lims=(None, None), title=None,
+                  x_label=None, y1_label=None, y2_label=None, x_scale='linear',
+                  y1_scale='linear', y2_scale='linear', x_tick_format=None,
+                  y1_tick_format=None, y2_tick_format=None, is_latex=False):
+    """Plot data in xy axes with two y axes.
+
+    Parameters
+    ----------
+    data_xy1 : np.ndarray(2d)
+        Data array containing the plot data associated with the first y-axis
+        stored columnwise as (x_i, y_i).
+    data_xy2 : np.ndarray(2d)
+        Data array containing the plot data associated with the second y-axis
+        stored columnwise as (x_i, y_i).
+    x_lims : tuple, default=(None, None)
+        x-axis limits in data coordinates.
+    y1_lims : tuple, default=(None, None)
+        y1-axis limits in data coordinates.
+    y2_lims : tuple, default=(None, None)
+        y2-axis limits in data coordinates.
+    title : str, default=None
+        Plot title.
+    x_label : str, default=None
+        x-axis label.
+    y1_label : str, default=None
+        y1-axis label.
+    y2_label : str, default=None
+        y2-axis label.
+    x_scale : str {'linear', 'log'}, default='linear'
+        x-axis scale. If None or invalid format, then default scale is set.
+        Scale 'log' overrides any x-axis ticks formatting.
+    y1_scale : str {'linear', 'log'}, default='linear'
+        y1-axis scale. If None or invalid format, then default scale is set.
+        Scale 'log' overrides any y1-axis ticks formatting.
+    y2_scale : str {'linear', 'log'}, default='linear'
+        y2-axis scale. If None or invalid format, then default scale is set.
+        Scale 'log' overrides any y2-axis ticks formatting.
+    x_tick_format : {'int', 'float', 'exp'}, default=None
+        x-axis ticks formatting. If None or invalid format, then default
+        formatting is set.
+    y1_tick_format : {'int', 'float', 'exp'}, default=None
+        y1-axis ticks formatting. If None or invalid format, then default
+        formatting is set.
+    y2_tick_format : {'int', 'float', 'exp'}, default=None
+        y2-axis ticks formatting. If None or invalid format, then default
+        formatting is set.
+    is_latex : bool, default=False
+        If True, then render all strings in LaTeX.
+
+    Returns
+    -------
+    figure : Matplotlib Figure
+        Figure.
+    axes : Matplotlib Axes
+        Axes.
+    """
+    # Check data
+    if data_xy1.shape[1] != 2:
+        raise RuntimeError('Data array for first y-axis dataset must have '
+                           'shape (n_points, 2).')
+    if data_xy2.shape[1] != 2:
+        raise RuntimeError('Data array for second y-axis dataset must have '
+                           'shape (n_points, 2).')
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Set default color cycle
+    cycler_color = cycler.cycler('color',['#4477AA', '#EE6677', '#228833',
+                                          '#CCBB44', '#66CCEE', '#AA3377',
+                                          '#BBBBBB', '#000000'])
+    # Set default linestyle cycle
+    cycler_linestyle = cycler.cycler('linestyle',['-','--','-.'])
+    # Set default cycler
+    default_cycler = cycler_linestyle*cycler_color
+    plt.rc('axes', prop_cycle = default_cycler)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Set LaTeX font
+    if is_latex:
+        # Default LaTeX Computer Modern Roman
+        plt.rc('text',usetex=True)
+        plt.rc('font',**{'family':'serif','serif':['Computer Modern Roman']})
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Create figure
+    figure = plt.figure()
+    # Set figure size (inches) - stdout print purpose
+    figure.set_figheight(6, forward=True)
+    figure.set_figwidth(6, forward=True)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Create first axes
+    axes = figure.add_subplot(1,1,1)
+    # Set title
+    axes.set_title(title, fontsize=12, pad=10)
+    # Set first axes labels
+    axes.set_xlabel(x_label, fontsize=12, labelpad=10)
+    axes.set_ylabel(y1_label, fontsize=12, labelpad=10)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Create second axes (sharing the x axis)
+    axes2 = axes.twinx()
+    # Configure second axes label
+    axes2.set_ylabel(y2_label, fontsize=12, labelpad=10)    
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Set axes scales
+    if x_scale in ('linear', 'log'):
+        axes.set_xscale(x_scale)
+    if y1_scale in ('linear', 'log'):
+        axes.set_yscale(y1_scale)
+    # Set tick formatting functions
+    def intTickFormat(x, pos):
+        return '${:2d}$'.format(int(x))
+    def floatTickFormat(x, pos):
+        return '${:3.1f}$'.format(x)
+    def expTickFormat(x, pos):
+        return '${:7.2e}$'.format(x)
+    tick_formats = {'int': intTickFormat, 'float': floatTickFormat,
+                    'exp': expTickFormat}
+    # Set axes tick formats
+    if x_scale != 'log' and x_tick_format in ('int', 'float', 'exp'):
+        axes.xaxis.set_major_formatter(
+            ticker.FuncFormatter(tick_formats[x_tick_format]))
+    if y1_scale != 'log' and y1_tick_format in ('int', 'float', 'exp'):
+        axes.yaxis.set_major_formatter(
+            ticker.FuncFormatter(tick_formats[y1_tick_format]))
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Set second axes scales
+    if y2_scale in ('linear', 'log'):
+        axes2.set_yscale(y2_scale)
+    if y2_scale != 'log' and y2_tick_format in ('int', 'float', 'exp'):
+        axes2.yaxis.set_major_formatter(
+            ticker.FuncFormatter(tick_formats[y2_tick_format]))    
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Configure grid major lines
+    axes.grid(which='major', axis='both', linestyle='-', linewidth=0.5,
+              color='0.5', zorder=-20)
+    # Configure grid minor lines
+    axis_option = {'log-log': 'both', 'log-linear': 'x', 'linear-log': 'y'}
+    xy_scale = f'{x_scale}-{y1_scale}'
+    if xy_scale in axis_option.keys():
+        axes.grid(which='minor', axis=axis_option[xy_scale], linestyle='-',
+                  linewidth=0.5, color='0.5', zorder=-20)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Plot dataset in first axes
+    axes.plot(data_xy1[:, 0], data_xy1[:, 1], color='#4477AA')
+    # Plot dataset in second axes
+    axes2.plot(data_xy2[:, 0], data_xy2[:, 1], color='#EE6677')
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Set first axes limits
+    axes.set_xlim(x_lims)
+    axes.set_ylim(y1_lims)
+    # Set second axes limits
+    axes2.set_ylim(y2_lims)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Return figure and axes handlers
     return figure, axes
