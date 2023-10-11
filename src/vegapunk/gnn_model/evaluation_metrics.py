@@ -463,18 +463,31 @@ def plot_xy2_data(data_xy1, data_xy2, x_lims=(None, None),
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Create first axes
     axes = figure.add_subplot(1,1,1)
+    # Set first axes color
+    color_y1 = '#4477AA'
     # Set title
     axes.set_title(title, fontsize=12, pad=10)
     # Set first axes labels
     axes.set_xlabel(x_label, fontsize=12, labelpad=10)
-    axes.set_ylabel(y1_label, fontsize=12, labelpad=10)
+    axes.set_ylabel(y1_label, fontsize=12, labelpad=10, color=color_y1)
+    # Set first axes color
+    axes.spines["right"].set_visible(False)
+    axes.spines['left'].set(color=color_y1, linewidth=1.1)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Create second axes (sharing the x axis)
     axes2 = axes.twinx()
+    # Set second axes color
+    color_y2 = '#EE6677'
     # Configure second axes label
-    axes2.set_ylabel(y2_label, fontsize=12, labelpad=10)    
+    axes2.set_ylabel(y2_label, fontsize=12, labelpad=10, color=color_y2)
+    # Set second axes color
+    axes2.spines["left"].set_visible(False)
+    axes2.spines['right'].set(color=color_y2, linewidth=1.1)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Set axes scales
+    # Set first axes color
+    axes.tick_params(which='both', axis='y', color=color_y1,
+                     labelcolor=color_y1)
+    # Set first axes scales
     if x_scale in ('linear', 'log'):
         axes.set_xscale(x_scale)
     if y1_scale in ('linear', 'log'):
@@ -496,6 +509,9 @@ def plot_xy2_data(data_xy1, data_xy2, x_lims=(None, None),
         axes.yaxis.set_major_formatter(
             ticker.FuncFormatter(tick_formats[y1_tick_format]))
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Set second axes color
+    axes2.tick_params(which='both', axis='y', color=color_y2,
+                      labelcolor=color_y2)
     # Set second axes scales
     if y2_scale in ('linear', 'log'):
         axes2.set_yscale(y2_scale)
@@ -514,9 +530,9 @@ def plot_xy2_data(data_xy1, data_xy2, x_lims=(None, None),
                   linewidth=0.5, color='0.5', zorder=-20)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Plot dataset in first axes
-    axes.plot(data_xy1[:, 0], data_xy1[:, 1], color='#4477AA')
+    axes.plot(data_xy1[:, 0], data_xy1[:, 1], color=color_y1)
     # Plot dataset in second axes
-    axes2.plot(data_xy2[:, 0], data_xy2[:, 1], color='#EE6677')
+    axes2.plot(data_xy2[:, 0], data_xy2[:, 1], color=color_y2)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set first axes limits
     axes.set_xlim(x_lims)
