@@ -4,6 +4,8 @@ Classes
 -------
 GNNMaterialPatchModel(torch.nn.Module)
     GNN-based material patch model.
+TorchStandardScaler
+    PyTorch tensor standardization data scaler.
     
 Functions
 ---------
