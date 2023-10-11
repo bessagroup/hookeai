@@ -333,7 +333,13 @@ def get_learning_rate_scheduler(optimizer, scheduler_type='steplr', **kwargs):
         PyTorch optimizer learning rate scheduler.
     """
     if scheduler_type == 'steplr':
-        scheduler = torch.optim.lr_scheduler.SetpLR(optimizer, **kwargs)
+        # Check step size (period of learning rate decay)
+        if 'step_size' not in kwargs.keys():
+            raise RuntimeError('The step_size needs to be provided to '
+                               'initialize step-based decay learning rate '
+                               'scheduler.')
+        # Initialize scheduler
+        scheduler = torch.optim.lr_scheduler.StepLR(optimizer, **kwargs)
     else:
         raise RuntimeError('Unknown or unavailable PyTorch optimizer '
                            'learning rate scheduler.')

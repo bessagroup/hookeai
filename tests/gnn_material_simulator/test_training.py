@@ -14,8 +14,8 @@ import numpy as np
 from src.vegapunk.gnn_model.gnn_material_simulator import \
     GNNMaterialPatchModel
 from src.vegapunk.gnn_model.training import \
-    save_training_state, load_training_state, save_loss_history, \
-    load_loss_history, seed_worker
+    get_pytorch_optimizer, get_learning_rate_scheduler, save_training_state, \
+    load_training_state, save_loss_history, load_loss_history, seed_worker
 # =============================================================================
 #
 #                                                          Authorship & Credits
@@ -280,11 +280,55 @@ def test_invalid_load_model_state(gnn_material_simulator, opt_algorithm):
                                         model.model_name + '_optim-'
                                         + str(training_step) + '.pt')
     os.remove(optimizer_state_path)
-    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~     
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Test loading unexistent optimizer state file
     with pytest.raises(RuntimeError):
          _ = load_training_state(model, opt_algorithm, optimizer,
                                  load_model_state=0)
-    
-    
-
+# -----------------------------------------------------------------------------
+@pytest.mark.parametrize('scheduler_type', ['steplr',])
+def test_get_learning_rate_scheduler(pytorch_optimizer_adam, scheduler_type):
+    """Test PyTorch optimizer learning rate scheduler getter."""
+    # Set scheduler parameters
+    if scheduler_type == 'steplr':
+        kwargs = {'step_size': 5, 'gamma': 0.1}
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Get learning rate scheduler
+    scheduler = get_learning_rate_scheduler(pytorch_optimizer_adam,
+                                            scheduler_type, **kwargs)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    assert isinstance(scheduler, torch.optim.lr_scheduler.LRScheduler)    
+# -----------------------------------------------------------------------------
+@pytest.mark.parametrize('scheduler_type', ['steplr', 'unknown_type'])
+def test_get_learning_rate_scheduler_invalid(pytorch_optimizer_adam,
+                                             scheduler_type):
+    """Test invalid PyTorch optimizer learning rate scheduler getter."""
+    # Set empty scheduler parameters
+    kwargs = {}
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Get learning rate scheduler
+    with pytest.raises(RuntimeError):
+        _ = get_learning_rate_scheduler(pytorch_optimizer_adam, scheduler_type,
+                                        **kwargs)
+# -----------------------------------------------------------------------------
+@pytest.mark.parametrize('algorithm', ['adam',])
+def test_get_pytorch_optimizer(gnn_material_simulator, algorithm):
+    """Test PyTorch optimizer getter."""
+    # Set parameters to optimize
+    params = gnn_material_simulator.parameters(recurse=True)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Get optimizer
+    optimizer = get_pytorch_optimizer(algorithm, params)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    assert isinstance(optimizer, torch.optim.Optimizer)
+# -----------------------------------------------------------------------------
+@pytest.mark.parametrize('algorithm', ['unknown_algorithm',])
+def test_get_pytorch_optimizer_invalid(gnn_material_simulator, algorithm):
+    """Test invalid PyTorch optimizer getter."""
+    # Set parameters to optimize
+    params = gnn_material_simulator.parameters(recurse=True)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Get optimizer
+    with pytest.raises(RuntimeError):
+        _ = get_pytorch_optimizer(algorithm, params)
+# -----------------------------------------------------------------------------
