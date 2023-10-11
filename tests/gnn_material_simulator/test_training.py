@@ -14,6 +14,7 @@ import numpy as np
 from src.vegapunk.gnn_model.gnn_material_simulator import \
     GNNMaterialPatchModel
 from src.vegapunk.gnn_model.training import \
+    get_pytorch_loss, \
     get_pytorch_optimizer, get_learning_rate_scheduler, save_training_state, \
     load_training_state, save_loss_history, load_loss_history, seed_worker
 # =============================================================================
@@ -332,3 +333,17 @@ def test_get_pytorch_optimizer_invalid(gnn_material_simulator, algorithm):
     with pytest.raises(RuntimeError):
         _ = get_pytorch_optimizer(algorithm, params)
 # -----------------------------------------------------------------------------
+@pytest.mark.parametrize('loss_type', ['mse',])
+def test_get_pytorch_loss(loss_type):
+    """Test PyTorch optimizer getter."""
+    # Get loss function
+    loss_function = get_pytorch_loss(loss_type)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    assert isinstance(loss_function, torch.nn.modules.loss._Loss)
+# -----------------------------------------------------------------------------
+@pytest.mark.parametrize('loss_type', ['unknown_type',])
+def test_get_pytorch_loss_invalid(loss_type):
+    """Test invalid PyTorch optimizer getter."""
+    # Get loss function
+    with pytest.raises(RuntimeError):
+        _ = get_pytorch_loss(loss_type)
