@@ -14,9 +14,9 @@ import numpy as np
 from src.vegapunk.gnn_model.gnn_material_simulator import \
     GNNMaterialPatchModel
 from src.vegapunk.gnn_model.training import \
-    get_pytorch_loss, \
-    get_pytorch_optimizer, get_learning_rate_scheduler, save_training_state, \
-    load_training_state, save_loss_history, load_loss_history, seed_worker
+    get_pytorch_loss, get_pytorch_optimizer, get_learning_rate_scheduler, \
+    save_training_state, load_training_state, save_loss_history, \
+    load_loss_history, load_lr_history, seed_worker
 # =============================================================================
 #
 #                                                          Authorship & Credits
@@ -63,25 +63,32 @@ def test_seed_worker(torch_seed):
     assert not errors, "Errors:\n{}".format("\n".join(errors))
 # -----------------------------------------------------------------------------
 @pytest.mark.parametrize('total_n_train_steps, loss_type, loss_history,'
-                         'training_step, target_load_history',
+                         'training_step, target_load_history, '
+                         'lr_scheduler_type, lr_history, target_lr_history',
                          [(4, 'mse', [0.0, 2.0, 4.0, 6.0],
-                           None, [0.0, 2.0, 4.0, 6.0]),
+                           None, [0.0, 2.0, 4.0, 6.0], None, None, 4*[None,]),
                           (4, 'mse', [0.0, 2.0, 4.0, 6.0],
-                           3, [0.0, 2.0, 4.0, 6.0]),
+                           3, [0.0, 2.0, 4.0, 6.0], 'steplr',
+                           [0.0, 0.1, 0.2, 0.3], [0.0, 0.1, 0.2, 0.3]),
                           (10, 'mse', [0.0, 2.0, 4.0, 6.0],
-                           2, [0.0, 2.0, 4.0]),
+                           2, [0.0, 2.0, 4.0], 'steplr', [0.0, 0.1, 0.2, 0.3],
+                           [0.0, 0.1, 0.2]),
+                          (10, 'mse', [0.0, 2.0, 4.0, 6.0],
+                           2, [0.0, 2.0, 4.0], 'steplr', None, 3*[None,]),
                           ])
 def test_save_and_load_loss_history(gnn_material_simulator,
                                     total_n_train_steps, loss_type,
                                     loss_history, training_step,
-                                    target_load_history):
+                                    target_load_history, lr_scheduler_type,
+                                    lr_history, target_lr_history):
     """Test saving and loading of training process loss history."""
     # Initialize errors
     errors = []
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Save training process loss history
     save_loss_history(gnn_material_simulator, total_n_train_steps, loss_type,
-                      loss_history)
+                      loss_history, lr_scheduler_type=lr_scheduler_type,
+                      lr_history=lr_history)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set loss history record file path
     loss_record_path = os.path.join(gnn_material_simulator.model_directory,
@@ -93,17 +100,31 @@ def test_save_and_load_loss_history(gnn_material_simulator,
     # Load training process loss history
     loaded_loss_history = load_loss_history(gnn_material_simulator, loss_type,
                                             training_step=training_step)
+    # Load training process learning rate history
+    loaded_lr_history = load_lr_history(gnn_material_simulator,
+                                        training_step=training_step)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Check loaded loss history
     if not np.allclose(loaded_loss_history, target_load_history):
         errors.append('Loss history was not properly recovered from file.')
+
+    # Check loaded learning rate history
+    if lr_history is not None:
+        if not np.allclose(loaded_lr_history, target_lr_history):
+            errors.append('Learning rate history was not properly recovered '
+                          'from file.')
+    else:
+        if not loaded_lr_history == (len(loaded_loss_history))*[None,]:
+            errors.append('Learning rate history was not properly set in the '
+                          'absence of available history.')   
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Remove loss history record file
     loss_record_path = os.path.join(gnn_material_simulator.model_directory,
                                     'loss_history_record' + '.pkl')
     os.remove(loss_record_path)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Attempt to load unexistent training process loss history
+    # Attempt to load unexistent training process loss and learning rate
+    # histories
     if training_step is not None:
         loaded_loss_history = \
             load_loss_history(gnn_material_simulator, loss_type,
@@ -111,6 +132,11 @@ def test_save_and_load_loss_history(gnn_material_simulator,
         if not loaded_loss_history == (training_step + 1)*[None,]:
             errors.append('Loss history was not properly set in the absence '
                           'of loss history record file.')
+        loaded_lr_history = load_lr_history(gnn_material_simulator,
+                                            training_step=training_step)        
+        if not loaded_lr_history == (training_step + 1)*[None,]:
+            errors.append('Learning rate history was not properly set in the '
+                          'absence of loss history record file.')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     assert not errors, "Errors:\n{}".format("\n".join(errors))
 # -----------------------------------------------------------------------------
@@ -147,6 +173,37 @@ def test_invalid_load_loss_history(gnn_material_simulator):
     with pytest.raises(RuntimeError):
         _ = load_loss_history(gnn_material_simulator, loss_type,
                               training_step=None)
+# -----------------------------------------------------------------------------
+def test_invalid_load_lr_history(gnn_material_simulator):
+    """Test invalid loading of training process learning rate history."""
+    # Set valid parameters to save and load training process loss and learning
+    # rate histories
+    total_n_train_steps = 4
+    loss_type = 'mse'
+    loss_history = [0.0, 2.0, 4.0, 6.0]
+    lr_scheduler_type = 'steplr'
+    lr_history = [0.0, 0.1, 0.2, 0.3]
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Save training process loss history
+    save_loss_history(gnn_material_simulator, total_n_train_steps, loss_type,
+                      loss_history, lr_scheduler_type=lr_scheduler_type,
+                      lr_history=lr_history)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Test training step beyong available learning rate history
+    test_training_step = 4
+    with pytest.raises(RuntimeError):
+        _ = load_lr_history(gnn_material_simulator,
+                            training_step=test_training_step)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Remove loss history record file
+    loss_record_path = os.path.join(gnn_material_simulator.model_directory,
+                                    'loss_history_record' + '.pkl')
+    os.remove(loss_record_path)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Test loading unexistent training process learning rate history with
+    # unknown training step
+    with pytest.raises(RuntimeError):
+        _ = load_lr_history(gnn_material_simulator, training_step=None)
 # -----------------------------------------------------------------------------
 @pytest.mark.parametrize('opt_algorithm', ['adam',])
 def test_save_and_load_model_state(tmp_path, opt_algorithm):

@@ -18,6 +18,8 @@ save_loss_history
     Save training process loss history record.
 load_loss_history
     Load training process loss history record.
+load_lr_history
+    Load training process learning rate history record.
 """
 #
 #                                                                       Modules
@@ -155,8 +157,9 @@ def train_model(n_train_steps, dataset, model_init_args, learning_rate_init,
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Initialize loss function
     loss_function = get_pytorch_loss(loss_type, **loss_kwargs)
-    # Initialize loss history
+    # Initialize loss and learning rate histories
     loss_history = []
+    lr_history = []
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Initialize training flag
     is_keep_training = True
@@ -171,6 +174,8 @@ def train_model(n_train_steps, dataset, model_init_args, learning_rate_init,
         # Load loss history
         loss_history = load_loss_history(model, loss_type,
                                          training_step=loaded_step)
+        # Load learning rate history
+        lr_history = load_lr_history(model, training_step=loaded_step)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Update training step counter
         step = int(loaded_step)
@@ -237,8 +242,9 @@ def train_model(n_train_steps, dataset, model_init_args, learning_rate_init,
                 print('> Training step: {:d}/{:d} | Loss: {:.8e}'.format(
                     step, n_train_steps, loss))
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            # Save training step loss
+            # Save training step loss and learning rate
             loss_history.append(loss)
+            lr_history.append(lr_scheduler.get_last_lr())
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Save model and optimizer current states
             if step % save_every == 0:
@@ -257,7 +263,9 @@ def train_model(n_train_steps, dataset, model_init_args, learning_rate_init,
     # Save model and optimizer final states
     save_training_state(model=model, optimizer=optimizer, training_step=step)
     # Save loss history
-    save_loss_history(model, n_train_steps, loss_type, loss_history)
+    save_loss_history(model, n_train_steps, loss_type, loss_history,
+                      lr_scheduler_type=lr_scheduler_type,
+                      lr_history=lr_history)
 # =============================================================================
 def get_pytorch_loss(loss_type, **kwargs):
     """Get PyTorch loss function.
@@ -435,13 +443,16 @@ def load_training_state(model, opt_algorithm, optimizer, load_model_state):
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     return loaded_step
 # =============================================================================
-def save_loss_history(model, total_n_train_steps, loss_type, loss_history):
+def save_loss_history(model, total_n_train_steps, loss_type, loss_history,
+                      lr_scheduler_type=None, lr_history=None):
     """Save training process loss history record.
     
     Loss history record file is stored in model_directory under the name
     loss_history_record.pkl by default.
-        
+
     Overwrites existing loss history record file.
+    
+    Does also store learning history if provided.
     
     Parameters
     ----------
@@ -456,6 +467,13 @@ def save_loss_history(model, total_n_train_steps, loss_type, loss_history):
 
     loss_history : list[float]
         Training process loss history.
+    lr_scheduler_type : {'steplr',}, default=None
+        Type of learning rate scheduler:
+        
+        'steplr'  : Step-based decay (torch.optim.lr_scheduler.SetpLR)
+        
+    lr_history : list[float], default=None
+        Training process learning rate history.
     """
     # Set loss history record file path
     loss_record_path = os.path.join(model.model_directory,
@@ -464,8 +482,18 @@ def save_loss_history(model, total_n_train_steps, loss_type, loss_history):
     # Build loss history record
     loss_history_record = {}
     loss_history_record['total_n_train_steps'] = int(total_n_train_steps)
-    loss_history_record['loss_type'] = loss_type
+    loss_history_record['loss_type'] = str(loss_type)
     loss_history_record['loss_history'] = list(loss_history)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Store learning rate history record
+    if lr_scheduler_type is not None:
+        loss_history_record['lr_scheduler_type'] = str(lr_scheduler_type)
+    else:
+        loss_history_record['lr_scheduler_type'] = None
+    if lr_history is not None:
+        loss_history_record['lr_history'] = list(lr_history)
+    else:
+        loss_history_record['lr_history'] = None
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Save loss history record
     with open(loss_record_path, 'wb') as loss_record_file:
@@ -513,19 +541,18 @@ def load_loss_history(model, loss_type, training_step=None):
                                'process loss type (' + str(loss_type) + ').')
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Check loss history
-        if not isinstance(loss_history_record['loss_history'], list):
+        loss_record = loss_history_record['loss_history']
+        if not isinstance(loss_record, list):
             raise RuntimeError('Loaded loss history is not a list[float].')
         # Load loss history
-        if training_step is None or (
-                training_step + 1 == len(loss_history_record['loss_history'])):
-            loss_history = loss_history_record['loss_history']
+        if training_step is None or training_step + 1 == len(loss_record):
+            loss_history = loss_record
         else:
-            if training_step + 1 > len(loss_history_record['loss_history']):
+            if training_step + 1 > len(loss_record):
                 raise RuntimeError('Target training step is beyond available '
                                    'loss history.')
             else:
-                loss_history = \
-                    loss_history_record['loss_history'][:training_step + 1]
+                loss_history = loss_record[:training_step + 1]
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     else:
         # Build loss history with None entries if loss history record file
@@ -538,6 +565,72 @@ def load_loss_history(model, loss_type, training_step=None):
             loss_history = (training_step + 1)*[None,]
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     return loss_history
+# =============================================================================
+def load_lr_history(model, training_step=None):
+    """Load training process learning rate history record.
+    
+    Loss history record file is stored in model_directory under the name
+    loss_history_record.pkl by default.
+    
+    Parameters
+    ----------
+    model : torch.nn.Module
+        Model.        
+    training_step : int, default=None
+        Training step to which learning history is loaded (included), with the
+        first training step being 0. If None, then loads the full learning rate
+        history.
+
+    Returns
+    -------
+    lr_history : list[float]
+        Training process learning rate history.
+    """
+    # Set loss history record file path
+    loss_record_path = os.path.join(model.model_directory,
+                                    'loss_history_record' + '.pkl')
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Load training process learning history
+    if os.path.isfile(loss_record_path):
+        # Load loss history record
+        with open(loss_record_path, 'rb') as loss_record_file:
+            loss_history_record = pickle.load(loss_record_file)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Check learning rate history
+        lr_record = loss_history_record['lr_history']
+        if not isinstance(lr_record, list) and lr_record is not None:
+            raise RuntimeError('Loaded learning rate history is not a '
+                               'list[float] or None.')
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~    
+        # Load learning rate history
+        if lr_record is None and training_step is None:
+            # Build learning rate history with None entries if learning rate
+            # history is not available
+            lr_history = (len(loss_history_record['loss_history']))*[None,]
+        elif lr_record is None and training_step is not None:
+            # Build learning rate history with None entries if learning rate
+            # history is not available
+            lr_history = (training_step + 1)*[None,]
+        else:
+            if training_step is None or training_step + 1 == len(lr_record):
+                lr_history = lr_record
+            elif training_step + 1 > len(lr_record):
+                    raise RuntimeError('Target training step is beyond '
+                                       'available learning rate history.')
+            else:
+                lr_history = lr_record[:training_step + 1]
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    else:
+        # Build learning rate history with None entries if loss history record
+        # file cannot be found
+        if training_step is None:
+            raise RuntimeError('Training process loss history file has not '
+                               'been found and loaded training step is '
+                               'unknown.')
+        else:
+            lr_history = (training_step + 1)*[None,]
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    return lr_history
 # =============================================================================
 def seed_worker(worker_id):
     """Set workers seed in PyTorch data loaders to preserve reproducibility.
