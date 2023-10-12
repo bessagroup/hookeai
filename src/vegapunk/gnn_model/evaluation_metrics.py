@@ -72,6 +72,10 @@ def plot_training_loss_history(loss_history, loss_type=None, is_log_loss=False,
     # Check loss history
     if not isinstance(loss_history, dict):
         raise RuntimeError('Loss history is not a dict.')
+    elif not all([isinstance(x, list) for x in loss_history.values()]):
+        raise RuntimeError('Data must be provided as a dict where each loss '
+                           'history (key, str) is stored as a list[float] '
+                           '(item, list).')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Get number of training processes
     n_loss_history = len(loss_history.keys())
