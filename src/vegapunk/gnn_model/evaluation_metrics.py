@@ -8,12 +8,16 @@ plot_training_loss_and_lr_history
     Plot model training process loss and learning rate histories.
 plot_loss_convergence_test
     Plot testing and training loss for different training data set sizes.
+plot_truth_vs_prediction
+    Plot ground-truth against predictions.
 plot_xy_data
     Plot data in xy axes.
 plot_xy2_data
     Plot data in xy axes with two y axes.
 plot_xny_data
     Plot data in xy axes with given range of y-values for each x-value.
+scatter_xy_data
+    Scatter data in xy axes.
 save_figure
     Save Matplotlib figure.
 """
@@ -132,6 +136,9 @@ def plot_training_loss_history(loss_history, loss_type=None, is_log_loss=False,
     # Save figure
     if is_save_fig:
         save_figure(figure, filename, format='pdf', save_dir=save_dir)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Close plot
+    plt.close(figure)
 # =============================================================================
 def plot_training_loss_and_lr_history(loss_history, lr_history, loss_type=None,
                                       is_log_loss=False, loss_scale='linear',
@@ -231,6 +238,9 @@ def plot_training_loss_and_lr_history(loss_history, lr_history, loss_type=None,
     # Save figure
     if is_save_fig:
         save_figure(figure, filename, format='pdf', save_dir=save_dir)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Close plot
+    plt.close(figure)
 # =============================================================================
 def plot_loss_convergence_test(testing_loss, training_loss=None,
                                loss_type=None, is_log_loss=False,
@@ -242,7 +252,7 @@ def plot_loss_convergence_test(testing_loss, training_loss=None,
     
     Parameters
     ----------
-    testing_loss : np.ndarray(2d)
+    testing_loss : numpyp.ndarray(2d)
         Testing loss data array where i-th row is associated with the i-th
         testing process for a given training data set size and the
         corresponding data is stored as folows: testing_loss[i, 0] is the size
@@ -250,7 +260,7 @@ def plot_loss_convergence_test(testing_loss, training_loss=None,
         testing loss for each trained model (e.g., different training data sets
         in k-fold cross-validation). Missing loss values should be stored as
         None.
-    training_loss : np.ndarray(2d), default=None
+    training_loss : numpy.ndarray(2d), default=None
         Training loss data array where i-th row is associated with the i-th
         training process for given training data set size and the corresponding
         data is stored as folows: training_loss[i, 0] is the size of the
@@ -340,6 +350,120 @@ def plot_loss_convergence_test(testing_loss, training_loss=None,
     # Save figure
     if is_save_fig:
         save_figure(figure, filename, format='pdf', save_dir=save_dir)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Close plot
+    plt.close(figure)
+# =============================================================================
+def plot_truth_vs_prediction(prediction_sets, error_bound=None,
+                             is_normalized=False,
+                             filename='training_loss_history',
+                             save_dir=None, is_save_fig=False,
+                             is_stdout_display=False):
+    """Plot ground-truth against predictions.
+    
+    Parameters
+    ----------
+    prediction_sets : dict
+        One or more prediction processes, where each process (key, str) is
+        stored as a data array (item, numpy.ndarray(2d)) as follows: the i-th
+        row is associated with i-th prediction point, data_array[i, 0] holds
+        the ground-truth and data_array[i, 1] holds the prediction. Dictionary
+        keys are taken as labels for the corresponding prediction processes.
+    error_bound : float, default=None
+        Relative error between ground-truth and prediction that defines an
+        symmetric error-based shaded area with respect to the identity line.
+    is_normalized : bool, default=False
+        Normalize predictions and ground-truth data to the range [0, 1] for
+        each prediction process.
+    filename : str, default='training_loss_history'
+        Figure name.
+    save_dir : str, default=None
+        Directory where figure is saved. If None, then figure is saved in
+        current working directory.
+    is_save_fig : bool, default=False
+        Save figure.
+    is_stdout_display : bool, default=False
+        True if displaying figure to standard output device, False otherwise.
+    """
+    # Check loss history
+    if not isinstance(prediction_sets, dict):
+        raise RuntimeError('Prediction processes are not provided as a dict.')
+    elif not all([isinstance(x, np.ndarray)
+                  for x in prediction_sets.values()]):
+        raise RuntimeError('Prediction processes must be provided as a dict '
+                           'where each process (key, str) is stored as a '
+                           'numpy.ndarray of shape (n_points, 2).')
+    elif not all([x.shape[1] == 2 for x in prediction_sets.values()]):
+        raise RuntimeError('Prediction processes must be provided as a dict '
+                           'where each process (key, str) is stored as a '
+                           'numpy.ndarray of shape (n_points, 2).')
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Get number of prediction processes
+    n_processes = len(prediction_sets.keys())
+    # Get maximum number of prediction points
+    max_n_points = max([x.shape[0] for x in prediction_sets.values()])
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Initialize data array and data labels
+    data_xy = np.full((max_n_points, 2*n_processes), fill_value=None)
+    data_labels = []
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Loop over prediction processes
+    for i, (key, val) in enumerate(prediction_sets.items()):
+        # Normalize prediction process data
+        if is_normalized:
+            val = val/val.max(axis=0)
+        # Assemble prediction process
+        data_xy[:val.shape[0], 2*i] = val[:val.shape[0], 0]
+        data_xy[:len(val), 2*i + 1] = val[:val.shape[0], 1]
+        # Assemble data label
+        data_labels.append(key)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Set relative error parameters
+    if error_bound is not None:
+        is_identity_line = True
+        identity_error = float(error_bound)
+    else:
+        is_identity_line=None
+        identity_error=None
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Set axes limits and scale
+    if is_normalized:
+        x_lims = (0, 1)
+        y_lims = (0, 1)
+    else:
+        x_lims = (None, None)
+        y_lims = (None, None)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Set axes labels
+    x_label = 'Ground-truth'
+    y_label = 'Prediction'
+    if is_normalized:
+        x_label += ' (Normalized)'
+        y_label += ' (Normalized)'
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Set title
+    title = 'Prediction vs Ground-truth'
+    if is_normalized:
+        title += ' (Normalized)'
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Plot loss history
+    figure, _ = scatter_xy_data(data_xy, data_labels=data_labels,
+                                is_identity_line=is_identity_line,
+                                identity_error=identity_error,
+                                x_lims=x_lims, y_lims=y_lims, title=title,
+                                x_label=x_label, y_label=y_label,
+                                is_latex=True)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Display figure
+    if is_stdout_display:
+        plt.show()
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Save figure
+    if is_save_fig:
+        save_figure(figure, filename, format='pdf', save_dir=save_dir)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Close plot
+    plt.close(figure)
 # =============================================================================
 def plot_xy_data(data_xy, data_labels=None, x_lims=(None, None),
                  y_lims=(None, None), title=None, x_label=None, y_label=None,
@@ -349,7 +473,7 @@ def plot_xy_data(data_xy, data_labels=None, x_lims=(None, None),
 
     Parameters
     ----------
-    data_xy : np.ndarray(2d)
+    data_xy : numpy.ndarray(2d)
         Data array where the plot data is stored columnwise such that the i-th
         data set (x_i, y_i) is stored in columns (2*i, 2*i + 1), respectively.
     data_labels : list, default=None
@@ -493,10 +617,10 @@ def plot_xy2_data(data_xy1, data_xy2, x_lims=(None, None),
 
     Parameters
     ----------
-    data_xy1 : np.ndarray(2d)
+    data_xy1 : numpy.ndarray(2d)
         Data array containing the plot data associated with the first y-axis
         stored columnwise as (x_i, y_i).
-    data_xy2 : np.ndarray(2d)
+    data_xy2 : numpy.ndarray(2d)
         Data array containing the plot data associated with the second y-axis
         stored columnwise as (x_i, y_i).
     x_lims : tuple, default=(None, None)
@@ -803,8 +927,8 @@ def plot_xny_data(data_xy_list, range_type='min-max', data_labels=None,
         elif range_type == 'mean-std':
            y_mean = np.mean(data_xy[:, 1:], axis=1)
            y_err = np.concatenate(
-               (np.std(data_xy[:, 1:], axis=1).reshape(1, -1),
-                np.std(data_xy[:, 1:], axis=1).reshape(1, -1)), axis=0)
+               (1.96*np.std(data_xy[:, 1:], axis=1).reshape(1, -1),
+                1.96*np.std(data_xy[:, 1:], axis=1).reshape(1, -1)), axis=0)
         else:
             raise RuntimeError('Unknown type of range.')
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -821,6 +945,169 @@ def plot_xny_data(data_xy_list, range_type='min-max', data_labels=None,
     # Set axes limits
     axes.set_xlim(x_lims)
     axes.set_ylim(y_lims)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Return figure and axes handlers
+    return figure, axes
+# =============================================================================
+def scatter_xy_data(data_xy, data_labels=None, is_identity_line=False,
+                    identity_error=None, x_lims=(None, None),
+                    y_lims=(None, None), title=None, x_label=None,
+                    y_label=None, x_scale='linear', y_scale='linear',
+                    x_tick_format=None, y_tick_format=None, is_latex=False):
+    """Scatter data in xy axes.
+
+    Parameters
+    ----------
+    data_xy : numpy.ndarray(2d)
+        Data array where the plot data is stored columnwise such that the i-th
+        data set (x_i, y_i) is stored in columns (2*i, 2*i + 1), respectively.
+    data_labels : list, default=None
+        Labels of data sets (x_i, y_i) provided in data_xy and sorted
+        accordingly. If None, then no labels are displayed.
+    is_identity_line : bool, default=False
+        Plot identity line.
+    identity_error : float, default=None
+        Relative error between x-data and y-data defining a symmetric
+        error-based shaded area with respect to the identity line.
+    x_lims : tuple, default=(None, None)
+        x-axis limits in data coordinates.
+    y_lims : tuple, default=(None, None)
+        y-axis limits in data coordinates.
+    title : str, default=None
+        Plot title.
+    x_label : str, default=None
+        x-axis label.
+    y_label : str, default=None
+        y-axis label.
+    x_scale : str {'linear', 'log'}, default='linear'
+        x-axis scale. If None or invalid format, then default scale is set.
+        Scale 'log' overrides any x-axis ticks formatting.
+    y_scale : str {'linear', 'log'}, default='linear'
+        y-axis scale. If None or invalid format, then default scale is set.
+        Scale 'log' overrides any y-axis ticks formatting.
+    x_tick_format : {'int', 'float', 'exp'}, default=None
+        x-axis ticks formatting. If None or invalid format, then default
+        formatting is set.
+    y_tick_format : {'int', 'float', 'exp'}, default=None
+        y-axis ticks formatting. If None or invalid format, then default
+        formatting is set.
+    is_latex : bool, default=False
+        If True, then render all strings in LaTeX.
+
+    Returns
+    -------
+    figure : Matplotlib Figure
+        Figure.
+    axes : Matplotlib Axes
+        Axes.
+    """
+    # Check data
+    if data_xy.shape[1] % 2 != 0:
+        raise RuntimeError('Data array must have an even number of columns, '
+                           'two for each dataset (x_i, y_i).')
+    else:
+        # Get number of data sets
+        n_datasets = int(data_xy.shape[1]/2)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Check datasets labels
+    if data_labels is not None:
+        if len(data_labels) != n_datasets:
+            raise RuntimeError('Number of data set labels is not consistent '
+                               'with number of data sets.')
+    else:
+        data_labels = n_datasets*[None,]
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Set default color cycle
+    cycler_color = cycler.cycler('color',['#4477AA', '#EE6677', '#228833',
+                                          '#CCBB44', '#66CCEE', '#AA3377',
+                                          '#BBBBBB', '#000000'])
+    # Set default linestyle cycle
+    cycler_linestyle = cycler.cycler('linestyle',['-','--','-.'])
+    # Set default cycler
+    default_cycler = cycler_linestyle*cycler_color
+    plt.rc('axes', prop_cycle = default_cycler)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Set LaTeX font
+    if is_latex:
+        # Default LaTeX Computer Modern Roman
+        plt.rc('text',usetex=True)
+        plt.rc('font',**{'family':'serif','serif':['Computer Modern Roman']})
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Create figure
+    figure = plt.figure()
+    # Set figure size (inches) - stdout print purpose
+    figure.set_figheight(6, forward=True)
+    figure.set_figwidth(6, forward=True)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Create axes
+    axes = figure.add_subplot(1,1,1)
+    # Set title
+    axes.set_title(title, fontsize=12, pad=10)
+    # Set axes labels
+    axes.set_xlabel(x_label, fontsize=12, labelpad=10)
+    axes.set_ylabel(y_label, fontsize=12, labelpad=10)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Set axes scales
+    if x_scale in ('linear', 'log'):
+        axes.set_xscale(x_scale)
+    if y_scale in ('linear', 'log'):
+        axes.set_yscale(y_scale)
+    # Set tick formatting functions
+    def intTickFormat(x, pos):
+        return '${:2d}$'.format(int(x))
+    def floatTickFormat(x, pos):
+        return '${:3.1f}$'.format(x)
+    def expTickFormat(x, pos):
+        return '${:7.2e}$'.format(x)
+    tick_formats = {'int': intTickFormat, 'float': floatTickFormat,
+                    'exp': expTickFormat}
+    # Set axes tick formats
+    if x_scale != 'log' and x_tick_format in ('int', 'float', 'exp'):
+        axes.xaxis.set_major_formatter(
+            ticker.FuncFormatter(tick_formats[x_tick_format]))
+    if y_scale != 'log' and y_tick_format in ('int', 'float', 'exp'):
+        axes.yaxis.set_major_formatter(
+            ticker.FuncFormatter(tick_formats[y_tick_format]))
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Configure grid major lines
+    axes.grid(which='major', axis='both', linestyle='-', linewidth=0.5,
+              color='0.5', zorder=-20)
+    # Configure grid minor lines
+    axis_option = {'log-log': 'both', 'log-linear': 'x', 'linear-log': 'y'}
+    xy_scale = f'{x_scale}-{y_scale}'
+    if xy_scale in axis_option.keys():
+        axes.grid(which='minor', axis=axis_option[xy_scale], linestyle='-',
+                  linewidth=0.5, color='0.5', zorder=-20)        
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Loop over data sets
+    for i in range(n_datasets):
+        # Plot dataset
+        axes.scatter(data_xy[:, 2*i], data_xy[:, 2*i + 1],
+                     label=data_labels[i], ec='k')
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Set axes limits
+    axes.set_xlim(x_lims)
+    axes.set_ylim(y_lims)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Plot identity line and identity error bounds
+    if is_identity_line:
+        # Plot identity line
+        axes.axline((0, 0), slope=1, color='k', linestyle='--',
+                    label='Identity line', zorder=-10)
+        # Plot identity error bounds
+        if identity_error is not None:            
+            x = np.linspace(0.0, axes.axis()[1])
+            axes.fill_between(x=x, y1=(1 + identity_error)*x,
+                              y2=(1 - identity_error)*x,
+                              color='#BBBBBB', 
+                              label=f'{identity_error*100:.0f}\% error',
+                              zorder=-15)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Set legend
+    if not all([x is None for x in data_labels]) or identity_error is not None:
+        axes.legend(loc='upper left', frameon=True, fancybox=True,
+                    facecolor='inherit', edgecolor='inherit', fontsize=10,
+                    framealpha=1.0)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Return figure and axes handlers
     return figure, axes
@@ -857,6 +1144,3 @@ def save_figure(figure, filename, format='pdf', save_dir=None):
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Save figure
     figure.savefig(filepath, transparent=False, dpi=300, bbox_inches='tight')
-    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Close plot
-    plt.close(figure)

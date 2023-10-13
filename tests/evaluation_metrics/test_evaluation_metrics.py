@@ -9,7 +9,7 @@ import matplotlib.pyplot as plt
 # Local
 from src.vegapunk.gnn_model.evaluation_metrics import \
     plot_training_loss_history, plot_training_loss_and_lr_history, \
-    plot_loss_convergence_test
+    plot_loss_convergence_test, plot_truth_vs_prediction
 # =============================================================================
 #
 #                                                          Authorship & Credits
@@ -166,3 +166,44 @@ def test_plot_loss_convergence_test(tmp_path, monkeypatch, testing_size,
         # Test detection of invalid data structure
         plot_loss_convergence_test(testing_loss=np.zeros((1, 1)),
                                    training_loss=np.zeros((1, 1, 1)))
+# =============================================================================
+@pytest.mark.parametrize('n_processes, error_bound, is_normalized',
+                         [(1, None, False),
+                          ])
+def test_plot_truth_vs_prediction(tmp_path, monkeypatch, n_processes,
+                                  error_bound, is_normalized):
+    """Test plot of ground-truth against predictions."""
+    # Set prediction processes  
+    prediction_sets = {
+        f'dataset_{i}': np.random.uniform(low=0.0, high=1.0,
+                                          size=(np.random.randint(10, 20), 2))
+        for i in range(n_processes)}
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Generate plot
+    monkeypatch.setattr(plt, 'show', lambda: None)
+    is_error_raised = False
+    try:
+        plot_truth_vs_prediction(prediction_sets, error_bound=error_bound,
+                                 is_normalized=is_normalized,
+                                 save_dir=tmp_path, is_save_fig=True,
+                                 is_stdout_display=True)
+        plot_truth_vs_prediction(prediction_sets, error_bound=error_bound,
+                                 is_normalized=is_normalized,
+                                 save_dir=tmp_path, is_save_fig=True,
+                                 is_stdout_display=True)
+    except:
+        is_error_raised = True
+    assert not is_error_raised, 'Error while attempting to generate plot of ' \
+        'ground-truth against predictions.'
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    with pytest.raises(RuntimeError):
+        # Test detection of invalid data type
+        plot_truth_vs_prediction(prediction_sets='invalid_type')
+    with pytest.raises(RuntimeError):
+        # Test detection of invalid data type
+        plot_truth_vs_prediction(
+            prediction_sets={'dataset_1': 'invalid_type',})
+    with pytest.raises(RuntimeError):
+        # Test detection of invalid data structure
+        plot_truth_vs_prediction(
+            prediction_sets={'dataset_1': np.zeros((1, 3)),})
