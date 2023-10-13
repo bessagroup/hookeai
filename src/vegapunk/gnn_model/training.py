@@ -84,10 +84,18 @@ def train_model(n_train_steps, dataset, model_init_args, learning_rate_init,
         Number of samples loaded per batch.
     is_sampler_shuffle : bool, default=False
         If True, shuffles data set samples at every epoch.
-    load_model_state : {'last', int}, default=None
+    load_model_state : {'best', 'last', int, 'default'}, default=None
         Load available GNN-based material patch model state from the model
-        directory. The option 'last' loads the highest training step available,
-        otherwise the specified training step (int) is loaded.
+        directory. Options:
+        
+        'best'      : Model state corresponding to best performance available
+        
+        'last'      : Model state corresponding to highest training step
+        
+        int         : Model state corresponding to given training step
+        
+        'default'   : Model default state file
+
     save_every : int, default=None
         Save GNN-based material patch model every save_every training steps.
         If None, then saves only last training step.
@@ -167,10 +175,11 @@ def train_model(n_train_steps, dataset, model_init_args, learning_rate_init,
     step = 0
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Load GNN-based material patch model state
-    if load_model_state == 'last' or isinstance(load_model_state, int):
+    if load_model_state is not None:
         # Load GNN-based material patch model state
         loaded_step = load_training_state(model, opt_algorithm, optimizer,
                                           load_model_state)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Load loss history
         loss_history = load_loss_history(model, loss_type,
                                          training_step=loaded_step)
@@ -250,6 +259,12 @@ def train_model(n_train_steps, dataset, model_init_args, learning_rate_init,
             if step % save_every == 0:
                 save_training_state(model=model, optimizer=optimizer,
                                     training_step=step)
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Save model and optimizer current best performant state
+            # (criterion: minimum loss during training process)
+            if loss <= min(loss_history):
+                save_training_state(model=model, optimizer=optimizer,
+                                    training_step=step, is_best_state=True)
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Check training process completion
             if step >= n_train_steps:
@@ -354,12 +369,20 @@ def get_learning_rate_scheduler(optimizer, scheduler_type='steplr', **kwargs):
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     return scheduler
 # =============================================================================
-def save_training_state(model, optimizer, training_step):
+def save_training_state(model, optimizer, training_step=None,
+                        is_best_state=False):
     """Save model and optimizer states at given training step.
     
     Material patch model state file is stored in model_directory under the
     name < model_name >.pt or < model_name >-< training_step >.pt if
     training_step is known.
+    
+    Material patch model state file corresponding to the best performance
+    is stored in model_directory under the name
+    < model_name >-< training_step >-best.pt if training_step is known.
+        
+    Optimizer state file is stored in model_directory under the name
+    < model_name >_optim-< training_step >.pt.
     
     Parameters
     ----------
@@ -367,30 +390,40 @@ def save_training_state(model, optimizer, training_step):
         Model.
     optimizer : torch.optim.Optimizer
         PyTorch optimizer.
-    training_step : int
+    training_step : int, default=None
         Training step.
+    is_best_state : bool, default=False
+        If True and training step is known, save copy of material patch
+        model state file corresponding to the best performance.
     """
     # Save GNN-based material patch model
-    model.save_model_state(training_step=training_step)
+    model.save_model_state(training_step=training_step,
+                           is_best_state=is_best_state)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Set optimizer state file
+    optimizer_state_file = model.model_name + '_optim'
+    # Append training step
+    if isinstance(training_step, int):
+        optimizer_state_file += '-' + str(training_step)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set optimizer state file path
     optimizer_path = os.path.join(model.model_directory,
-                                  model.model_name
-                                  + '_optim-' + str(training_step) + '.pt')
+                                  optimizer_state_file + '.pt')
     # Save optimizer state
     optimizer_state = dict(state=optimizer.state_dict(),
                            training_step=training_step)
     torch.save(optimizer_state, optimizer_path)
 # =============================================================================
-def load_training_state(model, opt_algorithm, optimizer, load_model_state):
+def load_training_state(model, opt_algorithm, optimizer,
+                        load_model_state=None):
     """Load model and optimizer states from available training data.
     
     Material patch model state file is stored in model_directory under the
-    name < model_name >.pt or < model_name >-< training_step >.pt if
-    training_step is known.
+    name < model_name >.pt, < model_name >-< training_step >.pt or
+    < model_name >-< training_step >-best.pt.
 
     Optimizer state file is stored in model_directory under the name
-    < model_name >_optim-< training_step >.pt by default.
+    < model_name >_optim-< training_step >.pt.
     
     Both model and optimizer are updated 'in-place' with loaded state data.
     
@@ -405,26 +438,45 @@ def load_training_state(model, opt_algorithm, optimizer, load_model_state):
 
     optimizer : torch.optim.Optimizer
         PyTorch optimizer.
-    load_model_state : {'last', int}, default=None
+    load_model_state : {'best', 'last', int, 'default'}, default=None
         Load available GNN-based material patch model state from the model
-        directory. The option 'last' loads the highest training step
-        available, otherwise the specified training step (int) is loaded.
+        directory. Options:
         
+        'best'      : Model state corresponding to best performance available
+        
+        'last'      : Model state corresponding to highest training step
+        
+        int         : Model state corresponding to given training step
+        
+        'default'   : Model default state file
+
     Returns
     -------
     loaded_step : int
         Training step corresponding to loaded state data.
     """
     # Load GNN-based material patch model state
-    if load_model_state == 'last':
-        loaded_step = model.load_model_state(is_latest=True)
+    if load_model_state == 'best':
+        loaded_step = model.load_model_state(special_state='best',
+                                             is_remove_posterior=True)
+    elif load_model_state == 'last':
+        loaded_step = model.load_model_state(special_state='last',
+                                             is_remove_posterior=True)
+    elif isinstance(load_model_state, int):
+        loaded_step = model.load_model_state(training_step=load_model_state,
+                                             is_remove_posterior=True)
     else:
-        loaded_step = model.load_model_state(
-            training_step=int(load_model_state))
+        loaded_step = model.load_model_state()
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Set optimizer state file
+    optimizer_state_file = model.model_name + '_optim'
+    # Append training step
+    if isinstance(loaded_step, int):
+        optimizer_state_file += '-' + str(loaded_step)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set optimizer state file path
-    optimizer_path = os.path.join(model.model_directory, model.model_name
-                                  + '_optim-' + str(loaded_step) + '.pt')
+    optimizer_path = os.path.join(model.model_directory,
+                                  optimizer_state_file + '.pt')
     # Load optimizer state
     if not os.path.isfile(optimizer_path):
         raise RuntimeError('Optimizer state file has not been found:\n\n'

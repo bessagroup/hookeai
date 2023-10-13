@@ -660,7 +660,7 @@ def test_save_and_load_model_state(tmp_path):
     # Get model state
     saved_state_dict_0 = model.state_dict()
     # Save material patch model state to file
-    model.save_model_state(training_step=0)
+    model.save_model_state(training_step=0, is_best_state=True)
     # Load material patch model state from file
     loaded_training_step = model.load_model_state(training_step=0)
     # Get model state
@@ -680,7 +680,7 @@ def test_save_and_load_model_state(tmp_path):
     # Get model state
     saved_state_dict_1 = model.state_dict()
     # Save material patch model state to file
-    model.save_model_state(training_step=1)
+    model.save_model_state(training_step=1, is_best_state=True)
     # Load material patch model state from file
     loaded_training_step = model.load_model_state(training_step=1)
     # Get model state
@@ -709,7 +709,7 @@ def test_save_and_load_model_state(tmp_path):
                       'state was not properly recovered from file.')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Load material patch model state from file
-    loaded_training_step = model.load_model_state(is_latest=True)
+    loaded_training_step = model.load_model_state(special_state='last')
     # Get model state
     loaded_state_dict_1 = model.state_dict()
     # Check loaded model state training step
@@ -719,6 +719,19 @@ def test_save_and_load_model_state(tmp_path):
     # Check loaded model state parameters
     if str(saved_state_dict_1) != str(loaded_state_dict_1):
         errors.append('GNN-based material patch model latest training step '
+                      'state was not properly recovered from file.')
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Load material patch model state from file
+    loaded_training_step = model.load_model_state(special_state='best')
+    # Get model state
+    loaded_state_dict_best = model.state_dict()
+    # Check loaded model state training step
+    if loaded_training_step != 1:
+        errors.append('GNN-based material patch model best training step '
+                      'was not properly recovered from file.')
+    # Check loaded model state parameters
+    if str(saved_state_dict_1) != str(loaded_state_dict_best):
+        errors.append('GNN-based material patch model best training step '
                       'state was not properly recovered from file.')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Load material patch model state from file
@@ -750,19 +763,33 @@ def test_save_and_load_model_state_invalid(tmp_path):
     model = GNNMaterialPatchModel(**model_init_args)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     with pytest.raises(RuntimeError):
-        # Test loading unexistent material patch model state file
+        # Test loading unexistent material patch model training step state file
         _ = model.load_model_state(training_step=0)
     with pytest.raises(RuntimeError):
-        # Test loading unexistent material patch model state file
-        _ = model.load_model_state(is_latest=True)
+        # Test loading unexistent material patch model best state file
+        _ = model.load_model_state(special_state='best')
     with pytest.raises(RuntimeError):
-        # Test detection of unexistent material patch model directory
-        model.model_directory = 'unknown_dir'
-        _ = model.load_model_state(is_latest=True)
+        # Test loading ambiguous material patch model best state file
+        torch.save([], os.path.join(model.model_directory,
+                                    f'{model.model_name}-0-best.pt'))
+        torch.save([], os.path.join(model.model_directory,
+                                    f'{model.model_name}-1-best.pt'))
+        _ = model.load_model_state(special_state='best')
+    with pytest.raises(RuntimeError):
+        # Test loading unexistent material patch model latest training step
+        # state file
+        _ = model.load_model_state(special_state='last')
+    with pytest.raises(RuntimeError):
+        # Test loading unexistent material patch model default state file
+        _ = model.load_model_state(special_state='default')
     with pytest.raises(RuntimeError):
         # Test detection of unexistent material patch model directory
         model.model_directory = 'unknown_dir'
         _ = model.save_model_state()
+    with pytest.raises(RuntimeError):
+        # Test detection of unexistent material patch model directory
+        model.model_directory = 'unknown_dir'
+        _ = model.load_model_state()
 # -----------------------------------------------------------------------------
 @pytest.mark.parametrize('is_data_normalization, is_normalized,',
                          [(False, False), (True, True), (True, False)

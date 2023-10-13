@@ -37,9 +37,9 @@ __status__ = 'Planning'
 # =============================================================================
 #
 # =============================================================================
-def predict(predict_dir, dataset, model_directory, is_compute_loss=True,
-            loss_type='mse', loss_kwargs={}, device_type='cpu', seed=None,
-            is_verbose=False):
+def predict(predict_dir, dataset, model_directory, load_model_state='default',
+            is_compute_loss=True, loss_type='mse', loss_kwargs={},
+            device_type='cpu', seed=None, is_verbose=False):
     """Make predictions with GNN-based material patch model for given dataset.
     
     Parameters
@@ -49,6 +49,20 @@ def predict(predict_dir, dataset, model_directory, is_compute_loss=True,
     dataset : GNNMaterialPatchDataset
         GNN-based material patch data set. Each sample corresponds to a
         torch_geometric.data.Data object describing a homogeneous graph.
+    model_directory : str
+        Directory where material patch model is stored.
+    load_model_state : {'best', 'last', int, 'default'}, default='default'
+        Load available GNN-based material patch model state from the model
+        directory. Options:
+        
+        'best'      : Model state corresponding to best performance available
+        
+        'last'      : Model state corresponding to highest training step
+        
+        int         : Model state corresponding to given training step
+        
+        'default'   : Model default state file
+        
     is_compute_loss : bool, default=True
         If True, computes predictions average loss. The computation of the
         predictions loss is restricted to data set samples for which the
@@ -62,9 +76,7 @@ def predict(predict_dir, dataset, model_directory, is_compute_loss=True,
         'mse'  : MSE (torch.nn.MSELoss)
         
     loss_kwargs : dict, default={}
-        Arguments of torch.nn._Loss initializer.    
-    model_directory : str
-        Directory where GNN-based material patch model is stored.
+        Arguments of torch.nn._Loss initializer.
     device_type : {'cpu', 'cuda'}, default='cpu'
         Type of device on which torch.Tensor is allocated.
     seed : int, default=None
@@ -103,9 +115,18 @@ def predict(predict_dir, dataset, model_directory, is_compute_loss=True,
     # Initialize GNN-based material patch model
     model = GNNMaterialPatchModel.init_model_from_file(model_directory)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Load GNN-based material patch model state (state file corresponding to
-    # the highest training step available in model directory)
-    _ = model.load_model_state(is_latest=True)
+    # Load GNN-based material patch model state
+    if load_model_state == 'best':
+        _ = model.load_model_state(special_state='best',
+                                   is_remove_posterior=True)
+    elif load_model_state == 'last':
+        _ = model.load_model_state(special_state='last',
+                                   is_remove_posterior=True)
+    elif isinstance(load_model_state, int):
+        _ = model.load_model_state(training_step=load_model_state,
+                                   is_remove_posterior=True)
+    else:
+        _ = model.load_model_state()
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Get model data normalization
     is_data_normalization = model.is_data_normalization
