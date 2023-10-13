@@ -277,10 +277,19 @@ def train_model(n_train_steps, dataset, model_init_args, learning_rate_init,
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Save model and optimizer final states
     save_training_state(model=model, optimizer=optimizer, training_step=step)
-    # Save loss history
+    # Save loss and learning rate histories
     save_loss_history(model, n_train_steps, loss_type, loss_history,
                       lr_scheduler_type=lr_scheduler_type,
                       lr_history=lr_history)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    if is_verbose:
+        best_loss = min(loss_history)
+        training_step = loss_history.index(best_loss)
+        print('\n> Minimum loss: {:.8e} | Training step: {:.d}'.format(
+            best_loss, training_step))
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    if is_verbose:
+        print(f'\n> Model directory: {model.model_directory}\n')
 # =============================================================================
 def get_pytorch_loss(loss_type, **kwargs):
     """Get PyTorch loss function.

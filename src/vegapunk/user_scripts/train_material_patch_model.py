@@ -13,8 +13,6 @@ if root_dir not in sys.path:
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Third-party
 import numpy as np
-# Local
-
 #
 #                                                          Authorship & Credits
 # =============================================================================
@@ -22,3 +20,9 @@ __author__ = 'Bernardo Ferreira (bernardo_ferreira@brown.edu)'
 __credits__ = ['Bernardo Ferreira', ]
 __status__ = 'Planning'
 # =============================================================================
+def perform_model_standard_training():
+    """Perform standard training of GNN-based material patch model."""
+    pass
+# =============================================================================
+if __name__ == "__main__":
+    pass
