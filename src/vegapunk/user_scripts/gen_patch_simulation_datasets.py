@@ -11,6 +11,7 @@ root_dir = str(pathlib.Path(__file__).parents[1])
 if root_dir not in sys.path:
     sys.path.insert(0, root_dir)
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+import os
 # Third-party
 import numpy as np
 # Local
@@ -22,13 +23,13 @@ __author__ = 'Bernardo Ferreira (bernardo_ferreira@brown.edu)'
 __credits__ = ['Bernardo Ferreira', ]
 __status__ = 'Planning'
 # =============================================================================
-def generate_dataset(sim_dataset_type, simulation_directory, is_verbose=False):
+def generate_dataset(case_study_name, simulation_directory, is_verbose=False):
     """Generate material patch simulation data sets.
     
     Parameters
     ----------
-    sim_dataset_type : str
-        Material patch simulation data set type.
+    case_study_name : str
+        Case study.
     simulation_directory : str
         Directory where files associated with the generation of the material
         patch finite element simulations dataset are written. All existent
@@ -45,7 +46,7 @@ def generate_dataset(sim_dataset_type, simulation_directory, is_verbose=False):
             set_default_saving_options()
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Generate material patch simulation data set
-    if sim_dataset_type == '2d_elastic':
+    if case_study_name == '2d_elastic':
         # Set number of samples
         n_sample = 5
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -202,17 +203,20 @@ def set_default_saving_options():
         is_save_simulation_files, is_remove_failed_samples, is_save_plot_patch
 # =============================================================================
 if __name__ == "__main__":
-    # Available material patch simulation data set types:
-    #
-    # ['2d_elastic'] - 2D material patch, homogeneous, elastic
-    #
-    available_sim_dataset_types = {}
-    available_sim_dataset_types['2d_elastic'] = \
-        '/home/bernardoferreira/Documents/temp'
+    # Set case study name
+    case_study_name = '2d_elastic'
+    # Set case study base directory
+    case_study_dir = \
+        f'/home/bernardoferreira/Documents/temp/cs_{case_study_name}'
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Set simulation data set type
-    sim_dataset_type = '2d_elastic'
-    simulation_directory = available_sim_dataset_types['2d_elastic']
+    # Check case study directory
+    if not os.path.isdir(case_study_dir):
+        raise RuntimeError('The case study directory has not been found:\n\n'
+                           + case_study_dir)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Set simulation directory
+    simulation_directory = os.path.join(os.path.normpath(case_study_dir),
+                                        'simulation')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Generate material patch simulation data set
-    generate_dataset(sim_dataset_type, simulation_directory, is_verbose=True)
+    generate_dataset(case_study_name, simulation_directory, is_verbose=True)
