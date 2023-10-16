@@ -40,7 +40,7 @@ __author__ = 'Bernardo Ferreira (bernardo_ferreira@brown.edu)'
 __credits__ = ['Bernardo Ferreira', ]
 __status__ = 'Planning'
 # =============================================================================
-def train_model(n_train_steps, dataset, model_init_args, learning_rate_init,
+def train_model(n_train_steps, dataset, model_init_args, lr_init,
                 opt_algorithm='adam', lr_scheduler_type=None,
                 lr_scheduler_kwargs={}, loss_type='mse', loss_kwargs={},
                 batch_size=1, is_sampler_shuffle=False, load_model_state=None,
@@ -58,7 +58,7 @@ def train_model(n_train_steps, dataset, model_init_args, learning_rate_init,
     model_init_args : dict
         GNN-based material patch model class initialization parameters (check
         class GNNMaterialPatchModel).
-    learning_rate_init : float
+    lr_init : float
         Initial value optimizer learning rate. Constant learning rate value if
         no learning rate scheduler is specified (lr_scheduler_type=None).
     opt_algorithm : {'adam',}, default='adam'
@@ -86,7 +86,8 @@ def train_model(n_train_steps, dataset, model_init_args, learning_rate_init,
         If True, shuffles data set samples at every epoch.
     load_model_state : {'best', 'last', int, 'default'}, default=None
         Load available GNN-based material patch model state from the model
-        directory. Options:
+        directory. Data scalers are also loaded from model initialization file.
+        Options:
         
         'best'      : Model state corresponding to best performance available
         
@@ -133,18 +134,14 @@ def train_model(n_train_steps, dataset, model_init_args, learning_rate_init,
     # Get model parameters
     model_parameters = model.parameters(recurse=True)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Set data loader
-    if isinstance(seed, int):
-        data_loader = torch.utils.data.DataLoader(
-            dataset=dataset, batch_size=batch_size, worker_init_fn=seed_worker,
-            generator=generator)
-    else:
-        data_loader = torch.utils.data.DataLoader(
-            dataset=dataset, batch_size=batch_size, shuffle=is_sampler_shuffle)        
+    # Get model data normalization
+    is_data_normalization = model.is_data_normalization
+    # Fit model data scalers
+    if is_data_normalization and load_model_state is None:
+        model.fit_data_scalers(dataset)        
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Initialize learning rate
-    learning_rate = learning_rate_init
-    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    learning_rate = lr_init
     # Set optimizer    
     if opt_algorithm == 'adam':
         # Initialize optimizer, specifying the model (and submodels) parameters
@@ -177,6 +174,16 @@ def train_model(n_train_steps, dataset, model_init_args, learning_rate_init,
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Load GNN-based material patch model state
     if load_model_state is not None:
+        # Initialize GNN-based material patch model
+        # (includes loading of data scalers)
+        model = GNNMaterialPatchModel.init_model_from_file(
+            model_init_args['model_directory'])
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Move model to process ID
+        model.to(device=device)
+        # Set model in training mode
+        model.train()
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Load GNN-based material patch model state
         loaded_step = load_training_state(model, opt_algorithm, optimizer,
                                           load_model_state)
@@ -190,8 +197,14 @@ def train_model(n_train_steps, dataset, model_init_args, learning_rate_init,
         # Update training step counter
         step = int(loaded_step)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Get model data normalization
-    is_data_normalization = model.is_data_normalization
+    # Set data loader
+    if isinstance(seed, int):
+        data_loader = torch.utils.data.DataLoader(
+            dataset=dataset, batch_size=batch_size, worker_init_fn=seed_worker,
+            generator=generator)
+    else:
+        data_loader = torch.utils.data.DataLoader(
+            dataset=dataset, batch_size=batch_size, shuffle=is_sampler_shuffle)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Loop over training iterations
     while is_keep_training:
