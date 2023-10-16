@@ -193,6 +193,13 @@ def generate_material_patch_dataset(
         print('\n> Setting default design space parameters...')
         start_time_sec = time.time()
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Check simulation directory
+    if not os.path.isdir(simulation_directory):
+        raise RuntimeError('The simulation directory has not been found:\n\n'
+                           + simulation_directory)
+    else:
+        simulation_directory = os.path.normpath(simulation_directory)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Get default design space parameters
     default_parameters = get_default_design_parameters(n_dim)
     # Set default parameters

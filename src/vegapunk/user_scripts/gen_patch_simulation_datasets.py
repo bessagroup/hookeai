@@ -16,6 +16,7 @@ import os
 import numpy as np
 # Local
 from material_patch.patch_dataset import generate_material_patch_dataset
+from ioput.iostandard import make_directory
 #
 #                                                          Authorship & Credits
 # =============================================================================
@@ -217,6 +218,9 @@ if __name__ == "__main__":
     # Set simulation directory
     simulation_directory = os.path.join(os.path.normpath(case_study_dir),
                                         'simulation')
+    # Create simulation directory
+    if not os.path.isdir(simulation_directory):
+        make_directory(simulation_directory)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Generate material patch simulation data set
     generate_dataset(case_study_name, simulation_directory, is_verbose=True)
