@@ -451,6 +451,8 @@ class GNNMaterialPatchDataset(torch.utils.data.Dataset):
         if not isinstance(dataset, GNNMaterialPatchDataset):
             raise RuntimeError('Loaded GNN-based material patch data set '
                                'is not a GNNMaterialPatchDataset.')
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        return dataset
     # -------------------------------------------------------------------------
     def update_dataset_directory(self, dataset_directory,
                                  is_reload_data=False):
