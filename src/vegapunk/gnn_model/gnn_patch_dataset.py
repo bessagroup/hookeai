@@ -247,6 +247,11 @@ class GNNMaterialPatchDataset(torch.utils.data.Dataset):
         GNN-based material patch data set samples files paths. Each sample file
         contains a torch_geometric.data.Data object describing a homogeneous
         graph.
+    _dataset_samples : list
+        GNN-based material patch data set samples data. Each sample is stored
+        as a torch_geometric.data.Data object describing a homogeneous graph.
+        Only populated if _is_store_dataset is True, otherwise is set as an
+        empty list.
     _is_store_dataset : bool, default=False
         If True, then the GNN-based material patch data set samples are loaded
         and stored in attribute dataset_samples_data. If False, the dataset
