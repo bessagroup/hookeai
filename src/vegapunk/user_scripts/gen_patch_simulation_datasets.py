@@ -40,7 +40,7 @@ def generate_dataset(sim_dataset_type, simulation_directory, is_verbose=False):
     links_bin_path, strain_formulation, analysis_type, links_input_params = \
         set_default_links_parameters()
     # Set default files and directories storage options
-    is_save_simulation_dataset, is_save_simulation_files, \
+    is_save_simulation_dataset, is_append_n_sample, is_save_simulation_files, \
         is_remove_failed_samples, is_save_plot_patch = \
             set_default_saving_options()
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -94,6 +94,7 @@ def generate_dataset(sim_dataset_type, simulation_directory, is_verbose=False):
         is_remove_failed_samples = is_remove_failed_samples,
         links_input_params=links_input_params,
         is_save_simulation_dataset=is_save_simulation_dataset,
+        is_append_n_sample=is_append_n_sample, 
         is_save_plot_patch=is_save_plot_patch,
         is_save_simulation_files=is_save_simulation_files,
         is_verbose=is_verbose)
@@ -178,24 +179,27 @@ def set_default_saving_options():
     Returns
     -------
     is_save_simulation_dataset : bool
-        Save material patch finite element simulations dataset in simulation
-        directory. Data set is stored as a pickle file as
-        'material_patch_fem_dataset.pkl'.
-    is_save_simulation_files : bool, default=False
+        Save material patch finite element simulations data set in simulation
+        directory.
+    is_append_n_sample : bool
+        If True, then data set size (number of samples) is appended to
+        material patch finite element simulations data set filename.
+    is_save_simulation_files : bool
         Save material patch simulation files in simulation directory.
-    is_remove_failed_samples : bool, default=False
+    is_remove_failed_samples : bool
         Remove failed material patches from data set. Size of resulting data
         set is lower or equal to prescribed number of material patch samples.
-    is_save_plot_patch : bool, default=False
+    is_save_plot_patch : bool
         Save plot of material patch design sample in simulation directory.
     """
     is_save_simulation_dataset = True
-    is_save_simulation_files = True
+    is_append_n_sample = True
+    is_save_simulation_files = False
     is_remove_failed_samples = True
-    is_save_plot_patch = True
+    is_save_plot_patch = False
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    return is_save_simulation_dataset, is_save_simulation_files, \
-        is_remove_failed_samples, is_save_plot_patch
+    return is_save_simulation_dataset, is_append_n_sample, \
+        is_save_simulation_files, is_remove_failed_samples, is_save_plot_patch
 # =============================================================================
 if __name__ == "__main__":
     # Available material patch simulation data set types:

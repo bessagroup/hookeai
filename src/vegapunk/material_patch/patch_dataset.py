@@ -53,8 +53,8 @@ def generate_material_patch_dataset(
     edge_deformation_order_ranges=None, edge_deformation_magnitude_ranges=None,
     max_iter_per_patch=10, is_remove_failed_samples=False,
     links_input_params=None, is_save_simulation_dataset=False,
-    is_save_simulation_files=False, is_save_plot_patch=False,
-    is_verbose=False):
+    is_append_n_sample=True, is_save_simulation_files=False,
+    is_save_plot_patch=False, is_verbose=False):
     """Generate and simulate a set of deformed finite element material patches.
     
     Material patch is assumed quadrilateral (2d) or parallelepipedic (3D)
@@ -67,6 +67,10 @@ def generate_material_patch_dataset(
     
     Outputs for each sample include nodal and global features data across
     multiple time steps of the simulation deformation path.
+    
+    Material patch finite element simulation data set is stored in
+    simulation_directory as a pickle file named material_patch_fem_dataset.pkl
+    or material_patch_fem_dataset_n< n_sample >.pkl
     
     Parameters
     ----------
@@ -153,9 +157,11 @@ def generate_material_patch_dataset(
     links_input_params : dict, default=None
         Links input data file parameters. If None, default parameters are set.
     is_save_simulation_dataset : bool, default=False
-        Save material patch finite element simulations dataset in simulation
-        directory. Data set is stored as a pickle file as
-        'material_patch_fem_dataset.pkl'. Existing data set file is overriden.
+        Save material patch finite element simulations data set in simulation
+        directory. Existing data set file is overriden.
+    is_append_n_sample : bool, default=True
+        If True, then data set size (number of samples) is appended to
+        material patch finite element simulations data set filename.
     is_save_simulation_files : bool, default=False
         Save material patch simulation files in simulation directory.
     is_save_plot_patch : bool, default=False
@@ -333,7 +339,7 @@ def generate_material_patch_dataset(
         print('\n> Sampling design space input data...\n')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Initialize sampler
-    sampler = f3dasm.sampling.RandomUniform(design_space)
+    sampler = f3dasm.sampling.SobolSequence(design_space)
     # Generate samples (class ExperimentData)
     dataset = sampler.get_samples(numsamples=n_sample)
     # Get samples input data (class pd.DataFrame)
@@ -409,11 +415,15 @@ def generate_material_patch_dataset(
         if is_verbose:
             print('\n> Saving material patch simulation data set...')
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        # Set data set file name
-        dataset_file_name = 'material_patch_fem_dataset.pkl'
+        # Set data set file
+        dataset_file_name = 'material_patch_fem_dataset'
+        # Append data set size
+        if is_append_n_sample:
+            dataset_file_name += f'_n{len(dataset_simulation_data)}'
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Set data set file path
         dataset_file_path = os.path.join(
-            os.path.normpath(simulation_directory), dataset_file_name)
+            os.path.normpath(simulation_directory), dataset_file_name + '.pkl')
         # Save data set
         with open(dataset_file_path, 'wb') as dataset_file:
             pickle.dump(dataset_simulation_data, dataset_file)
