@@ -37,14 +37,14 @@ __status__ = 'Planning'
 # =============================================================================
 #
 # =============================================================================
-def predict(predict_dir, dataset, model_directory, load_model_state='default',
-            is_compute_loss=True, loss_type='mse', loss_kwargs={},
-            device_type='cpu', seed=None, is_verbose=False):
+def predict(predict_directory, dataset, model_directory,
+            load_model_state='default', is_compute_loss=True, loss_type='mse',
+            loss_kwargs={}, device_type='cpu', seed=None, is_verbose=False):
     """Make predictions with GNN-based material patch model for given dataset.
     
     Parameters
     ----------
-    predict_dir : str
+    predict_directory : str
         Directory where model predictions results are stored.
     dataset : GNNMaterialPatchDataset
         GNN-based material patch data set. Each sample corresponds to a
@@ -105,9 +105,9 @@ def predict(predict_dir, dataset, model_directory, load_model_state='default',
         raise RuntimeError('The material patch model directory has not '
                            'been found:\n\n' + model_directory)
     # Check prediction directory
-    if not os.path.exists(predict_dir):
+    if not os.path.exists(predict_directory):
         raise RuntimeError('The model prediction directory has not been '
-                           'found:\n\n' + predict_dir)
+                           'found:\n\n' + predict_directory)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     if is_verbose:
         print('\n> Loading GNN-based material patch model...\n')
@@ -137,7 +137,8 @@ def predict(predict_dir, dataset, model_directory, load_model_state='default',
     model.eval()
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Create model predictions subdirectory for current prediction process
-    predict_subdir = make_predictions_subdir(predict_dir, model.model_name)
+    predict_subdir = make_predictions_subdir(predict_directory,
+                                             model.model_name)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set data loader
     if isinstance(seed, int):
@@ -204,12 +205,12 @@ def predict(predict_dir, dataset, model_directory, load_model_state='default',
         # Display prediction results directory 
         print('\n> Prediction results directory: ', predict_subdir, '\n')
 # =============================================================================
-def make_predictions_subdir(predict_dir, model_name):
+def make_predictions_subdir(predict_directory, model_name):
     """Create model predictions subdirectory.
     
     Parameters
     ----------
-    predict_dir : str
+    predict_directory : str
         Directory where model predictions results are stored.
     model_name : str
         Name of model.
@@ -220,14 +221,15 @@ def make_predictions_subdir(predict_dir, model_name):
         Subdirectory where model predictions results are stored.
     """
     # Check prediction directory
-    if not os.path.exists(predict_dir):
+    if not os.path.exists(predict_directory):
         raise RuntimeError('The model prediction directory has not been '
-                           'found:\n\n' + predict_dir)
+                           'found:\n\n' + predict_directory)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set predictions subdirectory path
-    predict_subdir = os.path.join(predict_dir, str(model_name) + '_prediction')
+    predict_subdir = os.path.join(predict_directory,
+                                  str(model_name) + '_prediction')
     # Create model predictions subdirectory
-    make_directory(predict_dir, is_overwrite=False)
+    make_directory(predict_directory, is_overwrite=False)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     return predict_subdir
 # =============================================================================
