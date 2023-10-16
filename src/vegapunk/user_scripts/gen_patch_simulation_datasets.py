@@ -24,7 +24,8 @@ __author__ = 'Bernardo Ferreira (bernardo_ferreira@brown.edu)'
 __credits__ = ['Bernardo Ferreira', ]
 __status__ = 'Planning'
 # =============================================================================
-def generate_dataset(case_study_name, simulation_directory, is_verbose=False):
+def generate_dataset(case_study_name, simulation_directory, n_sample,
+                     is_verbose=False):
     """Generate material patch simulation data sets.
     
     Parameters
@@ -35,6 +36,8 @@ def generate_dataset(case_study_name, simulation_directory, is_verbose=False):
         Directory where files associated with the generation of the material
         patch finite element simulations dataset are written. All existent
         files are overridden when saving new data files.
+    n_sample : int
+        Number of material patch samples.
     is_verbose : bool, default=False
         If True, enable verbose output.
     """
@@ -48,9 +51,6 @@ def generate_dataset(case_study_name, simulation_directory, is_verbose=False):
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Generate material patch simulation data set
     if case_study_name == '2d_elastic':
-        # Set number of samples
-        n_sample = 5
-        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Set number of spatial dimensions
         n_dim = 2
         # Set finite element discretization
@@ -206,14 +206,20 @@ def set_default_saving_options():
 if __name__ == "__main__":
     # Set case study name
     case_study_name = '2d_elastic'
-    # Set case study base directory
+    # Set case study directory
+    case_study_base_dirs = {
+        '2d_elastic': f'/home/bernardoferreira/Documents/temp',}
     case_study_dir = \
-        f'/home/bernardoferreira/Documents/temp/cs_{case_study_name}'
+        os.path.join(os.path.normpath(case_study_base_dirs[case_study_name]),
+                     f'cs_{case_study_name}')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Check case study directory
     if not os.path.isdir(case_study_dir):
         raise RuntimeError('The case study directory has not been found:\n\n'
                            + case_study_dir)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Set material patch simulation data set size
+    n_sample = 5
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set simulation directory
     simulation_directory = os.path.join(os.path.normpath(case_study_dir),
@@ -223,4 +229,5 @@ if __name__ == "__main__":
         make_directory(simulation_directory)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Generate material patch simulation data set
-    generate_dataset(case_study_name, simulation_directory, is_verbose=True)
+    generate_dataset(case_study_name, simulation_directory, n_sample,
+                     is_verbose=True)

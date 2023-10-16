@@ -90,9 +90,12 @@ def set_default_saving_options():
 if __name__ == "__main__":
     # Set case study name
     case_study_name = '2d_elastic'
-    # Set case study base directory
+    # Set case study directory
+    case_study_base_dirs = {
+        '2d_elastic': f'/home/bernardoferreira/Documents/temp',}
     case_study_dir = \
-        f'/home/bernardoferreira/Documents/temp/cs_{case_study_name}'
+        os.path.join(os.path.normpath(case_study_base_dirs[case_study_name]),
+                     f'cs_{case_study_name}')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Check case study directory
     if not os.path.isdir(case_study_dir):
