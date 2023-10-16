@@ -217,7 +217,7 @@ if __name__ == "__main__":
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set simulation directory
     simulation_directory = os.path.join(os.path.normpath(case_study_dir),
-                                        'simulation')
+                                        '0_simulation')
     # Create simulation directory
     if not os.path.isdir(simulation_directory):
         make_directory(simulation_directory)

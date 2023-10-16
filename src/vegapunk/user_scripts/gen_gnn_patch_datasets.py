@@ -102,13 +102,13 @@ if __name__ == "__main__":
     # Set simulation data set size
     n_sample = 5
     # Set material patch simulation data set file path
-    sim_dataset_file_path = \
-        os.path.join(os.path.normpath(case_study_dir),
-                     f'simulation/material_patch_fem_dataset_n{n_sample}.pkl')
+    sim_dataset_file_path = os.path.join(
+        os.path.normpath(case_study_dir),
+        f'0_simulation/material_patch_fem_dataset_n{n_sample}.pkl')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set GNN-based material patch data set directory
     dataset_directory = os.path.join(os.path.normpath(case_study_dir),
-                                     'dataset')
+                                     '1_dataset')
     # Create data set directory
     if not os.path.isdir(dataset_directory):
         make_directory(dataset_directory)
