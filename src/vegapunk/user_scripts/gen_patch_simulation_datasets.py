@@ -81,7 +81,7 @@ def generate_dataset(case_study_name, simulation_directory, n_sample,
                                              '4': (-0.2, 0.2)}
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~    
     else:
-        raise RuntimeError('Unknown material patch simulation data set type.')
+        raise RuntimeError('Unknown case study.')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Generate material patch simulation data set
     dataset_simulation_data = generate_material_patch_dataset(
