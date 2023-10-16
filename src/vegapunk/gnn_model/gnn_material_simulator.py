@@ -108,6 +108,8 @@ class GNNMaterialPatchModel(torch.nn.Module):
         Get fitted model data scalers.
     get_fitted_data_scaler(self, features_type)
         Get fitted model data scalers.
+    load_model_data_scalers_from_file(self)
+        Load data scalers from model initialization file.
     _check_normalized_return(self)
         Check if model data normalization is available.
     """
@@ -881,6 +883,30 @@ class GNNMaterialPatchModel(torch.nn.Module):
                                'the same shape.')
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         return transformed_tensor
+    # -------------------------------------------------------------------------
+    def load_model_data_scalers_from_file(self):
+        """Load data scalers from model initialization file."""
+        # Check material patch model directory
+        if not os.path.isdir(self.model_directory):
+            raise RuntimeError('The material patch model directory has not '
+                               'been found:\n\n' + self.model_directory)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Get model initialization file path from model directory
+        model_init_file_path = os.path.join(self.model_directory,
+                                            'model_init_file' + '.pkl')
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Load model initialization attributes from file
+        if not os.path.isfile(model_init_file_path):
+            raise RuntimeError('The material patch model initialization file '
+                               'has not been found:\n\n'
+                                + model_init_file_path)
+        else:
+            with open(model_init_file_path, 'rb') as model_init_file:
+                model_init_attributes = pickle.load(model_init_file)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Load model data scalers
+        model_data_scalers = model_init_attributes['model_data_scalers']
+        self._data_scalers = model_data_scalers
     # -------------------------------------------------------------------------
     def _check_normalized_return(self):
         """Check if model data normalization is available."""

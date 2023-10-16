@@ -172,7 +172,7 @@ def test_init_from_file_invalid(gnn_material_simulator_norm):
         # Test detection of unexistent model directory
         _ = GNNMaterialPatchModel.init_model_from_file('unknown_directory')
     with pytest.raises(RuntimeError):
-        # Remove model initialization files
+        # Remove model initialization file
         model_init_file_path = os.path.join(model_directory,
                                             'model_init_file' + '.pkl')
         os.remove(model_init_file_path)
@@ -493,6 +493,65 @@ def test_data_scaler_transform(gnn_material_simulator_norm,
                           'tensor.')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     assert not errors, "Errors:\n{}".format("\n".join(errors))
+# -----------------------------------------------------------------------------
+def test_load_model_data_scalers_from_file(gnn_material_simulator,
+                                           gnn_material_simulator_norm):
+    """Test loading of data scalers from model initialization file."""
+    # Initialize errors
+    errors = []
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~    
+    # Check model with and without data normalization
+    for model in (gnn_material_simulator, gnn_material_simulator_norm):
+        # Save model data scalers
+        saved_data_scalers = model._data_scalers
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Load data scalers from model initialization file.
+        model.load_model_data_scalers_from_file()
+        # Set loaded model data scalers
+        loaded_data_scalers = model._data_scalers
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Check recovery of saved model data scalers
+        if saved_data_scalers is not None:
+            # Loop over saved data scalers
+            for scaler_type, saved_scaler in saved_data_scalers.items():
+                # Check standardization data scaler parameters
+                if isinstance(saved_scaler, TorchStandardScaler):
+                    loaded_scaler = loaded_data_scalers[scaler_type]
+                    if not torch.allclose(saved_scaler._mean,
+                                          loaded_scaler._mean):
+                        errors.append('The mean of the loaded '
+                                      'TorchStandardScaler data scaler does '
+                                      'not match the original value.')
+                    if not torch.allclose(saved_scaler._std,
+                                          loaded_scaler._std):
+                        errors.append('The standard deviation of the loaded '
+                                      'TorchStandardScaler data scaler does '
+                                      'not match the original value.')
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    assert not errors, "Errors:\n{}".format("\n".join(errors))
+# -----------------------------------------------------------------------------
+def test_load_model_data_scalers_from_file_invalid(
+        gnn_material_simulator_norm):
+    """Test invalid loading of data scalers from model initialization file."""
+
+    # Set GNN-based material patch model with data normalization
+    model = gnn_material_simulator_norm
+    # Get model directory
+    model_directory = gnn_material_simulator_norm.model_directory
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    with pytest.raises(RuntimeError):
+        # Remove model initialization file
+        model_init_file_path = os.path.join(model_directory,
+                                            'model_init_file' + '.pkl')
+        os.remove(model_init_file_path)
+        # Test detection of unexistent model initialization file
+        _ = model.load_model_data_scalers_from_file()
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    with pytest.raises(RuntimeError):
+        # Set unknown model directory
+        model.model_directory = 'unknown_directory'
+        # Test detection of unexistent model initialization file
+        _ = model.load_model_data_scalers_from_file()
 # -----------------------------------------------------------------------------
 def test_check_normalized_return(tmp_path):
     """Test detection of unfitted model data scalers."""
