@@ -92,6 +92,13 @@ def generate_dataset_samples_files(dataset_directory, dataset_simulation_data,
               '\n------------------------------------------\n')
         start_time_sec = time.time()
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Check data set directory
+    if not os.path.isdir(dataset_directory):
+        raise RuntimeError('The GNN-based material patch data set directory '
+                           'has not been found:\n\n' + dataset_directory)
+    else:
+        dataset_directory = os.path.normpath(dataset_directory)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Get number of samples
     n_sample = len(dataset_simulation_data)
     # Initialize material patch data set samples files
@@ -301,7 +308,7 @@ class GNNMaterialPatchDataset(torch.utils.data.Dataset):
                                'directory has not been found:\n\n'
                                + dataset_directory)
         else:
-            self._dataset_directory = dataset_directory
+            self._dataset_directory = os.path.normpath(dataset_directory)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Check data set sample files
         for file_path in dataset_sample_files:
@@ -382,11 +389,18 @@ class GNNMaterialPatchDataset(torch.utils.data.Dataset):
         """
         return self._dataset_sample_files
     # -------------------------------------------------------------------------
-    def save_dataset(self):
+    def save_dataset(self, is_append_n_sample=True):
         """Save GNN-based material patch data set to file.
         
         GNN-based material patch data set is stored in dataset_directory as a
-        pickle file named 'material_patch_graph_dataset.pkl'.
+        pickle file named material_patch_graph_dataset.pkl or
+        material_patch_graph_dataset_n< n_sample >.pkl.
+        
+        Parameters
+        ----------
+        is_append_n_sample : bool, default=True
+            If True, then data set size (number of samples) is appended to
+            GNN-based material patch data set filename.
         """
         # Check data set directory
         if not os.path.isdir(self._dataset_directory):
@@ -394,9 +408,16 @@ class GNNMaterialPatchDataset(torch.utils.data.Dataset):
                                'directory has not been found:\n\n'
                                + self._dataset_directory)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set GNN-based material patch data set file
+        dataset_file = 'material_patch_graph_dataset'
+        # Append data set size
+        if is_append_n_sample:
+            dataset_file += f'_n{len(self._dataset_sample_files)}'
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Set GNN-based material patch data set file path
         dataset_path = os.path.join(self._dataset_directory,
-                                    'material_patch_graph_dataset' + '.pkl')
+                                    dataset_file + '.pkl')   
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Save GNN-based material patch data set
         with open(dataset_path, 'wb') as dataset_file:
             pickle.dump(self, dataset_file)

@@ -18,6 +18,7 @@ import numpy as np
 from material_patch.patch_dataset import read_simulation_dataset_from_file
 from gnn_model.gnn_patch_dataset import generate_dataset_samples_files, \
     get_dataset_sample_files_from_dir, GNNMaterialPatchDataset, split_dataset
+from ioput.iostandard import make_directory
 #
 #                                                          Authorship & Credits
 # =============================================================================
@@ -25,18 +26,16 @@ __author__ = 'Bernardo Ferreira (bernardo_ferreira@brown.edu)'
 __credits__ = ['Bernardo Ferreira', ]
 __status__ = 'Planning'
 # =============================================================================
-def generate_dataset(sim_dataset_type, simulation_directory, dataset_directory,
+def generate_dataset(case_study_name, sim_dataset_file_path, dataset_directory,
                      is_verbose=False):
     """Generate GNN-based material patch data sets.
     
     Parameters
     ----------
-    sim_dataset_type : str
-        Material patch simulation data set type.
-    simulation_directory : str
-        Directory where files associated with the generation of the material
-        patch finite element simulations dataset are written. All existent
-        files are overridden when saving new data files.
+    case_study_name : str
+        Case study.
+    sim_dataset_file_path : str
+        Material patches finite element simulations data set file path.        
     dataset_directory : str
         Directory where the GNN-based material patch data set is stored (all
         data set samples files). All existent files are overridden when saving
@@ -47,10 +46,7 @@ def generate_dataset(sim_dataset_type, simulation_directory, dataset_directory,
     # Set default files and directories storage options
     sample_file_basename, is_save_plot_patch = set_default_saving_options()
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~    
-    if sim_dataset_type == '2d_elastic':
-        # Set material patch simulation data set file path
-        sim_dataset_file_path = os.path.join(simulation_directory,
-            'material_patch_fem_dataset.pkl')
+    if case_study_name == '2d_elastic':
         # Load material patch simulation data set
         dataset_simulation_data = \
             read_simulation_dataset_from_file(sim_dataset_file_path)
@@ -67,7 +63,7 @@ def generate_dataset(sim_dataset_type, simulation_directory, dataset_directory,
     # Initialize GNN-based material patch data set
     dataset = GNNMaterialPatchDataset(dataset_directory, dataset_samples_files)
     # Save GNN-based material patch data set to file
-    dataset.save_dataset()    
+    dataset.save_dataset(is_append_n_sample=True)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Randomly split data set into training, validation and testing
     split_sizes = {'training': 0.6, 'validation': 0.2, 'testing': 0.2}
@@ -92,22 +88,32 @@ def set_default_saving_options():
     return sample_file_basename, is_save_plot_patch
 # =============================================================================
 if __name__ == "__main__":
-    # Available material patch simulation data set types:
-    #
-    # ['2d_elastic'] - 2D material patch, homogeneous, elastic
-    #
-    available_sim_dataset_types = {}
-    available_sim_dataset_types['2d_elastic'] = \
-        '/home/bernardoferreira/Documents/temp'
+    # Set case study name
+    case_study_name = '2d_elastic'
+    # Set case study base directory
+    case_study_dir = \
+        f'/home/bernardoferreira/Documents/temp/cs_{case_study_name}'
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Set simulation data set type
-    sim_dataset_type = '2d_elastic'
-    simulation_directory = available_sim_dataset_types['2d_elastic']
+    # Check case study directory
+    if not os.path.isdir(case_study_dir):
+        raise RuntimeError('The case study directory has not been found:\n\n'
+                           + case_study_dir)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Set simulation data set size
+    n_sample = 5
+    # Set material patch simulation data set file path
+    sim_dataset_file_path = \
+        os.path.join(os.path.normpath(case_study_dir),
+                     f'simulation/material_patch_fem_dataset_n{n_sample}.pkl')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set GNN-based material patch data set directory
-    dataset_directory = simulation_directory
+    dataset_directory = os.path.join(os.path.normpath(case_study_dir),
+                                     'dataset')
+    # Create data set directory
+    if not os.path.isdir(dataset_directory):
+        make_directory(dataset_directory)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Generate material patch simulation data set
-    generate_dataset(sim_dataset_type, simulation_directory, dataset_directory,
+    # Generate GNN-based material patch data set
+    generate_dataset(case_study_name, sim_dataset_file_path, dataset_directory,
                      is_verbose=True)
 
