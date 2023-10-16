@@ -277,6 +277,8 @@ class GNNMaterialPatchDataset(torch.utils.data.Dataset):
         Get GNN-based material patch data set samples files paths.
     save_dataset(self)
         Save GNN-based material patch data set to file.
+    load_dataset(dataset_file_path)
+        Load GNN-based material patch data set.
     update_dataset_directory(self, dataset_directory, is_reload_data=False)
         Update directory where GNN-based material patch data set is stored.
     """
@@ -421,6 +423,34 @@ class GNNMaterialPatchDataset(torch.utils.data.Dataset):
         # Save GNN-based material patch data set
         with open(dataset_path, 'wb') as dataset_file:
             pickle.dump(self, dataset_file)
+    # -------------------------------------------------------------------------
+    @staticmethod
+    def load_dataset(dataset_file_path):
+        """Load GNN-based material patch data set.
+        
+        Parameters
+        ----------
+        dataset_file_path : str
+            GNN-based material patch data set file path.
+        
+        Returns
+        -------
+        dataset : GNNMaterialPatchDataset
+            GNN-based material patch data set.
+        """
+        # Check GNN-based material patch data set file
+        if not os.path.isfile(dataset_file_path):
+            raise RuntimeError('GNN-based material patch data set file has '
+                               'not been found:\n\n' + dataset_file_path)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Load GNN-based material patch data set
+        with open(dataset_file_path, 'rb') as dataset_file:
+            dataset = pickle.load(dataset_file)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Check GNN-based material patch data set
+        if not isinstance(dataset, GNNMaterialPatchDataset):
+            raise RuntimeError('Loaded GNN-based material patch data set '
+                               'is not a GNNMaterialPatchDataset.')
     # -------------------------------------------------------------------------
     def update_dataset_directory(self, dataset_directory,
                                  is_reload_data=False):
