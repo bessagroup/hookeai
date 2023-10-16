@@ -98,7 +98,8 @@ def train_model(n_train_steps, dataset, model_init_args, learning_rate_init,
 
     save_every : int, default=None
         Save GNN-based material patch model every save_every training steps.
-        If None, then saves only last training step.
+        If None, then saves only last training step and best performance
+        states.
     device_type : {'cpu', 'cuda'}, default='cpu'
         Type of device on which torch.Tensor is allocated.
     seed : int, default=None
