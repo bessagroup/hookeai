@@ -52,7 +52,7 @@ def generate_dataset(case_study_name, sim_dataset_file_path, dataset_directory,
             read_simulation_dataset_from_file(sim_dataset_file_path)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     else:
-        raise RuntimeError('Unknown material patch simulation data set type.')
+        raise RuntimeError('Unknown case study.')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Generate GNN-based material patch data set samples files
     dataset_directory, dataset_samples_files = generate_dataset_samples_files(
