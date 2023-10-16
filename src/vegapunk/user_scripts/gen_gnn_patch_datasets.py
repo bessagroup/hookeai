@@ -17,7 +17,7 @@ import numpy as np
 # Local
 from material_patch.patch_dataset import read_simulation_dataset_from_file
 from gnn_model.gnn_patch_dataset import generate_dataset_samples_files, \
-    get_dataset_sample_files_from_dir, GNNMaterialPatchDataset, split_dataset
+    GNNMaterialPatchDataset, split_dataset
 from ioput.iostandard import make_directory
 #
 #                                                          Authorship & Credits
@@ -99,7 +99,7 @@ if __name__ == "__main__":
         raise RuntimeError('The case study directory has not been found:\n\n'
                            + case_study_dir)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Set simulation data set size
+    # Set material patch simulation data set size
     n_sample = 5
     # Set material patch simulation data set file path
     sim_dataset_file_path = os.path.join(
