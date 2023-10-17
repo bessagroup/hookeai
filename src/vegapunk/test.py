@@ -503,3 +503,69 @@ test_class = TestClassInit.init_from_call(10)
 
 print(type(test_class))
 print(test_class.x)
+
+"""
+    save_dir = '/home/bernardoferreira/Documents/temp'
+    
+    # Set loss history
+    loss_history = {
+        'dataset 1': list(np.random.uniform(low=0.0, high=1.0e4, size=20)),
+        'dataset 2': list(np.random.uniform(low=0.0, high=1.0e4, size=20))
+    }
+    
+    # Set learning rate history
+    lr_history = {
+        'dataset 1': list(np.random.uniform(low=0.0, high=1.0, size=20)),
+        'dataset 2': list(np.random.uniform(low=0.0, high=1.0, size=20))
+    }
+    
+    # Set loss type
+    loss_type = 'MSE'
+    # Set total number of training steps
+    total_n_strain_steps = 25
+    
+    plot_training_loss_history(loss_history, loss_type=loss_type,
+                               is_log_loss=True,
+                               total_n_train_steps=total_n_strain_steps,
+                               is_stdout_display=True)
+    
+    plot_training_loss_and_lr_history(
+        loss_history['dataset 1'], lr_history['dataset 1'],
+        loss_type=loss_type, is_log_loss=True, lr_type='step',
+        total_n_train_steps=total_n_strain_steps,
+        is_stdout_display=True)
+    
+    
+    testing_loss = np.random.uniform(low=1.0e3, high=1.0e4, size=(50, 4))
+    testing_loss[:, 0] = np.linspace(10, 1000, 50)
+    training_loss = np.random.uniform(low=1.0e3, high=1.0e4, size=(50, 4))
+    training_loss[:, 0] = np.linspace(10, 1000, 50)
+    
+    plot_loss_convergence_test(testing_loss, training_loss,
+                               loss_type=loss_type,
+                               is_log_loss=True, loss_scale='linear',
+                               is_stdout_display=True,
+                               is_save_fig=True, save_dir=save_dir)
+    
+    
+    grouth_truth = list(np.random.uniform(low=0.0, high=1.0, size=20))
+    testing = list(np.random.uniform(low=0.0, high=1.0, size=20))
+    training = list(np.random.uniform(low=0.0, high=1.0, size=20))
+    
+    
+    testing_xy = np.concatenate((np.array(grouth_truth).reshape(-1, 1),
+                                 np.array(testing).reshape(-1, 1)),
+                                 axis=1)
+    training_xy = np.concatenate((np.array(grouth_truth).reshape(-1, 1),
+                                  np.array(training).reshape(-1, 1)),
+                                  axis=1)
+    
+    prediction_sets = {'Training': training_xy, 'Testing': testing_xy}
+    
+    
+    plot_truth_vs_prediction(prediction_sets, error_bound=0.1,
+                             is_normalized=True,
+                             save_dir=None, is_save_fig=False,
+                             is_stdout_display=True)
+
+"""
