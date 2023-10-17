@@ -116,17 +116,8 @@ def predict(predict_directory, dataset, model_directory,
     model = GNNMaterialPatchModel.init_model_from_file(model_directory)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Load GNN-based material patch model state
-    if load_model_state == 'best':
-        _ = model.load_model_state(special_state='best',
-                                   is_remove_posterior=True)
-    elif load_model_state == 'last':
-        _ = model.load_model_state(special_state='last',
-                                   is_remove_posterior=True)
-    elif isinstance(load_model_state, int):
-        _ = model.load_model_state(training_step=load_model_state,
-                                   is_remove_posterior=True)
-    else:
-        _ = model.load_model_state()
+    _ = model.load_model_state(load_model_state=load_model_state,
+                               is_remove_posterior=True)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Get model data normalization
     is_data_normalization = model.is_data_normalization

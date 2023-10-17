@@ -455,7 +455,8 @@ class GNNMaterialPatchModel(torch.nn.Module):
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         return node_internal_forces
     # -------------------------------------------------------------------------
-    def save_model_state(self, training_step=None, is_best_state=False):
+    def save_model_state(self, training_step=None, is_best_state=False,
+                         is_remove_posterior=True):
         """Save material patch model state to file.
         
         Material patch model state file is stored in model_directory under the
@@ -463,7 +464,7 @@ class GNNMaterialPatchModel(torch.nn.Module):
         training_step is known.
         
         Material patch model state file corresponding to the best performance
-        is stored in model_directory under the name
+        is stored in model_directory under the name < model_name >-best.pt or
         < model_name >-< training_step >-best.pt if training_step is known.
         
         Parameters
@@ -471,8 +472,12 @@ class GNNMaterialPatchModel(torch.nn.Module):
         training_step : int, default=None
             Training step corresponding to current material patch model state.
         is_best_state : bool, default=False
-            If True and training step is known, save copy of material patch
-            model state file corresponding to the best performance.
+            If True, save material patch model state file corresponding to the
+            best performance instead of regular state file.
+        is_remove_posterior : bool, default=True
+            Remove material patch model and optimizer state files corresponding
+            to training steps posterior to the saved state file. Effective only
+            if saved training step is known.
         """
         # Check material patch model directory
         if not os.path.isdir(self.model_directory):
@@ -485,50 +490,51 @@ class GNNMaterialPatchModel(torch.nn.Module):
         if isinstance(training_step, int):
             model_state_file += '-' + str(training_step)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set material patch model state corresponding to the best performance
+        if is_best_state:
+            # Append best performance
+            model_state_file += '-' + 'best'
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Remove any existent best material patch model state file
+            self._remove_best_state_files()
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Set material patch model state file path
         model_path = os.path.join(self.model_directory,
                                   model_state_file + '.pt')
         # Save material patch model state
         torch.save(self.state_dict(), model_path)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        # Save material patch model state corresponding to the best performance
-        if is_best_state and isinstance(training_step, int):                
-            # Remove any existent best material patch model state file
-            self._remove_best_state_files()
-            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            # Set model state filename
-            model_state_file = \
-                self.model_name + '-' + str(training_step) + '-best'
-            # Set material patch model state file path
-            model_path = os.path.join(self.model_directory,
-                                      model_state_file + '.pt')
-            # Save material patch model state
-            torch.save(self.state_dict(), model_path)
+        # Delete model training step state files posterior to saved training
+        # step
+        if isinstance(training_step, int) and is_remove_posterior:
+            self._remove_posterior_state_files(training_step)  
     # -------------------------------------------------------------------------
-    def load_model_state(self, training_step=None, is_remove_posterior=True,
-                         special_state=None):
+    def load_model_state(self, load_model_state=None,
+                         is_remove_posterior=True):
         """Load material patch model state from file.
         
         Material patch model state file is stored in model_directory under the
         name < model_name >.pt or < model_name >-< training_step >.pt if
         training_step is known.
         
-        If available, material patch model state file corresponding to the best
-        performance is stored in model_directory under the name
-        < model_name >-< training_step >-best.pt.
+        Material patch model state file corresponding to the best performance
+        is stored in model_directory under the name < model_name >-best.pt or
+        < model_name >-< training_step >-best.pt if training_step if known.
         
         Parameters
-        ----------
-        special_state : {'last', 'best'}, default=None
-            Load unique material patch model state file. Overriden if
-            training_step is provided. Options:
+        ----------            
+        load_model_state : {'best', 'last', int, None}, default=None
+            Load available GNN-based material patch model state from the model
+            directory. Options:
             
-            'last' : Highest training step available
+            'best'      : Model state corresponding to best performance
             
-            'best' : Best performance available
-
-        training_step : int, default=None
-            Training step corresponding to loaded material patch model state.
+            'last'      : Model state corresponding to highest training step
+            
+            int         : Model state corresponding to given training step
+            
+            None   : Model default state file
+        
         is_remove_posterior : bool, default=True
             Remove material patch model state files corresponding to training
             steps posterior to the loaded state file. Effective only if
@@ -545,17 +551,46 @@ class GNNMaterialPatchModel(torch.nn.Module):
             raise RuntimeError('The material patch model directory has not '
                                'been found:\n\n' + self.model_directory)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        # Set model state filename
-        if isinstance(training_step, int):
-            # Set model state filename with training step
-            model_state_file = self.model_name + '-' + str(int(training_step))
+        if load_model_state == 'best':
+            # Get state files in material patch model directory
+            directory_list = os.listdir(self.model_directory)
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Initialize model best state files training steps
+            best_state_steps = []
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Loop over files in material patch model directory
+            for filename in directory_list:
+                # Check if file is model training step best state file
+                is_best_state_file, best_state_step = \
+                    self._check_best_state_file(filename)
+                # Store model best state file training step
+                if is_best_state_file:
+                    best_state_steps.append(best_state_step)
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Set model best state file
+            if not best_state_steps:
+                raise RuntimeError('Material patch model best state file '
+                                   'has not been found in directory:\n\n'
+                                   + self.model_directory)
+            elif len(best_state_steps) > 1:
+                raise RuntimeError('Two or more material patch model best '
+                                   'state files have been found in directory:'
+                                   '\n\n' + self.model_directory)
+            else:
+                # Set best state training step
+                training_step = best_state_steps[0]
+                # Set model best state file
+                model_state_file = self.model_name
+                if isinstance(training_step, int):
+                    model_state_file += '-' + str(training_step)      
+                model_state_file += '-' + 'best'
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Delete model training step state files posterior to loaded
             # training step
-            if is_remove_posterior:
+            if isinstance(training_step, int) and is_remove_posterior:
                 self._remove_posterior_state_files(training_step)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        elif special_state == 'last':
+        elif load_model_state == 'last':
             # Get state files in material patch model directory
             directory_list = os.listdir(self.model_directory)
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -582,43 +617,17 @@ class GNNMaterialPatchModel(torch.nn.Module):
                                    'been found in directory:\n\n'
                                    + self.model_directory)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        elif special_state == 'best':
-            # Get state files in material patch model directory
-            directory_list = os.listdir(self.model_directory)
-            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            # Initialize model best state files training steps
-            best_state_steps = []
-            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            # Loop over files in material patch model directory
-            for filename in directory_list:
-                # Check if file is model training step best state file
-                is_best_state_file, best_state_step = \
-                    self._check_best_state_file(filename)
-                # Store model best state file training step
-                if is_best_state_file:
-                    best_state_steps.append(best_state_step)
-            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            # Set model best state file
-            if not best_state_steps:
-                raise RuntimeError('Material patch model best state file and '
-                                   'corresponding training step have not been '
-                                   'found in directory:\n\n'
-                                   + self.model_directory)
-            elif len(best_state_steps) > 1:
-                raise RuntimeError('Two or more material patch model best '
-                                   'state files and corresponding training '
-                                   'steps have been found in directory:\n\n'
-                                   + self.model_directory)
-            else:
-                # Set best state training step
-                training_step = best_state_steps[0]
-                # Set model best state file
-                model_state_file = \
-                    self.model_name + '-' + str(training_step) + '-best'
+        # Set model state filename
+        elif isinstance(load_model_state, int):
+            # Get training step
+            training_step = load_model_state
+            # Set model state filename with training step
+            model_state_file = self.model_name + '-' + str(int(training_step))
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Delete model training step state files posterior to loaded
             # training step
-            self._remove_posterior_state_files(training_step)
+            if is_remove_posterior:
+                self._remove_posterior_state_files(training_step)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         else:
             # Set model state filename
@@ -663,20 +672,19 @@ class GNNMaterialPatchModel(torch.nn.Module):
         is_state_file = bool(re.search(r'^' + self.model_name + r'-[0-9]+'
                                        + r'\.pt', filename))
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        training_step = None
         if is_state_file:
             # Get model state training step
             training_step = int(os.path.splitext(filename)[0].split('-')[-1])
-        else:
-            training_step = None
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         return is_state_file, training_step
     # -------------------------------------------------------------------------
     def _check_best_state_file(self, filename):
-        """Check if file is model training step best state file.
+        """Check if file is model best state file.
         
         Material patch model state file corresponding to the best performance
-        is stored in model_directory under the name
-        < model_name >-< training_step >-best.pt.
+        is stored in model_directory under the name < model_name >-best.pt. or
+        < model_name >-< training_step >-best.pt if the training step is known.
         
         Parameters
         ----------
@@ -689,17 +697,17 @@ class GNNMaterialPatchModel(torch.nn.Module):
             True if model training step state file, False otherwise.
         training_step : {None, int}
             Training step corresponding to model state file if
-            is_best_state_file=True, None otherwise.
+            is_best_state_file=True and training step is known, None otherwise.
         """
         # Check if file is model training step best state file
-        is_best_state_file = bool(re.search(r'^' + self.model_name + r'-[0-9]+'
-                                            + r'-best' + r'\.pt', filename))
+        is_best_state_file = bool(re.search(r'^' + self.model_name
+                                            + r'-?[0-9]*' + r'-best' + r'\.pt',
+                                            filename))
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        training_step = None
         if is_best_state_file:
             # Get model state training step
             training_step = int(os.path.splitext(filename)[0].split('-')[-2])
-        else:
-            training_step = None
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         return is_best_state_file, training_step
     # -------------------------------------------------------------------------
@@ -711,7 +719,7 @@ class GNNMaterialPatchModel(torch.nn.Module):
         training_step : int
             Training step.
         """
-        # Get state files in material patch model directory
+        # Get files in material patch model directory
         directory_list = os.listdir(self.model_directory)
         # Loop over files in material patch model directory
         for filename in directory_list:
@@ -724,11 +732,11 @@ class GNNMaterialPatchModel(torch.nn.Module):
     # -------------------------------------------------------------------------
     def _remove_best_state_files(self):
         """Delete existent model best state files."""
-        # Get state files in material patch model directory
+        # Get files in material patch model directory
         directory_list = os.listdir(self.model_directory)
         # Loop over files in material patch model directory
         for filename in directory_list:
-            # Check if file is model training step best state file
+            # Check if file is model best state file
             is_best_state_file, _ = self._check_best_state_file(filename)
             # Delete state file
             if is_best_state_file:

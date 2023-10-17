@@ -249,7 +249,7 @@ def test_save_and_load_model_state(tmp_path, opt_algorithm):
     loaded_step = load_training_state(model, opt_algorithm, optimizer)
     # # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ 
     # Check loaded model state training step
-    if loaded_step is not None:
+    if loaded_step != 0:
         errors.append('Unknown training step was not properly recovered from '
                       'file.')
     # Check model state parameters
@@ -265,6 +265,8 @@ def test_save_and_load_model_state(tmp_path, opt_algorithm):
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set number of training steps
     n_train_steps = 5
+    # Set random best states during training process
+    best_training_states = (1, 3)
     # Loop over training steps
     for step in range(n_train_steps):
         # Build GNN-based material patch model (reinitializing parameters to
@@ -275,12 +277,10 @@ def test_save_and_load_model_state(tmp_path, opt_algorithm):
         if opt_algorithm == 'adam':
             optimizer = torch.optim.Adam(model.parameters(recurse=True))
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        # Set random best states during training process
-        best_training_states = (1, 3)
-        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Save model and optimizer states at given training step
-        save_training_state(model, optimizer, step,
-                            is_best_state=step in best_training_states)
+        save_training_state(model, optimizer, step)
+        if step in best_training_states:
+            save_training_state(model, optimizer, step, is_best_state=True)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Store model state
         saved_model_states.append(model.state_dict())
@@ -292,7 +292,7 @@ def test_save_and_load_model_state(tmp_path, opt_algorithm):
                                         + '-' + str(step) + '.pt')
         # Check model state file
         if not os.path.isfile(model_state_path):
-            errors.append('Model state file has not been found.')
+            errors.append('Model state file has not been found.')        
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Set optimizer state file path
         optimizer_state_path = \
@@ -301,6 +301,25 @@ def test_save_and_load_model_state(tmp_path, opt_algorithm):
         # Check optimizer state file
         if not os.path.isfile(optimizer_state_path):
             errors.append('Optimizer state file has not been found.')
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Check best performance state files
+        if step in best_training_states:
+            # Set model state state file path
+            model_state_path = \
+                os.path.join(model.model_directory,
+                             model.model_name + '-' + str(step) + '-best'
+                             + '.pt')
+            # Check model state file
+            if not os.path.isfile(model_state_path):
+                errors.append('Model state file has not been found.')
+            # Set optimizer state file path
+            optimizer_state_path = \
+                os.path.join(model.model_directory,
+                             model.model_name + '_optim-' + str(step) + '-best'
+                             + '.pt')
+            # Check optimizer state file
+            if not os.path.isfile(optimizer_state_path):
+                errors.append('Optimizer state file has not been found.')
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Build GNN-based material patch model (reinitializing parameters to
         # emulate parameters update)

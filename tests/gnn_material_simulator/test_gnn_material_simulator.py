@@ -719,9 +719,10 @@ def test_save_and_load_model_state(tmp_path):
     # Get model state
     saved_state_dict_0 = model.state_dict()
     # Save material patch model state to file
+    model.save_model_state(training_step=0)
     model.save_model_state(training_step=0, is_best_state=True)
     # Load material patch model state from file
-    loaded_training_step = model.load_model_state(training_step=0)
+    loaded_training_step = model.load_model_state(load_model_state=0)
     # Get model state
     loaded_state_dict_0 = model.state_dict()
     # Check loaded model state training step
@@ -739,9 +740,10 @@ def test_save_and_load_model_state(tmp_path):
     # Get model state
     saved_state_dict_1 = model.state_dict()
     # Save material patch model state to file
+    model.save_model_state(training_step=1)
     model.save_model_state(training_step=1, is_best_state=True)
     # Load material patch model state from file
-    loaded_training_step = model.load_model_state(training_step=1)
+    loaded_training_step = model.load_model_state(load_model_state=1)
     # Get model state
     loaded_state_dict_1 = model.state_dict()
     # Check loaded model state training step
@@ -754,7 +756,7 @@ def test_save_and_load_model_state(tmp_path):
                       'state was not properly recovered from file.')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Load material patch model state from file
-    loaded_training_step = model.load_model_state(training_step=0,
+    loaded_training_step = model.load_model_state(load_model_state=0,
                                                   is_remove_posterior=False)
     # Get model state
     loaded_state_dict_0 = model.state_dict()
@@ -768,7 +770,7 @@ def test_save_and_load_model_state(tmp_path):
                       'state was not properly recovered from file.')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Load material patch model state from file
-    loaded_training_step = model.load_model_state(special_state='last')
+    loaded_training_step = model.load_model_state(load_model_state='last')
     # Get model state
     loaded_state_dict_1 = model.state_dict()
     # Check loaded model state training step
@@ -781,7 +783,7 @@ def test_save_and_load_model_state(tmp_path):
                       'state was not properly recovered from file.')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Load material patch model state from file
-    loaded_training_step = model.load_model_state(special_state='best')
+    loaded_training_step = model.load_model_state(load_model_state='best')
     # Get model state
     loaded_state_dict_best = model.state_dict()
     # Check loaded model state training step
@@ -794,7 +796,7 @@ def test_save_and_load_model_state(tmp_path):
                       'state was not properly recovered from file.')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Load material patch model state from file
-    loaded_training_step = model.load_model_state(training_step=0,
+    loaded_training_step = model.load_model_state(load_model_state=0,
                                                   is_remove_posterior=True)
     # Get model state
     loaded_state_dict_0 = model.state_dict()
@@ -823,24 +825,24 @@ def test_save_and_load_model_state_invalid(tmp_path):
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     with pytest.raises(RuntimeError):
         # Test loading unexistent material patch model training step state file
-        _ = model.load_model_state(training_step=0)
+        _ = model.load_model_state(load_model_state=0)
     with pytest.raises(RuntimeError):
         # Test loading unexistent material patch model best state file
-        _ = model.load_model_state(special_state='best')
+        _ = model.load_model_state(load_model_state='best')
     with pytest.raises(RuntimeError):
         # Test loading ambiguous material patch model best state file
         torch.save([], os.path.join(model.model_directory,
                                     f'{model.model_name}-0-best.pt'))
         torch.save([], os.path.join(model.model_directory,
                                     f'{model.model_name}-1-best.pt'))
-        _ = model.load_model_state(special_state='best')
+        _ = model.load_model_state(load_model_state='best')
     with pytest.raises(RuntimeError):
         # Test loading unexistent material patch model latest training step
         # state file
-        _ = model.load_model_state(special_state='last')
+        _ = model.load_model_state(load_model_state='last')
     with pytest.raises(RuntimeError):
         # Test loading unexistent material patch model default state file
-        _ = model.load_model_state(special_state='default')
+        _ = model.load_model_state(load_model_state=None)
     with pytest.raises(RuntimeError):
         # Test detection of unexistent material patch model directory
         model.model_directory = 'unknown_dir'

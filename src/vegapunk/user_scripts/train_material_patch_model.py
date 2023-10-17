@@ -16,7 +16,8 @@ import os
 import numpy as np
 # Local
 from gnn_model.gnn_patch_dataset import GNNMaterialPatchDataset
-from gnn_model.training import train_model
+from gnn_model.training import train_model, read_loss_history_from_file
+from gnn_model.evaluation_metrics import plot_training_loss_history
 from ioput.iostandard import make_directory
 #
 #                                                          Authorship & Credits
@@ -54,7 +55,7 @@ def perform_model_standard_training(case_study_name, dataset_file_path,
         model_name = 'material_patch_model'
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Set number of training steps
-        n_train_steps = 1
+        n_train_steps = 100
         # Set batch size
         batch_size = 1
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -92,14 +93,27 @@ def perform_model_standard_training(case_study_name, dataset_file_path,
     dataset = GNNMaterialPatchDataset.load_dataset(dataset_file_path)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Training of GNN-based material patch model
-    train_model(n_train_steps, dataset, model_init_args, lr_init,
-                opt_algorithm=opt_algorithm,
-                lr_scheduler_type=lr_scheduler_type,
-                lr_scheduler_kwargs=lr_scheduler_kwargs, loss_type=loss_type,
-                loss_kwargs=loss_kwargs,
-                batch_size=batch_size, is_sampler_shuffle=is_sampler_shuffle,
-                load_model_state=None, save_every=None, device_type='cpu',
-                seed=None, is_verbose=is_verbose)
+    model = train_model(n_train_steps, dataset, model_init_args, lr_init,
+                        opt_algorithm=opt_algorithm,
+                        lr_scheduler_type=lr_scheduler_type,
+                        lr_scheduler_kwargs=lr_scheduler_kwargs,
+                        loss_type=loss_type, loss_kwargs=loss_kwargs,
+                        batch_size=batch_size,
+                        is_sampler_shuffle=is_sampler_shuffle,
+                        load_model_state=None, save_every=None,
+                        device_type='cpu', seed=None, is_verbose=is_verbose)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Set loss history record file path
+    loss_record_path = os.path.join(model.model_directory,
+                                    'loss_history_record.pkl')
+    # Read training process loss history
+    loss_type, loss_history = read_loss_history_from_file(loss_record_path)
+    loss_histories = {f'$n_s = {len(dataset)}$': loss_history,}
+    
+    # Plot model training process loss history
+    plot_training_loss_history(loss_histories, loss_type.upper(),
+                               save_dir=model_directory,
+                               is_save_fig=True, is_stdout_display=True)
 # =============================================================================
 def set_default_training_options():
     """Set default GNN-based material patch model training options.
