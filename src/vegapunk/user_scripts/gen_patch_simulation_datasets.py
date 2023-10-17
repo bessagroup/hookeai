@@ -79,6 +79,9 @@ def generate_dataset(case_study_name, simulation_directory, n_sample,
                                              '2': (-0.2, 0.2),
                                              '3': (-0.2, 0.2),
                                              '4': (-0.2, 0.2)}
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Save patch plot
+        is_save_plot_patch = True
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~    
     else:
         raise RuntimeError('Unknown case study.')
