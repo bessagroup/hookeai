@@ -264,6 +264,8 @@ class GNNMaterialPatchDataset(torch.utils.data.Dataset):
         and stored in attribute dataset_samples_data. If False, the dataset
         object holds solely the samples data files paths and load the
         corresponding files when accessing a given sample data.
+    _dataset_basename : str
+        Data set file base name.
     
     Methods
     -------
