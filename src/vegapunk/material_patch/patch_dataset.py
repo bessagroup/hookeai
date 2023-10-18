@@ -2,23 +2,18 @@
 
 Functions
 ---------
-generate_material_patch_dataset(n_dim, links_bin_path, strain_formulation, \
-                                analysis_type, elem_type, n_elems_per_dim, \
-                                patch_material_data, simulation_directory, \
-                                n_sample=1, patch_dims_ranges=None, \
-                                avg_deformation_ranges=None, \
-                                edge_deformation_order_ranges=None, \
-                                edge_deformation_magnitude_ranges=None,
-                                max_iter_per_patch=10, links_input_params=None)
+generate_material_patch_dataset
     Generate and simulate a set of deformed finite element material patches.
-generate_dataset_output_data(dataset_input_data, constant_parameters={})
+generate_dataset_output_data
     Generate material patches simulations output data.   
-simulate_material_patch(design)
+simulate_material_patch
     Generate and simulate finite element material patch design sample.
-get_default_design_parameters(n_dim)
+get_default_design_parameters
     Generate finite element material patch design space default parameters.
-read_simulation_dataset_from_file(dataset_file_path)
+read_simulation_dataset_from_file
     Read material patch finite element data set from file.
+write_dataset_parameters_file
+    Write material patch data set generation input parameters file.
 """
 #
 #                                                                       Modules
@@ -217,6 +212,20 @@ def generate_material_patch_dataset(
         elem_type = default_parameters['elem_type']
     if n_elems_per_dim is None:
         n_elems_per_dim = default_parameters['n_elems_per_dim']
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    if is_verbose:
+        print('\n> Writting data set generation parameters file...')
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Write material patch data set generation input parameters file
+    write_dataset_parameters_file(
+        simulation_directory, n_sample=n_sample, n_dim=n_dim,
+        strain_formulation=strain_formulation, analysis_type=analysis_type,
+        patch_dims_ranges=patch_dims_ranges,
+        elem_type=elem_type, n_elems_per_dim=n_elems_per_dim,
+        avg_deformation_ranges=avg_deformation_ranges,
+        edge_deformation_order_ranges=edge_deformation_order_ranges,
+        edge_deformation_magnitude_ranges=edge_deformation_magnitude_ranges,
+        patch_material_data=patch_material_data)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     if is_verbose:
         print('\n> Setting input constant parameters...')
@@ -740,7 +749,44 @@ def read_simulation_dataset_from_file(dataset_file_path):
         dataset_simulation_data = pickle.load(dataset_file)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     return dataset_simulation_data
+# =============================================================================
+def write_dataset_parameters_file(simulation_directory, **kwargs):
+    """Write material patch data set generation input parameters file.
     
+    Parameters file is stored in model_directory under the name
+    dataset_parameters.dat.
     
-    
+    Parameters
+    ----------
+    simulation_directory : str
+        Directory where files associated with the generation of the material
+        patch finite element simulations dataset are written.
+    kwargs: dict
+        Material patch dataset generation input parameters written to file.
+    """
+    # Set data set generation parameters file path
+    parameters_file_path = os.path.join(os.path.normpath(simulation_directory),
+                                        'dataset_parameters' + '.dat')
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Initialize file content
+    parameters = ['Material path data set generation input parameters\n',
+                  '--------------------------------------------------\n']
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Loop over data set generation parameters
+    for key1, val1 in kwargs.items():
+        # Append parameter
+        if isinstance(val1, dict):
+            parameters.append(f'\n"{str(key1)}":\n')
+            for key2, val2 in val1.items():
+                if isinstance(val2, dict):
+                    parameters.append(f'\n  "{str(key2)}":\n')
+                    for key3, val3 in val2.items():
+                        parameters.append(f'    "{str(key3)}": {str(val3)}\n')
+                else:
+                    parameters.append(f'  "{str(key2)}": {str(val2)}\n')
+        else:
+            parameters.append(f'\n"{str(key1)}":  {str(val1)}\n')
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Write data set generation parameters file
+    open(parameters_file_path, 'w').writelines(parameters)
     
