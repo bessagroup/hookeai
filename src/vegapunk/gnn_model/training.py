@@ -228,7 +228,7 @@ def train_model(n_train_steps, dataset, model_init_args, lr_init,
     if is_verbose:
         normalization_str = 'Yes' if is_data_normalization else 'No'
         print(f'\n> Data normalization: {normalization_str}')
-        print('\n> Starting training process...\n')
+        print('\n\n> Starting training process...\n')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Loop over training iterations
     while is_keep_training:
