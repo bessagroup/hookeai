@@ -275,10 +275,12 @@ class GNNMaterialPatchDataset(torch.utils.data.Dataset):
         Get directory where the GNN-based material patch data set is stored.
     get_dataset_sample_files(self)
         Get GNN-based material patch data set samples files paths.
+    get_dataset_basename(self)
+        Get data set file base name.
     save_dataset(self)
         Save GNN-based material patch data set to file.
     load_dataset(dataset_file_path)
-        Load GNN-based material patch data set.
+        Load PyTorch data set.
     update_dataset_directory(self, dataset_directory, is_reload_data=False)
         Update directory where GNN-based material patch data set is stored.
     """
@@ -326,7 +328,7 @@ class GNNMaterialPatchDataset(torch.utils.data.Dataset):
         # Store data set samples file paths
         self._dataset_sample_files = dataset_sample_files
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        # Set data set sample data storange flag
+        # Set data set sample data storage flag
         self._is_store_dataset = is_store_dataset
         # Load data set sample files data
         self._dataset_samples = []
@@ -334,7 +336,10 @@ class GNNMaterialPatchDataset(torch.utils.data.Dataset):
             # Loop over sample files
             for file_path in dataset_sample_files:
                 # Load sample
-                self._dataset_samples.append(torch.load(file_path))       
+                self._dataset_samples.append(torch.load(file_path))
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set data set file base name
+        self._dataset_basename = 'material_patch_graph_dataset'
     # -------------------------------------------------------------------------
     def __len__(self):
         """Return size of data set (number of samples).
@@ -391,6 +396,16 @@ class GNNMaterialPatchDataset(torch.utils.data.Dataset):
         """
         return self._dataset_sample_files
     # -------------------------------------------------------------------------
+    def get_dataset_basename(self):
+        """Get data set file base name.
+        
+        Returns
+        -------
+        dataset_basename : str
+            Data set file base name.
+        """
+        return self._dataset_basename
+    # -------------------------------------------------------------------------
     def save_dataset(self, is_append_n_sample=True):
         """Save GNN-based material patch data set to file.
         
@@ -411,7 +426,7 @@ class GNNMaterialPatchDataset(torch.utils.data.Dataset):
                                + self._dataset_directory)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Set GNN-based material patch data set file
-        dataset_file = 'material_patch_graph_dataset'
+        dataset_file = self._dataset_basename
         # Append data set size
         if is_append_n_sample:
             dataset_file += f'_n{len(self._dataset_sample_files)}'
@@ -426,31 +441,31 @@ class GNNMaterialPatchDataset(torch.utils.data.Dataset):
     # -------------------------------------------------------------------------
     @staticmethod
     def load_dataset(dataset_file_path):
-        """Load GNN-based material patch data set.
+        """Load PyTorch data set.
         
         Parameters
         ----------
         dataset_file_path : str
-            GNN-based material patch data set file path.
+            PyTorch data set file path.
         
         Returns
         -------
-        dataset : GNNMaterialPatchDataset
-            GNN-based material patch data set.
+        dataset : torch.utils.data.Dataset
+            PyTorch data set.
         """
-        # Check GNN-based material patch data set file
+        # Check PyTorch data set file
         if not os.path.isfile(dataset_file_path):
-            raise RuntimeError('GNN-based material patch data set file has '
-                               'not been found:\n\n' + dataset_file_path)
+            raise RuntimeError('PyTorch data set file has not been found:\n\n'
+                               + dataset_file_path)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        # Load GNN-based material patch data set
+        # Load PyTorch data set
         with open(dataset_file_path, 'rb') as dataset_file:
             dataset = pickle.load(dataset_file)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        # Check GNN-based material patch data set
-        if not isinstance(dataset, GNNMaterialPatchDataset):
-            raise RuntimeError('Loaded GNN-based material patch data set '
-                               'is not a GNNMaterialPatchDataset.')
+        # Check PyTorch data set
+        if not isinstance(dataset, torch.utils.data.Dataset):
+            raise RuntimeError('Loaded data set is not a '
+                               'torch.utils.data.Dataset.')
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         return dataset
     # -------------------------------------------------------------------------
@@ -494,43 +509,48 @@ class GNNMaterialPatchDataset(torch.utils.data.Dataset):
                 if self._is_store_dataset and is_reload_data:
                     self._dataset_samples[i] = torch.load(file_path)
 # =============================================================================
-def split_dataset(dataset, split_sizes, seed=None):
-    """Randomly split data set into non-overlapping parts.
+def split_dataset(dataset, split_sizes, is_save_subsets=False,
+                  subsets_directory=None, subsets_basename=None, seed=None):
+    """Randomly split data set into non-overlapping subsets.
     
     Parameters
     ----------
     dataset : torch.utils.data.Dataset
         Data set.
     split_sizes : dict
-        Size (item, float) for each data set split part name (key, str), where
-        size is a fraction contained between 0 and 1. The sum of all sizes must
-        equal 1.
+        Size (item, float) of each data subset name (key, str), where size is a
+        fraction contained between 0 and 1. The sum of all sizes must equal 1.
+    is_save_subsets : bool, False
+        If True, then save data subsets to files.
+    subsets_directory : str, default=None
+        Directory where the data subsets files are stored.
+    subset_basename : str, default=None
+        Subset file base name.
     seed : int, default=None
         Seed for random data set split generator.
     
     Returns
     -------
     dataset_split : dict
-        Split data set part (item, torch.utils.data.Dataset) for each data set
-        split part name (key, str).
+        Data subsets (key, str, item, torch.utils.data.Dataset).
     """
-    # Initialize data set split parts names and sizes
-    parts_names = []
-    parts_sizes = []
-    # Assemble data set split parts names and sizes
+    # Initialize data subsets names and sizes
+    subsets_names = []
+    subsets_sizes = []
+    # Assemble data subsets names and sizes
     for key, val in split_sizes.items():
-        # Check if part size is valid
+        # Check if subset size is valid
         if val < 0.0 or val > 1.0:
-            raise RuntimeError(f'Part size must be contained between 0 and 1. '
-                               f'Check part (size): {key} ({val})')
-        # Assemble part name and size
-        parts_names.append(str(key))
-        parts_sizes.append(val)
+            raise RuntimeError(f'Subset size must be contained between 0 and '
+                               f'1. Check subset (size): {key} ({val})')
+        # Assemble subset name and size
+        subsets_names.append(str(key))
+        subsets_sizes.append(val)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Check if split sizes are valid
-    if not np.isclose(np.sum(parts_sizes), 1.0):
-        raise RuntimeError('Sum of part split sizes must equal 1. '
-                           f'Current sum: {np.sum(parts_sizes):.2f}')
+    if not np.isclose(np.sum(subsets_sizes), 1.0):
+        raise RuntimeError('Sum of subset split sizes must equal 1. '
+                           f'Current sum: {np.sum(subsets_sizes):.2f}')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set random split generator
     if seed is not None:
@@ -538,14 +558,37 @@ def split_dataset(dataset, split_sizes, seed=None):
     else:
         generator = torch.Generator()
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Randomly split data set into non-overlapping parts
-    subsets_list = torch.utils.data.random_split(dataset, parts_sizes,
+    # Randomly split data set into non-overlapping subsets
+    subsets_list = torch.utils.data.random_split(dataset, subsets_sizes,
                                                  generator=generator)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Build data set split parts
+    # Build data subsets
     dataset_split = {}
-    for i, part in enumerate(parts_names):
-        dataset_split[str(part)] = subsets_list[i]
+    for i, subset in enumerate(subsets_names):
+        dataset_split[str(subset)] = subsets_list[i]
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Save data subsets files
+    if is_save_subsets:
+        # Check subsets directory
+        if not os.path.isdir(subsets_directory):
+            raise RuntimeError('The data subsets directory has not been '
+                               'specified or found:\n\n'
+                               + subsets_directory)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Loop over data subsets
+        for key, val in dataset_split.items():
+            # Set data subset file name
+            subset_file = ''
+            if subsets_basename is not None:
+                subset_file += f'{subsets_basename}_'
+            subset_file += f'{str(key)}_n{len(val)}'
+            # Set data subset file path
+            subset_path = os.path.join(subsets_directory,
+                                       subset_file + '.pkl')
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Save data subset
+            with open(subset_path, 'wb') as subset_file:
+                pickle.dump(val, subset_file)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~    
     return dataset_split
 # =============================================================================
