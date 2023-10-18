@@ -92,7 +92,7 @@ def train_model(n_train_steps, dataset, model_init_args, lr_init,
         Number of samples loaded per batch.
     is_sampler_shuffle : bool, default=False
         If True, shuffles data set samples at every epoch.
-    load_model_state : {'best', 'last', int, 'default'}, default=None
+    load_model_state : {'best', 'last', int, None}, default=None
         Load available GNN-based material patch model state from the model
         directory. Data scalers are also loaded from model initialization file.
         Options:
@@ -103,7 +103,7 @@ def train_model(n_train_steps, dataset, model_init_args, lr_init,
         
         int         : Model state corresponding to given training step
         
-        'default'   : Model default state file
+        None        : Model default state file
 
     save_every : int, default=None
         Save GNN-based material patch model every save_every training steps.

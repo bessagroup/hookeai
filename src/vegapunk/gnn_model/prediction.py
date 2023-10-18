@@ -38,7 +38,7 @@ __status__ = 'Planning'
 #
 # =============================================================================
 def predict(predict_directory, dataset, model_directory,
-            load_model_state='default', is_compute_loss=True, loss_type='mse',
+            load_model_state=None, is_compute_loss=True, loss_type='mse',
             loss_kwargs={}, device_type='cpu', seed=None, is_verbose=False):
     """Make predictions with GNN-based material patch model for given dataset.
     
@@ -61,7 +61,7 @@ def predict(predict_directory, dataset, model_directory,
         
         int         : Model state corresponding to given training step
         
-        'default'   : Model default state file
+        None        : Model default state file
         
     is_compute_loss : bool, default=True
         If True, computes predictions average loss. The computation of the
