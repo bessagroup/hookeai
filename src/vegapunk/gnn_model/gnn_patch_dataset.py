@@ -89,7 +89,7 @@ def generate_dataset_samples_files(dataset_directory, dataset_simulation_data,
     """
     if is_verbose:
         print('\nGenerate GNN-based material patch data set'
-              '\n------------------------------------------\n')
+              '\n------------------------------------------')
         start_time_sec = time.time()
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Check data set directory
@@ -104,8 +104,11 @@ def generate_dataset_samples_files(dataset_directory, dataset_simulation_data,
     # Initialize material patch data set samples files
     dataset_sample_files = []
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    if is_verbose:
+        print('\n> Starting graphs generation process...\n')
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Loop over samples
-    for i in tqdm.tqdm(range(n_sample), desc='> Generating data set: ',
+    for i in tqdm.tqdm(range(n_sample), desc='> Generating graphs: ',
                        disable=not is_verbose):
         # Check sample
         patch = dataset_simulation_data[i]['patch']
@@ -191,10 +194,16 @@ def generate_dataset_samples_files(dataset_directory, dataset_simulation_data,
                 is_overwrite_file=True)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     if is_verbose:
+        print('\n> Finished graphs generation process!\n')
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    if is_verbose:
         print('\n> Data set directory: ', dataset_directory)
         total_time_sec = time.time() - start_time_sec
+        avg_time_sec = total_time_sec/n_sample
         print(f'\n> Total generation time (s): '
-              f'{str(datetime.timedelta(seconds=int(total_time_sec)))}\n')
+              f'{str(datetime.timedelta(seconds=int(total_time_sec)))} | '
+              f'Avg. generation time per graph (s): '
+              f'{str(datetime.timedelta(seconds=int(avg_time_sec)))}\n')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ 
     return dataset_directory, dataset_sample_files
 # =============================================================================

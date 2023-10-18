@@ -361,6 +361,9 @@ def generate_material_patch_dataset(
     # Get samples input data (class pd.DataFrame)
     dataset_input_data = dataset.get_input_data()
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    if is_verbose:
+        print('\n> Starting samples generation process...\n')
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Generate samples simulation data                                             
     option = ('no_f3dasm', 'f3dasm')[0]
     if option == 'no_f3dasm':
@@ -415,17 +418,20 @@ def generate_material_patch_dataset(
         print('\n  > Prescribed number of material patch samples: ', n_sample)
         print('\n  > Successful material patch samples: ',
             '{:d}/{:d} ({:>.1f}%)'.format(n_success, n_sample,
-                                            100*n_success/n_sample))
+                                          100*n_success/n_sample))
         if n_failure > 0:
             print('\n  > Failed material patch samples: ',
                 '{:d}/{:d} ({:>.1f}%)'.format(n_failure, n_sample,
-                                                100*n_failure/n_sample))
+                                              100*n_failure/n_sample))
             print('\n    > Non-admissible deformed configuration: ',
                 '{:d}/{:d} ({:>.1f}%)'.format(n_fail_patch, n_sample,
-                                                100*n_fail_patch/n_sample))
+                                              100*n_fail_patch/n_sample))
             print('    > Failed finite element simulation: ',
                 '{:d}/{:d} ({:>.1f}%)'.format(n_fail_simulation, n_sample,
                                               100*n_fail_simulation/n_sample))
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    if is_verbose:
+        print('\n> Finished material patches generation process!\n')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     if is_save_simulation_dataset:
         if is_verbose:
@@ -447,8 +453,11 @@ def generate_material_patch_dataset(
     if is_verbose:
         print('\n> Data set directory: ', simulation_directory)
         total_time_sec = time.time() - start_time_sec
+        avg_time_sec = total_time_sec/n_sample
         print(f'\n> Total generation time (s): '
-              f'{str(datetime.timedelta(seconds=int(total_time_sec)))}\n')
+              f'{str(datetime.timedelta(seconds=int(total_time_sec)))} | '
+              f'Avg. generation time per patch (s): '
+              f'{str(datetime.timedelta(seconds=int(avg_time_sec)))}\n')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     return dataset_simulation_data
 # =============================================================================
