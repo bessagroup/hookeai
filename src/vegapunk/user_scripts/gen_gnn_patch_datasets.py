@@ -42,6 +42,11 @@ def generate_dataset(case_study_name, sim_dataset_file_path, dataset_directory,
         sample data files.
     is_verbose : bool, default=False
         If True, enable verbose output.
+        
+    Returns
+    -------
+    dataset : GNNMaterialPatchDataset
+        GNN-based material patch data set.
     """
     # Set default files and directories storage options
     sample_file_basename, is_save_plot_patch = set_default_saving_options()
@@ -61,14 +66,12 @@ def generate_dataset(case_study_name, sim_dataset_file_path, dataset_directory,
         is_save_plot_patch=is_save_plot_patch, is_verbose=is_verbose)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Initialize GNN-based material patch data set
-    dataset = GNNMaterialPatchDataset(dataset_directory, dataset_samples_files)
+    dataset = GNNMaterialPatchDataset(dataset_directory, dataset_samples_files,
+                                      is_store_dataset=False)
     # Save GNN-based material patch data set to file
     dataset.save_dataset(is_append_n_sample=True)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Randomly split data set into training, validation and testing
-    split_sizes = {'training': 0.6, 'validation': 0.2, 'testing': 0.2}
-    # Split data set
-    dataset_split = split_dataset(dataset, split_sizes)
+    return dataset
 # =============================================================================
 def set_default_saving_options():
     """Set default files and directories storage options.
@@ -113,10 +116,17 @@ if __name__ == "__main__":
     dataset_directory = os.path.join(os.path.normpath(case_study_dir),
                                      '1_dataset')
     # Create data set directory
-    if not os.path.isdir(dataset_directory):
-        make_directory(dataset_directory)
+    make_directory(dataset_directory, is_overwrite=True)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Generate GNN-based material patch data set
-    generate_dataset(case_study_name, sim_dataset_file_path, dataset_directory,
-                     is_verbose=True)
+    dataset = generate_dataset(case_study_name, sim_dataset_file_path,
+                               dataset_directory, is_verbose=True)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Randomly split data set into training, validation and testing
+    split_sizes = {'training': 0.6, 'validation': 0.2, 'testing': 0.2}
+    # Split data set
+    dataset_split = \
+        split_dataset(dataset, split_sizes, is_save_subsets=True,
+                      subsets_basename=dataset.get_dataset_basename(),
+                      subsets_directory=dataset.get_dataset_directory())
 
