@@ -1,4 +1,4 @@
-"""User script: Train Graph Neural Network based material patch model."""
+"""User script: Train GNN-based material patch model."""
 #
 #                                                                       Modules
 # =============================================================================
@@ -12,8 +12,7 @@ if root_dir not in sys.path:
     sys.path.insert(0, root_dir)
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 import os
-# Third-party
-import numpy as np
+import re
 # Local
 from gnn_model.gnn_patch_dataset import GNNMaterialPatchDataset
 from gnn_model.training import train_model, read_loss_history_from_file
@@ -170,20 +169,35 @@ if __name__ == "__main__":
     if not os.path.isdir(case_study_dir):
         raise RuntimeError('The case study directory has not been found:\n\n'
                            + case_study_dir)
-    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Set GNN-based material patch data set size
-    n_sample = 5
-    # Set GNN-based material patch data set file path
-    dataset_file_path = os.path.join(
-        os.path.normpath(case_study_dir),
-        f'1_dataset/material_patch_graph_dataset_n{n_sample}.pkl')
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~    
+    # Set GNN-based material patch data set directory
+    dataset_directory = os.path.join(os.path.normpath(case_study_dir),
+                                     '1_dataset')
+    # Get files in GNN-based material patch data set directory
+    directory_list = os.listdir(dataset_directory)
+    # Loop over files
+    is_training_dataset = False
+    for filename in directory_list:
+        # Check if file is training data set file
+        is_training_dataset = \
+            bool(re.search(r'^material_patch_graph_dataset_training_n'
+                           r'[0-9]+.pkl$', filename))
+        # Leave searching loop when training data set file is found
+        if is_training_dataset:
+            break
+    # Set GNN-based material patch training data set file path
+    if is_training_dataset:
+        dataset_file_path = os.path.join(os.path.normpath(dataset_directory),
+                                         filename)
+    else:
+        raise RuntimeError(f'Training data set file has not been found in '
+                           'dataset directory:\n\n{dataset_directory}')      
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set GNN-based material patch model directory
     model_directory = os.path.join(os.path.normpath(case_study_dir),
                                    '2_model')
     # Create model directory
-    if not os.path.isdir(model_directory):
-        make_directory(model_directory)
+    make_directory(model_directory, is_overwrite=True)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set device type
     device_type = 'cpu'
