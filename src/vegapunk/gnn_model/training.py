@@ -35,6 +35,8 @@ import os
 import pickle
 import random
 import re
+import time
+import datetime
 # Third-party
 import torch
 import torch_geometric.loader
@@ -135,7 +137,8 @@ def train_model(n_train_steps, dataset, model_init_args, lr_init,
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     if is_verbose:
         print('\nGNN-based material patch data model training'
-              '\n--------------------------------------------\n')
+              '\n--------------------------------------------')
+        start_time_sec = time.time()
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Initialize GNN-based material patch model
     model = GNNMaterialPatchModel(**model_init_args)
@@ -186,7 +189,7 @@ def train_model(n_train_steps, dataset, model_init_args, lr_init,
     step = 0
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Load GNN-based material patch model state
-    if load_model_state is not None:
+    if load_model_state is not None:   
         # Initialize GNN-based material patch model
         # (includes loading of data scalers)
         model = GNNMaterialPatchModel.init_model_from_file(
@@ -196,6 +199,9 @@ def train_model(n_train_steps, dataset, model_init_args, lr_init,
         model.to(device=device)
         # Set model in training mode
         model.train()
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        if is_verbose:
+            print('\n> Loading model state...')
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Load GNN-based material patch model state
         loaded_step = load_training_state(model, opt_algorithm, optimizer,
@@ -218,6 +224,11 @@ def train_model(n_train_steps, dataset, model_init_args, lr_init,
     else:
         data_loader = torch_geometric.loader.dataloader.DataLoader(
             dataset=dataset, batch_size=batch_size, shuffle=is_sampler_shuffle)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    if is_verbose:
+        normalization_str = 'Yes' if is_data_normalization else 'No'
+        print(f'\n> Data normalization: {normalization_str}')
+        print('\n> Starting training process...\n')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Loop over training iterations
     while is_keep_training:
@@ -272,10 +283,12 @@ def train_model(n_train_steps, dataset, model_init_args, lr_init,
                 lr_scheduler.step()
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             if is_verbose:
+                total_time_sec = time.time() - start_time_sec
                 print('> Training step: {:{width}d}/{:d} | '
-                      'Loss: {:.8e}'.format(step, n_train_steps, loss,
-                                            width=len(str(n_train_steps))),
-                      end='\r')
+                      'Loss: {:.8e} | Elapsed time (s): {:}'.format(
+                    step, n_train_steps, loss,
+                    str(datetime.timedelta(seconds=int(total_time_sec))),
+                    width=len(str(n_train_steps))), end='\r')
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Save training step loss and learning rate
             loss_history.append(loss)
@@ -301,6 +314,9 @@ def train_model(n_train_steps, dataset, model_init_args, lr_init,
             # Increment training step counter
             step += 1
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    if is_verbose:
+        print('\n\n> Finished training process!')
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Save model and optimizer final states
     save_training_state(model=model, optimizer=optimizer, training_step=step)
     # Save loss and learning rate histories
@@ -315,7 +331,12 @@ def train_model(n_train_steps, dataset, model_init_args, lr_init,
             best_loss, training_step))
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     if is_verbose:
-        print(f'\n> Model directory: {model.model_directory}\n')
+        print(f'\n> Model directory: {model.model_directory}')
+        total_time_sec = time.time() - start_time_sec
+        print(f'\n> Total training time (s): '
+              f'{str(datetime.timedelta(seconds=int(total_time_sec)))} | '
+              f'Avg. training time per epoch (s): '
+              f'{str(datetime.timedelta(seconds=int(total_time_sec/step)))}\n')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     return model
 # =============================================================================
