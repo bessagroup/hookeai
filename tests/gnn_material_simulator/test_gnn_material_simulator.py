@@ -564,7 +564,7 @@ def test_check_normalized_return(tmp_path):
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     with pytest.raises(RuntimeError):
         # Test unknown data scaler
-        _ = model._check_normalized_return()
+        _ = model.check_normalized_return()
 # -----------------------------------------------------------------------------
 def test_get_input_features_from_graph_norm(batch_graph_patch_data_2d,
                                             tmp_path):

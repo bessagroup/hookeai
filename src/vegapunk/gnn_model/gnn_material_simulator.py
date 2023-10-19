@@ -110,13 +110,14 @@ class GNNMaterialPatchModel(torch.nn.Module):
         Get fitted model data scalers.
     load_model_data_scalers_from_file(self)
         Load data scalers from model initialization file.
-    _check_normalized_return(self)
+    check_normalized_return(self)
         Check if model data normalization is available.
     """
     def __init__(self, n_node_in, n_node_out, n_edge_in, n_message_steps,
                  n_hidden_layers, hidden_layer_size, model_directory,
                  model_name='material_patch_model',
-                 is_data_normalization=False, device_type='cpu'):
+                 is_data_normalization=False, is_save_model_init_file=True,
+                 device_type='cpu'):
         """Constructor.
         
         Parameters
@@ -143,6 +144,12 @@ class GNNMaterialPatchModel(torch.nn.Module):
             If True, then input and output features are normalized for
             training, False otherwise. Data scalers need to be fitted with
             fit_data_scalers() and are stored as model attributes.
+        is_save_model_init_file: bool, default=True
+            If True, saves model initialization file when model is initialized
+            (overwritting existent initialization file), False otherwise. When
+            initializing model from initialization file this option should be
+            set to False to avoid updating the initialization file and preserve
+            fitted data scalers.
         device_type : {'cpu', 'cuda'}, default='cpu'
             Type of device on which torch.Tensor is allocated.
         """
@@ -192,7 +199,8 @@ class GNNMaterialPatchModel(torch.nn.Module):
             self._init_data_scalers()
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Save model initialization file
-        self.save_model_init_file()
+        if is_save_model_init_file:
+            self.save_model_init_file()
     # -------------------------------------------------------------------------
     @staticmethod
     def init_model_from_file(model_directory):
@@ -226,7 +234,8 @@ class GNNMaterialPatchModel(torch.nn.Module):
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Initialize GNN-based material patch model
         model_init_args = model_init_attributes['model_init_args']
-        model = GNNMaterialPatchModel(**model_init_args)
+        model = GNNMaterialPatchModel(**model_init_args,
+                                      is_save_model_init_file=False)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Set model data scalers
         model_data_scalers = model_init_attributes['model_data_scalers']
@@ -432,7 +441,7 @@ class GNNMaterialPatchModel(torch.nn.Module):
                                'of torch_geometric.data.Data.')
         # Check model data normalization
         if is_normalized:
-            self._check_normalized_return()
+            self.check_normalized_return()
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Get features from material patch input graph
         node_features_in, edge_features_in, edges_indexes = \
@@ -860,7 +869,7 @@ class GNNMaterialPatchModel(torch.nn.Module):
             Transformed features PyTorch tensor.
         """
         # Check model data normalization
-        self._check_normalized_return()
+        self.check_normalized_return()
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Check input features tensor
         if not isinstance(tensor, torch.Tensor):
@@ -916,7 +925,7 @@ class GNNMaterialPatchModel(torch.nn.Module):
         model_data_scalers = model_init_attributes['model_data_scalers']
         self._data_scalers = model_data_scalers
     # -------------------------------------------------------------------------
-    def _check_normalized_return(self):
+    def check_normalized_return(self):
         """Check if model data normalization is available."""
         if not self.is_data_normalization or self._data_scalers is None:
             raise RuntimeError('Data scalers for model features have not '
