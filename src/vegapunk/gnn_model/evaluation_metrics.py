@@ -355,8 +355,8 @@ def plot_loss_convergence_test(testing_loss, training_loss=None,
     plt.close(figure)
 # =============================================================================
 def plot_truth_vs_prediction(prediction_sets, error_bound=None,
-                             is_normalized=False,
-                             filename='training_loss_history',
+                             is_normalize_data=False,
+                             filename='prediction_vs_groundtruth',
                              save_dir=None, is_save_fig=False,
                              is_stdout_display=False):
     """Plot ground-truth against predictions.
@@ -372,10 +372,10 @@ def plot_truth_vs_prediction(prediction_sets, error_bound=None,
     error_bound : float, default=None
         Relative error between ground-truth and prediction that defines an
         symmetric error-based shaded area with respect to the identity line.
-    is_normalized : bool, default=False
+    is_normalize_data : bool, default=False
         Normalize predictions and ground-truth data to the range [0, 1] for
         each prediction process.
-    filename : str, default='training_loss_history'
+    filename : str, default='prediction_vs_groundtruth'
         Figure name.
     save_dir : str, default=None
         Directory where figure is saved. If None, then figure is saved in
@@ -410,7 +410,7 @@ def plot_truth_vs_prediction(prediction_sets, error_bound=None,
     # Loop over prediction processes
     for i, (key, val) in enumerate(prediction_sets.items()):
         # Normalize prediction process data
-        if is_normalized:
+        if is_normalize_data:
             val = val/val.max(axis=0)
         # Assemble prediction process
         data_xy[:val.shape[0], 2*i] = val[:val.shape[0], 0]
@@ -427,7 +427,7 @@ def plot_truth_vs_prediction(prediction_sets, error_bound=None,
         identity_error=None
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set axes limits and scale
-    if is_normalized:
+    if is_normalize_data:
         x_lims = (0, 1)
         y_lims = (0, 1)
     else:
@@ -437,13 +437,13 @@ def plot_truth_vs_prediction(prediction_sets, error_bound=None,
     # Set axes labels
     x_label = 'Ground-truth'
     y_label = 'Prediction'
-    if is_normalized:
+    if is_normalize_data:
         x_label += ' (Normalized)'
         y_label += ' (Normalized)'
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set title
     title = 'Prediction vs Ground-truth'
-    if is_normalized:
+    if is_normalize_data:
         title += ' (Normalized)'
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Plot loss history

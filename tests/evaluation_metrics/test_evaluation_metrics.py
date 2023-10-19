@@ -167,11 +167,11 @@ def test_plot_loss_convergence_test(tmp_path, monkeypatch, testing_size,
         plot_loss_convergence_test(testing_loss=np.zeros((1, 1)),
                                    training_loss=np.zeros((1, 1, 1)))
 # =============================================================================
-@pytest.mark.parametrize('n_processes, error_bound, is_normalized',
+@pytest.mark.parametrize('n_processes, error_bound, is_normalize_data',
                          [(1, None, False),
                           ])
 def test_plot_truth_vs_prediction(tmp_path, monkeypatch, n_processes,
-                                  error_bound, is_normalized):
+                                  error_bound, is_normalize_data):
     """Test plot of ground-truth against predictions."""
     # Set prediction processes  
     prediction_sets = {
@@ -184,11 +184,11 @@ def test_plot_truth_vs_prediction(tmp_path, monkeypatch, n_processes,
     is_error_raised = False
     try:
         plot_truth_vs_prediction(prediction_sets, error_bound=error_bound,
-                                 is_normalized=is_normalized,
+                                 is_normalize_data=is_normalize_data,
                                  save_dir=tmp_path, is_save_fig=True,
                                  is_stdout_display=True)
         plot_truth_vs_prediction(prediction_sets, error_bound=error_bound,
-                                 is_normalized=is_normalized,
+                                 is_normalize_data=is_normalize_data,
                                  save_dir=tmp_path, is_save_fig=True,
                                  is_stdout_display=True)
     except:
