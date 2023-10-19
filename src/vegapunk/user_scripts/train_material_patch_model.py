@@ -35,7 +35,7 @@ def perform_model_standard_training(case_study_name, dataset_file_path,
     case_study_name : str
         Case study.
     dataset_file_path : str
-        GNN-based material patch data set file path.        
+        GNN-based material patch training data set file path.        
     model_directory : str
         Directory where material patch model is stored.
     device_type : {'cpu', 'cuda'}, default='cpu'
@@ -88,7 +88,7 @@ def perform_model_standard_training(case_study_name, dataset_file_path,
     else:
         raise RuntimeError('Unknown case study.')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Load GNN-based material patch data set
+    # Load GNN-based material patch training data set
     dataset = GNNMaterialPatchDataset.load_dataset(dataset_file_path)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Training of GNN-based material patch model
@@ -112,7 +112,7 @@ def perform_model_standard_training(case_study_name, dataset_file_path,
     # Plot model training process loss history
     plot_training_loss_history(loss_histories, loss_type.upper(),
                                save_dir=model_directory,
-                               is_save_fig=True, is_stdout_display=True)
+                               is_save_fig=True, is_stdout_display=False)
 # =============================================================================
 def set_default_training_options():
     """Set default GNN-based material patch model training options.
