@@ -109,10 +109,15 @@ def perform_model_standard_training(case_study_name, dataset_file_path,
     # Read training process loss history
     loss_type, loss_history = read_loss_history_from_file(loss_record_path)
     loss_histories = {f'$n_s = {len(dataset)}$': loss_history,}
-    
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Create plot directory
+    plot_dir = os.path.join(os.path.normpath(model_directory), 'plots')
+    if not os.path.isdir(plot_dir):
+        make_directory(plot_dir)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Plot model training process loss history
     plot_training_loss_history(loss_histories, loss_type.upper(),
-                               save_dir=model_directory,
+                               save_dir=plot_dir,
                                is_save_fig=True, is_stdout_display=False)
 # =============================================================================
 def set_default_training_options():

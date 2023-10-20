@@ -57,7 +57,12 @@ def perform_model_prediction(predict_directory, dataset_file_path,
                              dataset_file_path=dataset_file_path,
                              device_type=device_type, seed=None,
                              is_verbose=is_verbose)
-    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~    
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Create plot directory
+    plot_dir = os.path.join(os.path.normpath(predict_subdir), 'plots')
+    if not os.path.isdir(plot_dir):
+        make_directory(plot_dir)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set prediction data arrays types and filenames
     prediction_types = {}
     prediction_types['int_force_comps'] = ('prediction_int_force_dim_1',
@@ -87,7 +92,7 @@ def perform_model_prediction(predict_directory, dataset_file_path,
             plot_truth_vs_prediction(prediction_sets, error_bound=0.1,
                                      is_normalize_data=True,
                                      filename=filename,
-                                     save_dir=predict_subdir,
+                                     save_dir=plot_dir,
                                      is_save_fig=True, is_stdout_display=False)
 # =============================================================================
 def set_default_prediction_options():
