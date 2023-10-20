@@ -240,7 +240,7 @@ def predict(predict_directory, dataset, model_directory,
     summary_data['Total prediction time'] = \
         str(datetime.timedelta(seconds=int(total_time_sec)))
     summary_data['Avg. prediction time per sample'] = \
-        str(datetime.timedelta(seconds=int(total_time_sec)))
+        str(datetime.timedelta(seconds=int(avg_time_sample)))
     # Write summary file
     write_summary_file(
         predict_subdir,
