@@ -100,6 +100,7 @@ def perform_model_standard_training(case_study_name, dataset_file_path,
                         batch_size=batch_size,
                         is_sampler_shuffle=is_sampler_shuffle,
                         load_model_state=None, save_every=None,
+                        dataset_file_path=dataset_file_path,
                         device_type='cpu', seed=None, is_verbose=is_verbose)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set loss history record file path

@@ -26,6 +26,8 @@ seed_worker
     Set workers seed in PyTorch data loaders to preserve reproducibility.
 read_loss_history_from_file
     Read training loss history from loss history record file.
+write_training_summary_file    
+    Write summary data file for model training process.
 """
 #
 #                                                                       Modules
@@ -43,6 +45,7 @@ import torch_geometric.loader
 import numpy as np
 # Local
 from gnn_model.gnn_material_simulator import GNNMaterialPatchModel
+from ioput.iostandard import write_summary_file
 #
 #                                                          Authorship & Credits
 # =============================================================================
@@ -54,8 +57,8 @@ def train_model(n_train_steps, dataset, model_init_args, lr_init,
                 opt_algorithm='adam', lr_scheduler_type=None,
                 lr_scheduler_kwargs={}, loss_type='mse', loss_kwargs={},
                 batch_size=1, is_sampler_shuffle=False, load_model_state=None,
-                save_every=None, device_type='cpu', seed=None,
-                is_verbose=False):
+                save_every=None, dataset_file_path=None, device_type='cpu',
+                seed=None, is_verbose=False):
     """Training of GNN-based material patch model.
     
     Parameters
@@ -111,6 +114,9 @@ def train_model(n_train_steps, dataset, model_init_args, lr_init,
         Save GNN-based material patch model every save_every training steps.
         If None, then saves only last training step and best performance
         states.
+    dataset_file_path : str, default=None
+        GNN-based material patch data set file path if such file exists. Only
+        used for output purposes.
     device_type : {'cpu', 'cuda'}, default='cpu'
         Type of device on which torch.Tensor is allocated.
     seed : int, default=None
@@ -324,19 +330,33 @@ def train_model(n_train_steps, dataset, model_init_args, lr_init,
                       lr_scheduler_type=lr_scheduler_type,
                       lr_history=lr_history)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Get best loss and corresponding training step
+    best_loss = min(loss_history)
+    best_training_step = loss_history.index(best_loss)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     if is_verbose:
-        best_loss = min(loss_history)
-        training_step = loss_history.index(best_loss)
         print('\n\n> Minimum loss: {:.8e} | Training step: {:d}'.format(
-            best_loss, training_step))
+            best_loss, best_training_step))
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Compute total training time and average training time per epoch
+    total_time_sec = time.time() - start_time_sec
+    avg_time_epoch = total_time_sec/step
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     if is_verbose:
         print(f'\n> Model directory: {model.model_directory}')
         total_time_sec = time.time() - start_time_sec
-        print(f'\n> Total training time (s): '
+        print(f'\n> Total training time: '
               f'{str(datetime.timedelta(seconds=int(total_time_sec)))} | '
-              f'Avg. training time per epoch (s): '
-              f'{str(datetime.timedelta(seconds=int(total_time_sec/step)))}\n')
+              f'Avg. training time per epoch: '
+              f'{str(datetime.timedelta(seconds=int(avg_time_epoch)))}\n')
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Write summary data file for model training process
+    write_training_summary_file(
+        device_type, seed, model.model_directory, load_model_state,
+        n_train_steps, is_data_normalization, batch_size, is_sampler_shuffle,
+        loss_type, loss_kwargs, opt_algorithm, lr_init, lr_scheduler_type,
+        lr_scheduler_kwargs, dataset_file_path, dataset, best_loss,
+        best_training_step, total_time_sec, avg_time_epoch)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     return model
 # =============================================================================
@@ -872,3 +892,97 @@ def read_loss_history_from_file(loss_record_path):
     loss_history = [x.detach() for x in loss_history_record['loss_history']]
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     return loss_type, loss_history
+# =============================================================================
+def write_training_summary_file(
+    device_type, seed, model_directory, load_model_state, n_train_steps,
+    is_data_normalization, batch_size, is_sampler_shuffle, loss_type,
+    loss_kwargs, opt_algorithm, lr_init, lr_scheduler_type,
+    lr_scheduler_kwargs, dataset_file_path, dataset, best_loss,
+    best_training_step, total_time_sec, avg_time_epoch):
+    """Write summary data file for model training process.
+    
+    Parameters
+    ----------
+    device_type : {'cpu', 'cuda'}
+        Type of device on which torch.Tensor is allocated.
+    seed : int
+        Seed used to initialize the random number generators of Python and
+        other libraries (e.g., NumPy, PyTorch) for all devices to preserve
+        reproducibility. Does also set workers seed in PyTorch data loaders.
+    model_directory : str
+        Directory where material patch model is stored.
+    load_model_state : {'best', 'last', int, None}
+        Load available GNN-based material patch model state from the model
+        directory. Data scalers are also loaded from model initialization file.
+    n_train_steps : int
+        Number of training steps.
+    is_data_normalization : bool
+        If True, then input and output features are normalized for training
+        False otherwise. Data scalers need to be fitted with fit_data_scalers()
+        and are stored as model attributes.
+    batch_size : int
+        Number of samples loaded per batch.
+    is_sampler_shuffle : bool
+        If True, shuffles data set samples at every epoch.
+    loss_type : {'mse',}
+        Loss function type.
+    loss_kwargs : dict
+        Arguments of torch.nn._Loss initializer.
+    opt_algorithm : {'adam',}
+        Optimization algorithm.
+    lr_init : float
+        Initial value optimizer learning rate. Constant learning rate value if
+        no learning rate scheduler is specified (lr_scheduler_type=None).
+    lr_scheduler_type : {'steplr',}
+        Type of learning rate scheduler.
+    lr_scheduler_kwargs : dict
+        Arguments of torch.optim.lr_scheduler.LRScheduler initializer.
+    dataset_file_path : str
+        GNN-based material patch data set file path if such file exists. Only
+        used for output purposes.
+    dataset : GNNMaterialPatchDataset
+        GNN-based material patch data set. Each sample corresponds to a
+        torch_geometric.data.Data object describing a homogeneous graph.
+    best_loss : float
+        Best loss during training process.
+    best_training_step : int
+        Training step corresponding to best loss during training process.
+    total_time_sec : int
+        Total training time in seconds.
+    avg_time_epoch : float
+        Average training time per epoch.
+    """
+    # Set summary data
+    summary_data = {}
+    summary_data['device_type'] = device_type
+    summary_data['seed'] = seed
+    summary_data['model_directory'] = model_directory
+    summary_data['load_model_state'] = \
+        load_model_state if load_model_state else None
+    summary_data['n_train_steps'] = n_train_steps
+    summary_data['is_data_normalization'] = is_data_normalization
+    summary_data['batch_size'] = batch_size
+    summary_data['is_sampler_shuffle'] = is_sampler_shuffle
+    summary_data['loss_type'] = loss_type
+    summary_data['loss_kwargs'] = loss_kwargs if loss_kwargs else None
+    summary_data['opt_algorithm'] = opt_algorithm
+    summary_data['lr_init'] = lr_init
+    summary_data['lr_scheduler_type'] = \
+        lr_scheduler_type if lr_scheduler_type else None
+    summary_data['lr_scheduler_kwargs'] = \
+        lr_scheduler_kwargs if lr_scheduler_kwargs else None
+    summary_data['Training data set file'] = \
+        dataset_file_path if dataset_file_path else None
+    summary_data['Training data set size'] = len(dataset)
+    summary_data['Minimum loss: '] = \
+        f'{best_loss:.8e} (training step {best_training_step})'
+    summary_data['Total training time'] = \
+        str(datetime.timedelta(seconds=int(total_time_sec)))
+    summary_data['Avg. training time per epoch'] = \
+        str(datetime.timedelta(seconds=int(avg_time_epoch)))
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Write summary file
+    write_summary_file(
+        summary_directory=model_directory,
+        summary_title='Summary: GNN-based material patch model training',
+        **summary_data)
