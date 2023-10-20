@@ -54,6 +54,7 @@ def perform_model_prediction(predict_directory, dataset_file_path,
     predict_subdir = predict(predict_directory, dataset, model_directory,
                              load_model_state='best', loss_type=loss_type,
                              loss_kwargs=loss_kwargs, is_normalized_loss=True,
+                             dataset_file_path=dataset_file_path,
                              device_type=device_type, seed=None,
                              is_verbose=is_verbose)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~    
@@ -87,7 +88,7 @@ def perform_model_prediction(predict_directory, dataset_file_path,
                                      is_normalize_data=True,
                                      filename=filename,
                                      save_dir=predict_subdir,
-                                     is_save_fig=True, is_stdout_display=True)
+                                     is_save_fig=True, is_stdout_display=False)
 # =============================================================================
 def set_default_prediction_options():
     """Set default GNN-based material patch model prediction options.

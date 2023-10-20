@@ -33,7 +33,7 @@ import numpy as np
 # Local
 from gnn_model.gnn_material_simulator import GNNMaterialPatchModel
 from gnn_model.training import get_pytorch_loss, seed_worker
-from ioput.iostandard import make_directory
+from ioput.iostandard import make_directory, write_summary_file
 #
 #                                                          Authorship & Credits
 # =============================================================================
@@ -45,15 +45,15 @@ __status__ = 'Planning'
 # =============================================================================
 def predict(predict_directory, dataset, model_directory,
             load_model_state=None, loss_type='mse', loss_kwargs={},
-            is_normalized_loss=False, device_type='cpu', seed=None,
-            is_verbose=False):
+            is_normalized_loss=False, dataset_file_path=None,
+            device_type='cpu', seed=None, is_verbose=False):
     """Make predictions with GNN-based material patch model for given dataset.
     
     Parameters
     ----------
     predict_directory : str
         Directory where model predictions results are stored.
-    dataset : GNNMaterialPatchDataset
+    dataset : torch.utils.data.Dataset
         GNN-based material patch data set. Each sample corresponds to a
         torch_geometric.data.Data object describing a homogeneous graph.
     model_directory : str
@@ -81,6 +81,9 @@ def predict(predict_directory, dataset, model_directory,
         If True, then samples prediction loss are computed from the normalized
         data, False otherwise. Normalization requires that model features data
         scalers are fitted.
+    dataset_file_path : str, default=None
+        GNN-based material patch data set file path if such file exists. Only
+        used for output purposes.
     device_type : {'cpu', 'cuda'}, default='cpu'
         Type of device on which torch.Tensor is allocated.
     seed : int, default=None
@@ -191,10 +194,14 @@ def predict(predict_directory, dataset, model_directory,
     if is_verbose:
         print('\n> Finished prediction process!\n')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Compute average loss per sample
+    average_loss = None
+    if loss_samples:
+        average_loss = np.mean(loss_samples)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     if is_verbose:
-        # Set average loss output
-        if loss_samples:
-            average_loss = np.mean(loss_samples)
+        # Set average loss output format
+        if average_loss:
             loss_str = (f'{average_loss:.8e} | {loss_type}, '
                         f'{len(loss_samples)} samples')
             if is_normalized_loss:
@@ -205,14 +212,40 @@ def predict(predict_directory, dataset, model_directory,
         print('\n> Avg. prediction loss per sample: '
               + loss_str)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Compute total prediction time and average prediction time per sample
+    total_time_sec = time.time() - start_time_sec
+    avg_time_sample = total_time_sec/len(dataset)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     if is_verbose:
         print(f'\n> Prediction results directory: {predict_subdir}')
-        total_time_sec = time.time() - start_time_sec
-        avg_time_sample = total_time_sec/len(dataset)
-        print(f'\n> Total prediction time (s): '
+        print(f'\n> Total prediction time: '
               f'{str(datetime.timedelta(seconds=int(total_time_sec)))} | '
-              f'Avg. prediction time per sample (s): '
+              f'Avg. prediction time per sample: '
               f'{str(datetime.timedelta(seconds=int(avg_time_sample)))}\n')
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Set summary data
+    summary_data = {}
+    summary_data['device_type'] = device_type
+    summary_data['seed'] = seed
+    summary_data['model_directory'] = model_directory
+    summary_data['load_model_state'] = load_model_state
+    summary_data['loss_type'] = loss_type
+    summary_data['loss_kwargs'] = loss_kwargs if loss_kwargs else None
+    summary_data['is_normalized_loss'] = is_normalized_loss
+    summary_data['Prediction data set file'] = \
+        dataset_file_path if dataset_file_path else None
+    summary_data['Prediction data set size'] = len(dataset)
+    summary_data['Avg. prediction loss per sample: '] = \
+        f'{average_loss:.8e}' if average_loss else None
+    summary_data['Total prediction time'] = \
+        str(datetime.timedelta(seconds=int(total_time_sec)))
+    summary_data['Avg. prediction time per sample'] = \
+        str(datetime.timedelta(seconds=int(total_time_sec)))
+    # Write summary file
+    write_summary_file(
+        predict_subdir,
+        summary_title='Summary: GNN-based material patch model prediction',
+        **summary_data)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     return predict_subdir
 # =============================================================================
