@@ -445,9 +445,9 @@ def generate_material_patch_dataset(
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     if is_verbose:
         print('\n> Data set directory: ', simulation_directory)
-        print(f'\n> Total generation time (s): '
+        print(f'\n> Total generation time: '
               f'{str(datetime.timedelta(seconds=int(total_time_sec)))} | '
-              f'Avg. generation time per patch (s): '
+              f'Avg. generation time per patch: '
               f'{str(datetime.timedelta(seconds=int(avg_time_sec)))}\n')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Write summary data file for material patch data set generation
@@ -767,6 +767,10 @@ def write_patch_dataset_summary_file(
     
     Parameters
     ----------
+    simulation_directory : str
+        Directory where files associated with the generation of the material
+        patch finite element simulations dataset are written. All existent
+        files are overridden when saving new data files.
     n_dim : int
         Number of spatial dimensions.
     strain_formulation: {'infinitesimal', 'finite'}

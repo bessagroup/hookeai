@@ -15,6 +15,8 @@ split_dataset
     Randomly split data set into non-overlapping parts.
 get_pyg_data_loader
     Get GNN-based material patch data set PyG data loader.
+write_graph_dataset_summary_file
+    Write summary data file for material patch data set generation.
 """
 #
 #                                                                       Modules
@@ -33,6 +35,7 @@ import tqdm
 # Local
 from gnn_model.gnn_patch_data import GNNPatchGraphData, \
     GNNPatchFeaturesGenerator
+from ioput.iostandard import write_summary_file
 #
 #                                                          Authorship & Credits
 # =============================================================================
@@ -196,14 +199,20 @@ def generate_dataset_samples_files(dataset_directory, dataset_simulation_data,
     if is_verbose:
         print('\n> Finished graphs generation process!\n')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Compute total generation time and average generation time per patch
+    total_time_sec = time.time() - start_time_sec
+    avg_time_sec = total_time_sec/n_sample
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     if is_verbose:
         print('\n> Data set directory: ', dataset_directory)
-        total_time_sec = time.time() - start_time_sec
-        avg_time_sec = total_time_sec/n_sample
-        print(f'\n> Total generation time (s): '
+        print(f'\n> Total generation time: '
               f'{str(datetime.timedelta(seconds=int(total_time_sec)))} | '
-              f'Avg. generation time per graph (s): '
+              f'Avg. generation time per graph: '
               f'{str(datetime.timedelta(seconds=int(avg_time_sec)))}\n')
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Write summary data file for graph data set generation
+    write_graph_dataset_summary_file(dataset_directory, total_time_sec,
+                                     avg_time_sec)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ 
     return dataset_directory, dataset_sample_files
 # =============================================================================
@@ -653,3 +662,31 @@ def get_pyg_data_loader(dataset, batch_size=1, is_shuffle=False,
         dataset, batch_size=batch_size, shuffle=is_shuffle, **kwargs)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     return data_loader
+# =============================================================================
+def write_graph_dataset_summary_file(dataset_directory, total_time_sec,
+                                     avg_time_sample):
+    """Write summary data file for GNN-based patch data set generation.
+    
+    Parameters
+    ----------
+    dataset_directory : str
+        Directory where the GNN-based material patch data set is stored (all
+        data set samples files). All existent files are overridden when saving
+        sample data files.
+    total_time_sec : int
+        Total generation time in seconds.
+    avg_time_sample : float
+        Average generation time per patch.
+    """
+    # Set summary data
+    summary_data = {}
+    summary_data['Total generation time'] = \
+        str(datetime.timedelta(seconds=int(total_time_sec)))
+    summary_data['Avg. generation time per graph'] = \
+        str(datetime.timedelta(seconds=int(avg_time_sample)))
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Write summary file
+    write_summary_file(
+        summary_directory=dataset_directory,
+        summary_title='Summary: GNN-based material patch data set generation',
+        **summary_data)
