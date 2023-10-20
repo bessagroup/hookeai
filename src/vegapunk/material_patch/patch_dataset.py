@@ -12,8 +12,8 @@ get_default_design_parameters
     Generate finite element material patch design space default parameters.
 read_simulation_dataset_from_file
     Read material patch finite element data set from file.
-write_dataset_parameters_file
-    Write material patch data set generation input parameters file.
+write_patch_dataset_summary_file
+    Write summary data file for material patch data set generation.
 """
 #
 #                                                                       Modules
@@ -31,7 +31,7 @@ import tqdm
 # Local
 from material_patch.patch_generator import FiniteElementPatchGenerator
 from simulators.links.links import LinksSimulator
-from ioput.iostandard import new_file_path_with_int
+from ioput.iostandard import write_summary_file
 #
 #                                                          Authorship & Credits
 # =============================================================================
@@ -215,17 +215,6 @@ def generate_material_patch_dataset(
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     if is_verbose:
         print('\n> Writting data set generation parameters file...')
-    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Write material patch data set generation input parameters file
-    write_dataset_parameters_file(
-        simulation_directory, n_sample=n_sample, n_dim=n_dim,
-        strain_formulation=strain_formulation, analysis_type=analysis_type,
-        patch_dims_ranges=patch_dims_ranges,
-        elem_type=elem_type, n_elems_per_dim=n_elems_per_dim,
-        avg_deformation_ranges=avg_deformation_ranges,
-        edge_deformation_order_ranges=edge_deformation_order_ranges,
-        edge_deformation_magnitude_ranges=edge_deformation_magnitude_ranges,
-        patch_material_data=patch_material_data)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     if is_verbose:
         print('\n> Setting input constant parameters...')
@@ -450,14 +439,24 @@ def generate_material_patch_dataset(
         with open(dataset_file_path, 'wb') as dataset_file:
             pickle.dump(dataset_simulation_data, dataset_file)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Compute total generation time and average generation time per patch
+    total_time_sec = time.time() - start_time_sec
+    avg_time_sec = total_time_sec/n_sample
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     if is_verbose:
         print('\n> Data set directory: ', simulation_directory)
-        total_time_sec = time.time() - start_time_sec
-        avg_time_sec = total_time_sec/n_sample
         print(f'\n> Total generation time (s): '
               f'{str(datetime.timedelta(seconds=int(total_time_sec)))} | '
               f'Avg. generation time per patch (s): '
               f'{str(datetime.timedelta(seconds=int(avg_time_sec)))}\n')
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Write summary data file for material patch data set generation
+    write_patch_dataset_summary_file(
+        simulation_directory, n_sample, n_dim, strain_formulation,
+        analysis_type, patch_dims_ranges, elem_type, n_elems_per_dim,
+        avg_deformation_ranges, edge_deformation_order_ranges,
+        edge_deformation_magnitude_ranges, patch_material_data, total_time_sec,
+        avg_time_sec)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     return dataset_simulation_data
 # =============================================================================
@@ -759,43 +758,94 @@ def read_simulation_dataset_from_file(dataset_file_path):
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     return dataset_simulation_data
 # =============================================================================
-def write_dataset_parameters_file(simulation_directory, **kwargs):
-    """Write material patch data set generation input parameters file.
-    
-    Parameters file is stored in model_directory under the name
-    dataset_parameters.dat.
+def write_patch_dataset_summary_file(
+    simulation_directory, n_sample, n_dim, strain_formulation, analysis_type,
+    patch_dims_ranges, elem_type, n_elems_per_dim, avg_deformation_ranges,
+    edge_deformation_order_ranges, edge_deformation_magnitude_ranges,
+    patch_material_data, total_time_sec, avg_time_sample):
+    """Write summary data file for material patch data set generation.
     
     Parameters
     ----------
-    simulation_directory : str
-        Directory where files associated with the generation of the material
-        patch finite element simulations dataset are written.
-    kwargs: dict
-        Material patch dataset generation input parameters written to file.
+    n_dim : int
+        Number of spatial dimensions.
+    strain_formulation: {'infinitesimal', 'finite'}
+        Links strain formulation.
+    analysis_type : {'plane_stress', 'plane_strain', 'axisymmetric', \
+                     'tridimensional'}
+        Links analysis type.
+    patch_dims_ranges : dict
+        Range of material patch size (item, tuple[float](2)) along each
+        dimension. The range is specified as a tuple(lower_bound, upper_bound).
+        Range defaults to (1.0, 1.0) if not specified.
+    elem_type : str
+        Finite element type employed to discretize the material patch in a
+        regular finite element mesh.
+    n_elems_per_dim : tuple[int]
+        Number of finite elements per dimension that completely defines the
+        regular finite element mesh by assuming equal-sized elements. If not
+        specified, a single finite element is assumed.
+    avg_deformation_ranges : dict
+        Range of average deformation along each dimension
+        (item, tuple[tuple(2)]) for each corner label (key, str[int]). Corners
+        are labeled from 1 to number of corners. The deformation is relative to
+        the material patch size along the corresponding dimension. The range
+        for each dimension is specified as a tuple(lower_bound, upper_bound)
+        and where positive/negative values are associated with
+        tension/compression. Range defaults to (0, 0) if not specified along a
+        given dimension.
+    edge_deformation_order_ranges : dict
+        Range of polynomial deformation order (item, tuple[int](2)) prescribed
+        for each edge label (key, str[int]). Edges are labeled from 1 to number
+        of edges. The range is specified as a tuple(lower_bound, upper_bound),
+        where the minimum allowed is zero order. Range defaults to (0, 0) if
+        not specified along a given dimension.
+    edge_deformation_magnitude_ranges : dict
+        Range of polynomial deformation (item, tuple[float](2)) prescribed
+        for each edge label (key, str[int]). Edges are labeled from 1 to number
+        of edges. The edge deformation is orthogonal to the corresponding
+        direction (defined by limiting corner nodes in the deformed
+        configuration) and its magnitude is relative to the material patch size
+        orthogonal to its dimension in the reference configuration. The range
+        is specified as a tuple(lower_bound, upper_bound) and where
+        positive/negative values are associated with tension/compression. Range
+        defaults to (0, 0) if not specified along a given dimension.
+    patch_material_data : dict
+        Finite element patch material data. Expecting
+        'mesh_elem_material': numpy.ndarray [int](n_elems_per_dim) (finite
+        element mesh elements material matrix where each element
+        corresponds to a given finite element position and whose value is
+        the corresponding material phase (int)) and
+        'mat_phases_descriptors': dict (constitutive model descriptors
+        (item, dict) for each material phase (key, str[int])).
+    total_time_sec : int
+        Total generation time in seconds.
+    avg_time_sample : float
+        Average generation time per patch.
     """
-    # Set data set generation parameters file path
-    parameters_file_path = os.path.join(os.path.normpath(simulation_directory),
-                                        'dataset_parameters' + '.dat')
+    # Set summary data
+    summary_data = {}
+    summary_data['n_sample'] = n_sample
+    summary_data['n_dim'] = n_dim
+    summary_data['strain_formulation'] = strain_formulation
+    summary_data['analysis_type'] = analysis_type
+    summary_data['patch_dims_ranges'] = patch_dims_ranges
+    summary_data['elem_type'] = elem_type
+    summary_data['n_elems_per_dim'] = n_elems_per_dim
+    summary_data['avg_deformation_ranges'] = avg_deformation_ranges
+    summary_data['edge_deformation_order_ranges'] = \
+        edge_deformation_order_ranges
+    summary_data['edge_deformation_magnitude_ranges'] = \
+        edge_deformation_magnitude_ranges
+    summary_data['patch_material_data'] = patch_material_data
+    summary_data['Total generation time'] = \
+        str(datetime.timedelta(seconds=int(total_time_sec)))
+    summary_data['Avg. generation time per sample'] = \
+        str(datetime.timedelta(seconds=int(avg_time_sample)))
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Initialize file content
-    parameters = ['Material path data set generation input parameters\n',
-                  '--------------------------------------------------\n']
-    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Loop over data set generation parameters
-    for key1, val1 in kwargs.items():
-        # Append parameter
-        if isinstance(val1, dict):
-            parameters.append(f'\n"{str(key1)}":\n')
-            for key2, val2 in val1.items():
-                if isinstance(val2, dict):
-                    parameters.append(f'\n  "{str(key2)}":\n')
-                    for key3, val3 in val2.items():
-                        parameters.append(f'    "{str(key3)}": {str(val3)}\n')
-                else:
-                    parameters.append(f'  "{str(key2)}": {str(val2)}\n')
-        else:
-            parameters.append(f'\n"{str(key1)}":  {str(val1)}\n')
-    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Write data set generation parameters file
-    open(parameters_file_path, 'w').writelines(parameters)
+    # Write summary file
+    write_summary_file(
+        summary_directory=simulation_directory,
+        summary_title='Summary: Material patch data set generation',
+        **summary_data)
     
