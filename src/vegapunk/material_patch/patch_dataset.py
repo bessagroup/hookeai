@@ -214,9 +214,6 @@ def generate_material_patch_dataset(
         n_elems_per_dim = default_parameters['n_elems_per_dim']
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     if is_verbose:
-        print('\n> Writting data set generation parameters file...')
-    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    if is_verbose:
         print('\n> Setting input constant parameters...')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set input constant parameters
@@ -383,41 +380,40 @@ def generate_material_patch_dataset(
         for i in sorted(n_fail_ids, reverse=True):
             del dataset_simulation_data[i]
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Initialize samples status counters
+    n_success = 0
+    n_fail_patch = 0
+    n_fail_simulation = 0
+    # Loop over data set samples
+    for i in range(len(dataset_simulation_data)):
+        # Get material patch and simulation results
+        patch = dataset_simulation_data[i]['patch']
+        node_data = dataset_simulation_data[i]['node_data']
+        # Increment counter according to sample status
+        if patch is None:
+            n_fail_patch += 1
+        elif patch is not None and node_data is None:
+            n_fail_simulation += 1
+        else:
+            n_success += 1
+    # Compute total number of failed samples
+    n_failure = n_fail_patch + n_fail_simulation
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     if is_verbose:
-        # Initialize samples status counters
-        n_success = 0
-        n_fail_patch = 0
-        n_fail_simulation = 0
-        # Loop over data set samples
-        for i in range(len(dataset_simulation_data)):
-            # Get material patch and simulation results
-            patch = dataset_simulation_data[i]['patch']
-            node_data = dataset_simulation_data[i]['node_data']
-            # Increment counter according to sample status
-            if patch is None:
-                n_fail_patch += 1
-            elif patch is not None and node_data is None:
-                n_fail_simulation += 1
-            else:
-                n_success += 1
-        # Compute total number of failed samples
-        n_failure = n_fail_patch + n_fail_simulation
-        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        print('\n> Material patch simulation data set summary:')
+        print('\n> Material patch simulation data set status:')
         print('\n  > Prescribed number of material patch samples: ', n_sample)
         print('\n  > Successful material patch samples: ',
-            '{:d}/{:d} ({:>.1f}%)'.format(n_success, n_sample,
-                                          100*n_success/n_sample))
+              f'{n_success:d}/{n_sample:d} ({100*n_success/n_sample:>.1f}%)')
         if n_failure > 0:
             print('\n  > Failed material patch samples: ',
-                '{:d}/{:d} ({:>.1f}%)'.format(n_failure, n_sample,
-                                              100*n_failure/n_sample))
+                  (f'{n_failure:d}/{n_sample:d} '
+                   f'({100*n_failure/n_sample:>.1f}%)'))
             print('\n    > Non-admissible deformed configuration: ',
-                '{:d}/{:d} ({:>.1f}%)'.format(n_fail_patch, n_sample,
-                                              100*n_fail_patch/n_sample))
+                  (f'{n_fail_patch:d}/{n_sample:d} '
+                   f'({100*n_fail_patch/n_sample:>.1f}%)'))
             print('    > Failed finite element simulation: ',
-                '{:d}/{:d} ({:>.1f}%)'.format(n_fail_simulation, n_sample,
-                                              100*n_fail_simulation/n_sample))
+                  (f'{n_fail_simulation:d}/{n_sample:d} '
+                   f'({100*n_fail_simulation/n_sample:>.1f}%)'))
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     if is_verbose:
         print('\n> Finished material patches generation process!\n')
@@ -455,7 +451,8 @@ def generate_material_patch_dataset(
         simulation_directory, n_sample, n_dim, strain_formulation,
         analysis_type, patch_dims_ranges, elem_type, n_elems_per_dim,
         avg_deformation_ranges, edge_deformation_order_ranges,
-        edge_deformation_magnitude_ranges, patch_material_data, total_time_sec,
+        edge_deformation_magnitude_ranges, patch_material_data, n_success,
+        n_failure, n_fail_patch, n_fail_simulation, total_time_sec,
         avg_time_sec)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     return dataset_simulation_data
@@ -762,7 +759,8 @@ def write_patch_dataset_summary_file(
     simulation_directory, n_sample, n_dim, strain_formulation, analysis_type,
     patch_dims_ranges, elem_type, n_elems_per_dim, avg_deformation_ranges,
     edge_deformation_order_ranges, edge_deformation_magnitude_ranges,
-    patch_material_data, total_time_sec, avg_time_sample):
+    patch_material_data, n_success, n_failure, n_fail_patch, n_fail_simulation,
+    total_time_sec, avg_time_sample):
     """Write summary data file for material patch data set generation.
     
     Parameters
@@ -822,14 +820,23 @@ def write_patch_dataset_summary_file(
         the corresponding material phase (int)) and
         'mat_phases_descriptors': dict (constitutive model descriptors
         (item, dict) for each material phase (key, str[int])).
+    n_success : int
+        Number of successfully generated material patch samples.
+    n_failure : int
+        Number of failed material patch samples.
+    n_fail_patch : int
+        Number of failed material patch samples (non-admissible deformed
+        configuration).
+    n_fail_simulation : int
+        Number of failed material patch samples (failed finite element
+        simulation).
     total_time_sec : int
         Total generation time in seconds.
     avg_time_sample : float
         Average generation time per patch.
-    """
+    """    
     # Set summary data
     summary_data = {}
-    summary_data['n_sample'] = n_sample
     summary_data['n_dim'] = n_dim
     summary_data['strain_formulation'] = strain_formulation
     summary_data['analysis_type'] = analysis_type
@@ -842,6 +849,18 @@ def write_patch_dataset_summary_file(
     summary_data['edge_deformation_magnitude_ranges'] = \
         edge_deformation_magnitude_ranges
     summary_data['patch_material_data'] = patch_material_data
+    summary_data['Prescribed number of material patch samples'] = n_sample
+    summary_data['Successful material patch samples'] = \
+        f'{n_success:d}/{n_sample:d} ({100*n_success/n_sample:>.1f}%)'
+    if n_failure > 0:
+        summary_data['Failed material patch samples'] = \
+            f'{n_failure:d}/{n_sample:d} ({100*n_failure/n_sample:>.1f}%)'
+        summary_data['Non-admissible deformed configuration'] = \
+            (f'{n_fail_patch:d}/{n_sample:d} '
+             f'({100*n_fail_patch/n_sample:>.1f}%)')
+        summary_data['Failed finite element simulation'] = \
+            (f'{n_fail_simulation:d}/{n_sample:d} '
+             f'({100*n_fail_simulation/n_sample:>.1f}%)')
     summary_data['Total generation time'] = \
         str(datetime.timedelta(seconds=int(total_time_sec)))
     summary_data['Avg. generation time per sample'] = \
