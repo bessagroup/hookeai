@@ -51,12 +51,12 @@ def perform_model_prediction(predict_directory, dataset_file_path,
     dataset = GNNMaterialPatchDataset.load_dataset(dataset_file_path)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Prediction with GNN-based material patch model
-    predict_subdir = predict(predict_directory, dataset, model_directory,
-                             load_model_state='best', loss_type=loss_type,
-                             loss_kwargs=loss_kwargs, is_normalized_loss=True,
-                             dataset_file_path=dataset_file_path,
-                             device_type=device_type, seed=None,
-                             is_verbose=is_verbose)
+    predict_subdir, _ = \
+        predict(predict_directory, dataset, model_directory,
+                load_model_state='best', loss_type=loss_type,
+                loss_kwargs=loss_kwargs, is_normalized_loss=True,
+                dataset_file_path=dataset_file_path, device_type=device_type,
+                seed=None, is_verbose=is_verbose)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Create plot directory
     plot_dir = os.path.join(os.path.normpath(predict_subdir), 'plots')
@@ -157,7 +157,7 @@ if __name__ == "__main__":
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set GNN-based material patch model prediction directory
     prediction_directory = os.path.join(os.path.normpath(case_study_dir),
-                                        '3_prediction')
+                                        '4_prediction')
     # Create prediction directory
     if not os.path.isdir(prediction_directory):
         make_directory(prediction_directory)
