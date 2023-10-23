@@ -182,11 +182,11 @@ def generate_material_patch_dataset(
                         (1, n_data_dim, n_time_steps) where the global output \
                         data at the k-th time step is stored in [0, :, k].
     """
+    start_time_sec = time.time()
     if is_verbose:
         print('\nGenerate material patch simulation data set'
               '\n-------------------------------------------')
         print('\n> Setting default design space parameters...')
-        start_time_sec = time.time()
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Check simulation directory
     if not os.path.isdir(simulation_directory):
