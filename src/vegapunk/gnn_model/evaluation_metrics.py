@@ -1315,6 +1315,11 @@ def grouped_bar_chart(groups_labels, groups_data, bar_width=None,
         # Increment position counter
         group_id += 1
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Add average line to legend (dummy plot)
+    if is_avg_hline:
+        axes.plot(np.mean(list(groups_data.values())[0]),
+                  linestyle='--', color='k', label='Average')
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set axes limits
     axes.set_ylim(y_lims)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
