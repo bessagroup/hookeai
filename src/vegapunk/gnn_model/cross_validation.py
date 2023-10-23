@@ -37,6 +37,12 @@ def kfold_cross_validation(cross_validation_dir, n_fold, n_train_steps,
                            device_type='cpu', is_verbose=False):
     """k-fold cross validation of GNN-based material patch model.
     
+    Data set is split into k consecutive folds. The first n_samples % n_splits
+    folds have size n_samples // n_splits + 1, other folds have size
+    n_samples // n_splits, where n_samples is the number of samples. Each fold
+    is then used once as a validation set while the k - 1 remaining folds form
+    the training set.
+    
     Parameters
     ----------
     cross_validation_dir : dir
@@ -176,8 +182,8 @@ def kfold_cross_validation(cross_validation_dir, n_fold, n_train_steps,
                                f'validation data set samples.')
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Assemble fold losses
-        k_fold_loss_array = np.append(
-            k_fold_loss_array, (best_training_loss, avg_valid_loss_sample))
+        k_fold_loss_array = np.vstack(
+            (k_fold_loss_array, (best_training_loss, avg_valid_loss_sample)))
         # Store fold losses
         folds_training_losses.append(best_training_loss)
         folds_validation_losses.append(avg_valid_loss_sample)

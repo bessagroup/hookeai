@@ -17,7 +17,8 @@ import re
 from gnn_model.gnn_patch_dataset import GNNMaterialPatchDataset
 from gnn_model.training import train_model, read_loss_history_from_file
 from gnn_model.cross_validation import kfold_cross_validation
-from gnn_model.evaluation_metrics import plot_training_loss_history
+from gnn_model.evaluation_metrics import plot_training_loss_history, \
+    plot_kfold_cross_validation
 from ioput.iostandard import make_directory
 #
 #                                                          Authorship & Credits
@@ -153,10 +154,11 @@ def perform_model_kfold_cross_validation(case_study_name, dataset_file_path,
     plot_dir = os.path.join(os.path.normpath(cross_validation_dir), 'plots')
     if not os.path.isdir(plot_dir):
         make_directory(plot_dir)
-    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~    
     # Generate k-fold cross-validation bar plot
-    pass
-    
+    plot_kfold_cross_validation(k_fold_loss_array, loss_type=loss_type.upper(),
+                                loss_scale='log', save_dir=plot_dir,
+                                is_save_fig=True, is_stdout_display=False)
 # =============================================================================
 def set_case_study_model_parameters(case_study_name, model_directory,
                                     device_type='cpu'):

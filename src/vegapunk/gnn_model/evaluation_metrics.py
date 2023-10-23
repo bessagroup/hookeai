@@ -465,6 +465,79 @@ def plot_truth_vs_prediction(prediction_sets, error_bound=None,
     # Close plot
     plt.close(figure)
 # =============================================================================
+def plot_kfold_cross_validation(k_fold_loss_array, loss_type=None,
+                                loss_scale='linear',
+                                filename='kfold_cross_validation',
+                                save_dir=None, is_save_fig=False,
+                                is_stdout_display=False):
+    """Plot k-fold cross-validation results.
+    
+    Parameters
+    ----------
+    k_fold_loss_array : numpy.ndarray(2d)
+        k-fold cross-validation loss array. For the i-th fold,
+        data_array[i, 0] stores the best training loss and data_array[i, 1]
+        stores the average prediction loss per sample.
+    loss_type : str, default=None
+        Loss type. If provided, then loss type is added to the y-axis label.
+    loss_scale : {'linear', 'log'}, default='linear'
+        Loss axis scale type.
+    filename : str, default='prediction_vs_groundtruth'
+        Figure name.
+    save_dir : str, default=None
+        Directory where figure is saved. If None, then figure is saved in
+        current working directory.
+    is_save_fig : bool, default=False
+        Save figure.
+    is_stdout_display : bool, default=False
+        True if displaying figure to standard output device, False otherwise.
+    """
+    # Check loss history
+    if not isinstance(k_fold_loss_array, np.ndarray):
+        raise RuntimeError('k-fold cross-validation loss array must be '
+                           'numpy.ndarray(2d) of shape (n_fold, 2).')
+    elif k_fold_loss_array.shape[1] != 2:
+        raise RuntimeError('k-fold cross-validation loss array must be '
+                           'numpy.ndarray(2d) of shape (n_fold, 2).')
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Get number of cross-validation folds
+    n_fold = k_fold_loss_array.shape[0]
+    # Set folds labels
+    folds_labels = tuple([f'Fold {x + 1}' for x in range(n_fold)])
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Build folds training and validation loss data
+    folds_data = {}
+    folds_data['Training'] = tuple(k_fold_loss_array[:, 0])
+    folds_data['Validation'] = tuple(k_fold_loss_array[:, 1])
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Set axes labels
+    x_label = None
+    y_label = 'Loss'
+    if loss_type is not None:
+        y_label += f' ({loss_type})'
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Set title
+    title = 'k-Fold Cross-Validation'
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Plot loss history
+    figure, _ = grouped_bar_chart(groups_labels=folds_labels,
+                                  groups_data=folds_data,
+                                  is_avg_hline=True,
+                                  title=title, x_label=x_label,
+                                  y_label=y_label, y_scale=loss_scale,
+                                  is_latex=True)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Display figure
+    if is_stdout_display:
+        plt.show()
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Save figure
+    if is_save_fig:
+        save_figure(figure, filename, format='pdf', save_dir=save_dir)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Close plot
+    plt.close(figure)
+# =============================================================================
 def plot_xy_data(data_xy, data_labels=None, x_lims=(None, None),
                  y_lims=(None, None), title=None, x_label=None, y_label=None,
                  x_scale='linear', y_scale='linear', x_tick_format=None,
@@ -550,7 +623,7 @@ def plot_xy_data(data_xy, data_labels=None, x_lims=(None, None),
     figure.set_figwidth(6, forward=True)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Create axes
-    axes = figure.add_subplot(1,1,1)
+    axes = figure.add_subplot(1, 1, 1)
     # Set title
     axes.set_title(title, fontsize=12, pad=10)
     # Set axes labels
@@ -696,7 +769,7 @@ def plot_xy2_data(data_xy1, data_xy2, x_lims=(None, None),
     figure.set_figwidth(6, forward=True)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Create first axes
-    axes = figure.add_subplot(1,1,1)
+    axes = figure.add_subplot(1, 1, 1)
     # Set first axes color
     color_y1 = '#4477AA'
     # Set title
@@ -872,7 +945,7 @@ def plot_xny_data(data_xy_list, range_type='min-max', data_labels=None,
     figure.set_figwidth(6, forward=True)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Create axes
-    axes = figure.add_subplot(1,1,1)
+    axes = figure.add_subplot(1, 1, 1)
     # Set title
     axes.set_title(title, fontsize=12, pad=10)
     # Set axes labels
@@ -1040,7 +1113,7 @@ def scatter_xy_data(data_xy, data_labels=None, is_identity_line=False,
     figure.set_figwidth(6, forward=True)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Create axes
-    axes = figure.add_subplot(1,1,1)
+    axes = figure.add_subplot(1, 1, 1)
     # Set title
     axes.set_title(title, fontsize=12, pad=10)
     # Set axes labels
@@ -1108,6 +1181,147 @@ def scatter_xy_data(data_xy, data_labels=None, is_identity_line=False,
         axes.legend(loc='upper left', frameon=True, fancybox=True,
                     facecolor='inherit', edgecolor='inherit', fontsize=10,
                     framealpha=1.0)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Return figure and axes handlers
+    return figure, axes
+# =============================================================================
+def grouped_bar_chart(groups_labels, groups_data, bar_width=None,
+                      is_avg_hline=False, y_lims=(None, None), title=None,
+                      x_label=None, y_label=None, y_scale='linear',
+                      y_tick_format=None, is_latex=False):
+    """Plot grouped bar chart.
+
+    Parameters
+    ----------
+    groups_labels = tuple[str]
+        Bar groups labels.
+    groups_data = dict
+        Store groups data (item, tuple) for data set (key, str). Dictionary
+        keys are taken as labels for each data set.
+    bar_width : float, default=None
+        Width of bars.
+    is_avg_hline, default=False
+        Plot horizontal line for average value of each data set.
+    y_lims : tuple, default=(None, None)
+        y-axis limits in data coordinates.
+    title : str, default=None
+        Plot title.
+    x_label : str, default=None
+        x-axis label.
+    y_label : str, default=None
+        y-axis label.
+    y_scale : str {'linear', 'log'}, default='linear'
+        y-axis scale. If None or invalid format, then default scale is set.
+        Scale 'log' overrides any y-axis ticks formatting.
+    is_latex : bool, default=False
+        If True, then render all strings in LaTeX.
+
+    Returns
+    -------
+    figure : Matplotlib Figure
+        Figure.
+    axes : Matplotlib Axes
+        Axes.
+    """
+    # Check bar groups labels
+    if not isinstance(groups_labels, tuple):
+        raise RuntimeError('Bar groups labels must be provided as a tuple of '
+                           'strings.')
+    else:
+        # Get number of bar groups
+        n_groups = len(groups_labels)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Check bar groups data
+    if not isinstance(groups_data, dict):
+        raise RuntimeError('Bar groups data must be provided as a dictionary '
+                           'of tuples.')
+    elif not all([isinstance(x, tuple) and len(x) == n_groups
+                  for x in groups_data.values()]):
+        raise RuntimeError('Bar groups data must be provided as a dictionary '
+                           'of tuples with size (n_groups,).')
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Set bar width
+    if bar_width is None:
+        bar_width = 1/(2 + len(groups_data.keys()))
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Set default color cycle
+    cycler_color = cycler.cycler('color',['#4477AA', '#EE6677', '#228833',
+                                          '#CCBB44', '#66CCEE', '#AA3377',
+                                          '#BBBBBB', '#000000'])
+    # Set default linestyle cycle
+    cycler_linestyle = cycler.cycler('linestyle',['-','--','-.'])
+    # Set default cycler
+    default_cycler = cycler_linestyle*cycler_color
+    plt.rc('axes', prop_cycle = default_cycler)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Set LaTeX font
+    if is_latex:
+        # Default LaTeX Computer Modern Roman
+        plt.rc('text',usetex=True)
+        plt.rc('font',**{'family':'serif','serif':['Computer Modern Roman']})
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Create figure
+    figure = plt.figure()
+    # Set figure size (inches) - stdout print purpose
+    figure.set_figheight(6, forward=True)
+    figure.set_figwidth(6, forward=True)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Create axes
+    axes = figure.add_subplot(1, 1, 1)
+    axes.set_axisbelow(True)
+    # Set title
+    axes.set_title(title, fontsize=12, pad=10)
+    # Set axes labels
+    axes.set_xlabel(x_label, fontsize=12, labelpad=10)
+    axes.set_ylabel(y_label, fontsize=12, labelpad=10)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Set axes scales
+    if y_scale in ('linear', 'log'):
+        axes.set_yscale(y_scale)
+    # Set tick formatting functions
+    def intTickFormat(x, pos):
+        return '${:2d}$'.format(int(x))
+    def floatTickFormat(x, pos):
+        return '${:3.1f}$'.format(x)
+    def expTickFormat(x, pos):
+        return '${:7.2e}$'.format(x)
+    tick_formats = {'int': intTickFormat, 'float': floatTickFormat,
+                    'exp': expTickFormat}
+    # Set groups labels locations
+    x = np.arange(n_groups)
+    axes.set_xticks(x + bar_width, groups_labels)
+    # Set axes tick formats
+    if y_scale != 'log' and y_tick_format in ('int', 'float', 'exp'):
+        axes.yaxis.set_major_formatter(
+            ticker.FuncFormatter(tick_formats[y_tick_format]))
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Configure grid major lines
+    axes.grid(which='major', axis='y', linestyle='-', linewidth=0.5,
+              color='0.5')
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Initialize bar groups position counter
+    group_id = 0
+    # Loop over data sets
+    for ds_label, ds_values in groups_data.items():
+        # Set data set bar offset
+        ds_offset = (0.5 + group_id)*bar_width
+        # Plot data set bars
+        dataset_bars = axes.bar(x + ds_offset, ds_values, width=bar_width,
+                                label=ds_label, align='center')
+        # Plot data set average line
+        if is_avg_hline:
+            axes.axhline(np.mean(ds_values), linestyle='--', linewidth=1.0,
+                         color=dataset_bars[-1].get_facecolor())
+        # Increment position counter
+        group_id += 1
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Set axes limits
+    axes.set_ylim(y_lims)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Set legend
+    axes.legend(loc='best', frameon=True, fancybox=True,
+                facecolor='inherit', edgecolor='inherit', fontsize=10,
+                framealpha=1.0)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Return figure and axes handlers
     return figure, axes

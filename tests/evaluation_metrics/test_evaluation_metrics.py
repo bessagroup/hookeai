@@ -9,7 +9,8 @@ import matplotlib.pyplot as plt
 # Local
 from src.vegapunk.gnn_model.evaluation_metrics import \
     plot_training_loss_history, plot_training_loss_and_lr_history, \
-    plot_loss_convergence_test, plot_truth_vs_prediction
+    plot_loss_convergence_test, plot_truth_vs_prediction, \
+    plot_kfold_cross_validation
 # =============================================================================
 #
 #                                                          Authorship & Credits
@@ -169,6 +170,7 @@ def test_plot_loss_convergence_test(tmp_path, monkeypatch, testing_size,
 # =============================================================================
 @pytest.mark.parametrize('n_processes, error_bound, is_normalize_data',
                          [(1, None, False),
+                          (2, 0.1, True),
                           ])
 def test_plot_truth_vs_prediction(tmp_path, monkeypatch, n_processes,
                                   error_bound, is_normalize_data):
@@ -207,3 +209,37 @@ def test_plot_truth_vs_prediction(tmp_path, monkeypatch, n_processes,
         # Test detection of invalid data structure
         plot_truth_vs_prediction(
             prediction_sets={'dataset_1': np.zeros((1, 3)),})
+# =============================================================================
+@pytest.mark.parametrize('loss_type, loss_scale',
+                         [('MSE', 'linear'),
+                          ('RMSE', 'log'),
+                          ])
+def test_plot_kfold_cross_validation(tmp_path, monkeypatch, loss_type,
+                                     loss_scale):
+    """Test plot of k-fold cross-validation results."""
+    # Set random k-fold cross-validation loss array
+    k_fold_loss_array = np.random.uniform(low=0.0, high=1.0e4, size=(4, 2))
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Generate plot
+    monkeypatch.setattr(plt, 'show', lambda: None)
+    is_error_raised = False
+    try:
+        plot_kfold_cross_validation(k_fold_loss_array, loss_type=loss_type,
+                                    loss_scale=loss_scale,
+                                    save_dir=tmp_path, is_save_fig=True,
+                                    is_stdout_display=True)
+        plot_kfold_cross_validation(k_fold_loss_array, loss_type=loss_type,
+                                    loss_scale=loss_scale,
+                                    save_dir=tmp_path, is_save_fig=True,
+                                    is_stdout_display=True)
+    except:
+        is_error_raised = True
+    assert not is_error_raised, 'Error while attempting to generate plot of ' \
+        'of k-fold cross-validation results.'
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    with pytest.raises(RuntimeError):
+        # Test detection of invalid data type
+        plot_kfold_cross_validation(k_fold_loss_array='invalid_type')
+    with pytest.raises(RuntimeError):
+        # Test detection of invalid data structure
+        plot_kfold_cross_validation(k_fold_loss_array=np.zeros((4, 3)))
