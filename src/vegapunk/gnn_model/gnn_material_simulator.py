@@ -784,9 +784,12 @@ class GNNMaterialPatchModel(torch.nn.Module):
         self._init_data_scalers()
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Instantiate data scalers
-        scaler_node_in = TorchStandardScaler(n_features=self._n_node_in)
-        scaler_edge_in = TorchStandardScaler(n_features=self._n_edge_in)
-        scaler_node_out = TorchStandardScaler(n_features=self._n_node_out)
+        scaler_node_in = TorchStandardScaler(n_features=self._n_node_in,
+                                             device_type=self._device_type)
+        scaler_edge_in = TorchStandardScaler(n_features=self._n_edge_in,
+                                             device_type=self._device_type)
+        scaler_node_out = TorchStandardScaler(n_features=self._n_node_out,
+                                              device_type=self._device_type)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Get scaling parameters and fit data scalers: node input features
         mean, std = graph_standard_partial_fit(
@@ -951,6 +954,8 @@ class TorchStandardScaler:
     _std : torch.Tensor
         Features standardization standard deviation tensor stored as a
         torch.Tensor with shape (n_features,).
+    _device : torch.device
+        Device on which torch.Tensor is allocated.
     
     Methods
     -------
@@ -971,7 +976,7 @@ class TorchStandardScaler:
     _check_tensor(self, tensor):
         Check features tensor to be transformed.
     """
-    def __init__(self, n_features, mean=None, std=None):
+    def __init__(self, n_features, mean=None, std=None, device_type='cpu'):
         """Constructor.
         
         Parameters
@@ -984,6 +989,8 @@ class TorchStandardScaler:
         std : torch.Tensor, default=None
             Features standardization standard deviation tensor stored as a
             torch.Tensor with shape (n_features,).
+        device_type : {'cpu', 'cuda'}, default='cpu'
+            Type of device on which torch.Tensor is allocated.
         """
         if not isinstance(n_features, int) or n_features <= 0:
             raise RuntimeError('Number of features is not positive int.')
@@ -997,6 +1004,7 @@ class TorchStandardScaler:
             self._std = self._check_std(std)
         else:
              self._std = None
+        self._device = torch.device(device_type)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     def set_mean(self, mean):
         """Set features standardization mean tensor.
@@ -1052,8 +1060,8 @@ class TorchStandardScaler:
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Set standardization mean and standard deviation
         self._mean = self._check_mean(torch.mean(tensor, dim=0))
-        self._std = self._check_std(torch.std(tensor, dim=0,
-                                              unbiased=is_bessel))
+        self._std = \
+            self._check_std(torch.std(tensor, dim=0, unbiased=is_bessel))
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     def transform(self, tensor):
         """Standardize features tensor.
@@ -1076,8 +1084,8 @@ class TorchStandardScaler:
         # Get number of samples
         n_samples = tensor.shape[0]
         # Build mean and standard deviation tensors for standardization
-        mean = torch.tile(self._mean, (n_samples, 1))
-        std = torch.tile(self._std, (n_samples, 1))
+        mean = torch.tile(self._mean, (n_samples, 1)).to(self._device)
+        std = torch.tile(self._std, (n_samples, 1)).to(self._device)
         # Standardize features tensor
         transformed_tensor = torch.div(tensor - mean, std)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -1110,8 +1118,8 @@ class TorchStandardScaler:
         # Get number of samples
         n_samples = tensor.shape[0]
         # Build mean and standard deviation tensors for standardization
-        mean = torch.tile(self._mean, (n_samples, 1))
-        std = torch.tile(self._std, (n_samples, 1))
+        mean = torch.tile(self._mean, (n_samples, 1)).to(self._device)
+        std = torch.tile(self._std, (n_samples, 1)).to(self._device)
         # Destandardize features tensor
         transformed_tensor = torch.mul(tensor, std) + mean
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

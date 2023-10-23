@@ -165,7 +165,7 @@ def kfold_cross_validation(cross_validation_dir, n_fold, n_train_steps,
             opt_algorithm=opt_algorithm, lr_scheduler_type=lr_scheduler_type,
             lr_scheduler_kwargs=lr_scheduler_kwargs, loss_type=loss_type,
             loss_kwargs=loss_kwargs, batch_size=batch_size,
-            is_sampler_shuffle=is_sampler_shuffle, device_type='cpu',
+            is_sampler_shuffle=is_sampler_shuffle, device_type=device_type,
             seed=None, is_verbose=False)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Prediction with GNN-based material patch model

@@ -153,7 +153,7 @@ def train_model(n_train_steps, dataset, model_init_args, lr_init,
     # Initialize GNN-based material patch model
     model = GNNMaterialPatchModel(**model_init_args)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~  
-    # Move model to process ID
+    # Move model to device
     model.to(device=device)
     # Set model in training mode
     model.train()
@@ -205,7 +205,7 @@ def train_model(n_train_steps, dataset, model_init_args, lr_init,
         model = GNNMaterialPatchModel.init_model_from_file(
             model_init_args['model_directory'])
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        # Move model to process ID
+        # Move model to device
         model.to(device=device)
         # Set model in training mode
         model.train()
@@ -245,7 +245,7 @@ def train_model(n_train_steps, dataset, model_init_args, lr_init,
         # Loop over graph batches. A graph batch is a data object describing a
         # batch of graphs as one large (disconnected) graph.
         for pyg_graph in data_loader:
-            # Move graph sample to process ID
+            # Move graph sample to device
             pyg_graph.to(device)
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Compute node internal forces predictions (forward
@@ -335,7 +335,7 @@ def train_model(n_train_steps, dataset, model_init_args, lr_init,
                       lr_history=lr_history)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Get best loss and corresponding training step
-    best_loss = min(loss_history).detach()
+    best_loss = min(loss_history).detach().cpu()
     best_training_step = loss_history.index(best_loss)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     if is_verbose:

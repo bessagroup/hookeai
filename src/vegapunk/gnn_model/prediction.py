@@ -136,7 +136,7 @@ def predict(predict_directory, dataset, model_directory,
     _ = model.load_model_state(load_model_state=load_model_state,
                                is_remove_posterior=True)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Move model to process ID
+    # Move model to device
     model.to(device=device)
     # Set model in evaluation mode
     model.eval()
@@ -167,7 +167,7 @@ def predict(predict_directory, dataset, model_directory,
         for i, pyg_graph in enumerate(tqdm.tqdm(data_loader,
                                       desc='> Predictions: ',
                                       disable=not is_verbose)):
-            # Move sample to process ID
+            # Move sample to device
             pyg_graph.to(device)
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Compute node internal forces predictions (forward propagation)
@@ -182,7 +182,7 @@ def predict(predict_directory, dataset, model_directory,
                 is_normalized=is_normalized_loss)
             # Assemble sample prediction loss if ground-truth is available
             if loss is not None:
-                loss_samples.append(loss)
+                loss_samples.append(loss.detach().cpu())
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Build sample results
             results = {}

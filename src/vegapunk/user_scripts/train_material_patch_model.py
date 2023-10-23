@@ -76,7 +76,7 @@ def perform_model_standard_training(case_study_name, dataset_file_path,
                               is_sampler_shuffle=is_sampler_shuffle,
                               load_model_state=None, save_every=None,
                               dataset_file_path=dataset_file_path,
-                              device_type='cpu', seed=None,
+                              device_type=device_type, seed=None,
                               is_verbose=is_verbose)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set loss history record file path
@@ -256,7 +256,7 @@ def set_default_training_options():
 # =============================================================================
 if __name__ == "__main__":
     # Set processes
-    is_standard_training = True
+    is_standard_training = False
     is_cross_validation = True
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set case study name
@@ -317,7 +317,7 @@ if __name__ == "__main__":
     make_directory(cross_validation_dir, is_overwrite=True)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set device type
-    device_type = 'cpu'
+    device_type = 'cuda'
     # Perform k-fold cross validation of GNN-based material patch model
     if is_cross_validation:
         perform_model_kfold_cross_validation(
