@@ -130,6 +130,10 @@ def train_model(n_train_steps, dataset, model_init_args, lr_init,
     -------
     model : torch.nn.Module
         GNN-based material patch model.
+    best_loss : float
+        Best loss during training process.
+    best_training_step : int
+        Training step corresponding to best loss during training process.
     """
     # Set random number generators initialization for reproducibility
     if isinstance(seed, int):
@@ -141,10 +145,10 @@ def train_model(n_train_steps, dataset, model_init_args, lr_init,
     # Set device
     device = torch.device(device_type)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    start_time_sec = time.time()
     if is_verbose:
         print('\nGNN-based material patch data model training'
               '\n--------------------------------------------')
-        start_time_sec = time.time()
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Initialize GNN-based material patch model
     model = GNNMaterialPatchModel(**model_init_args)
@@ -331,7 +335,7 @@ def train_model(n_train_steps, dataset, model_init_args, lr_init,
                       lr_history=lr_history)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Get best loss and corresponding training step
-    best_loss = min(loss_history)
+    best_loss = min(loss_history).detach()
     best_training_step = loss_history.index(best_loss)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     if is_verbose:
@@ -358,7 +362,7 @@ def train_model(n_train_steps, dataset, model_init_args, lr_init,
         lr_scheduler_kwargs, dataset_file_path, dataset, best_loss,
         best_training_step, total_time_sec, avg_time_epoch)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    return model
+    return model, best_loss, best_training_step
 # =============================================================================
 def get_pytorch_loss(loss_type, **kwargs):
     """Get PyTorch loss function.
@@ -974,7 +978,7 @@ def write_training_summary_file(
     summary_data['Training data set file'] = \
         dataset_file_path if dataset_file_path else None
     summary_data['Training data set size'] = len(dataset)
-    summary_data['Minimum loss: '] = \
+    summary_data['Best loss: '] = \
         f'{best_loss:.8e} (training step {best_training_step})'
     summary_data['Total training time'] = \
         str(datetime.timedelta(seconds=int(total_time_sec)))
