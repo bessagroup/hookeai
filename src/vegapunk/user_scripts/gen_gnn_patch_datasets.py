@@ -106,7 +106,7 @@ if __name__ == "__main__":
                            + case_study_dir)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set material patch simulation data set size
-    n_sample = 5
+    n_sample = 10
     # Set material patch simulation data set file path
     sim_dataset_file_path = os.path.join(
         os.path.normpath(case_study_dir),
@@ -123,7 +123,7 @@ if __name__ == "__main__":
                                dataset_directory, is_verbose=True)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Randomly split data set into training, validation and testing
-    split_sizes = {'training': 0.6, 'validation': 0.2, 'testing': 0.2}
+    split_sizes = {'training': 0.8, 'testing': 0.2}
     # Split data set
     dataset_split = \
         split_dataset(dataset, split_sizes, is_save_subsets=True,

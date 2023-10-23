@@ -222,7 +222,7 @@ if __name__ == "__main__":
                            + case_study_dir)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set material patch simulation data set size
-    n_sample = 5
+    n_sample = 10
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set simulation directory
     simulation_directory = os.path.join(os.path.normpath(case_study_dir),

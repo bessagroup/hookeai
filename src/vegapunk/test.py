@@ -569,3 +569,19 @@ print(test_class.x)
                              is_stdout_display=True)
 
 """
+
+import sklearn.model_selection
+
+n_sample = 10
+n_fold = 4
+
+k_folder = sklearn.model_selection.KFold(n_splits=n_fold, shuffle=True,
+                                         random_state=0)
+
+folds_indexes = []
+
+for (train_index, test_index) in k_folder.split(np.zeros((n_sample, 3))):
+    folds_indexes.append((train_index, test_index))
+
+print(folds_indexes)
+
