@@ -90,10 +90,10 @@ def generate_dataset_samples_files(dataset_directory, dataset_simulation_data,
         contains a torch_geometric.data.Data object describing a homogeneous
         graph.
     """
+    start_time_sec = time.time()
     if is_verbose:
         print('\nGenerate GNN-based material patch data set'
               '\n------------------------------------------')
-        start_time_sec = time.time()
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Check data set directory
     if not os.path.isdir(dataset_directory):
