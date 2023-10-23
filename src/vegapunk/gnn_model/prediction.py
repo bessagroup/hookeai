@@ -99,6 +99,9 @@ def predict(predict_directory, dataset, model_directory,
     -------
     predict_subdir : str
         Subdirectory where samples predictions results files are stored.
+    avg_predict_loss : float
+        Average prediction loss per sample. Defaults to None if ground-truth is
+        not available for all data set samples.
     """
     # Set random number generators initialization for reproducibility
     if isinstance(seed, int):
@@ -109,10 +112,10 @@ def predict(predict_directory, dataset, model_directory,
     # Set device
     device = torch.device(device_type)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    start_time_sec = time.time()
     if is_verbose:
         print('\nGNN-based material patch data model prediction'
               '\n----------------------------------------------')
-        start_time_sec = time.time()
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Check model directory
     if not os.path.exists(model_directory):
@@ -197,15 +200,14 @@ def predict(predict_directory, dataset, model_directory,
         print('\n> Finished prediction process!\n')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Compute average prediction loss per sample
-    average_loss = None
-    if loss_samples:
-        average_loss = np.mean(loss_samples)
+    avg_predict_loss = None
+    if isinstance(loss_samples, list) and len(loss_samples) == len(dataset):
+        avg_predict_loss = np.mean(loss_samples)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     if is_verbose:
         # Set average prediction loss output format
-        if average_loss:
-            loss_str = (f'{average_loss:.8e} | {loss_type}, '
-                        f'{len(loss_samples)} samples')
+        if avg_predict_loss:
+            loss_str = (f'{avg_predict_loss:.8e} | {loss_type}')
             if is_normalized_loss:
                 loss_str += ', normalized'
         else:
@@ -229,9 +231,9 @@ def predict(predict_directory, dataset, model_directory,
     write_prediction_summary_file(
         predict_subdir, device_type, seed, model_directory, load_model_state,
         loss_type, loss_kwargs, is_normalized_loss, dataset_file_path, dataset,
-        average_loss, total_time_sec, avg_time_sample)
+        avg_predict_loss, total_time_sec, avg_time_sample)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    return predict_subdir
+    return predict_subdir, avg_predict_loss
 # =============================================================================
 def make_predictions_subdir(predict_directory):
     """Create model predictions subdirectory.
@@ -512,7 +514,7 @@ def build_prediction_data_arrays(predictions_dir, prediction_type,
 def write_prediction_summary_file(
     predict_subdir, device_type, seed, model_directory, load_model_state,
     loss_type, loss_kwargs, is_normalized_loss, dataset_file_path, dataset,
-    average_loss, total_time_sec, avg_time_sample):
+    avg_predict_loss, total_time_sec, avg_time_sample):
     """Write summary data file for model prediction process.
     
     Parameters
@@ -544,7 +546,7 @@ def write_prediction_summary_file(
     dataset : GNNMaterialPatchDataset
         GNN-based material patch data set. Each sample corresponds to a
         torch_geometric.data.Data object describing a homogeneous graph.
-    average_loss : float
+    avg_predict_loss : float
         Average prediction loss per sample.
     total_time_sec : int
         Total prediction time in seconds.
@@ -564,7 +566,7 @@ def write_prediction_summary_file(
         dataset_file_path if dataset_file_path else None
     summary_data['Prediction data set size'] = len(dataset)
     summary_data['Avg. prediction loss per sample: '] = \
-        f'{average_loss:.8e}' if average_loss else None
+        f'{avg_predict_loss:.8e}' if avg_predict_loss else None
     summary_data['Total prediction time'] = \
         str(datetime.timedelta(seconds=int(total_time_sec)))
     summary_data['Avg. prediction time per sample'] = \
