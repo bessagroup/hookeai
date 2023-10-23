@@ -17,6 +17,8 @@ write_summary_file
 # Standard
 import os
 import shutil
+# Third-party
+import numpy as np
 #
 #                                                          Authorship & Credits
 # =============================================================================
@@ -135,6 +137,8 @@ def write_summary_file(summary_directory, filename='summary',
                         summary.append(f'    "{str(key3)}": {str(val3)}\n')
                 else:
                     summary.append(f'  "{str(key2)}": {str(val2)}\n')
+        elif isinstance(val1, np.ndarray):
+            summary.append(f'\n"{str(key1)}":\n  {str(val1)}\n')
         else:
             summary.append(f'\n"{str(key1)}":  {str(val1)}\n')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
