@@ -125,14 +125,12 @@ def generate_material_patch_dataset(
         the material patch size along the corresponding dimension. The range
         for each dimension is specified as a tuple(lower_bound, upper_bound)
         and where positive/negative values are associated with
-        tension/compression. Range defaults to (0, 0) if not specified along a
-        given dimension.
+        tension/compression.
     edge_deformation_order_ranges : dict, default=None
         Range of polynomial deformation order (item, tuple[int](2)) prescribed
         for each edge label (key, str[int]). Edges are labeled from 1 to number
         of edges. The range is specified as a tuple(lower_bound, upper_bound),
-        where the minimum allowed is zero order. Range defaults to (0, 0) if
-        not specified along a given dimension.
+        where the minimum allowed is zero order.
     edge_deformation_magnitude_ranges : dict, default=None
         Range of polynomial deformation (item, tuple[float](2)) prescribed
         for each edge label (key, str[int]). Edges are labeled from 1 to number
@@ -141,8 +139,7 @@ def generate_material_patch_dataset(
         configuration) and its magnitude is relative to the material patch size
         orthogonal to its dimension in the reference configuration. The range
         is specified as a tuple(lower_bound, upper_bound) and where
-        positive/negative values are associated with tension/compression. Range
-        defaults to (0, 0) if not specified along a given dimension.
+        positive/negative values are associated with tension/compression.
     max_iter_per_patch : int, default=10
         Maximum number of iterations to get a geometrically admissible
         deformed patch configuration.
@@ -546,7 +543,7 @@ def simulate_material_patch(design, **kwargs):
     # Set corners tensile/compression displacements mapping
     if n_dim == 2:
         corners_disp_sign = {'1': (-1, -1), '2': (1, -1),
-                             '3': (1, -1), '4': (-1, 1)}
+                             '3': (1, 1), '4': (-1, 1)}
     else:
         raise RuntimeError('Missing 3D implementation.')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
