@@ -12,6 +12,8 @@ if root_dir not in sys.path:
     sys.path.insert(0, root_dir)
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 import os
+import pickle
+import shutil
 # Third-party
 import numpy as np
 # Local
@@ -104,6 +106,156 @@ def generate_dataset(case_study_name, simulation_directory, n_sample,
         is_save_simulation_files=is_save_simulation_files,
         is_verbose=is_verbose)
 # =============================================================================
+def generate_deterministic_dataset(case_study_name, simulation_directory,
+                                   is_verbose=False):
+    """Generate material patch simulation deterministic data sets.
+    
+    Parameters
+    ----------
+    case_study_name : str
+        Case study.
+    simulation_directory : str
+        Directory where files associated with the generation of the material
+        patch finite element simulations dataset are written. All existent
+        files are overridden when saving new data files.
+    is_verbose : bool, default=False
+        If True, enable verbose output.
+    """
+    # Set default Links simulation parameters
+    links_bin_path, strain_formulation, analysis_type, links_input_params = \
+        set_default_links_parameters()
+    # Set default files and directories storage options
+    is_save_simulation_dataset, is_append_n_sample, is_save_simulation_files, \
+        is_remove_failed_samples, is_save_plot_patch = \
+            set_default_saving_options()
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Set temporary samples directory
+    sample_directory = os.path.join(os.path.normpath(simulation_directory),
+                                    'samples_data')
+    # Create temporary samples directory
+    if not os.path.isdir(sample_directory):
+        make_directory(sample_directory)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Generate material patch simulation data set
+    if case_study_name == '2d_elastic_orthogonal':
+        # Description:
+        # Single element patches corresponding to 2D first-order orthogonal
+        # deformations
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set number of spatial dimensions
+        n_dim = 2
+        # Set finite element discretization
+        elem_type = 'SQUAD4'
+        n_elems_per_dim = (1, 1)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set patch material data
+        patch_material_data = set_patch_material_data(
+            mode='homogeneous_elastic', n_elems_per_dim=n_elems_per_dim)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set range of material patch size along each dimension
+        patch_dims_ranges = {'1': (1.0, 1.0), '2': (1.0, 1.0)}
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set first-order polynomial edge deformation
+        edge_deformation_order_ranges = {f'{x}': (1, 1) for x in range(1, 5)}
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Save patch plot
+        is_save_plot_patch = True
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Initialize material patches finite element simulations data set
+        dataset_simulation_data = []
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Loop over orthogonal deformations
+        for i in range(n_dim**2):
+            # Orthogonal deformation - F11:
+            if i == 0:
+                # Set deformed configuration
+                avg_deformation_ranges = {}
+                avg_deformation_ranges['1'] = ((0.2, 0.2), (0.0, 0.0))
+                avg_deformation_ranges['2'] = avg_deformation_ranges['1']
+                avg_deformation_ranges['3'] = avg_deformation_ranges['1']
+                avg_deformation_ranges['4'] = avg_deformation_ranges['1']
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Orthogonal deformation - F21:
+            elif i == 1:
+                # Set deformed configuration
+                avg_deformation_ranges = {}
+                avg_deformation_ranges['1'] = ((0.0, 0.0), (-0.2, -0.2))
+                avg_deformation_ranges['2'] = ((0.0, 0.0), (0.2, 0.2))
+                avg_deformation_ranges['3'] = avg_deformation_ranges['1']
+                avg_deformation_ranges['4'] = avg_deformation_ranges['2']
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Orthogonal deformation - F12:
+            elif i == 2:
+                # Set deformed configuration
+                avg_deformation_ranges = {}
+                avg_deformation_ranges['1'] = ((0.2, 0.2), (0.0, 0.0))
+                avg_deformation_ranges['2'] = ((-0.2, -0.2), (0.0, 0.0))
+                avg_deformation_ranges['3'] = avg_deformation_ranges['1']
+                avg_deformation_ranges['4'] = avg_deformation_ranges['2']
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            elif i == 3:
+                # Set deformed configuration
+                avg_deformation_ranges = {}
+                avg_deformation_ranges['1'] = ((0.0, 0.0), (0.2, 0.2))
+                avg_deformation_ranges['2'] = avg_deformation_ranges['1']
+                avg_deformation_ranges['3'] = avg_deformation_ranges['1']
+                avg_deformation_ranges['4'] = avg_deformation_ranges['1']
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Generate material patch
+            sample_simulation_data = generate_material_patch_dataset(
+                n_dim, links_bin_path, strain_formulation, analysis_type,
+                elem_type, n_elems_per_dim, patch_material_data,
+                simulation_directory, n_sample=1,
+                patch_dims_ranges=patch_dims_ranges,
+                avg_deformation_ranges=avg_deformation_ranges,
+                edge_deformation_order_ranges=edge_deformation_order_ranges,
+                is_remove_failed_samples = is_remove_failed_samples,
+                links_input_params=links_input_params,
+                is_save_simulation_dataset=False,
+                is_append_n_sample=is_append_n_sample, 
+                is_save_plot_patch=is_save_plot_patch,
+                is_save_simulation_files=False,
+                is_verbose=is_verbose)
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Append material patch data
+            dataset_simulation_data.append(sample_simulation_data)
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Rename material patch summary data file
+            os.rename(os.path.join(simulation_directory, 'summary.dat'),
+                      os.path.join(simulation_directory,
+                                   f'summary_material_patch_{i}.dat'))
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Store material patch plot in samples temporary directory
+            if is_save_plot_patch:
+                shutil.move(
+                    os.path.join(os.path.normpath(simulation_directory),
+                                 'material_patch_0_plot.pdf'),
+                    os.path.join(os.path.normpath(sample_directory),
+                                 f'material_patch_{i}_plot.pdf'))
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Extract files from samples temporary directory
+        for filename in os.listdir(sample_directory):
+            shutil.move(os.path.join(sample_directory, filename),
+                        os.path.join(simulation_directory, filename))
+        # Remove samples temporary directory
+        os.rmdir(sample_directory)     
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~    
+    else:
+        raise RuntimeError('Unknown case study.')
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Set data set file
+    dataset_file_name = 'material_patch_fem_dataset'
+    # Append data set size
+    if is_append_n_sample:
+        dataset_file_name += f'_n{len(dataset_simulation_data)}'
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Set data set file path
+    dataset_file_path = os.path.join(
+        os.path.normpath(simulation_directory), dataset_file_name + '.pkl')
+    # Save data set
+    with open(dataset_file_path, 'wb') as dataset_file:
+        pickle.dump(dataset_simulation_data, dataset_file)
+# =============================================================================    
 def set_patch_material_data(mode, n_elems_per_dim):
     """Set patch material data.
     
@@ -208,10 +360,12 @@ def set_default_saving_options():
 # =============================================================================
 if __name__ == "__main__":
     # Set case study name
-    case_study_name = '2d_elastic'
+    case_study_name = '2d_elastic_orthogonal'
     # Set case study directory
     case_study_base_dirs = {
-        '2d_elastic': f'/home/bernardoferreira/Documents/temp',}
+        '2d_elastic': f'/home/bernardoferreira/Documents/temp',
+        '2d_elastic_orthogonal': f'/home/bernardoferreira/Documents/temp',
+        }
     case_study_dir = \
         os.path.join(os.path.normpath(case_study_base_dirs[case_study_name]),
                      f'cs_{case_study_name}')
@@ -232,5 +386,9 @@ if __name__ == "__main__":
         make_directory(simulation_directory)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Generate material patch simulation data set
-    generate_dataset(case_study_name, simulation_directory, n_sample,
-                     is_verbose=True)
+    if case_study_name in ('2d_elastic_orthogonal',):
+        generate_deterministic_dataset(case_study_name, simulation_directory,
+                                       is_verbose=True)
+    else:
+        generate_dataset(case_study_name, simulation_directory, n_sample,
+                         is_verbose=True)
