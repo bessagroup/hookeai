@@ -218,7 +218,7 @@ def generate_deterministic_dataset(case_study_name, simulation_directory,
                 is_verbose=is_verbose)
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Append material patch data
-            dataset_simulation_data.append(sample_simulation_data)
+            dataset_simulation_data += sample_simulation_data
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Rename material patch summary data file
             os.rename(os.path.join(simulation_directory, 'summary.dat'),
@@ -360,11 +360,11 @@ def set_default_saving_options():
 # =============================================================================
 if __name__ == "__main__":
     # Set case study name
-    case_study_name = '2d_elastic_orthogonal'
+    case_study_name = '2d_elastic'
     # Set case study directory
     case_study_base_dirs = {
-        '2d_elastic': f'/home/bernardoferreira/Documents/temp',
         '2d_elastic_orthogonal': f'/home/bernardoferreira/Documents/temp',
+        '2d_elastic': f'/home/bernardoferreira/Documents/temp',
         }
     case_study_dir = \
         os.path.join(os.path.normpath(case_study_base_dirs[case_study_name]),
@@ -375,20 +375,19 @@ if __name__ == "__main__":
         raise RuntimeError('The case study directory has not been found:\n\n'
                            + case_study_dir)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Set material patch simulation data set size
-    n_sample = 10
-    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set simulation directory
     simulation_directory = os.path.join(os.path.normpath(case_study_dir),
                                         '0_simulation')
     # Create simulation directory
-    if not os.path.isdir(simulation_directory):
-        make_directory(simulation_directory)
+    make_directory(simulation_directory, is_overwrite=True)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Generate material patch simulation data set
     if case_study_name in ('2d_elastic_orthogonal',):
         generate_deterministic_dataset(case_study_name, simulation_directory,
                                        is_verbose=True)
-    else:
+    else:    
+        # Set material patch simulation data set size
+        n_sample = 10
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         generate_dataset(case_study_name, simulation_directory, n_sample,
                          is_verbose=True)
