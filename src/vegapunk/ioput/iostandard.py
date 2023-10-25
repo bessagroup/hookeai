@@ -10,6 +10,8 @@ new_file_path_with_int
     Generate new and non-existent file path by extending with an integer.
 write_summary_file
     Write summary data file with provided keyword-based parameters.
+find_unique_file_with_regex(directory, regex)
+    Find file in directory based on regular expression.
 """
 #
 #                                                                       Modules
@@ -17,6 +19,7 @@ write_summary_file
 # Standard
 import os
 import shutil
+import re
 # Third-party
 import numpy as np
 #
@@ -144,3 +147,75 @@ def write_summary_file(summary_directory, filename='summary',
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Write summary file
     open(summary_file_path, 'w').writelines(summary)
+# =============================================================================
+def find_unique_file_with_regex(directory, regex):
+    """Find file in directory based on regular expression.
+    
+    Returns first occurrence if file matching regular expression is found.
+    
+    Parameters
+    ----------
+    directory : str
+        Directory where file is searched.
+    regex : {str, tuple[str]}
+        Regular expression to search for file. If tuple of regular expressions
+        is provided, then search procedure loops over them.
+        
+    Returns
+    -------
+    is_file_found : bool
+        True if file is found, False otherwise.
+    file_path : {str, None}
+        File path. Set to None if file is not found.
+    """
+    # Check directory
+    if not os.path.isdir(directory):
+        raise RuntimeError('The searching directory has not been found:\n\n'
+                           + directory)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Check regular expression
+    if not isinstance(regex, str) and not isinstance(regex, tuple):
+        raise RuntimeError('Regular expression(s) must be provided as str or '
+                           'tuple[str].')
+    elif (isinstance(regex, tuple)
+          and not all([isinstance(x, str) for x in regex])):
+        raise RuntimeError('Regular expression(s) must be provided as str or '
+                           'tuple[str].')
+    else:
+        if isinstance(regex, str):
+            # Convert to tuple
+            regex = (regex,)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Check regular expression pattern
+    try:
+        for pattern in regex:
+            re.compile(pattern)
+    except re.error:
+        raise RuntimeError('Invalid regular expression.')    
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Get files in directory
+    directory_list = os.listdir(directory)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Initialize file found flag
+    is_file_found = False
+    # Loop over training regex
+    for pattern in regex:
+        # Loop over files
+        for filename in directory_list:
+            # Check if file meeting pattern has been found
+            is_file_found = bool(re.search(pattern, filename))
+            # Leave searching loop when file is found
+            if is_file_found:
+                break
+        # Leave searching loop when file is found
+        if is_file_found:
+            break
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Set file path
+    if is_file_found:
+        dataset_file_path = os.path.join(os.path.normpath(directory),
+                                         filename)
+    else:
+        dataset_file_path = None
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    return is_file_found, dataset_file_path
