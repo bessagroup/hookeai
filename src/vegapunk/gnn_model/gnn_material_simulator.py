@@ -78,6 +78,10 @@ class GNNMaterialPatchModel(torch.nn.Module):
     -------
     init_model_from_file(model_directory)
         Initialize GNN-based material patch model from initialization file.
+    set_device(self, device_type)
+        Set device on which torch.Tensor is allocated.
+    get_device(self)
+        Get device on which torch.Tensor is allocated.
     forward(self)
         Forward propagation.
     save_model_init_file(self)
@@ -178,11 +182,7 @@ class GNNMaterialPatchModel(torch.nn.Module):
         # Set normalization flag
         self.is_data_normalization = is_data_normalization
         # Set device
-        self._device_type = device_type
-        if device_type in ('cpu', 'cuda'):
-            self._device = torch.device(device_type)
-        else:
-            raise RuntimeError('Invalid device type.')
+        self.set_device(device_type)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Initialize GNN-based Encoder-Process-Decoder model
         self._gnn_epd_model = \
@@ -242,6 +242,38 @@ class GNNMaterialPatchModel(torch.nn.Module):
         model._data_scalers = model_data_scalers
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         return model
+    # -------------------------------------------------------------------------
+    def set_device(self, device_type):
+        """Set device on which torch.Tensor is allocated.
+        
+        Parameters
+        ----------
+        device_type : {'cpu', 'cuda'}
+            Type of device on which torch.Tensor is allocated.
+        device : torch.device
+            Device on which torch.Tensor is allocated.
+        """
+        if device_type in ('cpu', 'cuda'):
+            if device_type == 'cuda' and not torch.cuda.is_available():
+                raise RuntimeError('PyTorch with CUDA is not available. '
+                                   'Please set the model device type as CPU '
+                                   'as:\n\n' + 'model.set_device(\'cpu\').')
+            self._device_type = device_type
+            self._device = torch.device(device_type)
+        else:
+            raise RuntimeError('Invalid device type.')
+    # -------------------------------------------------------------------------
+    def get_device(self):
+        """Get device on which torch.Tensor is allocated.
+        
+        Parameters
+        ----------
+        device_type : {'cpu', 'cuda'}
+            Type of device on which torch.Tensor is allocated.
+        device : torch.device
+            Device on which torch.Tensor is allocated.
+        """
+        return self.device_type, self.device
     # -------------------------------------------------------------------------
     def forward(self, graph, is_normalized=False):
         """Forward propagation.
