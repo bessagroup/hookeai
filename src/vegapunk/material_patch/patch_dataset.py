@@ -1,13 +1,14 @@
 """Generate and simulate set of deformed finite element material patches.
 
+Classes
+-------
+MaterialPatchSimulator(f3dasm.datageneration.DataGenerator)
+    Material patch generator and simulator.
+
 Functions
 ---------
 generate_material_patch_dataset
     Generate and simulate a set of deformed finite element material patches.
-generate_dataset_output_data
-    Generate material patches simulations output data.   
-simulate_material_patch
-    Generate and simulate finite element material patch design sample.
 get_default_design_parameters
     Generate finite element material patch design space default parameters.
 read_simulation_dataset_from_file
@@ -24,10 +25,11 @@ import shutil
 import pickle
 import time
 import datetime
+import logging
 # Third-party
 import numpy as np
-import f3dasm
-import tqdm
+import f3dasm                                                                  # Waiting for fix: Logger
+import f3dasm.datageneration
 # Local
 from material_patch.patch_generator import FiniteElementPatchGenerator
 from simulators.links.links import LinksSimulator
@@ -165,7 +167,7 @@ def generate_material_patch_dataset(
     -------
     dataset_simulation_data : list[dict]
         Material patches finite element simulations data set. Each material
-        patch data of is stored in a dict, where:
+        patch data is stored in a dict, where:
         
         'patch' : Instance of FiniteElementPatch, the simulated finite \
                   element material patch.
@@ -234,7 +236,7 @@ def generate_material_patch_dataset(
         print('\n> Building design space:')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Initialize design space
-    design_space = f3dasm.Domain()
+    domain = f3dasm.Domain()
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     if is_verbose:
         print('  > [ input parameter] Setting material patch size...')
@@ -248,14 +250,11 @@ def generate_material_patch_dataset(
         # Set bounds
         lower_bound=patch_dims_ranges[str(i + 1)][0]
         upper_bound=patch_dims_ranges[str(i + 1)][1]
-        # Set parameter
-        if np.isclose(lower_bound, upper_bound):
-            parameter = f3dasm.ConstantParameter(value=lower_bound) 
-        else:
-            parameter = f3dasm.ContinuousParameter(lower_bound=lower_bound,
-                                                   upper_bound=upper_bound)
         # Add design input parameter
-        design_space.add_input_space(name=name, space=parameter)
+        if np.isclose(lower_bound, upper_bound):
+            domain.add_constant(name=name, value=lower_bound)
+        else:
+            domain.add_float(name=name, low=lower_bound, high=upper_bound)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     if is_verbose:
         print('  > [ input parameter] Setting material patch average '
@@ -279,14 +278,11 @@ def generate_material_patch_dataset(
             # Set bounds
             lower_bound=avg_deformation_ranges[label][i][0]
             upper_bound=avg_deformation_ranges[label][i][1]
-            # Set parameter
-            if np.isclose(lower_bound, upper_bound):
-                parameter = f3dasm.ConstantParameter(value=lower_bound)     
-            else:
-                parameter = f3dasm.ContinuousParameter(
-                    lower_bound=lower_bound, upper_bound=upper_bound)
             # Add design input parameter
-            design_space.add_input_space(name=name, space=parameter)
+            if np.isclose(lower_bound, upper_bound):
+                domain.add_constant(name=name, value=lower_bound) 
+            else:
+                domain.add_float(name=name, low=lower_bound, high=upper_bound)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     if is_verbose:
         print('  > [ input parameter] Setting material patch edge polynomial '
@@ -308,58 +304,40 @@ def generate_material_patch_dataset(
         # Set bounds
         lower_bound=edge_deformation_order_ranges[label][0]
         upper_bound=edge_deformation_order_ranges[label][1]
-        # Set parameter
-        if np.isclose(lower_bound, upper_bound):
-            parameter = f3dasm.ConstantParameter(value=lower_bound) 
-        else:
-            parameter = f3dasm.DiscreteParameter(lower_bound=lower_bound,
-                                                 upper_bound=upper_bound)
         # Add design input parameter
-        design_space.add_input_space(name=name, space=parameter)
+        if np.isclose(lower_bound, upper_bound):
+            domain.add_constant(name=name, value=lower_bound) 
+        else:
+            domain.add_int(name=name, low=lower_bound, high=upper_bound)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    if is_verbose:
-        print('  > [output parameter] Setting material patch...')
-        print('  > [output parameter] Setting node data...')
-        print('  > [output parameter] Setting global data...')
-    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Set output parameters:
-    #
-    # Set material patch                                                       # Question: How to handle a general object output?
-    design_space.add_output_space(name='patch',
-                                  space=f3dasm.design.parameter.Parameter())
-    # Set node features data                                                   # Question: How to handle a numpy.ndarray output?
-    design_space.add_output_space(name='node_data',
-                                  space=f3dasm.design.parameter.Parameter())
-    # Set global features data                                                 # Question: How to handle a numpy.ndarray output?
-    design_space.add_output_space(name='global_data',
-                                  space=f3dasm.design.parameter.Parameter())
+    # Initialize experiment data
+    experiment_data = f3dasm.ExperimentData(domain)                            # Waiting for fix: ExperimentData directory
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     if is_verbose:
         print('\n> Sampling design space input data...\n')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Initialize sampler
-    sampler = f3dasm.sampling.SobolSequence(design_space)
-    # Generate samples (class ExperimentData)
-    dataset = sampler.get_samples(numsamples=n_sample)
-    # Get samples input data (class pd.DataFrame)
-    dataset_input_data = dataset.get_input_data()
+    # Generate samples
+    experiment_data.sample(sampler='sobol', n_samples=n_sample)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     if is_verbose:
         print('\n> Starting samples generation process...\n')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Generate samples simulation data                                             
-    option = ('no_f3dasm', 'f3dasm')[0]
-    if option == 'no_f3dasm':
-        # Generate samples simulation data
-        dataset_simulation_data = \
-            generate_dataset_output_data(dataset_input_data,
-                                         constant_parameters,
-                                         is_verbose=is_verbose)
-    elif option == 'f3dasm':
-        dataset.run(simulate_material_patch, mode='sequential',
-                    kwargs=constant_parameters)                                # Error: AttributeError: 'NoneType' object has no attribute '_dict_output'
-    else:
-        raise RuntimeError('Unavailable option')
+    # Initialize material patch simulator
+    material_patch_simulator = MaterialPatchSimulator()
+    # Generate samples simulation data
+    experiment_data.evaluate(data_generator=material_patch_simulator,
+                             mode='parallel',
+                             kwargs=constant_parameters)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Initialize material patches finite element simulations data set
+    dataset_simulation_data = []
+    # Build material patches finite element simulations data set
+    for i in experiment_data.input_data.indices:
+        # Get material patch sample output data
+        sample_output_data = \
+            experiment_data._get_experiment_sample(i).output_data_loaded       # Waiting for fix: Access sample output data
+        # Append sample output data
+        dataset_simulation_data.append(sample_output_data)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Remove failed material patch samples from data set
     if is_remove_failed_samples:
@@ -454,213 +432,192 @@ def generate_material_patch_dataset(
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     return dataset_simulation_data
 # =============================================================================
-def generate_dataset_output_data(dataset_input_data, constant_parameters={},
-                                 is_verbose=False):
-    """Generate material patches simulations output data.
+class MaterialPatchSimulator(f3dasm.datageneration.DataGenerator):
+    """Material patch generator and simulator.
     
-    Parameters
+    Attributes
     ----------
-    dataset_input_data : pandas.DataFrame
-        Material patches dataset input data.
-    constant_parameters : dict, default={}
-        Constant parameters required for data generation process.
-    is_verbose : bool, default=False
-        If True, enable verbose output.
-    
-    Returns
+    experiment_sample : f3dasm.ExperimentSample
+        Material patch sample.
+            
+    Methods
     -------
-    dataset_simulation_data : list[dict]
-        Material patches finite element simulations data set. Each material
-        patch data of is stored in a dict, where:
-        
-        'patch' : Instance of FiniteElementPatch.
-        
-        'node_data' : numpy.ndarray(3d) of shape \
-                      (n_nodes, n_data_dim, n_time_steps), where the i-th \
-                      node output data at the k-th time step is stored in \
-                      indexes [i, :, k].
-        
-        'global_data' : numpy.ndarray(3d) of shape \
-                        (1, n_data_dim, n_time_steps) where the global output \
-                        data at the k-th time step is stored in [0, :, k].
+    execute(self, **kwargs)
+        Core data generation.
+    simulate_material_patch(self, experiment_sample, **kwargs)
+        Generate and simulate finite element material patch sample.
     """
-    # Initialize material patches simulations output data
-    dataset_simulation_data = []
-    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Get number of material patches
-    n_sample = dataset_input_data.shape[0]
-    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Loop over material patches
-    for i in tqdm.tqdm(range(n_sample), desc='> Computing material patches: ',
-                       disable=not is_verbose):
-        # Get material patch design sample
-        design = dataset_input_data.iloc[i].to_dict()
+    def __init__(self):
+        """Constructor."""
+        pass
+    # -------------------------------------------------------------------------
+    def execute(self, **kwargs):
+        """Core data generation.
+        
+        Parameters
+        ----------
+        kwargs : dict
+            Any arguments required to generate and simulate finite element
+            material patch sample that are not available from the sample
+            object itself.
+        """
+        self.simulate_material_patch(self.experiment_sample, **kwargs)
+    # -------------------------------------------------------------------------
+    def simulate_material_patch(self, experiment_sample, **kwargs):
+        """Generate and simulate finite element material patch sample.
+        
+        Parameters
+        ----------
+        experiment_sample : f3dasm.ExperimentSample
+            Material patch sample.
+        kwargs : dict
+            Any arguments required to generate and simulate finite element
+            material patch sample that are now available from the sample
+            object itself.
+        """
+        # Get material patch design sample ID
+        sample_id = experiment_sample.job_number
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        # Add constant parameters required for data generation process
-        design.update(constant_parameters)
+        # Get number of spatial dimensions                                         
+        n_dim = kwargs['n_dim']
+        # Get finite element type
+        elem_type = kwargs['elem_type']
+        # Get number of finite elements per dimension
+        n_elems_per_dim = kwargs['n_elems_per_dim']
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        # Convert to Design object
-        design = f3dasm.design.design.Design(design, {}, jobnumber=i)
-        # Generate and simulate material patch
-        design = simulate_material_patch(design, **constant_parameters)
-        # Get material patch sample simulation output data
-        output_data = design.output_data
+        # Set material patch dimensions 
+        patch_dims = tuple([experiment_sample.get('patch_size_' + str(i + 1))
+                            for i in range(n_dim)])
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        # Store material patch sample simulation output data
-        dataset_simulation_data.append(output_data)
-    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    return dataset_simulation_data
-# =============================================================================
-def simulate_material_patch(design, **kwargs):
-    """Generate and simulate finite element material patch design sample.
-    
-    Parameters
-    ----------
-    design : f3dasm.Design
-        Material patch design sample.
-    """
-    # Get material patch design sample ID
-    sample_id = design.job_number
-    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Get number of spatial dimensions                                         
-    n_dim = kwargs['n_dim']
-    # Get finite element type
-    elem_type = kwargs['elem_type']
-    # Get number of finite elements per dimension
-    n_elems_per_dim = kwargs['n_elems_per_dim']
-    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Set material patch dimensions 
-    patch_dims = tuple([design.get('patch_size_' + str(i + 1))
-                        for i in range(n_dim)])
-    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Set number of corners
-    if n_dim == 2:
-        n_corners = 4
-    else:
-        raise RuntimeError('Missing 3D implementation.')
-    # Set corners labels
-    corners_labels = tuple([str(i + 1) for i in range(n_corners)])
-    # Set corners tensile/compression displacements mapping
-    if n_dim == 2:
-        corners_disp_sign = {'1': (-1, -1), '2': (1, -1),
-                             '3': (1, 1), '4': (-1, 1)}
-    else:
-        raise RuntimeError('Missing 3D implementation.')
-    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Initialize corners displacements
-    corners_lab_disp_range = {}
-    # Loop over corners
-    for label in corners_labels:
-        # Initialize corner displacement
-        corner_disp = []
-        # Loop over dimensions
-        for i in range(n_dim):
+        # Set number of corners
+        if n_dim == 2:
+            n_corners = 4
+        else:
+            raise RuntimeError('Missing 3D implementation.')
+        # Set corners labels
+        corners_labels = tuple([str(i + 1) for i in range(n_corners)])
+        # Set corners tensile/compression displacements mapping
+        if n_dim == 2:
+            corners_disp_sign = {'1': (-1, -1), '2': (1, -1),
+                                 '3': (1, 1), '4': (-1, 1)}
+        else:
+            raise RuntimeError('Missing 3D implementation.')
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Initialize corners displacements
+        corners_lab_disp_range = {}
+        # Loop over corners
+        for label in corners_labels:
+            # Initialize corner displacement
+            corner_disp = []
+            # Loop over dimensions
+            for i in range(n_dim):
+                # Set parameter name
+                name = 'corner_' + label + '_deformation_' + str(i + 1)
+                # Get average deformation
+                avg_deformation = experiment_sample.get(name)
+                # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                # Compute corner displacement along dimension
+                disp = (corners_disp_sign[label][i]
+                        *0.5*avg_deformation*patch_dims[i])
+                # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                # Append corner displacement
+                corner_disp.append(disp)
+            # Set corner displacement
+            corners_lab_disp_range[label] = tuple([n_dim*(corner_disp[i],)
+                                                   for i in range(n_dim)])
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set number of edges and deformation dimension
+        if n_dim == 2:
+            n_edges = 4
+            edges_def_dimension = {'1': '2', '2': '2', '3': '1', '4': '1'}
+        else:
+            raise RuntimeError('Missing 3D implementation.')
+        # Set edges labels
+        edges_labels = tuple([str(i + 1) for i in range(n_edges)])    
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Initialize edges polynomial deformation order
+        edges_lab_def_order = {}
+        # Loop over edges
+        for label in edges_labels:
             # Set parameter name
-            name = 'corner_' + label + '_deformation_' + str(i + 1)
-            # Get average deformation
-            avg_deformation = design.get(name)
-            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            # Compute corner displacement along dimension
-            disp = \
-                corners_disp_sign[label][i]*0.5*avg_deformation*patch_dims[i]
-            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            # Append corner displacement
-            corner_disp.append(disp)
-        # Set corner displacement
-        corners_lab_disp_range[label] = tuple([n_dim*(corner_disp[i],)
-                                               for i in range(n_dim)])
-    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Set number of edges and deformation dimension
-    if n_dim == 2:
-        n_edges = 4
-        edges_def_dimension = {'1': '2', '2': '2', '3': '1', '4': '1'}
-    else:
-        raise RuntimeError('Missing 3D implementation.')
-    # Set edges labels
-    edges_labels = tuple([str(i + 1) for i in range(n_edges)])    
-    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Initialize edges polynomial deformation order
-    edges_lab_def_order = {}
-    # Loop over edges
-    for label in edges_labels:
-        # Set parameter name
-        name = 'edge_' + label + '_deformation_order'
-        # Get polynomial deformation order
-        order = design.get(name)
-        # Set edge polynomial deformation order
-        edges_lab_def_order[label] = int(order)                                # Unexpected behavior: int was converted to float
-    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Get edges polynomial deformation magnitude range
-    edge_deformation_order_ranges = kwargs['edge_deformation_order_ranges']
-    # Initialize edges polynomial deformation displacement range
-    edges_lab_disp_range = {}
-    # Loop over edges
-    for label in edges_labels:
-        # Get edge polynomial deformation magnitude range
-        avg_deformation_range = edge_deformation_order_ranges[label]
+            name = 'edge_' + label + '_deformation_order'
+            # Get polynomial deformation order
+            order = experiment_sample.get(name)
+            # Set edge polynomial deformation order
+            edges_lab_def_order[label] = int(order)                            # Unexpected behavior: int was converted to float
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        # Get orthogonal (deformation) dimension index
-        orth_dim = int(edges_def_dimension[label]) - 1
-        # Compute edge displacement range
-        min_disp = 0.5*avg_deformation_range[0]*patch_dims[orth_dim]
-        max_disp = 0.5*avg_deformation_range[1]*patch_dims[orth_dim]
+        # Get edges polynomial deformation magnitude range
+        edge_deformation_order_ranges = kwargs['edge_deformation_order_ranges']
+        # Initialize edges polynomial deformation displacement range
+        edges_lab_disp_range = {}
+        # Loop over edges
+        for label in edges_labels:
+            # Get edge polynomial deformation magnitude range
+            avg_deformation_range = edge_deformation_order_ranges[label]
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Get orthogonal (deformation) dimension index
+            orth_dim = int(edges_def_dimension[label]) - 1
+            # Compute edge displacement range
+            min_disp = 0.5*avg_deformation_range[0]*patch_dims[orth_dim]
+            max_disp = 0.5*avg_deformation_range[1]*patch_dims[orth_dim]
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Set edge displacement range
+            edges_lab_disp_range[label] = (min_disp, max_disp)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~        
+        # Initialize material patch generator
+        patch_generator = FiniteElementPatchGenerator(n_dim, patch_dims)
+        # Generate deformed material patch
+        is_admissible, patch = patch_generator.generate_deformed_patch(
+            elem_type, n_elems_per_dim,
+            corners_lab_disp_range=corners_lab_disp_range,
+            edges_lab_def_order=edges_lab_def_order,
+            edges_lab_disp_range=edges_lab_disp_range)
+        # Save plot of deformed material patch
+        is_save_plot_patch = kwargs['is_save_plot_patch']
+        if is_save_plot_patch and is_admissible:
+            patch.plot_deformed_patch(
+                is_save_plot=is_save_plot_patch,
+                save_directory=kwargs['directory'],
+                plot_name=kwargs['sample_basename'] + f'_{sample_id}_plot',
+                is_overwrite_file=True)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        # Set edge displacement range
-        edges_lab_disp_range[label] = (min_disp, max_disp)
-    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~        
-    # Initialize material patch generator
-    patch_generator = FiniteElementPatchGenerator(n_dim, patch_dims)
-    # Generate deformed material patch
-    is_admissible, patch = patch_generator.generate_deformed_patch(
-        elem_type, n_elems_per_dim,
-        corners_lab_disp_range=corners_lab_disp_range,
-        edges_lab_def_order=edges_lab_def_order,
-        edges_lab_disp_range=edges_lab_disp_range)
-    # Save plot of deformed material patch
-    is_save_plot_patch = kwargs['is_save_plot_patch']
-    if is_save_plot_patch and is_admissible:
-        patch.plot_deformed_patch(
-            is_save_plot=is_save_plot_patch,
-            save_directory=kwargs['directory'],
-            plot_name=kwargs['sample_basename'] + f'_{sample_id}_plot',
-            is_overwrite_file=True)
-    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Initialize results
-    results_keywords = ('node_data', 'global_data')
-    results = {key: None for key in results_keywords}
-    # Simulate material patch
-    if is_admissible:
-        # Initialize simulator
-        links_simulator = LinksSimulator(kwargs['links_bin_path'],
-                                         kwargs['strain_formulation'],
-                                         kwargs['analysis_type'])
-        # Generate simulator input data file
-        links_file_path = links_simulator.generate_input_data_file(
-            kwargs['sample_basename'] + f'_{sample_id}', kwargs['directory'],
-            patch, kwargs['patch_material_data'], kwargs['links_input_params'],
-            is_overwrite_file=True)
-        # Run simulation
-        is_success, links_output_directory = \
-            links_simulator.run_links_simulation(links_file_path)
-        # Read simulation results
-        if is_success:
-            results = links_simulator.read_links_simulation_results(
-                links_output_directory, results_keywords)
-        # Remove simulation files
-        if not kwargs['is_save_simulation_files']:
-            # Remove simulator input data file
-            if os.path.isfile(links_file_path):
-                os.remove(links_file_path)
-            # Remove simulator output directory
-            if os.path.isdir(links_output_directory):
-                shutil.rmtree(links_output_directory)
-    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Set material patch design sample output data
-    design.set('patch', patch)
-    design.set('node_data', results['node_data'])
-    design.set('global_data', results['global_data'])
-    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    return design
+        # Initialize results
+        results_keywords = ('node_data', 'global_data')
+        results = {key: None for key in results_keywords}
+        # Simulate material patch
+        if is_admissible:
+            # Initialize simulator
+            links_simulator = LinksSimulator(kwargs['links_bin_path'],
+                                             kwargs['strain_formulation'],
+                                             kwargs['analysis_type'])
+            # Generate simulator input data file
+            links_file_path = links_simulator.generate_input_data_file(
+                kwargs['sample_basename'] + f'_{sample_id}',
+                kwargs['directory'], patch, kwargs['patch_material_data'],
+                kwargs['links_input_params'], is_overwrite_file=True)
+            # Run simulation
+            is_success, links_output_directory = \
+                links_simulator.run_links_simulation(links_file_path)
+            # Read simulation results
+            if is_success:
+                results = links_simulator.read_links_simulation_results(
+                    links_output_directory, results_keywords)
+            # Remove simulation files
+            if not kwargs['is_save_simulation_files']:
+                # Remove simulator input data file
+                if os.path.isfile(links_file_path):
+                    os.remove(links_file_path)
+                # Remove simulator output directory
+                if os.path.isdir(links_output_directory):
+                    shutil.rmtree(links_output_directory)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set material patch sample output data
+        experiment_sample.store(name='patch', object=patch, to_disk=True)
+        experiment_sample.store(name='node_data', object=results['node_data'],
+                                to_disk=True)
+        experiment_sample.store(name='global_data',
+                                object=results['global_data'],
+                                to_disk=True)
 # =============================================================================
 def get_default_design_parameters(n_dim):
     """Generate finite element material patch design space default parameters.
@@ -728,7 +685,7 @@ def read_simulation_dataset_from_file(dataset_file_path):
     -------
     dataset_simulation_data : list[dict]
         Material patches finite element simulations data set. Each material
-        patch data of is stored in a dict, where:
+        patch data is stored in a dict, where:
         
         'patch' : Instance of FiniteElementPatch.
         
