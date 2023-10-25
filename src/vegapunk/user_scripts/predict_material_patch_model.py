@@ -13,11 +13,13 @@ if root_dir not in sys.path:
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 import os
 import re
+# Third-party
+import torch
 # Local
 from gnn_model.gnn_patch_dataset import GNNMaterialPatchDataset
 from gnn_model.prediction import predict, build_prediction_data_arrays
 from gnn_model.evaluation_metrics import plot_truth_vs_prediction
-from ioput.iostandard import make_directory
+from ioput.iostandard import make_directory, find_unique_file_with_regex
 #
 #                                                          Authorship & Credits
 # =============================================================================
@@ -114,10 +116,14 @@ def set_default_prediction_options():
     return loss_type, loss_kwargs
 # =============================================================================
 if __name__ == "__main__":
+    # Set in-distribution testing flag
+    is_in_dist_testing = True
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set case study name
     case_study_name = '2d_elastic'
     # Set case study directory
     case_study_base_dirs = {
+        '2d_elastic_orthogonal': f'/home/bernardoferreira/Documents/temp',
         '2d_elastic': f'/home/bernardoferreira/Documents/temp',}
     case_study_dir = \
         os.path.join(os.path.normpath(case_study_base_dirs[case_study_name]),
@@ -128,28 +134,23 @@ if __name__ == "__main__":
         raise RuntimeError('The case study directory has not been found:\n\n'
                            + case_study_dir)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Set GNN-based material patch data set directory
-    dataset_directory = os.path.join(os.path.normpath(case_study_dir),
-                                     '1_dataset')
-    # Get files in GNN-based material patch data set directory
-    directory_list = os.listdir(dataset_directory)
-    # Loop over files
-    is_testing_dataset = False
-    for filename in directory_list:
-        # Check if file is testing data set file
-        is_testing_dataset = \
-            bool(re.search(r'^material_patch_graph_dataset_testing_n'
-                           r'[0-9]+.pkl$', filename))
-        # Leave searching loop when testing data set file is found
-        if is_testing_dataset:
-            break
-    # Set GNN-based material patch testing data set file path
-    if is_testing_dataset:
-        dataset_file_path = os.path.join(os.path.normpath(dataset_directory),
-                                         filename)
+    # Set GNN-based material patch testing data set directory
+    if is_in_dist_testing:
+        dataset_directory = os.path.join(os.path.normpath(case_study_dir),
+                                        '1_training_dataset')
     else:
-        raise RuntimeError(f'Testing data set file has not been found in '
-                           'dataset directory:\n\n{dataset_directory}')      
+        dataset_directory = os.path.join(os.path.normpath(case_study_dir),
+                                        '4_testing_dataset')
+    # Get GNN-based material patch testing data set file path
+    regex = (r'^material_patch_graph_dataset_testing_n[0-9]+.pkl$',
+             r'^material_patch_graph_dataset_n[0-9]+.pkl$')
+    is_file_found, dataset_file_path = \
+        find_unique_file_with_regex(dataset_directory, regex)
+    # Check data set file
+    if not is_file_found:
+        raise RuntimeError(f'Testing data set file has not been found  '
+                            f'in data set directory:\n\n'
+                            f'{dataset_directory}')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set GNN-based material patch model directory
     model_directory = os.path.join(os.path.normpath(case_study_dir),
@@ -157,13 +158,28 @@ if __name__ == "__main__":
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set GNN-based material patch model prediction directory
     prediction_directory = os.path.join(os.path.normpath(case_study_dir),
-                                        '4_prediction')
+                                        '5_prediction')
     # Create prediction directory
     if not os.path.isdir(prediction_directory):
         make_directory(prediction_directory)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Create prediction in-distribution/out-of-distribution subdirectory
+    if is_in_dist_testing:
+        prediction_subdir = os.path.join(
+            os.path.normpath(prediction_directory), 'in_distribution')
+    else:
+        prediction_subdir = os.path.join(
+            os.path.normpath(prediction_directory), 'out_of_distribution')
+    # Create prediction subdirectory
+    if not os.path.isdir(prediction_subdir):
+        make_directory(prediction_subdir)  
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set device type
-    device_type = 'cpu'
+    if torch.cuda.is_available():
+        device_type = 'cuda'
+    else:
+        device_type = 'cpu'
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Perform prediction with GNN-based material patch model
-    perform_model_prediction(prediction_directory, dataset_file_path,
+    perform_model_prediction(prediction_subdir, dataset_file_path,
                              model_directory, device_type, is_verbose=True)
