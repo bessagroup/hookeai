@@ -12,14 +12,15 @@ if root_dir not in sys.path:
     sys.path.insert(0, root_dir)
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 import os
-import re
+# Third-party
+import torch
 # Local
 from gnn_model.gnn_patch_dataset import GNNMaterialPatchDataset
 from gnn_model.training import train_model, read_loss_history_from_file
 from gnn_model.cross_validation import kfold_cross_validation
 from gnn_model.evaluation_metrics import plot_training_loss_history, \
     plot_kfold_cross_validation
-from ioput.iostandard import make_directory
+from ioput.iostandard import make_directory, find_unique_file_with_regex
 #
 #                                                          Authorship & Credits
 # =============================================================================
@@ -44,7 +45,7 @@ def perform_model_standard_training(case_study_name, dataset_file_path,
         Type of device on which torch.Tensor is allocated.
     is_verbose : bool, default=False
         If True, enable verbose output.
-    """
+    """    
     # Get model initialization parameters
     model_init_args = set_case_study_model_parameters(case_study_name,
                                                       model_directory)
@@ -55,7 +56,12 @@ def perform_model_standard_training(case_study_name, dataset_file_path,
             set_default_training_options()
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set GNN-based material patch model training options
-    if case_study_name == '2d_elastic':
+    if case_study_name == '2d_elastic_orthogonal':
+        # Set number of training steps
+        n_train_steps = 100
+        # Set batch size
+        batch_size = 1
+    elif case_study_name == '2d_elastic':
         # Set number of training steps
         n_train_steps = 100
         # Set batch size
@@ -126,7 +132,12 @@ def perform_model_kfold_cross_validation(case_study_name, dataset_file_path,
             set_default_training_options()
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set GNN-based material patch model training options
-    if case_study_name == '2d_elastic':
+    if case_study_name == '2d_elastic_orthogonal':
+        # Set number of training steps
+        n_train_steps = 100
+        # Set batch size
+        batch_size = 1
+    elif case_study_name == '2d_elastic':
         # Set number of training steps
         n_train_steps = 100
         # Set batch size
@@ -179,7 +190,7 @@ def set_case_study_model_parameters(case_study_name, model_directory,
         GNN-based material patch model class initialization parameters (check
         class GNNMaterialPatchModel).
     """
-    if case_study_name == '2d_elastic':
+    if case_study_name in ('2d_elastic_orthogonal', '2d_elastic'):
         # Set GNN-based material patch model name
         model_name = 'material_patch_model'
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -252,18 +263,20 @@ def set_default_training_options():
     is_sampler_shuffle = True
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     return opt_algorithm, lr_init, lr_scheduler_type, lr_scheduler_kwargs, \
-        loss_type, loss_kwargs, is_sampler_shuffle        
+        loss_type, loss_kwargs, is_sampler_shuffle
 # =============================================================================
 if __name__ == "__main__":
-    # Set processes
-    is_standard_training = False
+    # Set computation processes
+    is_standard_training = True
     is_cross_validation = True
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set case study name
     case_study_name = '2d_elastic'
     # Set case study directory
     case_study_base_dirs = {
-        '2d_elastic': f'/home/bernardoferreira/Documents/temp',}
+        '2d_elastic_orthogonal': f'/home/bernardoferreira/Documents/temp',
+        '2d_elastic': f'/home/bernardoferreira/Documents/temp',
+        }
     case_study_dir = \
         os.path.join(os.path.normpath(case_study_base_dirs[case_study_name]),
                      f'cs_{case_study_name}')
@@ -272,29 +285,20 @@ if __name__ == "__main__":
     if not os.path.isdir(case_study_dir):
         raise RuntimeError('The case study directory has not been found:\n\n'
                            + case_study_dir)
-    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~    
-    # Set GNN-based material patch data set directory
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~        
+    # Set GNN-based material patch training data set directory
     dataset_directory = os.path.join(os.path.normpath(case_study_dir),
-                                     '1_dataset')
-    # Get files in GNN-based material patch data set directory
-    directory_list = os.listdir(dataset_directory)
-    # Loop over files
-    is_training_dataset = False
-    for filename in directory_list:
-        # Check if file is training data set file
-        is_training_dataset = \
-            bool(re.search(r'^material_patch_graph_dataset_training_n'
-                           r'[0-9]+.pkl$', filename))
-        # Leave searching loop when training data set file is found
-        if is_training_dataset:
-            break
-    # Set GNN-based material patch training data set file path
-    if is_training_dataset:
-        dataset_file_path = os.path.join(os.path.normpath(dataset_directory),
-                                         filename)
-    else:
-        raise RuntimeError(f'Training data set file has not been found in '
-                           'dataset directory:\n\n{dataset_directory}')      
+                                        '1_training_dataset')
+    # Get GNN-based material patch training data set file path
+    regex = (r'^material_patch_graph_dataset_training_n[0-9]+.pkl$',
+             r'^material_patch_graph_dataset_n[0-9]+.pkl$')
+    is_file_found, dataset_file_path = \
+        find_unique_file_with_regex(dataset_directory, regex)
+    # Check data set file
+    if not is_file_found:
+        raise RuntimeError(f'Training data set file has not been found  '
+                            f'in data set directory:\n\n'
+                            f'{dataset_directory}')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set GNN-based material patch model directory
     model_directory = os.path.join(os.path.normpath(case_study_dir),
@@ -303,7 +307,11 @@ if __name__ == "__main__":
     make_directory(model_directory, is_overwrite=True)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set device type
-    device_type = 'cpu'
+    if torch.cuda.is_available():
+        device_type = 'cuda'
+    else:
+        device_type = 'cpu'
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Perform standard training of GNN-based material patch model
     if is_standard_training:
         perform_model_standard_training(
