@@ -152,6 +152,8 @@ def train_model(n_train_steps, dataset, model_init_args, lr_init,
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Initialize GNN-based material patch model
     model = GNNMaterialPatchModel(**model_init_args)
+    # Set model device
+    model.set_device(device_type)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~  
     # Move model to device
     model.to(device=device)
@@ -266,7 +268,7 @@ def train_model(n_train_steps, dataset, model_init_args, lr_init,
                 model.get_output_features_from_graph(
                     pyg_graph, is_normalized=is_data_normalization)
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            # Compute and accumulate loss
+            # Compute loss
             loss = loss_function(node_internal_forces,
                                  node_internal_forces_target)
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -854,7 +856,7 @@ def read_loss_history_from_file(loss_record_path):
     Loss history record file is stored in model_directory under the name
     loss_history_record.pkl.
     
-    Detaches loss values from computation graph.
+    Detaches loss values from computation graph and moves them to CPU.
     
     Parameters
     ----------
@@ -893,7 +895,8 @@ def read_loss_history_from_file(loss_record_path):
     # Set loss type
     loss_type = str(loss_history_record['loss_type'])
     # Set loss history
-    loss_history = [x.detach() for x in loss_history_record['loss_history']]
+    loss_history = [x.detach().cpu()
+                    for x in loss_history_record['loss_history']]
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     return loss_type, loss_history
 # =============================================================================

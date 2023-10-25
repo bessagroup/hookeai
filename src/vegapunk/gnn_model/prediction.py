@@ -131,6 +131,8 @@ def predict(predict_directory, dataset, model_directory,
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Initialize GNN-based material patch model
     model = GNNMaterialPatchModel.init_model_from_file(model_directory)
+    # Set model device
+    model.set_device(device_type)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Load GNN-based material patch model state
     _ = model.load_model_state(load_model_state=load_model_state,
@@ -186,9 +188,10 @@ def predict(predict_directory, dataset, model_directory,
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Build sample results
             results = {}
-            results['node_internal_forces'] = node_internal_forces
+            results['node_internal_forces'] = \
+                node_internal_forces.detach().cpu()
             results['node_internal_forces_target'] = \
-                node_internal_forces_target
+                node_internal_forces_target.detach().cpu()
             results['node_internal_forces_loss'] = \
                 (loss_type, loss, is_normalized_loss)
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
