@@ -23,15 +23,16 @@ __status__ = 'Planning'
 # =============================================================================
 @pytest.mark.parametrize('n_node_in, n_node_out, n_edge_in, n_message_steps,'
                          'n_hidden_layers, hidden_layer_size, model_name,'
-                         'is_data_normalization, device_type',
+                         'is_data_normalization, hidden_activation,'
+                         'output_activation, device_type',
                          [(2, 5, 4, 10, 2, 3, 'material_patch_model', True,
-                           'cpu'),
+                           torch.nn.ReLU, torch.nn.Identity, 'cpu'),
                           ])
 def test_material_patch_model_init(n_node_in, n_node_out, n_edge_in,
                                    n_message_steps, n_hidden_layers,
                                    hidden_layer_size, model_name,
-                                   is_data_normalization, device_type,
-                                   tmp_path):
+                                   is_data_normalization, hidden_activation,
+                                   output_activation, device_type, tmp_path):
     """Test GNN-based material patch model constructor."""
     # Initialize errors
     errors = []
@@ -50,6 +51,16 @@ def test_material_patch_model_init(n_node_in, n_node_out, n_edge_in,
                            model_directory=model_directory,
                            model_name=model_name,
                            is_data_normalization=is_data_normalization,
+                           enc_node_hidden_activation=hidden_activation,
+                           enc_node_output_activation=output_activation,
+                           enc_edge_hidden_activation=hidden_activation,
+                           enc_edge_output_activation=output_activation,
+                           pro_node_hidden_activation=hidden_activation,
+                           pro_node_output_activation=output_activation,
+                           pro_edge_hidden_activation=hidden_activation,
+                           pro_edge_output_activation=output_activation,
+                           dec_node_hidden_activation=hidden_activation,
+                           dec_node_output_activation=output_activation,
                            device_type=device_type)
     model = GNNMaterialPatchModel(**model_init_args)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -65,6 +76,16 @@ def test_material_patch_model_init(n_node_in, n_node_out, n_edge_in,
             model.model_directory == str(tmp_path),
             model.model_name == model_name,
             model.is_data_normalization == is_data_normalization,
+            model._enc_node_hidden_activation == hidden_activation,
+            model._enc_node_output_activation == output_activation,
+            model._enc_edge_hidden_activation == hidden_activation,
+            model._enc_edge_output_activation == output_activation,
+            model._pro_node_hidden_activation == hidden_activation,
+            model._pro_node_output_activation == output_activation,
+            model._pro_edge_hidden_activation == hidden_activation,
+            model._pro_edge_output_activation == output_activation,
+            model._dec_node_hidden_activation == hidden_activation,
+            model._dec_node_output_activation == output_activation,
             model._device == device_type):
         errors.append('One or more attributes of GNN-based material patch '
                       'model class were not properly set.')
