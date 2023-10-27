@@ -26,6 +26,8 @@ seed_worker
     Set workers seed in PyTorch data loaders to preserve reproducibility.
 read_loss_history_from_file
     Read training loss history from loss history record file.
+read_lr_history_from_file(loss_record_path)
+    Read training learning rate history from loss history record file.
 write_training_summary_file    
     Write summary data file for model training process.
 """
@@ -656,7 +658,7 @@ def save_loss_history(model, total_n_train_steps, loss_type, loss_history,
 
     Overwrites existing loss history record file.
     
-    Does also store learning history if provided.
+    Does also store learning rate history if provided.
     
     Parameters
     ----------
@@ -865,7 +867,7 @@ def read_loss_history_from_file(loss_record_path):
     
     Returns
     -------
-    loss_type : {'mse',}, default='mse'
+    loss_type : {'mse',}
         Loss function type:
         
         'mse'  : MSE (torch.nn.MSELoss)
@@ -899,6 +901,53 @@ def read_loss_history_from_file(loss_record_path):
                     for x in loss_history_record['loss_history']]
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     return loss_type, loss_history
+# =============================================================================
+def read_lr_history_from_file(loss_record_path):
+    """Read training learning rate history from loss history record file.
+    
+    Loss history record file is stored in model_directory under the name
+    loss_history_record.pkl.
+    
+    Parameters
+    ----------
+    loss_record_path : str
+        Loss history record file path.
+    
+    Returns
+    -------
+    lr_scheduler_type : {'steplr',}
+        Type of learning rate scheduler:
+        
+        'steplr'  : Step-based decay (torch.optim.lr_scheduler.SetpLR)
+        
+    lr_history : list[float]
+        Training process learning rate history.
+    """
+    # Check loss history record file
+    if not os.path.isfile(loss_record_path):
+        raise RuntimeError('Loss history record file has not been found:\n\n'
+                           + loss_record_path)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Load loss history record
+    with open(loss_record_path, 'rb') as loss_record_file:
+        loss_history_record = pickle.load(loss_record_file)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Check learning rate history
+    if 'lr_scheduler_type' not in loss_history_record.keys():
+        raise RuntimeError('Learning rate scheduler type is not available in '
+                           'loss history record.')
+    elif 'lr_history' not in loss_history_record.keys():
+        raise RuntimeError('Learning rate history is not available in loss '
+                           'history record.')
+    elif not isinstance(loss_history_record['lr_history'], list):
+        raise RuntimeError('Learning rate history is not a list[float].')
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Set learning rate scheduler type
+    lr_scheduler_type = str(loss_history_record['lr_scheduler_type'])
+    # Set learning rate history
+    lr_history = loss_history_record['lr_history']
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    return lr_scheduler_type, lr_history
 # =============================================================================
 def write_training_summary_file(
     device_type, seed, model_directory, load_model_state, n_train_steps,
