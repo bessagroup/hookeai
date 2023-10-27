@@ -43,7 +43,9 @@ def test_material_patch_model_init(n_node_in, n_node_out, n_edge_in,
     model_init_args = dict(n_node_in=n_node_in, n_node_out=n_node_out,
                            n_edge_in=n_edge_in,
                            n_message_steps=n_message_steps,
-                           n_hidden_layers=n_hidden_layers,
+                           enc_n_hidden_layers=n_hidden_layers,
+                           pro_n_hidden_layers=n_hidden_layers,
+                           dec_n_hidden_layers=n_hidden_layers,
                            hidden_layer_size=hidden_layer_size,
                            model_directory=model_directory,
                            model_name=model_name,
@@ -56,7 +58,9 @@ def test_material_patch_model_init(n_node_in, n_node_out, n_edge_in,
             model._n_node_out == n_node_out,
             model._n_edge_in == n_edge_in,
             model._n_message_steps == n_message_steps,
-            model._n_hidden_layers == n_hidden_layers,
+            model._enc_n_hidden_layers == n_hidden_layers,
+            model._pro_n_hidden_layers == n_hidden_layers,
+            model._dec_n_hidden_layers == n_hidden_layers,
             model._hidden_layer_size == hidden_layer_size,
             model.model_directory == str(tmp_path),
             model.model_name == model_name,
@@ -112,7 +116,9 @@ def test_material_patch_model_init_invalid(n_node_in, n_node_out, n_edge_in,
     model_init_args = dict(n_node_in=n_node_in, n_node_out=n_node_out,
                            n_edge_in=n_edge_in,
                            n_message_steps=n_message_steps,
-                           n_hidden_layers=n_hidden_layers,
+                           enc_n_hidden_layers=n_hidden_layers,
+                           pro_n_hidden_layers=n_hidden_layers,
+                           dec_n_hidden_layers=n_hidden_layers,
                            hidden_layer_size=hidden_layer_size,
                            model_directory=model_directory,
                            model_name=model_name,
@@ -179,17 +185,10 @@ def test_init_from_file_invalid(gnn_material_simulator_norm):
         # Test detection of unexistent model initialization file
         _ = GNNMaterialPatchModel.init_model_from_file(model_directory)
 # -----------------------------------------------------------------------------
-def test_save_model_init_file(tmp_path):
+def test_save_model_init_file(gnn_material_simulator):
     """Test save of model initialization file."""
-    # Set GNN-based material patch model initialization parameters
-    model_init_args = dict(n_node_in=2, n_node_out=5, n_edge_in=3,
-                           n_message_steps=2, n_hidden_layers=2,
-                           hidden_layer_size=2, model_directory=str(tmp_path),
-                           model_name='material_patch_model',
-                           is_data_normalization=True)
-    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Build GNN-based material patch model
-    model = GNNMaterialPatchModel(**model_init_args)
+    # Set GNN-based material patch model
+    model = gnn_material_simulator
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Save model initialization file
     model.save_model_init_file()
@@ -198,17 +197,10 @@ def test_save_model_init_file(tmp_path):
                                        'model_init_file' + '.pkl')), \
         'GNN-based material patch model initialization file was not saved.'
 # -----------------------------------------------------------------------------
-def test_save_model_init_file_invalid(tmp_path):
+def test_save_model_init_file_invalid(gnn_material_simulator):
     """Test detection of failed save of model initialization file."""
-    # Set GNN-based material patch model initialization parameters
-    model_init_args = dict(n_node_in=2, n_node_out=5, n_edge_in=3,
-                           n_message_steps=2, n_hidden_layers=2,
-                           hidden_layer_size=2, model_directory=str(tmp_path),
-                           model_name='material_patch_model',
-                           is_data_normalization=True)
-    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Build GNN-based material patch model
-    model = GNNMaterialPatchModel(**model_init_args)
+    # Set GNN-based material patch model
+    model = gnn_material_simulator
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     with pytest.raises(RuntimeError):
         # Test detection of unexistent material patch model directory
@@ -238,8 +230,8 @@ def test_get_input_features_from_graph(graph_patch_data_2d, tmp_path):
     model_init_args = dict(n_node_in=node_features_in.shape[1],
                            n_node_out=node_targets_matrix.shape[1],
                            n_edge_in=edge_features_in.shape[1],
-                           n_message_steps=2,
-                           n_hidden_layers=2,
+                           n_message_steps=2, enc_n_hidden_layers=2,
+                           pro_n_hidden_layers=3, dec_n_hidden_layers=4,
                            hidden_layer_size=2,
                            model_directory=str(tmp_path),
                            is_data_normalization=False)
@@ -283,8 +275,8 @@ def test_get_input_features_from_graph_invalid(graph_patch_data_2d, tmp_path):
     model_init_args = dict(n_node_in=node_features_in.shape[1],
                            n_node_out=node_targets_matrix.shape[1],
                            n_edge_in=edge_features_in.shape[1],
-                           n_message_steps=2,
-                           n_hidden_layers=2,
+                           n_message_steps=2, enc_n_hidden_layers=2,
+                           pro_n_hidden_layers=3, dec_n_hidden_layers=4,
                            hidden_layer_size=2,
                            model_directory=str(tmp_path),
                            is_data_normalization=False)
@@ -330,8 +322,8 @@ def test_get_output_features_from_graph(graph_patch_data_2d, tmp_path):
     model_init_args = dict(n_node_in=node_features_in.shape[1],
                            n_node_out=node_targets_matrix.shape[1],
                            n_edge_in=edge_features_in.shape[1],
-                           n_message_steps=2,
-                           n_hidden_layers=2,
+                           n_message_steps=2, enc_n_hidden_layers=2,
+                           pro_n_hidden_layers=3, dec_n_hidden_layers=4,
                            hidden_layer_size=2,
                            model_directory=str(tmp_path),
                            is_data_normalization=False)
@@ -365,8 +357,8 @@ def test_get_output_features_from_graph_invalid(graph_patch_data_2d, tmp_path):
     model_init_args = dict(n_node_in=node_features_in.shape[1],
                            n_node_out=node_targets_matrix.shape[1],
                            n_edge_in=edge_features_in.shape[1],
-                           n_message_steps=2,
-                           n_hidden_layers=2,
+                           n_message_steps=2, enc_n_hidden_layers=2,
+                           pro_n_hidden_layers=3, dec_n_hidden_layers=4,
                            hidden_layer_size=2,
                            model_directory=str(tmp_path),
                            is_data_normalization=False)
@@ -394,7 +386,8 @@ def test_fit_data_scalers(batch_graph_patch_data_2d, tmp_path):
     # Build GNN-based material patch model
     model_init_args = dict(n_node_in=n_node_in, n_node_out=n_node_out,
                            n_edge_in=n_edge_in, n_message_steps=2,
-                           n_hidden_layers=2, hidden_layer_size=2,
+                           enc_n_hidden_layers=2, pro_n_hidden_layers=3,
+                           dec_n_hidden_layers=4, hidden_layer_size=2,
                            model_directory=str(tmp_path),
                            is_data_normalization=True)
     model = GNNMaterialPatchModel(**model_init_args)
@@ -422,20 +415,17 @@ def test_fit_data_scalers(batch_graph_patch_data_2d, tmp_path):
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     assert not errors, "Errors:\n{}".format("\n".join(errors))
 # -----------------------------------------------------------------------------
-def test_get_fitted_data_scaler_invalid(tmp_path):
+def test_get_fitted_data_scaler_invalid(gnn_material_simulator_norm):
     """Test GNN-based material patch model fitted data scaler getter."""
-    # Build GNN-based material patch model
-    model_init_args = dict(n_node_in=2, n_node_out=4, n_edge_in=3,
-                           n_message_steps=2, n_hidden_layers=2,
-                           hidden_layer_size=2, model_directory=tmp_path,
-                           is_data_normalization=True)
-    model = GNNMaterialPatchModel(**model_init_args)
+    # Set GNN-based material patch model
+    model = gnn_material_simulator_norm
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     with pytest.raises(RuntimeError):
         # Test unknown data scaler
         _ = model.get_fitted_data_scaler(features_type='unknown_type')
     with pytest.raises(RuntimeError):
         # Test unfitted data scaler
+        model._data_scalers['node_features_in'] = None
         _ = model.get_fitted_data_scaler(features_type='node_features_in')
 # -----------------------------------------------------------------------------
 def test_data_scaler_transform(gnn_material_simulator_norm,
@@ -553,14 +543,10 @@ def test_load_model_data_scalers_from_file_invalid(
         # Test detection of unexistent model initialization file
         _ = model.load_model_data_scalers_from_file()
 # -----------------------------------------------------------------------------
-def test_check_normalized_return(tmp_path):
+def test_check_normalized_return(gnn_material_simulator):
     """Test detection of unfitted model data scalers."""
-    # Build GNN-based material patch model
-    model_init_args = dict(n_node_in=2, n_node_out=4, n_edge_in=3,
-                           n_message_steps=2, n_hidden_layers=2,
-                           hidden_layer_size=2, model_directory=str(tmp_path),
-                           is_data_normalization=False)
-    model = GNNMaterialPatchModel(**model_init_args)
+    # Set GNN-based material patch model
+    model = gnn_material_simulator
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     with pytest.raises(RuntimeError):
         # Test unknown data scaler
@@ -591,7 +577,8 @@ def test_get_input_features_from_graph_norm(batch_graph_patch_data_2d,
     # Build GNN-based material patch model
     model_init_args = dict(n_node_in=n_node_in, n_node_out=n_node_out,
                            n_edge_in=n_edge_in, n_message_steps=2,
-                           n_hidden_layers=2, hidden_layer_size=2,
+                           enc_n_hidden_layers=2, pro_n_hidden_layers=3,
+                           dec_n_hidden_layers=4, hidden_layer_size=2,
                            model_directory=str(tmp_path),
                            is_data_normalization=True)
     model = GNNMaterialPatchModel(**model_init_args)
@@ -655,7 +642,8 @@ def test_get_output_features_from_graph_norm(batch_graph_patch_data_2d,
     # Build GNN-based material patch model
     model_init_args = dict(n_node_in=n_node_in, n_node_out=n_node_out,
                            n_edge_in=n_edge_in, n_message_steps=2,
-                           n_hidden_layers=2, hidden_layer_size=2,
+                           enc_n_hidden_layers=2, pro_n_hidden_layers=3,
+                           dec_n_hidden_layers=4, hidden_layer_size=2,
                            model_directory=str(tmp_path),
                            is_data_normalization=True)
     model = GNNMaterialPatchModel(**model_init_args)
@@ -690,7 +678,8 @@ def test_save_and_load_model_state(tmp_path):
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set GNN-based material patch model initialization parameters
     model_init_args = dict(n_node_in=2, n_node_out=5, n_edge_in=3,
-                           n_message_steps=2, n_hidden_layers=2,
+                           n_message_steps=2, enc_n_hidden_layers=2,
+                           pro_n_hidden_layers=3, dec_n_hidden_layers=4,
                            hidden_layer_size=2, model_directory=str(tmp_path),
                            model_name='material_patch_model',
                            is_data_normalization=True)
@@ -815,7 +804,8 @@ def test_save_and_load_model_state_invalid(tmp_path):
     """Test detection of failed save and load material patch model state."""
     # Set GNN-based material patch model initialization parameters
     model_init_args = dict(n_node_in=2, n_node_out=5, n_edge_in=3,
-                        n_message_steps=2, n_hidden_layers=2,
+                        n_message_steps=2, enc_n_hidden_layers=2,
+                        pro_n_hidden_layers=3, dec_n_hidden_layers=4,
                         hidden_layer_size=2, model_directory=str(tmp_path),
                         model_name='material_patch_model',
                         is_data_normalization=True)
@@ -877,7 +867,8 @@ def test_model_forward_propagation(batch_graph_patch_data_2d, tmp_path,
     # Set GNN-based material patch model initialization parameters
     model_init_args = dict(n_node_in=n_node_in, n_node_out=n_node_out,
                            n_edge_in=n_edge_in, n_message_steps=2,
-                           n_hidden_layers=2, hidden_layer_size=2,
+                           enc_n_hidden_layers=2, pro_n_hidden_layers=3,
+                           dec_n_hidden_layers=4, hidden_layer_size=2,
                            model_directory=str(tmp_path),
                            is_data_normalization=is_data_normalization)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -933,7 +924,8 @@ def test_model_forward_propagation_invalid(batch_graph_patch_data_2d, tmp_path,
     # Set GNN-based material patch model initialization parameters
     model_init_args = dict(n_node_in=n_node_in, n_node_out=n_node_out,
                            n_edge_in=n_edge_in, n_message_steps=2,
-                           n_hidden_layers=2, hidden_layer_size=2,
+                           enc_n_hidden_layers=2, pro_n_hidden_layers=3,
+                           dec_n_hidden_layers=4, hidden_layer_size=2,
                            model_directory=str(tmp_path),
                            is_data_normalization=is_data_normalization)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

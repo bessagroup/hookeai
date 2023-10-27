@@ -54,9 +54,15 @@ class GNNMaterialPatchModel(torch.nn.Module):
         Number of edge input features.
     _n_message_steps : int
         Number of message-passing steps.
-    _n_hidden_layers : int
-        Number of hidden layers of multilayer feed-forward neural network
-        update functions.
+    _enc_n_hidden_layers : int
+        Encoder: Number of hidden layers of multilayer feed-forward neural
+        network update functions.
+    _pro_n_hidden_layers : int
+        Processor: Number of hidden layers of multilayer feed-forward
+        neural network update functions.
+    _dec_n_hidden_layers : int
+        Decoder: Number of hidden layers of multilayer feed-forward neural
+        network update functions.
     _hidden_layer_size : int
         Number of neurons of hidden layers of multilayer feed-forward
         neural network update functions.
@@ -118,7 +124,8 @@ class GNNMaterialPatchModel(torch.nn.Module):
         Check if model data normalization is available.
     """
     def __init__(self, n_node_in, n_node_out, n_edge_in, n_message_steps,
-                 n_hidden_layers, hidden_layer_size, model_directory,
+                 enc_n_hidden_layers, pro_n_hidden_layers, dec_n_hidden_layers,
+                 hidden_layer_size, model_directory,
                  model_name='material_patch_model',
                  is_data_normalization=False, is_save_model_init_file=True,
                  device_type='cpu'):
@@ -134,9 +141,15 @@ class GNNMaterialPatchModel(torch.nn.Module):
             Number of edge input features.
         n_message_steps : int
             Number of message-passing steps.
-        n_hidden_layers : int
-            Number of hidden layers of multilayer feed-forward neural network
-            update functions.
+        enc_n_hidden_layers : int
+            Encoder: Number of hidden layers of multilayer feed-forward neural
+            network update functions.
+        pro_n_hidden_layers : int
+            Processor: Number of hidden layers of multilayer feed-forward
+            neural network update functions.
+        dec_n_hidden_layers : int
+            Decoder: Number of hidden layers of multilayer feed-forward neural
+            network update functions.
         hidden_layer_size : int
             Number of neurons of hidden layers of multilayer feed-forward
             neural network update functions.
@@ -166,7 +179,9 @@ class GNNMaterialPatchModel(torch.nn.Module):
         self._n_edge_in = n_edge_in
         # Set architecture parameters
         self._n_message_steps = n_message_steps
-        self._n_hidden_layers = n_hidden_layers
+        self._enc_n_hidden_layers = enc_n_hidden_layers
+        self._pro_n_hidden_layers = pro_n_hidden_layers
+        self._dec_n_hidden_layers = dec_n_hidden_layers
         self._hidden_layer_size = hidden_layer_size
         # Set material patch model directory and name
         if os.path.isdir(model_directory):
@@ -190,9 +205,9 @@ class GNNMaterialPatchModel(torch.nn.Module):
                                 n_node_in=n_node_in,
                                 n_node_out=n_node_out,
                                 n_edge_in=n_edge_in,
-                                enc_n_hidden_layers=n_hidden_layers,
-                                pro_n_hidden_layers=n_hidden_layers,
-                                dec_n_hidden_layers=n_hidden_layers,
+                                enc_n_hidden_layers=enc_n_hidden_layers,
+                                pro_n_hidden_layers=pro_n_hidden_layers,
+                                dec_n_hidden_layers=dec_n_hidden_layers,
                                 hidden_layer_size=hidden_layer_size)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Initialize data scalers
@@ -331,7 +346,9 @@ class GNNMaterialPatchModel(torch.nn.Module):
         model_init_args['n_node_out'] = self._n_node_out
         model_init_args['n_edge_in'] = self._n_edge_in
         model_init_args['n_message_steps'] = self._n_message_steps
-        model_init_args['n_hidden_layers'] = self._n_hidden_layers
+        model_init_args['dec_n_hidden_layers'] = self._enc_n_hidden_layers
+        model_init_args['pro_n_hidden_layers'] = self._pro_n_hidden_layers
+        model_init_args['enc_n_hidden_layers'] = self._dec_n_hidden_layers
         model_init_args['hidden_layer_size'] = self._hidden_layer_size
         model_init_args['model_directory'] = self.model_directory
         model_init_args['model_name'] = self.model_name
