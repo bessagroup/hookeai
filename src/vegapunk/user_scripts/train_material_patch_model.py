@@ -16,10 +16,11 @@ import os
 import torch
 # Local
 from gnn_model.gnn_patch_dataset import GNNMaterialPatchDataset
-from gnn_model.training import train_model, read_loss_history_from_file
+from gnn_model.training import train_model, read_loss_history_from_file, \
+    read_lr_history_from_file
 from gnn_model.cross_validation import kfold_cross_validation
 from gnn_model.evaluation_metrics import plot_training_loss_history, \
-    plot_kfold_cross_validation
+    plot_kfold_cross_validation, plot_training_loss_and_lr_history
 from ioput.iostandard import make_directory, find_unique_file_with_regex
 #
 #                                                          Authorship & Credits
@@ -91,6 +92,8 @@ def perform_model_standard_training(case_study_name, dataset_file_path,
     # Read training process loss history
     loss_type, loss_history = read_loss_history_from_file(loss_record_path)
     loss_histories = {f'$n_s = {len(dataset)}$': loss_history,}
+    # Read training process learning rate history
+    lr_scheduler_type, lr_history = read_lr_history_from_file(loss_record_path)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Create plot directory
     plot_dir = os.path.join(os.path.normpath(model_directory), 'plots')
@@ -99,8 +102,13 @@ def perform_model_standard_training(case_study_name, dataset_file_path,
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Plot model training process loss history
     plot_training_loss_history(loss_histories, loss_type.upper(),
-                               save_dir=plot_dir,
-                               is_save_fig=True, is_stdout_display=False)
+                               loss_scale='linear', save_dir=plot_dir,
+                               is_save_fig=True)
+    # Plot model training process loss and learning rate histories
+    plot_training_loss_and_lr_history(loss_history, lr_history, loss_type=None,
+                                      is_log_loss=False, loss_scale='linear',
+                                      lr_type=lr_scheduler_type,
+                                      save_dir=plot_dir, is_save_fig=True)
 # =============================================================================
 def perform_model_kfold_cross_validation(case_study_name, dataset_file_path,
                                          model_directory, cross_validation_dir,
@@ -202,9 +210,15 @@ def set_case_study_model_parameters(case_study_name, model_directory,
         # Set number of message-passing steps (number of processor layers)
         n_message_steps = 10
         # Set number of FNN hidden layers
-        n_hidden_layers = 2
+        enc_n_hidden_layers = 2
+        pro_n_hidden_layers = 2
+        dec_n_hidden_layers = 2
         # Set hidden layer size
         hidden_layer_size = 128
+        # Set (shared) hidden unit activation function
+        hidden_activation = torch.nn.Identity
+        # Set (shared) output unit activation function
+        output_activation = torch.nn.Identity
         # Set data normalization
         is_data_normalization = True
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -213,11 +227,23 @@ def set_case_study_model_parameters(case_study_name, model_directory,
                            'n_node_out': n_node_out,
                            'n_edge_in': n_edge_in,
                            'n_message_steps': n_message_steps,
-                           'n_hidden_layers': n_hidden_layers,
+                           'enc_n_hidden_layers': enc_n_hidden_layers,
+                           'pro_n_hidden_layers': pro_n_hidden_layers,
+                           'dec_n_hidden_layers': dec_n_hidden_layers,
                            'hidden_layer_size': hidden_layer_size,
                            'model_directory': model_directory,
                            'model_name': model_name,
                            'is_data_normalization': is_data_normalization,
+                           'enc_node_hidden_activation': hidden_activation,
+                           'enc_node_output_activation': output_activation,
+                           'enc_edge_hidden_activation': hidden_activation,
+                           'enc_edge_output_activation': output_activation,
+                           'pro_node_hidden_activation': hidden_activation,
+                           'pro_node_output_activation': output_activation,
+                           'pro_edge_hidden_activation': hidden_activation,
+                           'pro_edge_output_activation': output_activation,
+                           'dec_node_hidden_activation': hidden_activation,
+                           'dec_node_output_activation': output_activation,
                            'device_type': device_type}
     else:
         raise RuntimeError('Unknown case study.')
@@ -256,8 +282,8 @@ def set_default_training_options():
     """
     opt_algorithm = 'adam'
     lr_init = 1.0e-04
-    lr_scheduler_type = 'steplr'
-    lr_scheduler_kwargs = {'step_size': 5.0e+06, 'gamma': 0.1}
+    lr_scheduler_type = None
+    lr_scheduler_kwargs = None
     loss_type = 'mse'
     loss_kwargs = {}
     is_sampler_shuffle = True
@@ -268,10 +294,10 @@ def set_default_training_options():
 if __name__ == "__main__":
     # Set computation processes
     is_standard_training = True
-    is_cross_validation = True
+    is_cross_validation = False
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set case study name
-    case_study_name = '2d_elastic'
+    case_study_name = '2d_elastic_orthogonal'
     # Set case study directory
     case_study_base_dirs = {
         '2d_elastic_orthogonal': f'/home/bernardoferreira/Documents/temp',
