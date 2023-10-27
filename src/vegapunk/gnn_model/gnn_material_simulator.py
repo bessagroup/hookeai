@@ -190,7 +190,9 @@ class GNNMaterialPatchModel(torch.nn.Module):
                                 n_node_in=n_node_in,
                                 n_node_out=n_node_out,
                                 n_edge_in=n_edge_in,
-                                n_hidden_layers=n_hidden_layers,
+                                enc_n_hidden_layers=n_hidden_layers,
+                                pro_n_hidden_layers=n_hidden_layers,
+                                dec_n_hidden_layers=n_hidden_layers,
                                 hidden_layer_size=hidden_layer_size)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Initialize data scalers

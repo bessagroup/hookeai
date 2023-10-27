@@ -108,7 +108,11 @@ class GraphIndependentNetwork(torch.nn.Module):
         Forward propagation.
     """
     def __init__(self, n_node_in, n_node_out, n_edge_in, n_edge_out,
-                 n_hidden_layers, hidden_layer_size):
+                 n_hidden_layers, hidden_layer_size,
+                 node_hidden_activation=torch.nn.Identity,
+                 node_output_activation=torch.nn.Identity,
+                 edge_hidden_activation=torch.nn.Identity,
+                 edge_output_activation=torch.nn.Identity):
         """Constructor.
         
         Parameters
@@ -127,6 +131,22 @@ class GraphIndependentNetwork(torch.nn.Module):
         hidden_layer_size : int
             Number of neurons of hidden layers of multilayer feed-forward
             neural network update functions.
+        node_hidden_activation : torch.nn.Module, default=torch.nn.Identity
+            Hidden unit activation function of node update function (multilayer
+            feed-forward neural network). Defaults to identity (linear) unit
+            activation function.
+        node_output_activation : torch.nn.Module, default=torch.nn.Identity
+            Output unit activation function of node update function (multilayer
+            feed-forward neural network). Defaults to identity (linear) unit
+            activation function.
+        edge_hidden_activation : torch.nn.Module, default=torch.nn.Identity
+            Hidden unit activation function of edge update function (multilayer
+            feed-forward neural network). Defaults to identity (linear) unit
+            activation function.
+        edge_output_activation : torch.nn.Module, default=torch.nn.Identity
+            Output unit activation function of edge update function (multilayer
+            feed-forward neural network). Defaults to identity (linear) unit
+            activation function.
         """
         # Initialize Graph Network block from base class
         super(GraphIndependentNetwork, self).__init__()
@@ -137,9 +157,9 @@ class GraphIndependentNetwork(torch.nn.Module):
         fnn = build_fnn(
             input_size=n_node_in,
             output_size=n_node_out,
-            output_activation=torch.nn.Identity,
+            output_activation=node_output_activation,
             hidden_layer_sizes=n_hidden_layers*[hidden_layer_size,],
-            hidden_activation=torch.nn.ReLU)
+            hidden_activation=node_hidden_activation)
         # Build normalization layer
         norm_layer = torch.nn.LayerNorm(normalized_shape=n_node_out)
         # Set node update function
@@ -153,9 +173,9 @@ class GraphIndependentNetwork(torch.nn.Module):
         fnn = build_fnn(
             input_size=n_edge_in,
             output_size=n_edge_out,
-            output_activation=torch.nn.Identity,
+            output_activation=edge_output_activation,
             hidden_layer_sizes=n_hidden_layers*[hidden_layer_size,],
-            hidden_activation=torch.nn.ReLU)
+            hidden_activation=edge_hidden_activation)
         # Build normalization layer
         norm_layer = torch.nn.LayerNorm(normalized_shape=n_edge_out)
         # Set edge update function
@@ -212,7 +232,11 @@ class GraphInteractionNetwork(torch_geometric.nn.MessagePassing):
         Update node features.
     """
     def __init__(self, n_node_in, n_node_out, n_edge_in, n_edge_out,
-                 n_hidden_layers, hidden_layer_size):
+                 n_hidden_layers, hidden_layer_size,
+                 node_hidden_activation=torch.nn.Identity,
+                 node_output_activation=torch.nn.Identity,
+                 edge_hidden_activation=torch.nn.Identity,
+                 edge_output_activation=torch.nn.Identity):
         """Constructor.
         
         Parameters
@@ -231,6 +255,22 @@ class GraphInteractionNetwork(torch_geometric.nn.MessagePassing):
         hidden_layer_size : int
             Number of neurons of hidden layers of multilayer feed-forward
             neural network update functions.
+        node_hidden_activation : torch.nn.Module, default=torch.nn.Identity
+            Hidden unit activation function of node update function (multilayer
+            feed-forward neural network). Defaults to identity (linear) unit
+            activation function.
+        node_output_activation : torch.nn.Module, default=torch.nn.Identity
+            Output unit activation function of node update function (multilayer
+            feed-forward neural network). Defaults to identity (linear) unit
+            activation function.
+        edge_hidden_activation : torch.nn.Module, default=torch.nn.Identity
+            Hidden unit activation function of edge update function (multilayer
+            feed-forward neural network). Defaults to identity (linear) unit
+            activation function.
+        edge_output_activation : torch.nn.Module, default=torch.nn.Identity
+            Output unit activation function of edge update function (multilayer
+            feed-forward neural network). Defaults to identity (linear) unit
+            activation function.
         """
         # Set aggregation scheme
         aggregation = 'add'
@@ -246,9 +286,9 @@ class GraphInteractionNetwork(torch_geometric.nn.MessagePassing):
         fnn = build_fnn(
             input_size=n_node_in+n_edge_out,
             output_size=n_node_out,
-            output_activation=torch.nn.Identity,
+            output_activation=node_output_activation,
             hidden_layer_sizes=n_hidden_layers*[hidden_layer_size,],
-            hidden_activation=torch.nn.ReLU)
+            hidden_activation=node_hidden_activation)
         # Build normalization layer
         norm_layer = torch.nn.LayerNorm(normalized_shape=n_node_out)
         # Set node update function
@@ -262,9 +302,9 @@ class GraphInteractionNetwork(torch_geometric.nn.MessagePassing):
         fnn = build_fnn(
             input_size=n_edge_in+2*n_node_in,
             output_size=n_edge_out,
-            output_activation=torch.nn.Identity,
+            output_activation=edge_output_activation,
             hidden_layer_sizes=n_hidden_layers*[hidden_layer_size,],
-            hidden_activation=torch.nn.ReLU)
+            hidden_activation=edge_hidden_activation)
         # Build normalization layer
         norm_layer = torch.nn.LayerNorm(normalized_shape=n_edge_out)
         # Set node update function

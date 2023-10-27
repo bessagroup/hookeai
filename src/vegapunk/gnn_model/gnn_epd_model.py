@@ -47,7 +47,19 @@ class EncodeProcessDecode(torch.nn.Module):
         Forward propagation.
     """
     def __init__(self, n_message_steps, n_node_in, n_node_out, n_edge_in,
-                 n_hidden_layers, hidden_layer_size, is_node_res_connect=False,
+                 enc_n_hidden_layers, pro_n_hidden_layers, dec_n_hidden_layers,
+                 hidden_layer_size,
+                 enc_node_hidden_activation=torch.nn.Identity,
+                 enc_node_output_activation=torch.nn.Identity,
+                 enc_edge_hidden_activation=torch.nn.Identity,
+                 enc_edge_output_activation=torch.nn.Identity,
+                 pro_node_hidden_activation=torch.nn.Identity,
+                 pro_node_output_activation=torch.nn.Identity,
+                 pro_edge_hidden_activation=torch.nn.Identity,
+                 pro_edge_output_activation=torch.nn.Identity,
+                 dec_node_hidden_activation=torch.nn.Identity,
+                 dec_node_output_activation=torch.nn.Identity,
+                 is_node_res_connect=False,
                  is_edge_res_connect=False):
         """Constructor.
         
@@ -61,12 +73,58 @@ class EncodeProcessDecode(torch.nn.Module):
             Number of node output features.
         n_edge_in : int
             Number of edge input features.
-        n_hidden_layers : int
-            Number of hidden layers of multilayer feed-forward neural network
-            update functions.
+        enc_n_hidden_layers : int
+            Encoder: Number of hidden layers of multilayer feed-forward neural
+            network update functions.
+        pro_n_hidden_layers : int
+            Processor: Number of hidden layers of multilayer feed-forward
+            neural network update functions.
+        dec_n_hidden_layers : int
+            Decoder: Number of hidden layers of multilayer feed-forward neural
+            network update functions.
         hidden_layer_size : int
             Number of neurons of hidden layers of multilayer feed-forward
             neural network update functions.
+        enc_node_hidden_activation : torch.nn.Module, default=torch.nn.Identity
+            Encoder: Hidden unit activation function of node update function
+            (multilayer feed-forward neural network). Defaults to identity
+            (linear) unit activation function.
+        enc_node_output_activation : torch.nn.Module, default=torch.nn.Identity
+            Encoder: Output unit activation function of node update function
+            (multilayer feed-forward neural network). Defaults to identity
+            (linear) unit activation function.
+        enc_edge_hidden_activation : torch.nn.Module, default=torch.nn.Identity
+            Encoder: Hidden unit activation function of edge update function
+            (multilayer feed-forward neural network). Defaults to identity
+            (linear) unit activation function.
+        enc_edge_output_activation : torch.nn.Module, default=torch.nn.Identity
+            Encoder: Output unit activation function of edge update function
+            (multilayer feed-forward neural network). Defaults to identity
+            (linear) unit activation function.
+        pro_node_hidden_activation : torch.nn.Module, default=torch.nn.Identity
+            Processor: Hidden unit activation function of node update function
+            (multilayer feed-forward neural network). Defaults to identity
+            (linear) unit activation function.
+        pro_node_output_activation : torch.nn.Module, default=torch.nn.Identity
+            Processor: Output unit activation function of node update function
+            (multilayer feed-forward neural network). Defaults to identity
+            (linear) unit activation function.
+        pro_edge_hidden_activation : torch.nn.Module, default=torch.nn.Identity
+            Processor: Hidden unit activation function of edge update function
+            (multilayer feed-forward neural network). Defaults to identity
+            (linear) unit activation function.
+        pro_edge_output_activation : torch.nn.Module, default=torch.nn.Identity
+            Processor: Output unit activation function of edge update function
+            (multilayer feed-forward neural network). Defaults to identity
+            (linear) unit activation function.
+        dec_node_hidden_activation : torch.nn.Module, default=torch.nn.Identity
+            Decoder: Hidden unit activation function of node update function
+            (multilayer feed-forward neural network). Defaults to identity
+            (linear) unit activation function.
+        dec_node_output_activation : torch.nn.Module, default=torch.nn.Identity
+            Decoder: Output unit activation function of node update function
+            (multilayer feed-forward neural network). Defaults to identity
+            (linear) unit activation function.
         is_node_res_connect : bool, default=False
             Add residual connections in Processor between nodes input and
             output features if True, False otherwise. Number of input and
@@ -80,27 +138,37 @@ class EncodeProcessDecode(torch.nn.Module):
         super(EncodeProcessDecode, self).__init__()
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Set GNN-based material patch model encoder
-        self._encoder = Encoder(n_node_in=n_node_in,
-                                n_node_out=hidden_layer_size,
-                                n_edge_in=n_edge_in,
-                                n_edge_out=hidden_layer_size,
-                                n_hidden_layers=n_hidden_layers,
-                                hidden_layer_size=hidden_layer_size)
+        self._encoder = \
+            Encoder(n_node_in=n_node_in, n_node_out=hidden_layer_size,
+                    n_edge_in=n_edge_in, n_edge_out=hidden_layer_size,
+                    n_hidden_layers=enc_n_hidden_layers,
+                    hidden_layer_size=hidden_layer_size,
+                    node_hidden_activation=enc_node_hidden_activation,
+                    node_output_activation=enc_node_output_activation,
+                    edge_hidden_activation=enc_edge_hidden_activation,
+                    edge_output_activation=enc_edge_output_activation)
         # Set GNN-based material patch model processor
-        self._processor = Processor(n_message_steps=n_message_steps,
-                                    n_node_in=hidden_layer_size,
-                                    n_node_out=hidden_layer_size,
-                                    n_edge_in=hidden_layer_size,
-                                    n_edge_out=hidden_layer_size,
-                                    n_hidden_layers=n_hidden_layers,
-                                    hidden_layer_size=hidden_layer_size,
-                                    is_node_res_connect=is_node_res_connect,
-                                    is_edge_res_connect=is_edge_res_connect)
+        self._processor = \
+            Processor(n_message_steps=n_message_steps,
+                      n_node_in=hidden_layer_size,
+                      n_node_out=hidden_layer_size,
+                      n_edge_in=hidden_layer_size,
+                      n_edge_out=hidden_layer_size,
+                      n_hidden_layers=pro_n_hidden_layers,
+                      hidden_layer_size=hidden_layer_size,
+                      node_hidden_activation=pro_node_hidden_activation,
+                      node_output_activation=pro_node_output_activation,
+                      edge_hidden_activation=pro_edge_hidden_activation,
+                      edge_output_activation=pro_edge_output_activation,
+                      is_node_res_connect=is_node_res_connect,
+                      is_edge_res_connect=is_edge_res_connect)
         # Set GNN-based material patch model decoder
-        self._decoder = Decoder(n_node_in=hidden_layer_size,
-                                n_node_out=n_node_out,
-                                n_hidden_layers=n_hidden_layers,
-                                hidden_layer_size=hidden_layer_size)
+        self._decoder = \
+            Decoder(n_node_in=hidden_layer_size, n_node_out=n_node_out,
+                    n_hidden_layers=dec_n_hidden_layers,
+                    hidden_layer_size=hidden_layer_size,
+                    node_hidden_activation=dec_node_hidden_activation,
+                    node_output_activation=dec_node_output_activation)
     # -------------------------------------------------------------------------
     def forward(self, node_features_in, edge_features_in, edges_indexes):
         """Forward propagation.
@@ -160,10 +228,6 @@ class Processor(torch_geometric.nn.MessagePassing):
     
     Residual connections are adopted between the input and output latent
     features of both nodes and edges at each message-passing step.
-    
-    Questions:
-    (1) I believe that the aggr='max' in the Processor initializer is
-        meaningless (not used).
         
     Attributes
     ----------
@@ -177,6 +241,10 @@ class Processor(torch_geometric.nn.MessagePassing):
     """
     def __init__(self, n_message_steps, n_node_in, n_node_out, n_edge_in,
                  n_edge_out, n_hidden_layers, hidden_layer_size,
+                 node_hidden_activation=torch.nn.Identity,
+                 node_output_activation=torch.nn.Identity,
+                 edge_hidden_activation=torch.nn.Identity,
+                 edge_output_activation=torch.nn.Identity,
                  is_node_res_connect=False, is_edge_res_connect=False):
         """Constructor.
         
@@ -198,6 +266,22 @@ class Processor(torch_geometric.nn.MessagePassing):
         hidden_layer_size : int
             Number of neurons of hidden layers of multilayer feed-forward
             neural network update functions.
+        node_hidden_activation : torch.nn.Module, default=torch.nn.Identity
+            Hidden unit activation function of node update function (multilayer
+            feed-forward neural network). Defaults to identity (linear) unit
+            activation function.
+        node_output_activation : torch.nn.Module, default=torch.nn.Identity
+            Output unit activation function of node update function (multilayer
+            feed-forward neural network). Defaults to identity (linear) unit
+            activation function.
+        edge_hidden_activation : torch.nn.Module, default=torch.nn.Identity
+            Hidden unit activation function of edge update function (multilayer
+            feed-forward neural network). Defaults to identity (linear) unit
+            activation function.
+        edge_output_activation : torch.nn.Module, default=torch.nn.Identity
+            Output unit activation function of edge update function (multilayer
+            feed-forward neural network). Defaults to identity (linear) unit
+            activation function.
         is_node_res_connect : bool, default=False
             Add residual connections between nodes input and output features
             if True, False otherwise. Number of input and output features must
@@ -237,12 +321,15 @@ class Processor(torch_geometric.nn.MessagePassing):
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Set sequence of identical Graph Interaction Networks
         self._processor = torch.nn.ModuleList(
-            [GraphInteractionNetwork(n_node_in=n_node_in,
-                                     n_node_out=n_node_out,
-                                     n_edge_in=n_edge_in,
-                                     n_edge_out=n_edge_out,
-                                     n_hidden_layers=n_hidden_layers,
-                                     hidden_layer_size=hidden_layer_size)
+            [GraphInteractionNetwork(
+                n_node_in=n_node_in, n_node_out=n_node_out,
+                n_edge_in=n_edge_in, n_edge_out=n_edge_out,
+                n_hidden_layers=n_hidden_layers,
+                hidden_layer_size=hidden_layer_size,
+                node_hidden_activation=node_hidden_activation,
+                node_output_activation=node_output_activation,
+                edge_hidden_activation=edge_hidden_activation,
+                edge_output_activation=edge_output_activation)
              for _ in range(n_message_steps)])
     # -------------------------------------------------------------------------
     def forward(self, node_features_in, edge_features_in, edges_indexes):
@@ -261,7 +348,6 @@ class Processor(torch_geometric.nn.MessagePassing):
             (2, n_edges), where the i-th edge is stored in edges_indexes[:, i]
             as (start_node_index, end_node_index).
 
-        
         Returns
         -------
         node_features_out : torch.Tensor
@@ -314,7 +400,8 @@ class Decoder(torch.nn.Module):
         Forward propagation.
     """
     def __init__(self, n_node_in, n_node_out, n_hidden_layers,
-                 hidden_layer_size):
+                 hidden_layer_size, node_hidden_activation=torch.nn.Identity,
+                 node_output_activation=torch.nn.Identity):
         """Constructor.
         
         Parameters
@@ -329,6 +416,14 @@ class Decoder(torch.nn.Module):
         hidden_layer_size : int
             Number of neurons of hidden layers of multilayer feed-forward
             neural network update functions.
+        node_hidden_activation : torch.nn.Module, default=torch.nn.Identity
+            Hidden unit activation function of node update function (multilayer
+            feed-forward neural network). Defaults to identity (linear) unit
+            activation function.
+        node_output_activation : torch.nn.Module, default=torch.nn.Identity
+            Output unit activation function of node update function (multilayer
+            feed-forward neural network). Defaults to identity (linear) unit
+            activation function.
         """
         # Initialize from base class
         super(Decoder, self).__init__()
@@ -336,9 +431,9 @@ class Decoder(torch.nn.Module):
         # Set decoding feed-forward neural network
         self._node_fn = build_fnn(
             input_size=n_node_in, output_size=n_node_out,
-            output_activation=torch.nn.Identity,
+            output_activation=node_output_activation,
             hidden_layer_sizes=n_hidden_layers*[hidden_layer_size,],
-            hidden_activation=torch.nn.ReLU)
+            hidden_activation=node_hidden_activation)
     # -------------------------------------------------------------------------
     def forward(self, node_features_in):
         """Forward propagation.
