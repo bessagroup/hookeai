@@ -306,7 +306,10 @@ def train_model(n_train_steps, dataset, model_init_args, lr_init,
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Save training step loss and learning rate
             loss_history.append(loss)
-            lr_history.append(lr_scheduler.get_last_lr())
+            if is_lr_scheduler:
+                lr_history.append(lr_scheduler.get_last_lr())
+            else:
+                lr_history.append(lr_init)
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Save model and optimizer current states
             if save_every is not None and step % save_every == 0:
@@ -943,7 +946,7 @@ def read_lr_history_from_file(loss_record_path):
         raise RuntimeError('Learning rate history is not a list[float].')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set learning rate scheduler type
-    lr_scheduler_type = str(loss_history_record['lr_scheduler_type'])
+    lr_scheduler_type = loss_history_record['lr_scheduler_type']
     # Set learning rate history
     lr_history = loss_history_record['lr_history']
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
