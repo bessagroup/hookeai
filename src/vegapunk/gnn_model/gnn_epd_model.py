@@ -34,6 +34,8 @@ class EncodeProcessDecode(torch.nn.Module):
     
     Attributes
     ----------
+    _n_message_steps : int
+        Number of message-passing steps.
     _encoder : Encoder
         GNN-based encoder.
     _processor : Processor
@@ -66,7 +68,9 @@ class EncodeProcessDecode(torch.nn.Module):
         Parameters
         ----------
         n_message_steps : int
-            Number of message-passing steps.
+            Number of message-passing steps. Setting number of message-passing
+            steps to 0 results in Encoder-Decoder model (Processor is not
+            initialized).
         n_node_in : int
             Number of node input features.
         n_node_out : int
@@ -137,6 +141,9 @@ class EncodeProcessDecode(torch.nn.Module):
         # Initialize from base class
         super(EncodeProcessDecode, self).__init__()
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Store number of message-passing steps
+        self._n_message_steps = n_message_steps
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Set GNN-based material patch model encoder
         self._encoder = \
             Encoder(n_node_in=n_node_in, n_node_out=hidden_layer_size,
@@ -147,21 +154,25 @@ class EncodeProcessDecode(torch.nn.Module):
                     node_output_activation=enc_node_output_activation,
                     edge_hidden_activation=enc_edge_hidden_activation,
                     edge_output_activation=enc_edge_output_activation)
-        # Set GNN-based material patch model processor
-        self._processor = \
-            Processor(n_message_steps=n_message_steps,
-                      n_node_in=hidden_layer_size,
-                      n_node_out=hidden_layer_size,
-                      n_edge_in=hidden_layer_size,
-                      n_edge_out=hidden_layer_size,
-                      n_hidden_layers=pro_n_hidden_layers,
-                      hidden_layer_size=hidden_layer_size,
-                      node_hidden_activation=pro_node_hidden_activation,
-                      node_output_activation=pro_node_output_activation,
-                      edge_hidden_activation=pro_edge_hidden_activation,
-                      edge_output_activation=pro_edge_output_activation,
-                      is_node_res_connect=is_node_res_connect,
-                      is_edge_res_connect=is_edge_res_connect)
+        # Set GNN-based material patch model processor if positive number of
+        # message-passing steps
+        if self._n_message_steps > 0:
+            self._processor = \
+                Processor(n_message_steps=n_message_steps,
+                        n_node_in=hidden_layer_size,
+                        n_node_out=hidden_layer_size,
+                        n_edge_in=hidden_layer_size,
+                        n_edge_out=hidden_layer_size,
+                        n_hidden_layers=pro_n_hidden_layers,
+                        hidden_layer_size=hidden_layer_size,
+                        node_hidden_activation=pro_node_hidden_activation,
+                        node_output_activation=pro_node_output_activation,
+                        edge_hidden_activation=pro_edge_hidden_activation,
+                        edge_output_activation=pro_edge_output_activation,
+                        is_node_res_connect=is_node_res_connect,
+                        is_edge_res_connect=is_edge_res_connect)
+        else:
+            self._processor = None
         # Set GNN-based material patch model decoder
         self._decoder = \
             Decoder(n_node_in=hidden_layer_size, n_node_out=n_node_out,
@@ -172,6 +183,8 @@ class EncodeProcessDecode(torch.nn.Module):
     # -------------------------------------------------------------------------
     def forward(self, node_features_in, edge_features_in, edges_indexes):
         """Forward propagation.
+        
+        Processor is skipped if number of message-passing steps is set to zero.
         
         Parameters
         ----------
@@ -197,10 +210,11 @@ class EncodeProcessDecode(torch.nn.Module):
             self._encoder(node_features_in=node_features_in,
                           edge_features_in=edge_features_in)
         # Perform processing (message-passing steps)
-        node_features, edge_features = \
-            self._processor(node_features_in=node_features,
-                            edge_features_in=edge_features,
-                            edges_indexes=edges_indexes)
+        if self._n_message_steps > 0:
+            node_features, edge_features = \
+                self._processor(node_features_in=node_features,
+                                edge_features_in=edge_features,
+                                edges_indexes=edges_indexes)                
         # Perform decoding
         node_features_out = self._decoder(node_features_in=node_features)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
