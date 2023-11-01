@@ -160,8 +160,8 @@ class GraphIndependentNetwork(torch.nn.Module):
             output_activation=node_output_activation,
             hidden_layer_sizes=n_hidden_layers*[hidden_layer_size,],
             hidden_activation=node_hidden_activation)
-        # Build normalization layer
-        norm_layer = torch.nn.LayerNorm(normalized_shape=n_node_out)
+        # Build normalization layer (per-feature)
+        norm_layer = torch.nn.BatchNorm1d(num_features=n_node_out, affine=True)
         # Set node update function
         self._node_fn = torch.nn.Sequential()
         self._node_fn.add_module('FNN', fnn)
@@ -176,8 +176,8 @@ class GraphIndependentNetwork(torch.nn.Module):
             output_activation=edge_output_activation,
             hidden_layer_sizes=n_hidden_layers*[hidden_layer_size,],
             hidden_activation=edge_hidden_activation)
-        # Build normalization layer
-        norm_layer = torch.nn.LayerNorm(normalized_shape=n_edge_out)
+        # Build normalization layer (per-feature)
+        norm_layer = torch.nn.BatchNorm1d(num_features=n_edge_out, affine=True)
         # Set edge update function
         self._edge_fn = torch.nn.Sequential()
         self._edge_fn.add_module('FNN', fnn)
@@ -297,8 +297,8 @@ class GraphInteractionNetwork(torch_geometric.nn.MessagePassing):
             output_activation=node_output_activation,
             hidden_layer_sizes=n_hidden_layers*[hidden_layer_size,],
             hidden_activation=node_hidden_activation)
-        # Build normalization layer
-        norm_layer = torch.nn.LayerNorm(normalized_shape=n_node_out)
+        # Build normalization layer (per-feature)
+        norm_layer = torch.nn.BatchNorm1d(num_features=n_node_out, affine=True)
         # Set node update function
         self._node_fn = torch.nn.Sequential()
         self._node_fn.add_module('FNN', fnn)
@@ -313,8 +313,8 @@ class GraphInteractionNetwork(torch_geometric.nn.MessagePassing):
             output_activation=edge_output_activation,
             hidden_layer_sizes=n_hidden_layers*[hidden_layer_size,],
             hidden_activation=edge_hidden_activation)
-        # Build normalization layer
-        norm_layer = torch.nn.LayerNorm(normalized_shape=n_edge_out)
+        # Build normalization layer (per-feature)
+        norm_layer = torch.nn.BatchNorm1d(num_features=n_edge_out, affine=True)
         # Set node update function
         self._edge_fn = torch.nn.Sequential()
         self._edge_fn.add_module('FNN', fnn)
