@@ -227,12 +227,13 @@ class GraphInteractionNetwork(torch_geometric.nn.MessagePassing):
     forward(self, node_features_in, edge_features_in, edges_indexes)
         Forward propagation.
     message(self, node_features_in_i, node_features_in_j, edge_features_in)
-        Builds messages to node i from each edge (i, j) (edge update).
+        Builds messages to node i from each edge (j, i) (edge update).
     update(self, node_features_in_aggr, node_features_in, edge_features_out)
         Update node features.
     """
     def __init__(self, n_node_in, n_node_out, n_edge_in, n_edge_out,
                  n_hidden_layers, hidden_layer_size,
+                 aggregation_scheme='add',
                  node_hidden_activation=torch.nn.Identity,
                  node_output_activation=torch.nn.Identity,
                  edge_hidden_activation=torch.nn.Identity,
@@ -255,6 +256,8 @@ class GraphInteractionNetwork(torch_geometric.nn.MessagePassing):
         hidden_layer_size : int
             Number of neurons of hidden layers of multilayer feed-forward
             neural network update functions.
+        aggregation_scheme : {'add',}, default='add'
+            Message-passing aggregation scheme.
         node_hidden_activation : torch.nn.Module, default=torch.nn.Identity
             Hidden unit activation function of node update function (multilayer
             feed-forward neural network). Defaults to identity (linear) unit
@@ -273,9 +276,14 @@ class GraphInteractionNetwork(torch_geometric.nn.MessagePassing):
             activation function.
         """
         # Set aggregation scheme
-        aggregation = 'add'
+        if aggregation_scheme == 'add':
+            aggregation = torch_geometric.nn.aggr.SumAggregation()
+        else:
+            raise RuntimeError('Unknown aggregation scheme.')
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Set flow direction of message passing
         flow = 'source_to_target'
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Initialize Graph Network block from base class
         super(GraphInteractionNetwork, self).__init__(aggr=aggregation,
                                                       flow=flow)
@@ -351,12 +359,20 @@ class GraphInteractionNetwork(torch_geometric.nn.MessagePassing):
     # -------------------------------------------------------------------------
     def message(self, node_features_in_i, node_features_in_j,
                 edge_features_in):
-        """Builds messages to node i from each edge (i, j) (edge update).
+        """Builds messages to node i from each edge (j, i) (edge update).
         
-        Assumes that j is the sender node and i is the receiver node (flow
-        direction set as 'source_to_target'). For each edge (i, j), the
+        Assumes that j is the source node and i is the receiver node (flow
+        direction set as 'source_to_target'). For each edge (j, i), the
         update function input features result from concatenation of the edge
         features and the corresponding nodes features.
+        
+        The source and receiver node input features mappings based on the edges
+        indexes matrix are built in the __collect__() method of class
+        torch_geometric.nn.MessagePassing.
+        
+        The edges features output matrix is passed as the input tensor to the
+        aggregation operator (class torch.nn.aggr.Aggregation) set in the
+        initialization of the torch_geometric.nn.MessagePassing class.
         
         Parameters
         ----------
@@ -393,6 +409,11 @@ class GraphInteractionNetwork(torch_geometric.nn.MessagePassing):
     # -------------------------------------------------------------------------
     def update(self, node_features_in_aggr, node_features_in):
         """Update node features.
+        
+        The nodes features input matrix resulting from message passing and
+        aggregation is built in the aggregation operator (class
+        torch.nn.aggr.Aggregation) set in the initialization of the
+        torch_geometric.nn.MessagePassing class.
         
         Parameters
         ----------

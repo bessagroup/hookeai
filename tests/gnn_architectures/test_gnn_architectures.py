@@ -227,14 +227,15 @@ def test_graph_independent_network_forward(n_nodes, n_node_in, n_node_out,
     assert not errors, "Errors:\n{}".format("\n".join(errors))
 # -----------------------------------------------------------------------------
 @pytest.mark.parametrize('n_node_in, n_node_out, n_edge_in, n_edge_out,'
-                         'n_hidden_layers, hidden_layer_size',
-                         [(1, 5, 2, 3, 2, 4),
-                          (3, 2, 1, 4, 1, 2),
-                          (2, 4, 5, 4, 0, 2),
+                         'n_hidden_layers, hidden_layer_size,'
+                         'aggregation_scheme',
+                         [(1, 5, 2, 3, 2, 4, 'add'),
+                          (3, 2, 1, 4, 1, 2, 'add'),
+                          (2, 4, 5, 4, 0, 2, 'add'),
                           ])
 def test_graph_interaction_network_init(n_node_in, n_node_out, n_edge_in,
                                         n_edge_out, n_hidden_layers,
-                                        hidden_layer_size):
+                                        hidden_layer_size, aggregation_scheme):
     """Test Graph Interaction Network constructor."""
     # Initialize errors
     errors = []
@@ -244,6 +245,7 @@ def test_graph_interaction_network_init(n_node_in, n_node_out, n_edge_in,
                                     n_edge_in=n_edge_in, n_edge_out=n_edge_out,
                                     n_hidden_layers=n_hidden_layers,
                                     hidden_layer_size=hidden_layer_size,
+                                    aggregation_scheme=aggregation_scheme,
                                     node_hidden_activation=torch.nn.ReLU,
                                     node_output_activation=torch.nn.Identity,
                                     edge_hidden_activation=torch.nn.ReLU,
@@ -310,14 +312,16 @@ def test_graph_interaction_network_init(n_node_in, n_node_out, n_edge_in,
 # -----------------------------------------------------------------------------
 @pytest.mark.parametrize('n_nodes, n_node_in, n_node_out,'
                          'n_edges, n_edge_in, n_edge_out,'
-                         'n_hidden_layers, hidden_layer_size',
-                         [(10, 1, 5, 20, 2, 3, 2, 4),
-                          (1, 3, 2, 1, 1, 4, 1, 2),
-                          (3, 2, 4, 6, 5, 4, 0, 2),
+                         'n_hidden_layers, hidden_layer_size,'
+                         'aggregation_scheme',
+                         [(10, 1, 5, 20, 2, 3, 2, 4, 'add'),
+                          (1, 3, 2, 1, 1, 4, 1, 2, 'add'),
+                          (3, 2, 4, 6, 5, 4, 0, 2, 'add'),
                           ])
 def test_graph_interaction_network_forward(n_nodes, n_node_in, n_node_out,
                                            n_edges, n_edge_in, n_edge_out,
-                                           n_hidden_layers, hidden_layer_size):
+                                           n_hidden_layers, hidden_layer_size,
+                                           aggregation_scheme):
     """Test Graph Interaction Network forward propagation."""
     # Initialize errors
     errors = []
@@ -327,6 +331,7 @@ def test_graph_interaction_network_forward(n_nodes, n_node_in, n_node_out,
                                     n_edge_in=n_edge_in, n_edge_out=n_edge_out,
                                     n_hidden_layers=n_hidden_layers,
                                     hidden_layer_size=hidden_layer_size,
+                                    aggregation_scheme=aggregation_scheme,
                                     node_hidden_activation=torch.nn.ReLU,
                                     node_output_activation=torch.nn.Identity,
                                     edge_hidden_activation=torch.nn.ReLU,
@@ -364,14 +369,16 @@ def test_graph_interaction_network_forward(n_nodes, n_node_in, n_node_out,
 # -----------------------------------------------------------------------------
 @pytest.mark.parametrize('n_nodes, n_node_in, n_node_out,'
                          'n_edges, n_edge_in, n_edge_out,'
-                         'n_hidden_layers, hidden_layer_size',
-                         [(10, 1, 5, 20, 2, 3, 2, 4),
-                          (1, 3, 2, 1, 1, 4, 1, 2),
-                          (3, 2, 4, 6, 5, 4, 0, 2),
+                         'n_hidden_layers, hidden_layer_size,'
+                         'aggregation_scheme',
+                         [(10, 1, 5, 20, 2, 3, 2, 4, 'add'),
+                          (1, 3, 2, 1, 1, 4, 1, 2, 'add'),
+                          (3, 2, 4, 6, 5, 4, 0, 2, 'add'),
                           ])
 def test_graph_interaction_network_message(n_nodes, n_node_in, n_node_out,
                                            n_edges, n_edge_in, n_edge_out,
-                                           n_hidden_layers, hidden_layer_size):
+                                           n_hidden_layers, hidden_layer_size,
+                                           aggregation_scheme):
     """Test Graph Interaction Network message building (edge update)."""
     # Initialize errors
     errors = []
@@ -384,7 +391,8 @@ def test_graph_interaction_network_message(n_nodes, n_node_in, n_node_out,
                                     node_hidden_activation=torch.nn.ReLU,
                                     node_output_activation=torch.nn.Identity,
                                     edge_hidden_activation=torch.nn.ReLU,
-                                    edge_output_activation=torch.nn.Identity)
+                                    edge_output_activation=torch.nn.Identity,
+                                    aggregation_scheme=aggregation_scheme)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Generate random source nodes features input matrix
     node_features_in_i = torch.rand(n_edges, n_node_in)
@@ -409,14 +417,16 @@ def test_graph_interaction_network_message(n_nodes, n_node_in, n_node_out,
 # -----------------------------------------------------------------------------
 @pytest.mark.parametrize('n_nodes, n_node_in, n_node_out,'
                          'n_edges, n_edge_in, n_edge_out,'
-                         'n_hidden_layers, hidden_layer_size',
-                         [(10, 1, 5, 20, 2, 3, 2, 4),
-                          (1, 3, 2, 1, 1, 4, 1, 2),
-                          (3, 2, 4, 6, 5, 4, 0, 2),
+                         'n_hidden_layers, hidden_layer_size,'
+                         'aggregation_scheme',
+                         [(10, 1, 5, 20, 2, 3, 2, 4, 'add'),
+                          (1, 3, 2, 1, 1, 4, 1, 2, 'add'),
+                          (3, 2, 4, 6, 5, 4, 0, 2, 'add'),
                           ])
 def test_graph_interaction_network_update(n_nodes, n_node_in, n_node_out,
                                           n_edges, n_edge_in, n_edge_out,
-                                          n_hidden_layers, hidden_layer_size):
+                                          n_hidden_layers, hidden_layer_size,
+                                          aggregation_scheme):
     """Test Graph Interaction Network node features update."""
     # Initialize errors
     errors = []
@@ -426,6 +436,7 @@ def test_graph_interaction_network_update(n_nodes, n_node_in, n_node_out,
                                     n_edge_in=n_edge_in, n_edge_out=n_edge_out,
                                     n_hidden_layers=n_hidden_layers,
                                     hidden_layer_size=hidden_layer_size,
+                                    aggregation_scheme=aggregation_scheme,
                                     node_hidden_activation=torch.nn.ReLU,
                                     node_output_activation=torch.nn.Identity,
                                     edge_hidden_activation=torch.nn.ReLU,

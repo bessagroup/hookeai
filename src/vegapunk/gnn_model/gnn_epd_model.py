@@ -50,7 +50,7 @@ class EncodeProcessDecode(torch.nn.Module):
     """
     def __init__(self, n_message_steps, n_node_in, n_node_out, n_edge_in,
                  enc_n_hidden_layers, pro_n_hidden_layers, dec_n_hidden_layers,
-                 hidden_layer_size,
+                 hidden_layer_size, pro_aggregation_scheme='add',
                  enc_node_hidden_activation=torch.nn.Identity,
                  enc_node_output_activation=torch.nn.Identity,
                  enc_edge_hidden_activation=torch.nn.Identity,
@@ -89,6 +89,8 @@ class EncodeProcessDecode(torch.nn.Module):
         hidden_layer_size : int
             Number of neurons of hidden layers of multilayer feed-forward
             neural network update functions.
+        pro_aggregation_scheme : {'add',}, default='add'
+            Processor: Message-passing aggregation scheme.
         enc_node_hidden_activation : torch.nn.Module, default=torch.nn.Identity
             Encoder: Hidden unit activation function of node update function
             (multilayer feed-forward neural network). Defaults to identity
@@ -130,11 +132,11 @@ class EncodeProcessDecode(torch.nn.Module):
             (multilayer feed-forward neural network). Defaults to identity
             (linear) unit activation function.
         is_node_res_connect : bool, default=False
-            Add residual connections in Processor between nodes input and
+            Processor: Add residual connections between nodes input and
             output features if True, False otherwise. Number of input and
             output features must match to process residual connections.
         is_edge_res_connect : bool, default=False
-            Add residual connections in Processor between edges input and
+            Processor: Add residual connections in between edges input and
             output features if True, False otherwise. Number of input and
             output features must match to process residual connections.
         """
@@ -165,6 +167,7 @@ class EncodeProcessDecode(torch.nn.Module):
                         n_edge_out=hidden_layer_size,
                         n_hidden_layers=pro_n_hidden_layers,
                         hidden_layer_size=hidden_layer_size,
+                        aggregation_scheme=pro_aggregation_scheme,
                         node_hidden_activation=pro_node_hidden_activation,
                         node_output_activation=pro_node_output_activation,
                         edge_hidden_activation=pro_edge_hidden_activation,
@@ -255,6 +258,7 @@ class Processor(torch_geometric.nn.MessagePassing):
     """
     def __init__(self, n_message_steps, n_node_in, n_node_out, n_edge_in,
                  n_edge_out, n_hidden_layers, hidden_layer_size,
+                 aggregation_scheme='add',
                  node_hidden_activation=torch.nn.Identity,
                  node_output_activation=torch.nn.Identity,
                  edge_hidden_activation=torch.nn.Identity,
@@ -280,6 +284,8 @@ class Processor(torch_geometric.nn.MessagePassing):
         hidden_layer_size : int
             Number of neurons of hidden layers of multilayer feed-forward
             neural network update functions.
+        aggregation_scheme : {'add',}, default='add'
+            Message-passing aggregation scheme.
         node_hidden_activation : torch.nn.Module, default=torch.nn.Identity
             Hidden unit activation function of node update function (multilayer
             feed-forward neural network). Defaults to identity (linear) unit
@@ -340,6 +346,7 @@ class Processor(torch_geometric.nn.MessagePassing):
                 n_edge_in=n_edge_in, n_edge_out=n_edge_out,
                 n_hidden_layers=n_hidden_layers,
                 hidden_layer_size=hidden_layer_size,
+                aggregation_scheme=aggregation_scheme,
                 node_hidden_activation=node_hidden_activation,
                 node_output_activation=node_output_activation,
                 edge_hidden_activation=edge_hidden_activation,

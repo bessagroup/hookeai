@@ -23,15 +23,16 @@ __status__ = 'Planning'
 # =============================================================================
 @pytest.mark.parametrize('n_node_in, n_node_out, n_edge_in, n_message_steps,'
                          'n_hidden_layers, hidden_layer_size, model_name,'
-                         'is_data_normalization, hidden_activation,'
-                         'output_activation, device_type',
+                         'is_data_normalization, pro_aggregation_scheme,'
+                         'hidden_activation, output_activation, device_type',
                          [(2, 5, 4, 10, 2, 3, 'material_patch_model', True,
-                           torch.nn.ReLU, torch.nn.Identity, 'cpu'),
+                           'add', torch.nn.ReLU, torch.nn.Identity, 'cpu'),
                           ])
 def test_material_patch_model_init(n_node_in, n_node_out, n_edge_in,
                                    n_message_steps, n_hidden_layers,
                                    hidden_layer_size, model_name,
-                                   is_data_normalization, hidden_activation,
+                                   is_data_normalization,
+                                   pro_aggregation_scheme, hidden_activation,
                                    output_activation, device_type, tmp_path):
     """Test GNN-based material patch model constructor."""
     # Initialize errors
@@ -51,6 +52,7 @@ def test_material_patch_model_init(n_node_in, n_node_out, n_edge_in,
                            model_directory=model_directory,
                            model_name=model_name,
                            is_data_normalization=is_data_normalization,
+                           pro_aggregation_scheme=pro_aggregation_scheme,
                            enc_node_hidden_activation=hidden_activation,
                            enc_node_output_activation=output_activation,
                            enc_edge_hidden_activation=hidden_activation,
@@ -76,6 +78,7 @@ def test_material_patch_model_init(n_node_in, n_node_out, n_edge_in,
             model.model_directory == str(tmp_path),
             model.model_name == model_name,
             model.is_data_normalization == is_data_normalization,
+            model._pro_aggregation_scheme == pro_aggregation_scheme,
             model._enc_node_hidden_activation == hidden_activation,
             model._enc_node_output_activation == output_activation,
             model._enc_edge_hidden_activation == hidden_activation,

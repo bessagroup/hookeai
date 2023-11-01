@@ -168,6 +168,7 @@ class GNNMaterialPatchModel(torch.nn.Module):
                  hidden_layer_size, model_directory,
                  model_name='material_patch_model',
                  is_data_normalization=False,
+                 pro_aggregation_scheme='add',
                  enc_node_hidden_activation=torch.nn.Identity,
                  enc_node_output_activation=torch.nn.Identity,
                  enc_edge_hidden_activation=torch.nn.Identity,
@@ -212,6 +213,8 @@ class GNNMaterialPatchModel(torch.nn.Module):
             If True, then input and output features are normalized for
             training, False otherwise. Data scalers need to be fitted with
             fit_data_scalers() and are stored as model attributes.
+        pro_aggregation_scheme : {'add',}, default='add'
+            Processor: Message-passing aggregation scheme.
         enc_node_hidden_activation : torch.nn.Module, default=torch.nn.Identity
             Encoder: Hidden unit activation function of node update function
             (multilayer feed-forward neural network). Defaults to identity
@@ -274,6 +277,7 @@ class GNNMaterialPatchModel(torch.nn.Module):
         self._pro_n_hidden_layers = pro_n_hidden_layers
         self._dec_n_hidden_layers = dec_n_hidden_layers
         self._hidden_layer_size = hidden_layer_size
+        self._pro_aggregation_scheme = pro_aggregation_scheme
         self._enc_node_hidden_activation=enc_node_hidden_activation
         self._enc_node_output_activation=enc_node_output_activation
         self._enc_edge_hidden_activation=enc_edge_hidden_activation
@@ -308,6 +312,7 @@ class GNNMaterialPatchModel(torch.nn.Module):
             pro_n_hidden_layers=pro_n_hidden_layers,
             dec_n_hidden_layers=dec_n_hidden_layers,
             hidden_layer_size=hidden_layer_size,
+            pro_aggregation_scheme=pro_aggregation_scheme,
             enc_node_hidden_activation=enc_node_hidden_activation,
             enc_node_output_activation=enc_node_output_activation,
             enc_edge_hidden_activation=enc_edge_hidden_activation,
@@ -458,6 +463,8 @@ class GNNMaterialPatchModel(torch.nn.Module):
         model_init_args['dec_n_hidden_layers'] = self._enc_n_hidden_layers
         model_init_args['pro_n_hidden_layers'] = self._pro_n_hidden_layers
         model_init_args['enc_n_hidden_layers'] = self._dec_n_hidden_layers
+        model_init_args['pro_aggregation_scheme'] = \
+            self._pro_aggregation_scheme
         model_init_args['hidden_layer_size'] = self._hidden_layer_size
         model_init_args['enc_node_hidden_activation'] = \
             self._enc_node_hidden_activation
