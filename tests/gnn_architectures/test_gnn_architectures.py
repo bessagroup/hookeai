@@ -170,8 +170,8 @@ def test_graph_independent_network_init(n_node_in, n_node_out, n_edge_in,
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Check normalization layer
             elif name == 'Norm-Layer':
-                if module.normalized_shape[0] != n_features_out:
-                    errors.append('Number of features of Normalization Layer '
+                if module.num_features != n_features_out:
+                    errors.append('Number of features of normalization layer '
                                   'was not properly set.')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     assert not errors, "Errors:\n{}".format("\n".join(errors))
@@ -180,7 +180,7 @@ def test_graph_independent_network_init(n_node_in, n_node_out, n_edge_in,
                          'n_edges, n_edge_in, n_edge_out,'
                          'n_hidden_layers, hidden_layer_size',
                          [(10, 1, 5, 20, 2, 3, 2, 4),
-                          (1, 3, 2, 1, 1, 4, 1, 2),
+                          (2, 3, 2, 2, 1, 4, 1, 2),
                           (3, 2, 4, 6, 5, 4, 0, 2),
                           ])
 def test_graph_independent_network_forward(n_nodes, n_node_in, n_node_out,
@@ -304,8 +304,8 @@ def test_graph_interaction_network_init(n_node_in, n_node_out, n_edge_in,
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Check normalization layer
             elif name == 'Norm-Layer':
-                if module.normalized_shape[0] != n_features_out:
-                    errors.append('Number of features of Normalization Layer '
+                if module.num_features != n_features_out:
+                    errors.append('Number of features of normalization layer '
                                   'was not properly set.')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     assert not errors, "Errors:\n{}".format("\n".join(errors))
@@ -315,7 +315,7 @@ def test_graph_interaction_network_init(n_node_in, n_node_out, n_edge_in,
                          'n_hidden_layers, hidden_layer_size,'
                          'aggregation_scheme',
                          [(10, 1, 5, 20, 2, 3, 2, 4, 'add'),
-                          (1, 3, 2, 1, 1, 4, 1, 2, 'add'),
+                          (2, 3, 2, 2, 1, 4, 1, 2, 'add'),
                           (3, 2, 4, 6, 5, 4, 0, 2, 'add'),
                           ])
 def test_graph_interaction_network_forward(n_nodes, n_node_in, n_node_out,
@@ -372,7 +372,7 @@ def test_graph_interaction_network_forward(n_nodes, n_node_in, n_node_out,
                          'n_hidden_layers, hidden_layer_size,'
                          'aggregation_scheme',
                          [(10, 1, 5, 20, 2, 3, 2, 4, 'add'),
-                          (1, 3, 2, 1, 1, 4, 1, 2, 'add'),
+                          (2, 3, 2, 2, 1, 4, 1, 2, 'add'),
                           (3, 2, 4, 6, 5, 4, 0, 2, 'add'),
                           ])
 def test_graph_interaction_network_message(n_nodes, n_node_in, n_node_out,
@@ -420,7 +420,7 @@ def test_graph_interaction_network_message(n_nodes, n_node_in, n_node_out,
                          'n_hidden_layers, hidden_layer_size,'
                          'aggregation_scheme',
                          [(10, 1, 5, 20, 2, 3, 2, 4, 'add'),
-                          (1, 3, 2, 1, 1, 4, 1, 2, 'add'),
+                          (2, 3, 2, 2, 1, 4, 1, 2, 'add'),
                           (3, 2, 4, 6, 5, 4, 0, 2, 'add'),
                           ])
 def test_graph_interaction_network_update(n_nodes, n_node_in, n_node_out,

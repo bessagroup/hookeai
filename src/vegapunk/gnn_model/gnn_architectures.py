@@ -204,6 +204,13 @@ class GraphIndependentNetwork(torch.nn.Module):
             Edges features output matrix stored as a torch.Tensor(2d) of shape
             (n_edges, n_features).
         """
+        # Check number of nodes and edges
+        if node_features_in.shape[0] < 2 or edge_features_in.shape[0] < 2:
+            raise RuntimeError('Number of nodes and number of edges must be '
+                               'greater than 1 to compute standard deviation '
+                               'in corresponding update functions the '
+                               'normalization layer.')
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         return self._node_fn(node_features_in), \
             self._edge_fn(edge_features_in)
 # =============================================================================
@@ -345,6 +352,13 @@ class GraphInteractionNetwork(torch_geometric.nn.MessagePassing):
             Edges features output matrix stored as a torch.Tensor(2d) of shape
             (n_edges, n_features).
         """
+        # Check number of nodes and edges
+        if node_features_in.shape[0] < 2 or edge_features_in.shape[0] < 2:
+            raise RuntimeError('Number of nodes and number of edges must be '
+                               'greater than 1 to compute standard deviation '
+                               'in corresponding update functions the '
+                               'normalization layer.')
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Perform graph neural network message-passing step (message,
         # aggregation, update) and get updated node features
         node_features_out = self.propagate(
