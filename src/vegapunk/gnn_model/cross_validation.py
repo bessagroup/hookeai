@@ -66,10 +66,14 @@ def kfold_cross_validation(cross_validation_dir, n_fold, n_train_steps,
         
         'adam'  : Adam (torch.optim.Adam)
         
-    lr_scheduler_type : {'steplr',}, default=None
+    lr_scheduler_type : {'steplr', 'explr', 'linlr'}, default=None
         Type of learning rate scheduler:
         
         'steplr'  : Step-based decay (torch.optim.lr_scheduler.SetpLR)
+        
+        'explr'   : Exponential decay (torch.optim.lr_scheduler.ExponentialLR)
+        
+        'linlr'   : Linear decay (torch.optim.lr_scheduler.LinearLR)
 
     lr_scheduler_kwargs : dict, default={}
         Arguments of torch.optim.lr_scheduler.LRScheduler initializer.

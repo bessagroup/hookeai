@@ -81,10 +81,14 @@ def train_model(n_train_steps, dataset, model_init_args, lr_init,
         
         'adam'  : Adam (torch.optim.Adam)
         
-    lr_scheduler_type : {'steplr',}, default=None
+    lr_scheduler_type : {'steplr', 'explr', 'linlr'}, default=None
         Type of learning rate scheduler:
-        
+
         'steplr'  : Step-based decay (torch.optim.lr_scheduler.SetpLR)
+        
+        'explr'   : Exponential decay (torch.optim.lr_scheduler.ExponentialLR)
+        
+        'linlr'   : Linear decay (torch.optim.lr_scheduler.LinearLR)
 
     lr_scheduler_kwargs : dict, default={}
         Arguments of torch.optim.lr_scheduler.LRScheduler initializer.
@@ -168,7 +172,7 @@ def train_model(n_train_steps, dataset, model_init_args, lr_init,
     is_data_normalization = model.is_data_normalization
     # Fit model data scalers
     if is_data_normalization and load_model_state is None:
-        model.fit_data_scalers(dataset)        
+        model.fit_data_scalers(dataset)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Initialize learning rate
     learning_rate = lr_init
@@ -424,18 +428,22 @@ def get_pytorch_optimizer(algorithm, params, **kwargs):
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     return optimizer
 # =============================================================================
-def get_learning_rate_scheduler(optimizer, scheduler_type='steplr', **kwargs):
+def get_learning_rate_scheduler(optimizer, scheduler_type, **kwargs):
     """Get PyTorch optimizer learning rate scheduler.
     
     Parameters
     ----------
-    scheduler_type : {'steplr',}
-        Type of learning rate scheduler:
-        
-        'steplr'  : Step-based decay (torch.optim.lr_scheduler.SetpLR)
-        
     optimizer : torch.optim.Optimizer
         PyTorch optimizer.
+    lr_scheduler_type : {'steplr', 'explr', 'linlr'}
+        Type of learning rate scheduler:
+
+        'steplr'  : Step-based decay (torch.optim.lr_scheduler.SetpLR)
+        
+        'explr'   : Exponential decay (torch.optim.lr_scheduler.ExponentialLR)
+        
+        'linlr'   : Linear decay (torch.optim.lr_scheduler.LinearLR)
+
     **kwargs
         Arguments of torch.optim.lr_scheduler.LRScheduler initializer.
     
@@ -445,13 +453,27 @@ def get_learning_rate_scheduler(optimizer, scheduler_type='steplr', **kwargs):
         PyTorch optimizer learning rate scheduler.
     """
     if scheduler_type == 'steplr':
-        # Check step size (period of learning rate decay)
+        # Check scheduler mandatory parameters
         if 'step_size' not in kwargs.keys():
-            raise RuntimeError('The step_size needs to be provided to '
-                               'initialize step-based decay learning rate '
-                               'scheduler.')
+            raise RuntimeError('The parameter \'step_size\' needs to be '
+                               'provided to initialize step-based decay '
+                               'learning rate scheduler.')
         # Initialize scheduler
         scheduler = torch.optim.lr_scheduler.StepLR(optimizer, **kwargs)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    elif scheduler_type == 'explr':
+        # Check scheduler mandatory parameters
+        if 'gamma' not in kwargs.keys():
+            raise RuntimeError('The parameter \'gamma\' needs to be '
+                               'provided to initialize exponential decay '
+                               'learning rate scheduler.')
+        # Initialize scheduler
+        scheduler = torch.optim.lr_scheduler.ExponentialLR(optimizer, **kwargs)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    elif scheduler_type == 'linlr':
+        # Initialize scheduler
+        scheduler = torch.optim.lr_scheduler.LinearLR(optimizer, **kwargs)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     else:
         raise RuntimeError('Unknown or unavailable PyTorch optimizer '
                            'learning rate scheduler.')
@@ -676,11 +698,8 @@ def save_loss_history(model, total_n_train_steps, loss_type, loss_history,
 
     loss_history : list[float]
         Training process loss history.
-    lr_scheduler_type : {'steplr',}, default=None
-        Type of learning rate scheduler:
-        
-        'steplr'  : Step-based decay (torch.optim.lr_scheduler.SetpLR)
-        
+    lr_scheduler_type : {'steplr', 'explr', 'linlr'}, default=None
+        Type of learning rate scheduler.
     lr_history : list[float], default=None
         Training process learning rate history.
     """
@@ -918,10 +937,14 @@ def read_lr_history_from_file(loss_record_path):
     
     Returns
     -------
-    lr_scheduler_type : {'steplr',}
+    lr_scheduler_type : {'steplr', 'explr', 'linlr'}
         Type of learning rate scheduler:
-        
+
         'steplr'  : Step-based decay (torch.optim.lr_scheduler.SetpLR)
+        
+        'explr'   : Exponential decay (torch.optim.lr_scheduler.ExponentialLR)
+        
+        'linlr'   : Linear decay (torch.optim.lr_scheduler.LinearLR)
         
     lr_history : list[float]
         Training process learning rate history.
@@ -992,7 +1015,7 @@ def write_training_summary_file(
     lr_init : float
         Initial value optimizer learning rate. Constant learning rate value if
         no learning rate scheduler is specified (lr_scheduler_type=None).
-    lr_scheduler_type : {'steplr',}
+    lr_scheduler_type : {'steplr', 'explr', 'linlr'}
         Type of learning rate scheduler.
     lr_scheduler_kwargs : dict
         Arguments of torch.optim.lr_scheduler.LRScheduler initializer.
