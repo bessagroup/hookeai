@@ -585,3 +585,16 @@ for (train_index, test_index) in k_folder.split(np.zeros((n_sample, 3))):
 
 print(folds_indexes)
 
+
+
+a = torch.tensor(
+    [[ 0.2035,  1.2959,  1.8101, -0.4644],
+     [ 1.5027, -0.3270,  0.5905,  0.6538],
+     [-1.5745,  1.3330, -0.5596, -0.6548],
+     [ 0.1264, -0.5080,  1.6420,  0.1992]])
+print(torch.std(a, correction=1))
+print(torch.std(a, unbiased=True))
+print(torch.std(a, correction=0))
+print(torch.std(a, unbiased=False))
+print(torch.std(a, correction=2))
+

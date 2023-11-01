@@ -1230,7 +1230,7 @@ class TorchStandardScaler:
         self._mean = self._check_mean(mean)
         self._std = self._check_std(std)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    def fit(self, tensor, is_bessel=True):
+    def fit(self, tensor, is_bessel=False):
         """Fit features standardization mean and standard deviation tensors.
         
         Parameters
@@ -1239,16 +1239,16 @@ class TorchStandardScaler:
             Features PyTorch tensor stored as torch.Tensor with shape
             (n_samples, n_features).
         is_bessel : bool, default=False
-            Apply Bessel's correction to compute standard deviation, False
-            otherwise.
+            If True, apply Bessel's correction to compute standard deviation,
+            False otherwise.
         """
         # Check features tensor
         self._check_tensor(tensor)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Set standardization mean and standard deviation
         self._mean = self._check_mean(torch.mean(tensor, dim=0))
-        self._std = \
-            self._check_std(torch.std(tensor, dim=0, unbiased=is_bessel))
+        self._std = self._check_std(torch.std(tensor, dim=0,
+                                              correction=int(is_bessel)))
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     def transform(self, tensor):
         """Standardize features tensor.
@@ -1415,6 +1415,11 @@ def graph_standard_partial_fit(dataset, features_type, is_verbose=False):
     std : torch.Tensor
         Features standardization standard deviation tensor stored as a
         torch.Tensor with shape (n_features,).
+        
+    Notes
+    -----
+    A biased estimator is used to compute the standard deviation according with
+    scikit-learn 1.3.2 documentation (sklearn.preprocessing.StandardScaler).
     """
     # Instantiate data scaler
     data_scaler = sklearn.preprocessing.StandardScaler()
