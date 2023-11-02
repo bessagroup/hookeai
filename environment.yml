@@ -34,4 +34,4 @@ dependencies:
   - pyg::pyg=2.4.0
   - pip:
     - scikit_learn==1.3.0
-    - f3dasm==1.2.0
+    - f3dasm==1.4.4
