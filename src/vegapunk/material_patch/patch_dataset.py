@@ -28,7 +28,7 @@ import datetime
 import logging
 # Third-party
 import numpy as np
-import f3dasm                                                                  # Waiting for fix: Logger
+import f3dasm
 import f3dasm.datageneration
 # Local
 from material_patch.patch_generator import FiniteElementPatchGenerator
@@ -306,12 +306,14 @@ def generate_material_patch_dataset(
         upper_bound=edge_deformation_order_ranges[label][1]
         # Add design input parameter
         if np.isclose(lower_bound, upper_bound):
-            domain.add_constant(name=name, value=lower_bound) 
+            domain.add_constant(name=name, value=lower_bound)
         else:
             domain.add_int(name=name, low=lower_bound, high=upper_bound)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Set experiment data directory                                            # Waiting for fix: ExperimentData directory
+    experiment_data_dir = os.path.join(simulation_directory, 'experiment_data')
     # Initialize experiment data
-    experiment_data = f3dasm.ExperimentData(domain)                            # Waiting for fix: ExperimentData directory
+    experiment_data = f3dasm.ExperimentData(domain, path=experiment_data_dir)  
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     if is_verbose:
         print('\n> Sampling design space input data...\n')
@@ -334,8 +336,12 @@ def generate_material_patch_dataset(
     # Build material patches finite element simulations data set
     for i in experiment_data.input_data.indices:
         # Get material patch sample output data
-        sample_output_data = \
-            experiment_data._get_experiment_sample(i).output_data_loaded       # Waiting for fix: Access sample output data
+        sample_output_data =\
+            experiment_data.get_experiment_sample(i).output_data_loaded
+        # Fix output data key (remove '_path')                                 # Waiting for fix: 'path_' prefix
+        for key in sample_output_data.keys():
+            key_new = key.removeprefix('path_')
+            sample_output_data[key_new] = sample_output_data.pop(key)
         # Append sample output data
         dataset_simulation_data.append(sample_output_data)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
