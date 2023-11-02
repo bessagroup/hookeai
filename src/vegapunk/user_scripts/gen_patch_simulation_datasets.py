@@ -160,6 +160,8 @@ def generate_deterministic_dataset(case_study_name, simulation_directory,
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Save patch plot
         is_save_plot_patch = True
+        # Save simulation files
+        is_save_simulation_files = True
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Initialize material patches finite element simulations data set
         dataset_simulation_data = []
@@ -214,7 +216,7 @@ def generate_deterministic_dataset(case_study_name, simulation_directory,
                 is_save_simulation_dataset=False,
                 is_append_n_sample=is_append_n_sample, 
                 is_save_plot_patch=is_save_plot_patch,
-                is_save_simulation_files=False,
+                is_save_simulation_files=is_save_simulation_files,
                 is_verbose=is_verbose)
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Append material patch data
@@ -232,13 +234,26 @@ def generate_deterministic_dataset(case_study_name, simulation_directory,
                                  'material_patch_0_plot.pdf'),
                     os.path.join(os.path.normpath(sample_directory),
                                  f'material_patch_{i}_plot.pdf'))
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Store material patch simulation files
+            if is_save_simulation_files:
+                shutil.move(
+                    os.path.join(os.path.normpath(simulation_directory),
+                                 'material_patch_0.dat'),
+                    os.path.join(os.path.normpath(sample_directory),
+                                 f'material_patch_{i}.dat'))
+                shutil.move(
+                    os.path.join(os.path.normpath(simulation_directory),
+                                 'material_patch_0'),
+                    os.path.join(os.path.normpath(sample_directory),
+                                 f'material_patch_{i}'))
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Extract files from samples temporary directory
         for filename in os.listdir(sample_directory):
             shutil.move(os.path.join(sample_directory, filename),
                         os.path.join(simulation_directory, filename))
         # Remove samples temporary directory
-        os.rmdir(sample_directory)     
+        os.rmdir(sample_directory)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~    
     else:
         raise RuntimeError('Unknown case study.')
@@ -360,7 +375,7 @@ def set_default_saving_options():
 # =============================================================================
 if __name__ == "__main__":
     # Set case study name
-    case_study_name = '2d_elastic'
+    case_study_name = '2d_elastic_orthogonal'
     # Set case study directory
     case_study_base_dirs = {
         '2d_elastic_orthogonal': f'/home/bernardoferreira/Documents/temp',

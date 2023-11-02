@@ -104,7 +104,10 @@ def plot_training_loss_history(loss_history, loss_type=None, is_log_loss=False,
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set axes limits and scale
     x_lims = (0, max_n_train_steps)
-    y_lims = (None, None)
+    if is_log_loss:
+        y_lims = (None, None)
+    else:
+        y_lims = (0, None)
     y_scale = loss_scale
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set axes labels
@@ -200,7 +203,10 @@ def plot_training_loss_and_lr_history(loss_history, lr_history, loss_type=None,
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set axes limits and scale
     x_lims = (0, max(len(loss_history), total_n_train_steps))
-    y1_lims = (None, None)
+    if is_log_loss:
+        y1_lims = (None, None)
+    else:
+        y1_lims = (0, None)
     y2_lims = (None, None)
     y1_scale = loss_scale
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -317,7 +323,10 @@ def plot_loss_convergence_test(testing_loss, training_loss=None,
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set axes limits and scale
     x_lims = (0, None)
-    y_lims = (None, None)
+    if is_log_loss:
+        y_lims = (None, None)
+    else:
+        y_lims = (0, None)
     y_scale = loss_scale
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set axes labels

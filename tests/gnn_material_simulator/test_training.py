@@ -213,7 +213,8 @@ def test_save_and_load_model_state(tmp_path, opt_algorithm):
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set GNN-based material patch model initialization parameters
     model_init_args = dict(n_node_in=2, n_node_out=5, n_edge_in=3,
-                           n_message_steps=2, n_hidden_layers=2,
+                           n_message_steps=2, enc_n_hidden_layers=2,
+                           pro_n_hidden_layers=3, dec_n_hidden_layers=4,
                            hidden_layer_size=2, model_directory=str(tmp_path),
                            model_name='material_patch_model',
                            is_data_normalization=True)

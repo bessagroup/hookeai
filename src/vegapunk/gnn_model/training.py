@@ -26,6 +26,8 @@ seed_worker
     Set workers seed in PyTorch data loaders to preserve reproducibility.
 read_loss_history_from_file
     Read training loss history from loss history record file.
+read_lr_history_from_file(loss_record_path)
+    Read training learning rate history from loss history record file.
 write_training_summary_file    
     Write summary data file for model training process.
 """
@@ -79,10 +81,14 @@ def train_model(n_train_steps, dataset, model_init_args, lr_init,
         
         'adam'  : Adam (torch.optim.Adam)
         
-    lr_scheduler_type : {'steplr',}, default=None
+    lr_scheduler_type : {'steplr', 'explr', 'linlr'}, default=None
         Type of learning rate scheduler:
-        
+
         'steplr'  : Step-based decay (torch.optim.lr_scheduler.SetpLR)
+        
+        'explr'   : Exponential decay (torch.optim.lr_scheduler.ExponentialLR)
+        
+        'linlr'   : Linear decay (torch.optim.lr_scheduler.LinearLR)
 
     lr_scheduler_kwargs : dict, default={}
         Arguments of torch.optim.lr_scheduler.LRScheduler initializer.
@@ -166,7 +172,7 @@ def train_model(n_train_steps, dataset, model_init_args, lr_init,
     is_data_normalization = model.is_data_normalization
     # Fit model data scalers
     if is_data_normalization and load_model_state is None:
-        model.fit_data_scalers(dataset)        
+        model.fit_data_scalers(dataset)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Initialize learning rate
     learning_rate = lr_init
@@ -304,7 +310,10 @@ def train_model(n_train_steps, dataset, model_init_args, lr_init,
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Save training step loss and learning rate
             loss_history.append(loss)
-            lr_history.append(lr_scheduler.get_last_lr())
+            if is_lr_scheduler:
+                lr_history.append(lr_scheduler.get_last_lr())
+            else:
+                lr_history.append(lr_init)
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Save model and optimizer current states
             if save_every is not None and step % save_every == 0:
@@ -419,18 +428,22 @@ def get_pytorch_optimizer(algorithm, params, **kwargs):
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     return optimizer
 # =============================================================================
-def get_learning_rate_scheduler(optimizer, scheduler_type='steplr', **kwargs):
+def get_learning_rate_scheduler(optimizer, scheduler_type, **kwargs):
     """Get PyTorch optimizer learning rate scheduler.
     
     Parameters
     ----------
-    scheduler_type : {'steplr',}
-        Type of learning rate scheduler:
-        
-        'steplr'  : Step-based decay (torch.optim.lr_scheduler.SetpLR)
-        
     optimizer : torch.optim.Optimizer
         PyTorch optimizer.
+    lr_scheduler_type : {'steplr', 'explr', 'linlr'}
+        Type of learning rate scheduler:
+
+        'steplr'  : Step-based decay (torch.optim.lr_scheduler.SetpLR)
+        
+        'explr'   : Exponential decay (torch.optim.lr_scheduler.ExponentialLR)
+        
+        'linlr'   : Linear decay (torch.optim.lr_scheduler.LinearLR)
+
     **kwargs
         Arguments of torch.optim.lr_scheduler.LRScheduler initializer.
     
@@ -440,13 +453,27 @@ def get_learning_rate_scheduler(optimizer, scheduler_type='steplr', **kwargs):
         PyTorch optimizer learning rate scheduler.
     """
     if scheduler_type == 'steplr':
-        # Check step size (period of learning rate decay)
+        # Check scheduler mandatory parameters
         if 'step_size' not in kwargs.keys():
-            raise RuntimeError('The step_size needs to be provided to '
-                               'initialize step-based decay learning rate '
-                               'scheduler.')
+            raise RuntimeError('The parameter \'step_size\' needs to be '
+                               'provided to initialize step-based decay '
+                               'learning rate scheduler.')
         # Initialize scheduler
         scheduler = torch.optim.lr_scheduler.StepLR(optimizer, **kwargs)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    elif scheduler_type == 'explr':
+        # Check scheduler mandatory parameters
+        if 'gamma' not in kwargs.keys():
+            raise RuntimeError('The parameter \'gamma\' needs to be '
+                               'provided to initialize exponential decay '
+                               'learning rate scheduler.')
+        # Initialize scheduler
+        scheduler = torch.optim.lr_scheduler.ExponentialLR(optimizer, **kwargs)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    elif scheduler_type == 'linlr':
+        # Initialize scheduler
+        scheduler = torch.optim.lr_scheduler.LinearLR(optimizer, **kwargs)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     else:
         raise RuntimeError('Unknown or unavailable PyTorch optimizer '
                            'learning rate scheduler.')
@@ -656,7 +683,7 @@ def save_loss_history(model, total_n_train_steps, loss_type, loss_history,
 
     Overwrites existing loss history record file.
     
-    Does also store learning history if provided.
+    Does also store learning rate history if provided.
     
     Parameters
     ----------
@@ -671,11 +698,8 @@ def save_loss_history(model, total_n_train_steps, loss_type, loss_history,
 
     loss_history : list[float]
         Training process loss history.
-    lr_scheduler_type : {'steplr',}, default=None
-        Type of learning rate scheduler:
-        
-        'steplr'  : Step-based decay (torch.optim.lr_scheduler.SetpLR)
-        
+    lr_scheduler_type : {'steplr', 'explr', 'linlr'}, default=None
+        Type of learning rate scheduler.
     lr_history : list[float], default=None
         Training process learning rate history.
     """
@@ -865,7 +889,7 @@ def read_loss_history_from_file(loss_record_path):
     
     Returns
     -------
-    loss_type : {'mse',}, default='mse'
+    loss_type : {'mse',}
         Loss function type:
         
         'mse'  : MSE (torch.nn.MSELoss)
@@ -899,6 +923,57 @@ def read_loss_history_from_file(loss_record_path):
                     for x in loss_history_record['loss_history']]
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     return loss_type, loss_history
+# =============================================================================
+def read_lr_history_from_file(loss_record_path):
+    """Read training learning rate history from loss history record file.
+    
+    Loss history record file is stored in model_directory under the name
+    loss_history_record.pkl.
+    
+    Parameters
+    ----------
+    loss_record_path : str
+        Loss history record file path.
+    
+    Returns
+    -------
+    lr_scheduler_type : {'steplr', 'explr', 'linlr'}
+        Type of learning rate scheduler:
+
+        'steplr'  : Step-based decay (torch.optim.lr_scheduler.SetpLR)
+        
+        'explr'   : Exponential decay (torch.optim.lr_scheduler.ExponentialLR)
+        
+        'linlr'   : Linear decay (torch.optim.lr_scheduler.LinearLR)
+        
+    lr_history : list[float]
+        Training process learning rate history.
+    """
+    # Check loss history record file
+    if not os.path.isfile(loss_record_path):
+        raise RuntimeError('Loss history record file has not been found:\n\n'
+                           + loss_record_path)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Load loss history record
+    with open(loss_record_path, 'rb') as loss_record_file:
+        loss_history_record = pickle.load(loss_record_file)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Check learning rate history
+    if 'lr_scheduler_type' not in loss_history_record.keys():
+        raise RuntimeError('Learning rate scheduler type is not available in '
+                           'loss history record.')
+    elif 'lr_history' not in loss_history_record.keys():
+        raise RuntimeError('Learning rate history is not available in loss '
+                           'history record.')
+    elif not isinstance(loss_history_record['lr_history'], list):
+        raise RuntimeError('Learning rate history is not a list[float].')
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Set learning rate scheduler type
+    lr_scheduler_type = loss_history_record['lr_scheduler_type']
+    # Set learning rate history
+    lr_history = loss_history_record['lr_history']
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    return lr_scheduler_type, lr_history
 # =============================================================================
 def write_training_summary_file(
     device_type, seed, model_directory, load_model_state, n_train_steps,
@@ -940,7 +1015,7 @@ def write_training_summary_file(
     lr_init : float
         Initial value optimizer learning rate. Constant learning rate value if
         no learning rate scheduler is specified (lr_scheduler_type=None).
-    lr_scheduler_type : {'steplr',}
+    lr_scheduler_type : {'steplr', 'explr', 'linlr'}
         Type of learning rate scheduler.
     lr_scheduler_kwargs : dict
         Arguments of torch.optim.lr_scheduler.LRScheduler initializer.

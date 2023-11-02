@@ -89,7 +89,7 @@ def set_default_saving_options():
 if __name__ == "__main__":
     # Set computation processes
     is_generate_dataset  = True
-    is_split_dataset = True
+    is_split_dataset = False
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set case study name
     case_study_name = '2d_elastic'

@@ -54,12 +54,58 @@ class GNNMaterialPatchModel(torch.nn.Module):
         Number of edge input features.
     _n_message_steps : int
         Number of message-passing steps.
-    _n_hidden_layers : int
-        Number of hidden layers of multilayer feed-forward neural network
-        update functions.
+    _enc_n_hidden_layers : int
+        Encoder: Number of hidden layers of multilayer feed-forward neural
+        network update functions.
+    _pro_n_hidden_layers : int
+        Processor: Number of hidden layers of multilayer feed-forward
+        neural network update functions.
+    _dec_n_hidden_layers : int
+        Decoder: Number of hidden layers of multilayer feed-forward neural
+        network update functions.
     _hidden_layer_size : int
         Number of neurons of hidden layers of multilayer feed-forward
         neural network update functions.
+    _enc_node_hidden_activation : torch.nn.Module, default=torch.nn.Identity
+        Encoder: Hidden unit activation function of node update function
+        (multilayer feed-forward neural network). Defaults to identity
+        (linear) unit activation function.
+    _enc_node_output_activation : torch.nn.Module, default=torch.nn.Identity
+        Encoder: Output unit activation function of node update function
+        (multilayer feed-forward neural network). Defaults to identity
+        (linear) unit activation function.
+    _enc_edge_hidden_activation : torch.nn.Module, default=torch.nn.Identity
+        Encoder: Hidden unit activation function of edge update function
+        (multilayer feed-forward neural network). Defaults to identity
+        (linear) unit activation function.
+    _enc_edge_output_activation : torch.nn.Module, default=torch.nn.Identity
+        Encoder: Output unit activation function of edge update function
+        (multilayer feed-forward neural network). Defaults to identity
+        (linear) unit activation function.
+    _pro_node_hidden_activation : torch.nn.Module, default=torch.nn.Identity
+        Processor: Hidden unit activation function of node update function
+        (multilayer feed-forward neural network). Defaults to identity
+        (linear) unit activation function.
+    _pro_node_output_activation : torch.nn.Module, default=torch.nn.Identity
+        Processor: Output unit activation function of node update function
+        (multilayer feed-forward neural network). Defaults to identity
+        (linear) unit activation function.
+    _pro_edge_hidden_activation : torch.nn.Module, default=torch.nn.Identity
+        Processor: Hidden unit activation function of edge update function
+        (multilayer feed-forward neural network). Defaults to identity
+        (linear) unit activation function.
+    _pro_edge_output_activation : torch.nn.Module, default=torch.nn.Identity
+        Processor: Output unit activation function of edge update function
+        (multilayer feed-forward neural network). Defaults to identity
+        (linear) unit activation function.
+    _dec_node_hidden_activation : torch.nn.Module, default=torch.nn.Identity
+        Decoder: Hidden unit activation function of node update function
+        (multilayer feed-forward neural network). Defaults to identity
+        (linear) unit activation function.
+    _dec_node_output_activation : torch.nn.Module, default=torch.nn.Identity
+        Decoder: Output unit activation function of node update function
+        (multilayer feed-forward neural network). Defaults to identity
+        (linear) unit activation function.
     _gnn_epd_model : EncodeProcessDecode
         GNN-based Encoder-Process-Decoder model.
     _device_type : {'cpu', 'cuda'}, default='cpu'
@@ -118,9 +164,22 @@ class GNNMaterialPatchModel(torch.nn.Module):
         Check if model data normalization is available.
     """
     def __init__(self, n_node_in, n_node_out, n_edge_in, n_message_steps,
-                 n_hidden_layers, hidden_layer_size, model_directory,
+                 enc_n_hidden_layers, pro_n_hidden_layers, dec_n_hidden_layers,
+                 hidden_layer_size, model_directory,
                  model_name='material_patch_model',
-                 is_data_normalization=False, is_save_model_init_file=True,
+                 is_data_normalization=False,
+                 pro_aggregation_scheme='add',
+                 enc_node_hidden_activation=torch.nn.Identity,
+                 enc_node_output_activation=torch.nn.Identity,
+                 enc_edge_hidden_activation=torch.nn.Identity,
+                 enc_edge_output_activation=torch.nn.Identity,
+                 pro_node_hidden_activation=torch.nn.Identity,
+                 pro_node_output_activation=torch.nn.Identity,
+                 pro_edge_hidden_activation=torch.nn.Identity,
+                 pro_edge_output_activation=torch.nn.Identity,
+                 dec_node_hidden_activation=torch.nn.Identity,
+                 dec_node_output_activation=torch.nn.Identity,
+                 is_save_model_init_file=True,
                  device_type='cpu'):
         """Constructor.
         
@@ -134,9 +193,15 @@ class GNNMaterialPatchModel(torch.nn.Module):
             Number of edge input features.
         n_message_steps : int
             Number of message-passing steps.
-        n_hidden_layers : int
-            Number of hidden layers of multilayer feed-forward neural network
-            update functions.
+        enc_n_hidden_layers : int
+            Encoder: Number of hidden layers of multilayer feed-forward neural
+            network update functions.
+        pro_n_hidden_layers : int
+            Processor: Number of hidden layers of multilayer feed-forward
+            neural network update functions.
+        dec_n_hidden_layers : int
+            Decoder: Number of hidden layers of multilayer feed-forward neural
+            network update functions.
         hidden_layer_size : int
             Number of neurons of hidden layers of multilayer feed-forward
             neural network update functions.
@@ -148,6 +213,48 @@ class GNNMaterialPatchModel(torch.nn.Module):
             If True, then input and output features are normalized for
             training, False otherwise. Data scalers need to be fitted with
             fit_data_scalers() and are stored as model attributes.
+        pro_aggregation_scheme : {'add',}, default='add'
+            Processor: Message-passing aggregation scheme.
+        enc_node_hidden_activation : torch.nn.Module, default=torch.nn.Identity
+            Encoder: Hidden unit activation function of node update function
+            (multilayer feed-forward neural network). Defaults to identity
+            (linear) unit activation function.
+        enc_node_output_activation : torch.nn.Module, default=torch.nn.Identity
+            Encoder: Output unit activation function of node update function
+            (multilayer feed-forward neural network). Defaults to identity
+            (linear) unit activation function.
+        enc_edge_hidden_activation : torch.nn.Module, default=torch.nn.Identity
+            Encoder: Hidden unit activation function of edge update function
+            (multilayer feed-forward neural network). Defaults to identity
+            (linear) unit activation function.
+        enc_edge_output_activation : torch.nn.Module, default=torch.nn.Identity
+            Encoder: Output unit activation function of edge update function
+            (multilayer feed-forward neural network). Defaults to identity
+            (linear) unit activation function.
+        pro_node_hidden_activation : torch.nn.Module, default=torch.nn.Identity
+            Processor: Hidden unit activation function of node update function
+            (multilayer feed-forward neural network). Defaults to identity
+            (linear) unit activation function.
+        pro_node_output_activation : torch.nn.Module, default=torch.nn.Identity
+            Processor: Output unit activation function of node update function
+            (multilayer feed-forward neural network). Defaults to identity
+            (linear) unit activation function.
+        pro_edge_hidden_activation : torch.nn.Module, default=torch.nn.Identity
+            Processor: Hidden unit activation function of edge update function
+            (multilayer feed-forward neural network). Defaults to identity
+            (linear) unit activation function.
+        pro_edge_output_activation : torch.nn.Module, default=torch.nn.Identity
+            Processor: Output unit activation function of edge update function
+            (multilayer feed-forward neural network). Defaults to identity
+            (linear) unit activation function.
+        dec_node_hidden_activation : torch.nn.Module, default=torch.nn.Identity
+            Decoder: Hidden unit activation function of node update function
+            (multilayer feed-forward neural network). Defaults to identity
+            (linear) unit activation function.
+        dec_node_output_activation : torch.nn.Module, default=torch.nn.Identity
+            Decoder: Output unit activation function of node update function
+            (multilayer feed-forward neural network). Defaults to identity
+            (linear) unit activation function.
         is_save_model_init_file: bool, default=True
             If True, saves model initialization file when model is initialized
             (overwritting existent initialization file), False otherwise. When
@@ -166,8 +273,21 @@ class GNNMaterialPatchModel(torch.nn.Module):
         self._n_edge_in = n_edge_in
         # Set architecture parameters
         self._n_message_steps = n_message_steps
-        self._n_hidden_layers = n_hidden_layers
+        self._enc_n_hidden_layers = enc_n_hidden_layers
+        self._pro_n_hidden_layers = pro_n_hidden_layers
+        self._dec_n_hidden_layers = dec_n_hidden_layers
         self._hidden_layer_size = hidden_layer_size
+        self._pro_aggregation_scheme = pro_aggregation_scheme
+        self._enc_node_hidden_activation=enc_node_hidden_activation
+        self._enc_node_output_activation=enc_node_output_activation
+        self._enc_edge_hidden_activation=enc_edge_hidden_activation
+        self._enc_edge_output_activation=enc_edge_output_activation
+        self._pro_node_hidden_activation=pro_node_hidden_activation
+        self._pro_node_output_activation=pro_node_output_activation
+        self._pro_edge_hidden_activation=pro_edge_hidden_activation
+        self._pro_edge_output_activation=pro_edge_output_activation
+        self._dec_node_hidden_activation=dec_node_hidden_activation
+        self._dec_node_output_activation=dec_node_output_activation
         # Set material patch model directory and name
         if os.path.isdir(model_directory):
             self.model_directory = model_directory
@@ -185,13 +305,24 @@ class GNNMaterialPatchModel(torch.nn.Module):
         self.set_device(device_type)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Initialize GNN-based Encoder-Process-Decoder model
-        self._gnn_epd_model = \
-            EncodeProcessDecode(n_message_steps=n_message_steps,
-                                n_node_in=n_node_in,
-                                n_node_out=n_node_out,
-                                n_edge_in=n_edge_in,
-                                n_hidden_layers=n_hidden_layers,
-                                hidden_layer_size=hidden_layer_size)
+        self._gnn_epd_model = EncodeProcessDecode(
+            n_message_steps=n_message_steps,
+            n_node_in=n_node_in, n_node_out=n_node_out, n_edge_in=n_edge_in,
+            enc_n_hidden_layers=enc_n_hidden_layers,
+            pro_n_hidden_layers=pro_n_hidden_layers,
+            dec_n_hidden_layers=dec_n_hidden_layers,
+            hidden_layer_size=hidden_layer_size,
+            pro_aggregation_scheme=pro_aggregation_scheme,
+            enc_node_hidden_activation=enc_node_hidden_activation,
+            enc_node_output_activation=enc_node_output_activation,
+            enc_edge_hidden_activation=enc_edge_hidden_activation,
+            enc_edge_output_activation=enc_edge_output_activation,
+            pro_node_hidden_activation=pro_node_hidden_activation,
+            pro_node_output_activation=pro_node_output_activation,
+            pro_edge_hidden_activation=pro_edge_hidden_activation,
+            pro_edge_output_activation=pro_edge_output_activation,
+            dec_node_hidden_activation=dec_node_hidden_activation,
+            dec_node_output_activation=dec_node_output_activation)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Initialize data scalers
         self._data_scalers = None
@@ -329,8 +460,32 @@ class GNNMaterialPatchModel(torch.nn.Module):
         model_init_args['n_node_out'] = self._n_node_out
         model_init_args['n_edge_in'] = self._n_edge_in
         model_init_args['n_message_steps'] = self._n_message_steps
-        model_init_args['n_hidden_layers'] = self._n_hidden_layers
+        model_init_args['dec_n_hidden_layers'] = self._enc_n_hidden_layers
+        model_init_args['pro_n_hidden_layers'] = self._pro_n_hidden_layers
+        model_init_args['enc_n_hidden_layers'] = self._dec_n_hidden_layers
+        model_init_args['pro_aggregation_scheme'] = \
+            self._pro_aggregation_scheme
         model_init_args['hidden_layer_size'] = self._hidden_layer_size
+        model_init_args['enc_node_hidden_activation'] = \
+            self._enc_node_hidden_activation
+        model_init_args['enc_node_output_activation'] = \
+            self._enc_node_output_activation
+        model_init_args['enc_edge_hidden_activation'] = \
+            self._enc_edge_hidden_activation
+        model_init_args['enc_edge_output_activation'] = \
+            self._enc_edge_output_activation
+        model_init_args['pro_node_hidden_activation'] = \
+            self._pro_node_hidden_activation
+        model_init_args['pro_node_output_activation'] = \
+            self._pro_node_output_activation
+        model_init_args['pro_edge_hidden_activation'] = \
+            self._pro_edge_hidden_activation
+        model_init_args['pro_edge_output_activation'] = \
+            self._enc_edge_output_activation
+        model_init_args['dec_node_hidden_activation'] = \
+            self._dec_node_hidden_activation
+        model_init_args['dec_node_output_activation'] = \
+            self._dec_node_output_activation
         model_init_args['model_directory'] = self.model_directory
         model_init_args['model_name'] = self.model_name
         model_init_args['is_data_normalization'] = self.is_data_normalization
@@ -1075,7 +1230,7 @@ class TorchStandardScaler:
         self._mean = self._check_mean(mean)
         self._std = self._check_std(std)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    def fit(self, tensor, is_bessel=True):
+    def fit(self, tensor, is_bessel=False):
         """Fit features standardization mean and standard deviation tensors.
         
         Parameters
@@ -1084,16 +1239,16 @@ class TorchStandardScaler:
             Features PyTorch tensor stored as torch.Tensor with shape
             (n_samples, n_features).
         is_bessel : bool, default=False
-            Apply Bessel's correction to compute standard deviation, False
-            otherwise.
+            If True, apply Bessel's correction to compute standard deviation,
+            False otherwise.
         """
         # Check features tensor
         self._check_tensor(tensor)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Set standardization mean and standard deviation
         self._mean = self._check_mean(torch.mean(tensor, dim=0))
-        self._std = \
-            self._check_std(torch.std(tensor, dim=0, unbiased=is_bessel))
+        self._std = self._check_std(torch.std(tensor, dim=0,
+                                              correction=int(is_bessel)))
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     def transform(self, tensor):
         """Standardize features tensor.
@@ -1260,6 +1415,11 @@ def graph_standard_partial_fit(dataset, features_type, is_verbose=False):
     std : torch.Tensor
         Features standardization standard deviation tensor stored as a
         torch.Tensor with shape (n_features,).
+        
+    Notes
+    -----
+    A biased estimator is used to compute the standard deviation according with
+    scikit-learn 1.3.2 documentation (sklearn.preprocessing.StandardScaler).
     """
     # Instantiate data scaler
     data_scaler = sklearn.preprocessing.StandardScaler()

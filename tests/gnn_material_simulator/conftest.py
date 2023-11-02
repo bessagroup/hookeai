@@ -116,10 +116,21 @@ def gnn_material_simulator(tmp_path):
     """GNN-based material patch model."""
     # Set GNN-based material patch model initialization parameters
     model_init_args = dict(n_node_in=2, n_node_out=5, n_edge_in=3,
-                           n_message_steps=2, n_hidden_layers=2,
+                           n_message_steps=2, enc_n_hidden_layers=2,
+                           pro_n_hidden_layers=3, dec_n_hidden_layers=4,
                            hidden_layer_size=2, model_directory=tmp_path,
                            model_name='material_patch_model',
-                           is_data_normalization=False)
+                           is_data_normalization=False,
+                           enc_node_hidden_activation=torch.nn.ReLU,
+                           enc_node_output_activation=torch.nn.Identity,
+                           enc_edge_hidden_activation=torch.nn.ReLU,
+                           enc_edge_output_activation=torch.nn.Identity,
+                           pro_node_hidden_activation=torch.nn.ReLU,
+                           pro_node_output_activation=torch.nn.Identity,
+                           pro_edge_hidden_activation=torch.nn.ReLU,
+                           pro_edge_output_activation=torch.nn.Identity,
+                           dec_node_hidden_activation=torch.nn.ReLU,
+                           dec_node_output_activation=torch.nn.Identity)
     # Build GNN-based material patch model
     model = GNNMaterialPatchModel(**model_init_args)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -142,9 +153,20 @@ def gnn_material_simulator_norm(tmp_path, batch_graph_patch_data_2d):
     # Build GNN-based material patch model
     model_init_args = dict(n_node_in=n_node_in, n_node_out=n_node_out,
                            n_edge_in=n_edge_in, n_message_steps=2,
-                           n_hidden_layers=2, hidden_layer_size=2,
+                           enc_n_hidden_layers=2, pro_n_hidden_layers=3,
+                           dec_n_hidden_layers=4, hidden_layer_size=2,
                            model_directory=str(tmp_path),
-                           is_data_normalization=True)
+                           is_data_normalization=True,
+                           enc_node_hidden_activation=torch.nn.ReLU,
+                           enc_node_output_activation=torch.nn.Identity,
+                           enc_edge_hidden_activation=torch.nn.ReLU,
+                           enc_edge_output_activation=torch.nn.Identity,
+                           pro_node_hidden_activation=torch.nn.ReLU,
+                           pro_node_output_activation=torch.nn.Identity,
+                           pro_edge_hidden_activation=torch.nn.ReLU,
+                           pro_edge_output_activation=torch.nn.Identity,
+                           dec_node_hidden_activation=torch.nn.ReLU,
+                           dec_node_output_activation=torch.nn.Identity)
     model = GNNMaterialPatchModel(**model_init_args)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Build dataset

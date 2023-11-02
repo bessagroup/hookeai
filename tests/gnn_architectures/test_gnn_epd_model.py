@@ -90,8 +90,8 @@ def test_encoder_init(n_node_in, n_node_out, n_edge_in, n_edge_out,
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Check normalization layer
             elif name == 'Norm-Layer':
-                if module.normalized_shape[0] != n_features_out:
-                    errors.append('Number of features of Normalization Layer '
+                if module.num_features != n_features_out:
+                    errors.append('Number of features of normalization layer '
                                   'was not properly set.')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     assert not errors, "Errors:\n{}".format("\n".join(errors))
@@ -100,7 +100,7 @@ def test_encoder_init(n_node_in, n_node_out, n_edge_in, n_edge_out,
                          'n_edges, n_edge_in, n_edge_out,'
                          'n_hidden_layers, hidden_layer_size',
                          [(10, 1, 5, 20, 2, 3, 2, 4),
-                          (1, 3, 2, 1, 1, 4, 1, 2),
+                          (2, 3, 2, 2, 1, 4, 1, 2),
                           (3, 2, 4, 6, 5, 4, 0, 2),
                           ])
 def test_encoder_forward(n_nodes, n_node_in, n_node_out, n_edges, n_edge_in,
@@ -324,7 +324,7 @@ def test_decoder_init(n_node_in, n_node_out, n_hidden_layers,
 # -----------------------------------------------------------------------------
 @pytest.mark.parametrize('n_nodes, n_node_in, n_node_out, n_hidden_layers,'
                          'hidden_layer_size',
-                         [(1, 1, 5, 2, 4),
+                         [(2, 1, 5, 2, 4),
                           (10, 3, 2, 1, 2),
                           (5, 2, 4, 0, 2),
                           ])
@@ -362,8 +362,19 @@ def test_epd_init():
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Build GNN-based Encoder-Process-Decoder model
     model = EncodeProcessDecode(n_message_steps=5, n_node_in=2, n_node_out=4,
-                                n_edge_in=3, n_hidden_layers=2,
+                                n_edge_in=3, enc_n_hidden_layers=2,
+                                pro_n_hidden_layers=3, dec_n_hidden_layers=4,
                                 hidden_layer_size=5,
+                                enc_node_hidden_activation=torch.nn.ReLU,
+                                enc_node_output_activation=torch.nn.Identity,
+                                enc_edge_hidden_activation=torch.nn.ReLU,
+                                enc_edge_output_activation=torch.nn.Identity,
+                                pro_node_hidden_activation=torch.nn.ReLU,
+                                pro_node_output_activation=torch.nn.Identity,
+                                pro_edge_hidden_activation=torch.nn.ReLU,
+                                pro_edge_output_activation=torch.nn.Identity,
+                                dec_node_hidden_activation=torch.nn.ReLU,
+                                dec_node_output_activation=torch.nn.Identity,
                                 is_node_res_connect=False,
                                 is_edge_res_connect=True)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -394,8 +405,20 @@ def test_epd_forward(n_message_steps, n_nodes, n_node_in, n_node_out, n_edges,
     model = EncodeProcessDecode(n_message_steps=n_message_steps,
                                 n_node_in=n_node_in, n_node_out=n_node_out,
                                 n_edge_in=n_edge_in,
-                                n_hidden_layers=n_hidden_layers,
+                                enc_n_hidden_layers=n_hidden_layers,
+                                pro_n_hidden_layers=n_hidden_layers,
+                                dec_n_hidden_layers=n_hidden_layers,
                                 hidden_layer_size=hidden_layer_size,
+                                enc_node_hidden_activation=torch.nn.ReLU,
+                                enc_node_output_activation=torch.nn.Identity,
+                                enc_edge_hidden_activation=torch.nn.ReLU,
+                                enc_edge_output_activation=torch.nn.Identity,
+                                pro_node_hidden_activation=torch.nn.ReLU,
+                                pro_node_output_activation=torch.nn.Identity,
+                                pro_edge_hidden_activation=torch.nn.ReLU,
+                                pro_edge_output_activation=torch.nn.Identity,
+                                dec_node_hidden_activation=torch.nn.ReLU,
+                                dec_node_output_activation=torch.nn.Identity,
                                 is_node_res_connect=is_node_res_connect,
                                 is_edge_res_connect=is_edge_res_connect)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

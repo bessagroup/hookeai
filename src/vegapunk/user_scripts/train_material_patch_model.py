@@ -16,10 +16,12 @@ import os
 import torch
 # Local
 from gnn_model.gnn_patch_dataset import GNNMaterialPatchDataset
-from gnn_model.training import train_model, read_loss_history_from_file
+from gnn_model.training import train_model, read_loss_history_from_file, \
+    read_lr_history_from_file
 from gnn_model.cross_validation import kfold_cross_validation
+from gnn_model.model_summary import get_model_summary
 from gnn_model.evaluation_metrics import plot_training_loss_history, \
-    plot_kfold_cross_validation
+    plot_kfold_cross_validation, plot_training_loss_and_lr_history
 from ioput.iostandard import make_directory, find_unique_file_with_regex
 #
 #                                                          Authorship & Credits
@@ -58,9 +60,15 @@ def perform_model_standard_training(case_study_name, dataset_file_path,
     # Set GNN-based material patch model training options
     if case_study_name == '2d_elastic_orthogonal':
         # Set number of training steps
-        n_train_steps = 100
+        n_train_steps = 500
         # Set batch size
-        batch_size = 1
+        batch_size = 4
+        # Set learning rate
+        lr_init = 1.0e-02
+        # Set learning rate scheduler        
+        lr_scheduler_type = 'explr'
+        lr_scheduler_kwargs = {'gamma': 0.99}
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     elif case_study_name == '2d_elastic':
         # Set number of training steps
         n_train_steps = 100
@@ -91,6 +99,8 @@ def perform_model_standard_training(case_study_name, dataset_file_path,
     # Read training process loss history
     loss_type, loss_history = read_loss_history_from_file(loss_record_path)
     loss_histories = {f'$n_s = {len(dataset)}$': loss_history,}
+    # Read training process learning rate history
+    lr_scheduler_type, lr_history = read_lr_history_from_file(loss_record_path)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Create plot directory
     plot_dir = os.path.join(os.path.normpath(model_directory), 'plots')
@@ -99,8 +109,18 @@ def perform_model_standard_training(case_study_name, dataset_file_path,
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Plot model training process loss history
     plot_training_loss_history(loss_histories, loss_type.upper(),
-                               save_dir=plot_dir,
+                               loss_scale='linear', save_dir=plot_dir,
                                is_save_fig=True, is_stdout_display=False)
+    # Plot model training process loss and learning rate histories
+    plot_training_loss_and_lr_history(loss_history, lr_history, loss_type=None,
+                                      is_log_loss=False, loss_scale='linear',
+                                      lr_type=lr_scheduler_type,
+                                      save_dir=plot_dir, is_save_fig=True,
+                                      is_stdout_display=True)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Display summary of PyTorch model
+    _ = get_model_summary(model, device_type=device_type,
+                          is_verbose=is_verbose)
 # =============================================================================
 def perform_model_kfold_cross_validation(case_study_name, dataset_file_path,
                                          model_directory, cross_validation_dir,
@@ -190,7 +210,7 @@ def set_case_study_model_parameters(case_study_name, model_directory,
         GNN-based material patch model class initialization parameters (check
         class GNNMaterialPatchModel).
     """
-    if case_study_name in ('2d_elastic_orthogonal', '2d_elastic'):
+    if case_study_name in '2d_elastic_orthogonal':
         # Set GNN-based material patch model name
         model_name = 'material_patch_model'
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -200,27 +220,48 @@ def set_case_study_model_parameters(case_study_name, model_directory,
         # Set number of edge input features
         n_edge_in = 6
         # Set number of message-passing steps (number of processor layers)
-        n_message_steps = 10
+        n_message_steps = 1
         # Set number of FNN hidden layers
-        n_hidden_layers = 2
+        enc_n_hidden_layers = 1
+        pro_n_hidden_layers = 1
+        dec_n_hidden_layers = 1
         # Set hidden layer size
-        hidden_layer_size = 128
+        hidden_layer_size = 10
+        # Set (shared) hidden unit activation function
+        hidden_activation = torch.nn.ReLU
+        # Set (shared) output unit activation function
+        output_activation = torch.nn.Identity
         # Set data normalization
         is_data_normalization = True
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        # Build model initialization parameters
-        model_init_args = {'n_node_in': n_node_in,
-                           'n_node_out': n_node_out,
-                           'n_edge_in': n_edge_in,
-                           'n_message_steps': n_message_steps,
-                           'n_hidden_layers': n_hidden_layers,
-                           'hidden_layer_size': hidden_layer_size,
-                           'model_directory': model_directory,
-                           'model_name': model_name,
-                           'is_data_normalization': is_data_normalization,
-                           'device_type': device_type}
+    elif case_study_name == '2d_elastic':
+        raise RuntimeError('Set case-study parameters.')
     else:
         raise RuntimeError('Unknown case study.')
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Build model initialization parameters
+    model_init_args = {'n_node_in': n_node_in,
+                        'n_node_out': n_node_out,
+                        'n_edge_in': n_edge_in,
+                        'n_message_steps': n_message_steps,
+                        'enc_n_hidden_layers': enc_n_hidden_layers,
+                        'pro_n_hidden_layers': pro_n_hidden_layers,
+                        'dec_n_hidden_layers': dec_n_hidden_layers,
+                        'hidden_layer_size': hidden_layer_size,
+                        'model_directory': model_directory,
+                        'model_name': model_name,
+                        'is_data_normalization': is_data_normalization,
+                        'enc_node_hidden_activation': hidden_activation,
+                        'enc_node_output_activation': output_activation,
+                        'enc_edge_hidden_activation': hidden_activation,
+                        'enc_edge_output_activation': output_activation,
+                        'pro_node_hidden_activation': hidden_activation,
+                        'pro_node_output_activation': output_activation,
+                        'pro_edge_hidden_activation': hidden_activation,
+                        'pro_edge_output_activation': output_activation,
+                        'dec_node_hidden_activation': hidden_activation,
+                        'dec_node_output_activation': output_activation,
+                        'device_type': device_type}
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     return model_init_args
 # =============================================================================
@@ -237,10 +278,14 @@ def set_default_training_options():
     lr_init : float
         Initial value optimizer learning rate. Constant learning rate value if
         no learning rate scheduler is specified (lr_scheduler_type=None).
-    lr_scheduler_type : {'steplr',}
+    lr_scheduler_type : {'steplr', 'explr', 'linlr'}
         Type of learning rate scheduler:
         
         'steplr'  : Step-based decay (torch.optim.lr_scheduler.SetpLR)
+        
+        'explr'   : Exponential decay (torch.optim.lr_scheduler.ExponentialLR)
+        
+        'linlr'   : Linear decay (torch.optim.lr_scheduler.LinearLR)
 
     lr_scheduler_kwargs : dict
         Arguments of torch.optim.lr_scheduler.LRScheduler initializer.
@@ -256,8 +301,8 @@ def set_default_training_options():
     """
     opt_algorithm = 'adam'
     lr_init = 1.0e-04
-    lr_scheduler_type = 'steplr'
-    lr_scheduler_kwargs = {'step_size': 5.0e+06, 'gamma': 0.1}
+    lr_scheduler_type = None
+    lr_scheduler_kwargs = None
     loss_type = 'mse'
     loss_kwargs = {}
     is_sampler_shuffle = True
@@ -268,10 +313,10 @@ def set_default_training_options():
 if __name__ == "__main__":
     # Set computation processes
     is_standard_training = True
-    is_cross_validation = True
+    is_cross_validation = False
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set case study name
-    case_study_name = '2d_elastic'
+    case_study_name = '2d_elastic_orthogonal'
     # Set case study directory
     case_study_base_dirs = {
         '2d_elastic_orthogonal': f'/home/bernardoferreira/Documents/temp',
