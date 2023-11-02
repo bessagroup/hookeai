@@ -64,10 +64,10 @@ def perform_model_standard_training(case_study_name, dataset_file_path,
         # Set batch size
         batch_size = 4
         # Set learning rate
-        lr_init = 1.0e-04
-        lr_scheduler_type = 'steplr'
-        lr_scheduler_kwargs = {'step_size': 100, 'gamma': 0.05}
-        lr_scheduler_type=None
+        lr_init = 1.0e-02
+        # Set learning rate scheduler        
+        lr_scheduler_type = 'explr'
+        lr_scheduler_kwargs = {'gamma': 0.99}
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     elif case_study_name == '2d_elastic':
         # Set number of training steps
@@ -110,12 +110,13 @@ def perform_model_standard_training(case_study_name, dataset_file_path,
     # Plot model training process loss history
     plot_training_loss_history(loss_histories, loss_type.upper(),
                                loss_scale='linear', save_dir=plot_dir,
-                               is_save_fig=True)
+                               is_save_fig=True, is_stdout_display=False)
     # Plot model training process loss and learning rate histories
     plot_training_loss_and_lr_history(loss_history, lr_history, loss_type=None,
                                       is_log_loss=False, loss_scale='linear',
                                       lr_type=lr_scheduler_type,
-                                      save_dir=plot_dir, is_save_fig=True)
+                                      save_dir=plot_dir, is_save_fig=True,
+                                      is_stdout_display=True)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Display summary of PyTorch model
     _ = get_model_summary(model, device_type=device_type,
@@ -225,9 +226,9 @@ def set_case_study_model_parameters(case_study_name, model_directory,
         pro_n_hidden_layers = 1
         dec_n_hidden_layers = 1
         # Set hidden layer size
-        hidden_layer_size = 1
+        hidden_layer_size = 10
         # Set (shared) hidden unit activation function
-        hidden_activation = torch.nn.Identity
+        hidden_activation = torch.nn.ReLU
         # Set (shared) output unit activation function
         output_activation = torch.nn.Identity
         # Set data normalization
@@ -277,10 +278,14 @@ def set_default_training_options():
     lr_init : float
         Initial value optimizer learning rate. Constant learning rate value if
         no learning rate scheduler is specified (lr_scheduler_type=None).
-    lr_scheduler_type : {'steplr',}
+    lr_scheduler_type : {'steplr', 'explr', 'linlr'}
         Type of learning rate scheduler:
         
         'steplr'  : Step-based decay (torch.optim.lr_scheduler.SetpLR)
+        
+        'explr'   : Exponential decay (torch.optim.lr_scheduler.ExponentialLR)
+        
+        'linlr'   : Linear decay (torch.optim.lr_scheduler.LinearLR)
 
     lr_scheduler_kwargs : dict
         Arguments of torch.optim.lr_scheduler.LRScheduler initializer.
