@@ -259,7 +259,8 @@ def make_predictions_subdir(predict_directory):
     # Set predictions subdirectory path
     predict_subdir = os.path.join(predict_directory, 'prediction_set_0')
     while os.path.exists(predict_subdir):
-        predict_subdir = os.path.join(predict_directory,
+        predict_subdir = os.path.join(
+            predict_directory,
             'prediction_set_' + str(int(predict_subdir.split('_')[-1]) + 1))
     # Create model predictions subdirectory
     predict_subdir = make_directory(predict_subdir, is_overwrite=False)
