@@ -52,7 +52,7 @@ def generate_dataset(case_study_name, simulation_directory, n_sample,
             set_default_saving_options()
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Generate material patch simulation data set
-    if case_study_name == '2d_elastic':
+    if case_study_name in ('2d_elastic_orthogonal', '2d_elastic'):
         # Set number of spatial dimensions
         n_dim = 2
         # Set finite element discretization
@@ -374,6 +374,9 @@ def set_default_saving_options():
         is_save_simulation_files, is_remove_failed_samples, is_save_plot_patch
 # =============================================================================
 if __name__ == "__main__":
+    # Set training/testing data set flag
+    is_testing_dataset = False
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set case study name
     case_study_name = '2d_elastic_orthogonal'
     # Set case study directory
@@ -391,13 +394,28 @@ if __name__ == "__main__":
                            + case_study_dir)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set simulation directory
-    simulation_directory = os.path.join(os.path.normpath(case_study_dir),
-                                        '0_simulation')
+    if is_testing_dataset:
+        # Set testing data set directory
+        dataset_directory = os.path.join(os.path.normpath(case_study_dir),
+                                         '4_testing_dataset')
+        # Create testing data set directory
+        if not os.path.isdir(dataset_directory):
+            make_directory(dataset_directory)         
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set simulation directory (training data set)
+        simulation_directory = os.path.join(
+            os.path.normpath(dataset_directory), 'simulation')
+    else:
+        # Set simulation directory (testing data set)
+        simulation_directory = os.path.join(os.path.normpath(case_study_dir),
+                                            '0_simulation')
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Create simulation directory
     make_directory(simulation_directory, is_overwrite=True)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Generate material patch simulation data set
-    if case_study_name in ('2d_elastic_orthogonal',):
+    if (not is_testing_dataset
+            and case_study_name in ('2d_elastic_orthogonal',)):
         generate_deterministic_dataset(case_study_name, simulation_directory,
                                        is_verbose=True)
     else:    
