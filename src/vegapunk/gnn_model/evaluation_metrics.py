@@ -1151,7 +1151,7 @@ def scatter_xy_data(data_xy, data_labels=None, is_identity_line=False,
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Configure grid major lines
     axes.grid(which='major', axis='both', linestyle='-', linewidth=0.5,
-              color='0.5', zorder=-20)
+              color='0.5', zorder=0)
     # Configure grid minor lines
     axis_option = {'log-log': 'both', 'log-linear': 'x', 'linear-log': 'y'}
     xy_scale = f'{x_scale}-{y_scale}'
@@ -1163,7 +1163,7 @@ def scatter_xy_data(data_xy, data_labels=None, is_identity_line=False,
     for i in range(n_datasets):
         # Plot dataset
         axes.scatter(data_xy[:, 2*i], data_xy[:, 2*i + 1],
-                     label=data_labels[i], ec='k')
+                     label=data_labels[i], ec='k', zorder=10)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set axes limits
     axes.set_xlim(x_lims)
@@ -1173,7 +1173,7 @@ def scatter_xy_data(data_xy, data_labels=None, is_identity_line=False,
     if is_identity_line:
         # Plot identity line
         axes.axline((0, 0), slope=1, color='k', linestyle='--',
-                    label='Identity line', zorder=-10)
+                    label='Identity line', zorder=5)
         # Plot identity error bounds
         if identity_error is not None:            
             x = np.linspace(0.0, axes.axis()[1])
