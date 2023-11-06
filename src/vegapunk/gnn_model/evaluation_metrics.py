@@ -104,10 +104,7 @@ def plot_training_loss_history(loss_history, loss_type=None, is_log_loss=False,
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set axes limits and scale
     x_lims = (0, max_n_train_steps)
-    if is_log_loss:
-        y_lims = (None, None)
-    else:
-        y_lims = (0, None)
+    y_lims = (None, None)
     y_scale = loss_scale
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set axes labels
@@ -203,10 +200,7 @@ def plot_training_loss_and_lr_history(loss_history, lr_history, loss_type=None,
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set axes limits and scale
     x_lims = (0, max(len(loss_history), total_n_train_steps))
-    if is_log_loss:
-        y1_lims = (None, None)
-    else:
-        y1_lims = (0, None)
+    y1_lims = (None, None)
     y2_lims = (None, None)
     y1_scale = loss_scale
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -323,10 +317,7 @@ def plot_loss_convergence_test(testing_loss, training_loss=None,
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set axes limits and scale
     x_lims = (0, None)
-    if is_log_loss:
-        y_lims = (None, None)
-    else:
-        y_lims = (0, None)
+    y_lims = (None, None)
     y_scale = loss_scale
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set axes labels
@@ -684,8 +675,10 @@ def plot_xy_data(data_xy, data_labels=None, x_lims=(None, None),
                     framealpha=1.0)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set axes limits
-    axes.set_xlim(x_lims)
-    axes.set_ylim(y_lims)
+    if x_lims != (None, None):
+        axes.set_xlim(x_lims)
+    if y_lims != (None, None):
+        axes.set_ylim(y_lims)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Return figure and axes handlers
     return figure, axes
@@ -851,10 +844,13 @@ def plot_xy2_data(data_xy1, data_xy2, x_lims=(None, None),
     axes2.plot(data_xy2[:, 0], data_xy2[:, 1], color=color_y2)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set first axes limits
-    axes.set_xlim(x_lims)
-    axes.set_ylim(y1_lims)
+    if x_lims != (None, None):
+        axes.set_xlim(x_lims)
+    if y1_lims != (None, None):
+        axes.set_ylim(y1_lims)
     # Set second axes limits
-    axes2.set_ylim(y2_lims)
+    if y2_lims != (None, None):
+        axes2.set_ylim(y2_lims)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Return figure and axes handlers
     return figure, axes
@@ -1025,8 +1021,10 @@ def plot_xny_data(data_xy_list, range_type='min-max', data_labels=None,
                     framealpha=1.0)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set axes limits
-    axes.set_xlim(x_lims)
-    axes.set_ylim(y_lims)
+    if x_lims != (None, None):
+        axes.set_xlim(x_lims)
+    if y_lims != (None, None):
+        axes.set_ylim(y_lims)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Return figure and axes handlers
     return figure, axes
