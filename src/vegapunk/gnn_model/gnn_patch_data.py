@@ -16,6 +16,7 @@ import copy
 # Third-party
 import numpy as np
 import scipy.spatial
+import sklearn.preprocessing
 import matplotlib.pyplot as plt
 import torch
 import torch_geometric.data
@@ -693,7 +694,8 @@ class GNNPatchFeaturesGenerator:
         # Set current nodes coordinates
         self._nodes_coords = nodes_coords_hist[:, :n_dim, -1]
     # -------------------------------------------------------------------------
-    def build_nodes_features_matrix(self, features=(), n_time_steps=1):
+    def build_nodes_features_matrix(self, features=(), n_time_steps=1,
+                                    feature_kwargs={}):
         """Build nodes features matrix.
         
         Parameters
@@ -703,6 +705,9 @@ class GNNPatchFeaturesGenerator:
         n_time_steps : int, default=1
             Number of history time steps to account for in history-based
             features. Defaults to the last time step only.
+        features_kwargs : dict, default={}
+            Parameters (item, dict) associated with the computation of node
+            features (key, str).
         
         Returns
         -------
@@ -782,6 +787,39 @@ class GNNPatchFeaturesGenerator:
                     # Assemble node feature
                     feature_matrix[i, :] = \
                         self._nodes_int_forces_hist[i, :n_dim, -1]
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            elif feature == 'polycoord_disp':
+                # Check required data
+                if self._nodes_disps_hist is None:
+                    raise RuntimeError('Nodes displacements must be set in '
+                                       'order to build feature '
+                                       + str(feature))
+                # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                # Set feature parameters
+                features_kwargs = {}
+                features_kwargs[feature] = {'coord_order': 3,}
+                # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                # Set coordinates polynomial basis order and bias inclusion
+                coord_order = features_kwargs[feature]['coord_order']
+                is_bias = False
+                # Initialize polynomial basis generator
+                poly_basis = sklearn.preprocessing.PolynomialFeatures(
+                    degree=coord_order, include_bias=is_bias)
+                # Get node coordinates (last time step)
+                nodes_coords_last = self._nodes_coords_hist[:, :n_dim, -1]
+                # Compute node coordinates polynomial basis
+                poly_coord = poly_basis.fit_transform(nodes_coords_last)
+                # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                # Get node displacements (last time step)
+                nodes_disps_last = self._nodes_disps_hist[:, :n_dim, -1]
+                # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                # Build node coordinates-displacements products
+                poly_coord_disp = \
+                    [poly_coord*nodes_disps_last[:, i][:, np.newaxis]
+                     for i in range(n_dim)]
+                # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                # Build node feature matrix
+                feature_matrix = np.concatenate(poly_coord_disp, axis=1)
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~     
             # Assemble node feature
             node_features_matrix = \
@@ -798,16 +836,24 @@ class GNNPatchFeaturesGenerator:
         available_features : tuple[str]
             Available nodes features.
             
-            'coord_hist' : numpy.ndarray(1d) of shape (n_time_steps*n_dim,) \
-                           with the node coordinates history.
+            'coord_hist'     : numpy.ndarray(1d) of shape \
+                               (n_time_steps*n_dim,) with the node \
+                               coordinates history.
                           
-            'disp_hist'  : numpy.ndarray(1d) of shape (n_time_steps*n_dim,) \
-                           with the node displacements history.
+            'disp_hist'      : numpy.ndarray(1d) of shape \
+                               (n_time_steps*n_dim,) with the node \
+                               displacements history.
             
-            'int_force'  : numpy.ndarray(1d) of shape (n_dim,) with the node \
-                           internal forces.
+            'int_force'      : numpy.ndarray(1d) of shape (n_dim,) with the \
+                               node internal forces.
+                           
+            'polycoord_disp' : numpy.ndarray(1d) of shape (n_dim*0.5n*(n+1),) \
+                               with a n-order polynomial basis of node \
+                               coordinates (bias term excluded) multiplied \
+                               by each node displacement component.
         """
-        available_features = ('coord_hist', 'disp_hist', 'int_force')
+        available_features = ('coord_hist', 'disp_hist', 'int_force',
+                              'polycoord_disp')
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         return available_features
     # -------------------------------------------------------------------------
