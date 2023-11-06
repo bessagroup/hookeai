@@ -137,10 +137,10 @@ if __name__ == "__main__":
     # Set GNN-based material patch testing data set directory
     if is_in_dist_testing:
         dataset_directory = os.path.join(os.path.normpath(case_study_dir),
-                                        '1_training_dataset')
+                                         '1_training_dataset')
     else:
         dataset_directory = os.path.join(os.path.normpath(case_study_dir),
-                                        '4_testing_dataset')
+                                         '4_testing_dataset')
     # Get GNN-based material patch testing data set file path
     regex = (r'^material_patch_graph_dataset_testing_n[0-9]+.pkl$',
              r'^material_patch_graph_dataset_n[0-9]+.pkl$')
