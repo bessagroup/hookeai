@@ -87,12 +87,14 @@ def set_default_saving_options():
     return sample_file_basename, is_save_plot_patch
 # =============================================================================
 if __name__ == "__main__":
+    # Set training/testing data set flag
+    is_testing_dataset = False
     # Set computation processes
-    is_generate_dataset  = True
+    is_generate_dataset = True
     is_split_dataset = False
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set case study name
-    case_study_name = '2d_elastic'
+    case_study_name = '2d_elastic_orthogonal'
     # Set case study directory
     case_study_base_dirs = {
         '2d_elastic_orthogonal': f'/home/bernardoferreira/Documents/temp',
@@ -108,8 +110,23 @@ if __name__ == "__main__":
                            + case_study_dir)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set simulation directory
-    simulation_directory = os.path.join(os.path.normpath(case_study_dir),
-                                        '0_simulation')
+    if is_testing_dataset:
+        # Set testing data set directory
+        testing_dataset_dir = os.path.join(os.path.normpath(case_study_dir),
+                                           '4_testing_dataset')
+        # Check testing data set directory
+        if not os.path.isdir(testing_dataset_dir):
+            raise RuntimeError('The case study testing data set directory has '
+                               'not been found:\n\n' + testing_dataset_dir)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set simulation directory (testing data set)
+        simulation_directory = os.path.join(
+            os.path.normpath(testing_dataset_dir), 'simulation')
+    else:
+        # Set simulation directory (training data set)
+        simulation_directory = os.path.join(os.path.normpath(case_study_dir),
+                                            '0_simulation')
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Get material patch simulation data set file path
     regex = r'^material_patch_fem_dataset_n[0-9]+.pkl$'
     is_file_found, sim_dataset_file_path = \
@@ -121,20 +138,26 @@ if __name__ == "__main__":
                             f'{simulation_directory}')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set GNN-based material patch data set directory
-    dataset_directory = os.path.join(os.path.normpath(case_study_dir),
-                                    '1_training_dataset')
+    if is_testing_dataset:
+        # Set data set directory (testing data set)
+        dataset_directory = testing_dataset_dir
+    else:
+        # Set data set directory (training data set)
+        dataset_directory = os.path.join(os.path.normpath(case_study_dir),
+                                         '1_training_dataset')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Generate GNN-based material patch data set
-    if is_generate_dataset:
+    if is_generate_dataset or is_testing_dataset:
         # Create data set directory
-        make_directory(dataset_directory, is_overwrite=True)
+        if not is_testing_dataset:
+            make_directory(dataset_directory, is_overwrite=True)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Generate GNN-based material patch data set
         dataset, _ = generate_dataset(case_study_name, sim_dataset_file_path,
                                       dataset_directory, is_verbose=True)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Split data set
-    if is_split_dataset:
+    if is_split_dataset and not is_testing_dataset:
         # Get GNN-based material patch training data set file path
         regex = r'^material_patch_graph_dataset_n[0-9]+.pkl$'
         is_file_found, dataset_file_path = \
