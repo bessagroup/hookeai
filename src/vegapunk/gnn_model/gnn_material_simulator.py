@@ -533,11 +533,13 @@ class GNNMaterialPatchModel(torch.nn.Module):
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Check consistency with simulator
         if graph.num_node_features != self._n_node_in:
-            raise RuntimeError('Input graph and simulator number of node '
-                               'features are not consistent.')
+            raise RuntimeError(f'Input graph ({graph.num_node_features}) and '
+                               f'simulator ({self._n_node_in}) number of node '
+                               f'features are not consistent.')
         if graph.num_edge_features != self._n_edge_in:
-            raise RuntimeError('Input graph and simulator number of edge '
-                               'features are not consistent.')
+            raise RuntimeError(f'Input graph ({graph.num_edge_features}) and '
+                               f'simulator ({self._n_edge_in}) number of edge '
+                               f'features are not consistent.')
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Get features from material patch graph
         if isinstance(graph.x, torch.Tensor):
@@ -594,6 +596,13 @@ class GNNMaterialPatchModel(torch.nn.Module):
             node_features_out = graph.y.clone()
         else:
             node_features_out = None
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Check consistency with simulator
+        if (node_features_out is not None
+                and node_features_out.shape[1] != self._n_node_out):
+            raise RuntimeError(f'Input graph ({node_features_out.shape[1]}) '
+                               f'and simulator ({self._n_node_in}) number of '
+                               f'output node features are not consistent.')
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~  
         # Normalize output features data
         if is_normalized:                
@@ -980,15 +989,18 @@ class GNNMaterialPatchModel(torch.nn.Module):
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Get scaling parameters and fit data scalers: node input features
         mean, std = graph_standard_partial_fit(
-            dataset, features_type='node_features_in')
+            dataset, features_type='node_features_in',
+            n_features=self._n_node_in)
         scaler_node_in.set_mean_and_std(mean, std)        
         # Get scaling parameters and fit data scalers: edge input features
         mean, std = graph_standard_partial_fit(
-            dataset, features_type='edge_features_in')
+            dataset, features_type='edge_features_in',
+            n_features=self._n_edge_in)
         scaler_edge_in.set_mean_and_std(mean, std)
         # Get scaling parameters and fit data scalers: node output features
         mean, std = graph_standard_partial_fit(
-            dataset, features_type='node_features_out')
+            dataset, features_type='node_features_out',
+            n_features=self._n_node_out)
         scaler_node_out.set_mean_and_std(mean, std)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         if is_verbose:
@@ -1387,7 +1399,8 @@ class TorchStandardScaler:
             raise RuntimeError('Features tensor is not consistent with data'
                                'scaler number of features.')
 # =============================================================================
-def graph_standard_partial_fit(dataset, features_type, is_verbose=False):
+def graph_standard_partial_fit(dataset, features_type, n_features,
+                               is_verbose=False):
     """Perform batch fitting of standardization data scalers.
     
     Parameters
@@ -1404,6 +1417,8 @@ def graph_standard_partial_fit(dataset, features_type, is_verbose=False):
         
         'node_features_out' : Node features output matrix
     
+    n_features : int
+        Number of features to standardize.
     is_verbose : bool, default=False
         If True, enable verbose output.
     
@@ -1445,10 +1460,18 @@ def graph_standard_partial_fit(dataset, features_type, is_verbose=False):
         elif features_type == 'node_features_out':
             features_tensor = pyg_graph.y
         else:
-            raise RuntimeError('Unknown features type.')   
+            raise RuntimeError('Unknown features type.')
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Process sample to fit data scaler
         if isinstance(features_tensor, torch.Tensor):
+            # Check number of features
+            if features_tensor.shape[1] != n_features:
+                raise RuntimeError(f'Mismatch between input graph '
+                                   f'({features_tensor.shape[1]}) and '
+                                   f'model ({n_features}) number of '
+                                   f'features for features type: '
+                                   f'{features_type}')
+            # Process sample
             data_scaler.partial_fit(features_tensor.clone())
         else:
             raise RuntimeError('Sample features tensor is not torch.Tensor.')

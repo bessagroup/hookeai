@@ -1125,12 +1125,13 @@ def test_torch_standard_scaler_inverse_transform_invalid(n_features, tensor):
         # Test invalid features tensor
         _ = data_scaler.inverse_transform(tensor)
 # -----------------------------------------------------------------------------
-@pytest.mark.parametrize('features_type',
-                         ['node_features_in',
-                          'edge_features_in',
-                          'node_features_out',
+@pytest.mark.parametrize('features_type, n_features',
+                         [('node_features_in', 2),
+                          ('edge_features_in', 3),
+                          ('node_features_out', 5)
                           ])
-def test_graph_standard_partial_fit(batch_graph_patch_data_2d, features_type):
+def test_graph_standard_partial_fit(batch_graph_patch_data_2d, features_type,
+                                    n_features):
     """Test batch fitting of standardization data scalers."""
     # Initialize errors
     errors = []
@@ -1141,7 +1142,8 @@ def test_graph_standard_partial_fit(batch_graph_patch_data_2d, features_type):
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Get scaling parameters and fit data scalers
     mean, std = graph_standard_partial_fit(
-        dataset, features_type=features_type, is_verbose=True)
+        dataset, features_type=features_type, n_features=n_features,
+        is_verbose=True)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Check features standardization mean tensor
     if not isinstance(mean, torch.Tensor):
@@ -1154,13 +1156,13 @@ def test_graph_standard_partial_fit(batch_graph_patch_data_2d, features_type):
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     assert not errors, "Errors:\n{}".format("\n".join(errors))
 # -----------------------------------------------------------------------------
-@pytest.mark.parametrize('features_type',
-                         ['node_features_in',
-                          'edge_features_in',
-                          'node_features_out',
+@pytest.mark.parametrize('features_type, n_features',
+                         [('node_features_in', 2),
+                          ('edge_features_in', 3),
+                          ('node_features_out', 5)
                           ])
 def test_graph_standard_partial_fit_invalid(batch_graph_patch_data_2d,
-                                            features_type):
+                                            features_type, n_features):
     """Test detection of invalid inputs to batch fitting of data scalers."""
     # Build dataset
     dataset = [gnn_patch_data.get_torch_data_object()
@@ -1171,8 +1173,9 @@ def test_graph_standard_partial_fit_invalid(batch_graph_patch_data_2d,
         test_dataset = dataset[:]
         test_dataset[0] = 'invalid_sample_type'
         # Get scaling parameters and fit data scalers
-        mean, std = graph_standard_partial_fit(
-            test_dataset, features_type=features_type, is_verbose=True)
+        _, _ = graph_standard_partial_fit(
+            test_dataset, features_type=features_type, n_features=n_features,
+            is_verbose=True)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     with pytest.raises(RuntimeError):
         # Test missing sample features tensor
@@ -1181,5 +1184,6 @@ def test_graph_standard_partial_fit_invalid(batch_graph_patch_data_2d,
         test_dataset[0].edge_attr = None
         test_dataset[0].y = None
         # Get scaling parameters and fit data scalers
-        mean, std = graph_standard_partial_fit(
-            test_dataset, features_type=features_type, is_verbose=True)
+        _, _ = graph_standard_partial_fit(
+            test_dataset, features_type=features_type, n_features=n_features,
+            is_verbose=True)
