@@ -116,11 +116,11 @@ def set_default_prediction_options():
     return loss_type, loss_kwargs
 # =============================================================================
 if __name__ == "__main__":
-    # Set in-distribution testing flag
-    is_in_dist_testing = True
+    # Set in-distribution/out-of-distribution testing flag
+    is_in_dist_testing = False
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set case study name
-    case_study_name = '2d_elastic'
+    case_study_name = '2d_elastic_orthogonal'
     # Set case study directory
     case_study_base_dirs = {
         '2d_elastic_orthogonal': f'/home/bernardoferreira/Documents/temp',
@@ -136,11 +136,14 @@ if __name__ == "__main__":
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set GNN-based material patch testing data set directory
     if is_in_dist_testing:
+        # Set testing data set directory (in-distribution)
         dataset_directory = os.path.join(os.path.normpath(case_study_dir),
                                          '1_training_dataset')
     else:
+        # Set testing data set directory (out-of-distribution)
         dataset_directory = os.path.join(os.path.normpath(case_study_dir),
                                          '4_testing_dataset')
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Get GNN-based material patch testing data set file path
     regex = (r'^material_patch_graph_dataset_testing_n[0-9]+.pkl$',
              r'^material_patch_graph_dataset_n[0-9]+.pkl$')
@@ -149,8 +152,8 @@ if __name__ == "__main__":
     # Check data set file
     if not is_file_found:
         raise RuntimeError(f'Testing data set file has not been found  '
-                            f'in data set directory:\n\n'
-                            f'{dataset_directory}')
+                           f'in data set directory:\n\n'
+                           f'{dataset_directory}')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set GNN-based material patch model directory
     model_directory = os.path.join(os.path.normpath(case_study_dir),
