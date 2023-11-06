@@ -154,9 +154,14 @@ def perform_model_kfold_cross_validation(case_study_name, dataset_file_path,
     # Set GNN-based material patch model training options
     if case_study_name == '2d_elastic_orthogonal':
         # Set number of training steps
-        n_train_steps = 100
+        n_train_steps = 500
         # Set batch size
-        batch_size = 1
+        batch_size = 4
+        # Set learning rate
+        lr_init = 1.0e-02
+        # Set learning rate scheduler        
+        lr_scheduler_type = 'explr'
+        lr_scheduler_kwargs = {'gamma': 0.99}
     elif case_study_name == '2d_elastic':
         # Set number of training steps
         n_train_steps = 100
@@ -342,14 +347,16 @@ if __name__ == "__main__":
     # Check data set file
     if not is_file_found:
         raise RuntimeError(f'Training data set file has not been found  '
-                            f'in data set directory:\n\n'
-                            f'{dataset_directory}')
+                           f'in data set directory:\n\n'
+                           f'{dataset_directory}')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Set GNN-based material patch model directory
-    model_directory = os.path.join(os.path.normpath(case_study_dir),
-                                   '2_model')
     # Create model directory
-    make_directory(model_directory, is_overwrite=True)
+    if is_standard_training:
+        # Set GNN-based material patch model directory
+        model_directory = os.path.join(os.path.normpath(case_study_dir),
+                                    '2_model')
+        # Create model directory
+        make_directory(model_directory, is_overwrite=True)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set device type
     if torch.cuda.is_available():
@@ -363,14 +370,14 @@ if __name__ == "__main__":
             case_study_name, dataset_file_path, model_directory,
             device_type=device_type, is_verbose=True)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Set cross-validation directory
-    cross_validation_dir = os.path.join(os.path.normpath(case_study_dir),
-                                        '3_cross_validation')
     # Create cross-validation directory
-    make_directory(cross_validation_dir, is_overwrite=True)
+    if is_cross_validation:
+        # Set cross-validation directory
+        cross_validation_dir = os.path.join(os.path.normpath(case_study_dir),
+                                            '3_cross_validation')
+        # Create cross-validation directory
+        make_directory(cross_validation_dir, is_overwrite=True)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Set device type
-    device_type = 'cuda'
     # Perform k-fold cross validation of GNN-based material patch model
     if is_cross_validation:
         perform_model_kfold_cross_validation(
