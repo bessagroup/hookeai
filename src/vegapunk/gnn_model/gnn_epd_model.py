@@ -161,19 +161,19 @@ class EncodeProcessDecode(torch.nn.Module):
         if self._n_message_steps > 0:
             self._processor = \
                 Processor(n_message_steps=n_message_steps,
-                        n_node_in=hidden_layer_size,
-                        n_node_out=hidden_layer_size,
-                        n_edge_in=hidden_layer_size,
-                        n_edge_out=hidden_layer_size,
-                        n_hidden_layers=pro_n_hidden_layers,
-                        hidden_layer_size=hidden_layer_size,
-                        aggregation_scheme=pro_aggregation_scheme,
-                        node_hidden_activation=pro_node_hidden_activation,
-                        node_output_activation=pro_node_output_activation,
-                        edge_hidden_activation=pro_edge_hidden_activation,
-                        edge_output_activation=pro_edge_output_activation,
-                        is_node_res_connect=is_node_res_connect,
-                        is_edge_res_connect=is_edge_res_connect)
+                          n_node_in=hidden_layer_size,
+                          n_node_out=hidden_layer_size,
+                          n_edge_in=hidden_layer_size,
+                          n_edge_out=hidden_layer_size,
+                          n_hidden_layers=pro_n_hidden_layers,
+                          hidden_layer_size=hidden_layer_size,
+                          aggregation_scheme=pro_aggregation_scheme,
+                          node_hidden_activation=pro_node_hidden_activation,
+                          node_output_activation=pro_node_output_activation,
+                          edge_hidden_activation=pro_edge_hidden_activation,
+                          edge_output_activation=pro_edge_output_activation,
+                          is_node_res_connect=is_node_res_connect,
+                          is_edge_res_connect=is_edge_res_connect)
         else:
             self._processor = None
         # Set GNN-based material patch model decoder
