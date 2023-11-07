@@ -203,20 +203,28 @@ def generate_dataset_samples_files(dataset_directory, node_features,
     if is_verbose:
         print('\n> Finished graphs generation process!\n')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    if is_verbose:
+        print(f'\n> Data set size (number of graphs): {n_sample}')
+        print(f'\n> Node features ({node_features_matrix.shape[1]}): '
+              f'{" || ".join([x for x in node_features])}')
+        print(f'\n> Edge features ({edge_features_matrix.shape[1]}): '
+              f'{" || ".join([x for x in edge_features])}')
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Compute total generation time and average generation time per patch
     total_time_sec = time.time() - start_time_sec
     avg_time_sec = total_time_sec/n_sample
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     if is_verbose:
-        print('\n> Data set directory: ', dataset_directory)
+        print('\n\n> Data set directory: ', dataset_directory)
         print(f'\n> Total generation time: '
               f'{str(datetime.timedelta(seconds=int(total_time_sec)))} | '
               f'Avg. generation time per graph: '
               f'{str(datetime.timedelta(seconds=int(avg_time_sec)))}\n')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Write summary data file for graph data set generation
-    write_graph_dataset_summary_file(dataset_directory, total_time_sec,
-                                     avg_time_sec)
+    write_graph_dataset_summary_file(dataset_directory, n_sample,
+                                     node_features, edge_features,
+                                     total_time_sec, avg_time_sec)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ 
     return dataset_directory, dataset_sample_files
 # =============================================================================
@@ -674,8 +682,9 @@ def get_pyg_data_loader(dataset, batch_size=1, is_shuffle=False,
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     return data_loader
 # =============================================================================
-def write_graph_dataset_summary_file(dataset_directory, total_time_sec,
-                                     avg_time_sample):
+def write_graph_dataset_summary_file(dataset_directory, n_sample,
+                                     node_features, edge_features,
+                                     total_time_sec, avg_time_sample):
     """Write summary data file for GNN-based patch data set generation.
     
     Parameters
@@ -684,6 +693,14 @@ def write_graph_dataset_summary_file(dataset_directory, total_time_sec,
         Directory where the GNN-based material patch data set is stored (all
         data set samples files). All existent files are overridden when saving
         sample data files.
+    n_sample : int
+        Data set size (number of samples).
+    node_features : tuple[str]
+        GNN-based material patch data set nodes features. Check class
+        GNNPatchFeaturesGenerator for available node features.
+    edge_features : tuple[str]
+        GNN-based material patch data set edges features. Check class
+        GNNPatchFeaturesGenerator for available edge features.
     total_time_sec : int
         Total generation time in seconds.
     avg_time_sample : float
@@ -691,6 +708,9 @@ def write_graph_dataset_summary_file(dataset_directory, total_time_sec,
     """
     # Set summary data
     summary_data = {}
+    summary_data['n_sample'] = n_sample
+    summary_data['node_features'] = node_features
+    summary_data['edge_features'] = edge_features
     summary_data['Total generation time'] = \
         str(datetime.timedelta(seconds=int(total_time_sec)))
     summary_data['Avg. generation time per graph'] = \
