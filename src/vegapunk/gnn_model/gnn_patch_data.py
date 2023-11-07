@@ -634,7 +634,9 @@ class GNNPatchFeaturesGenerator:
     _nodes_coords_hist : numpy.ndarray(3d)
         Nodes coordinates history stored as a numpy.ndarray(3d) with shape
         (n_nodes, n_dim, n_time_steps). Coordinates of i-th node at k-th
-        time step are stored in nodes_coords[i, :, k].   
+        time step are stored in nodes_coords[i, :, k].
+    _n_edge : int
+        Number of edges.
     _edges_indexes : numpy.ndarray(2d)
         Edges indexes matrix stored as numpy.ndarray[int](2d) with shape
         (num_edges, 2), where the i-th edge is stored in
@@ -659,8 +661,9 @@ class GNNPatchFeaturesGenerator:
     get_available_edges_input_features()
         Get available edges features.   
     """
-    def __init__(self, n_dim, nodes_coords_hist, edges_indexes=None,
-                 nodes_disps_hist=None, nodes_int_forces_hist=None):
+    def __init__(self, n_dim, nodes_coords_hist, n_edge=None,
+                 edges_indexes=None, nodes_disps_hist=None,
+                 nodes_int_forces_hist=None):
         """Constructor.
         
         Parameters
@@ -670,11 +673,15 @@ class GNNPatchFeaturesGenerator:
         nodes_coords_hist : numpy.ndarray(3d)
             Nodes coordinates history stored as a numpy.ndarray(3d) with shape
             (n_nodes, n_dim, n_time_steps). Coordinates of i-th node at k-th
-            time step are stored in nodes_coords[i, :, k].   
+            time step are stored in nodes_coords[i, :, k].
+        n_edge : int, default=None
+            Number of edges. If None, then number of edges is inferred from
+            edges indexes matrix if the later is known.
         edges_indexes : numpy.ndarray(2d), default=None
             Edges indexes matrix stored as numpy.ndarray[int](2d) with shape
             (num_edges, 2), where the i-th edge is stored in
-            edges_indexes[i, :] as (start_node_index, end_node_index).
+            edges_indexes[i, :] as (start_node_index, end_node_index). Required
+            to compute edge features based on corresponding node features.
         nodes_disps_hist : numpy.ndarray(3d), default=None
             Nodes displacements history stored as a numpy.ndarray(3d) with
             shape (n_nodes, n_dim, n_time_steps). Displacements of i-th node at
@@ -687,12 +694,22 @@ class GNNPatchFeaturesGenerator:
         self._n_dim = n_dim
         self._nodes_coords_hist = \
             copy.deepcopy(nodes_coords_hist)[:, :n_dim, :]
+        self._n_edge = n_edge
         self._edges_indexes = copy.deepcopy(edges_indexes)
         self._nodes_disps_hist = copy.deepcopy(nodes_disps_hist)[:, :n_dim, :]
         self._nodes_int_forces_hist = \
             copy.deepcopy(nodes_int_forces_hist)[:, :n_dim, :]
         # Set current nodes coordinates
         self._nodes_coords = nodes_coords_hist[:, :n_dim, -1]
+        # Check number of edges
+        if self._n_edge is not None and self._edges_indexes is not None:
+            if self._n_edge != self._edges_indexes.shape[0]:
+                raise RuntimeError(f'Mismatch between number of edges '
+                                   f'n_edges ({n_edge}) and edges_indexes '
+                                   f'({self._edges_indexes.shape[0]}).')
+        elif self._n_edge is None and self._edges_indexes is not None:
+            # Set number of edges from edges indexes
+            self._n_edge = self._edges_indexes.shape[0]
     # -------------------------------------------------------------------------
     def build_nodes_features_matrix(self, features=(), n_time_steps=1,
                                     feature_kwargs={}):
@@ -711,7 +728,7 @@ class GNNPatchFeaturesGenerator:
         
         Returns
         -------
-        node_features_matrix : numpy.ndarray(2d), default=None
+        node_features_matrix : {numpy.ndarray(2d), None}
             Nodes features matrix stored as a numpy.ndarray(2d) of shape
             (n_nodes, n_features).
         """
@@ -825,6 +842,10 @@ class GNNPatchFeaturesGenerator:
             node_features_matrix = \
                 np.concatenate((node_features_matrix, feature_matrix), axis=1)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set nodes features matrix as None in the absence of node features
+        if node_features_matrix.shape[1] == 0:
+            node_features_matrix = None
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         return node_features_matrix
     # -------------------------------------------------------------------------
     @staticmethod
@@ -870,21 +891,32 @@ class GNNPatchFeaturesGenerator:
         
         Returns
         -------
-        edge_features_matrix : numpy.ndarray(2d), default=None
+        edge_features_matrix : {numpy.ndarray(2d), None}
             Edges features matrix stored as a numpy.ndarray(2d) of shape
-            (n_edges, n_features).
+            (n_edges, n_features). Set as None in the absence of edges
+            features.
         """
-        # Check required data
-        if self._edges_indexes is None:
+        # Check number of edges
+        if self._n_edge is None and self._edges_indexes is None:
+            raise RuntimeError('The number of edges must be known in order '
+                               'to build the edges features matrix. Provide '
+                               'either n_edges or edges_indexes when '
+                               'initializing the features generator.')
+        # Check edge features requiring edge indexes
+        edge_indexes_features = ('edge_vector', 'edge_vector_norm',
+                                 'relative_disp', 'relative_disp_norm')
+        if (self._edges_indexes is None
+                and any([x in features for x in edge_indexes_features])):
             raise RuntimeError('Edges indexes must be set in order to build '
-                               'edges features matrix.')
+                               'edges features matrix based on the '
+                               'corresponding node features.')
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Get number of edges
-        n_edges = self._edges_indexes.shape[0]
+        n_edge = self._n_edge
         # Get number of spatial dimensions
         n_dim = self._n_dim
         # Initialize edges features matrix
-        edge_features_matrix = np.empty((n_edges, 0))
+        edge_features_matrix = np.empty((n_edge, 0))
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Get available edges
         available_features = type(self).get_available_edges_features()
@@ -899,7 +931,7 @@ class GNNPatchFeaturesGenerator:
         for feature in features:
             if feature == 'edge_vector':
                 # Initialize edge feature matrix
-                feature_matrix = np.zeros((n_edges, n_dim))
+                feature_matrix = np.zeros((n_edge, n_dim))
                 # Loop over edges
                 for k, (i, j) in enumerate(self._edges_indexes):
                     # Assemble edge feature
@@ -908,7 +940,7 @@ class GNNPatchFeaturesGenerator:
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ 
             elif feature == 'edge_vector_norm':
                 # Initialize edge feature matrix
-                feature_matrix = np.zeros((n_edges, 1))
+                feature_matrix = np.zeros((n_edge, 1))
                 # Loop over edges
                 for k, (i, j) in enumerate(self._edges_indexes):
                     # Assemble edge feature
@@ -923,7 +955,7 @@ class GNNPatchFeaturesGenerator:
                                        'order to build feature '
                                        + str(feature))
                 # Initialize edge feature matrix
-                feature_matrix = np.zeros((n_edges, n_dim))
+                feature_matrix = np.zeros((n_edge, n_dim))
                 # Loop over edges
                 for k, (i, j) in enumerate(self._edges_indexes):
                     # Assemble edge feature
@@ -938,7 +970,7 @@ class GNNPatchFeaturesGenerator:
                                        'order to build feature '
                                        + str(feature))
                 # Initialize edge feature matrix
-                feature_matrix = np.zeros((n_edges, 1))
+                feature_matrix = np.zeros((n_edge, 1))
                 # Loop over edges
                 for k, (i, j) in enumerate(self._edges_indexes):
                     # Assemble edge feature
@@ -949,6 +981,10 @@ class GNNPatchFeaturesGenerator:
             # Assemble edge feature
             edge_features_matrix = \
                 np.concatenate((edge_features_matrix, feature_matrix), axis=1)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set edges features matrix as None in the absence of edge features
+        if edge_features_matrix.shape[1] == 0:
+            edge_features_matrix = None
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         return edge_features_matrix
     # -------------------------------------------------------------------------

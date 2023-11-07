@@ -17,10 +17,26 @@ __status__ = 'Planning'
 # =============================================================================
 #
 # =============================================================================
-def test_gnn_patch_features_init_2d(gnn_patch_graph_2d):
+@pytest.mark.parametrize('is_n_edge, is_edges_indexes',
+                         [(True, True), (True, False),
+                          (False, True), (False, False)
+                          ])
+def test_gnn_patch_features_init_2d(gnn_patch_graph_2d, is_n_edge,
+                                    is_edges_indexes):
     """Test 2D GNN-based material patch features generator."""
+    # Initialize errors
+    errors = []
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     n_nodes = gnn_patch_graph_2d.get_nodes_coords().shape[0]
     edges_indexes = gnn_patch_graph_2d.get_graph_edges_indexes()
+    n_edge = edges_indexes.shape[0]
+    if is_n_edge and not is_edges_indexes:
+        edges_indexes = None
+    elif not is_n_edge and is_edges_indexes:
+        n_edge = None
+    elif not is_n_edge and not is_edges_indexes:
+        edges_indexes = None
+        n_edge = None
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     n_dim = 2
     n_time_steps = 5
@@ -29,18 +45,29 @@ def test_gnn_patch_features_init_2d(gnn_patch_graph_2d):
     nodes_int_forces_hist = np.zeros((n_nodes, n_dim, n_time_steps))
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     features_generator = GNNPatchFeaturesGenerator(
-        n_dim, nodes_coords_hist, edges_indexes=edges_indexes,
+        n_dim, nodes_coords_hist, n_edge=n_edge, edges_indexes=edges_indexes,
         nodes_disps_hist=nodes_disps_hist,
         nodes_int_forces_hist=nodes_int_forces_hist)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    assert np.allclose(features_generator._nodes_coords_hist,
-                       nodes_coords_hist) \
-        and np.allclose(features_generator._edges_indexes, edges_indexes) \
-        and np.allclose(features_generator._nodes_disps_hist,
-                        nodes_disps_hist) \
-        and np.allclose(features_generator._nodes_int_forces_hist,
-                        nodes_int_forces_hist), \
-        'Failed 2D GNN-based material patch features generator initialization.'
+    if not np.allclose(features_generator._nodes_coords_hist,
+                       nodes_coords_hist):
+        errors.append('Failed to set nodes_coords_hist in 2D GNN-based '
+                      'material patch features generator initialization.')
+    if not np.allclose(features_generator._nodes_disps_hist,
+                       nodes_disps_hist):
+        errors.append('Failed to set nodes_disps_hist in 2D GNN-based '
+                      'material patch features generator initialization.')
+    if not np.allclose(features_generator._nodes_int_forces_hist,
+                       nodes_int_forces_hist):
+        errors.append('Failed to set nodes_int_forces_hist in 2D GNN-based '
+                      'material patch features generator initialization.')
+    if (edges_indexes is not None
+            and not np.allclose(features_generator._edges_indexes,
+                                edges_indexes)):
+        errors.append('Failed to set edges_indexes in 2D GNN-based '
+                      'material patch features generator initialization.')
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    assert not errors, "Errors:\n{}".format("\n".join(errors))
 # -----------------------------------------------------------------------------
 def test_get_available_nodes_features():
     """Test available nodes features getter."""
@@ -110,9 +137,9 @@ def test_build_edges_features_matrix(features_generator_2d):
     """Test computation of edges features matrix with all features."""
     available_features = \
         GNNPatchFeaturesGenerator.get_available_edges_features()
-    node_features_matrix = features_generator_2d.build_edges_features_matrix(
+    edge_features_matrix = features_generator_2d.build_edges_features_matrix(
         features=available_features)
-    assert isinstance(node_features_matrix, np.ndarray), \
+    assert isinstance(edge_features_matrix, np.ndarray), \
         'Edges features matrix was not properly computed.'
 # -----------------------------------------------------------------------------
 def test_build_edges_features_matrix_invalid(features_generator_2d):
@@ -138,9 +165,10 @@ def test_build_edges_features_matrix_invalid(features_generator_2d):
         features = ('relative_disp_norm',)
         features_generator_2d._nodes_disps_hist = None
         _ = features_generator_2d.build_edges_features_matrix(
-            features=features)
+            features=features) 
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Test missing edges indexes
+    # Test missing number of edges
     with pytest.raises(RuntimeError):
+        features_generator_2d._n_edge = None
         features_generator_2d._edges_indexes = None
         _ = features_generator_2d.build_edges_features_matrix()   

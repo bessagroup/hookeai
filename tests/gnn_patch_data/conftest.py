@@ -58,6 +58,7 @@ def features_generator_2d(gnn_patch_graph_2d):
     """2D GNN-based material patch features generator."""
     n_nodes = gnn_patch_graph_2d.get_nodes_coords().shape[0]
     edges_indexes = gnn_patch_graph_2d.get_graph_edges_indexes()
+    n_edge = edges_indexes.shape[0]
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     n_dim = 2
     n_time_steps = 5
@@ -66,7 +67,7 @@ def features_generator_2d(gnn_patch_graph_2d):
     nodes_int_forces_hist = np.zeros((n_nodes, n_dim, n_time_steps))
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     features_generator = GNNPatchFeaturesGenerator(
-        n_dim, nodes_coords_hist, edges_indexes=edges_indexes,
+        n_dim, nodes_coords_hist, n_edge=n_edge, edges_indexes=edges_indexes,
         nodes_disps_hist=nodes_disps_hist,
         nodes_int_forces_hist=nodes_int_forces_hist)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
