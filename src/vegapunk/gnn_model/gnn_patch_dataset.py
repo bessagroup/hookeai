@@ -205,10 +205,16 @@ def generate_dataset_samples_files(dataset_directory, node_features,
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     if is_verbose:
         print(f'\n> Data set size (number of graphs): {n_sample}')
-        print(f'\n> Node features ({node_features_matrix.shape[1]}): '
-              f'{" || ".join([x for x in node_features])}')
-        print(f'\n> Edge features ({edge_features_matrix.shape[1]}): '
-              f'{" || ".join([x for x in edge_features])}')
+        if node_features_matrix is not None:
+            print(f'\n> Node features ({node_features_matrix.shape[1]}): '
+                f'{" || ".join([x for x in node_features])}')
+        else:
+            print(f'\n> Node features (0): None')
+        if edge_features_matrix is not None:
+            print(f'\n> Edge features ({edge_features_matrix.shape[1]}): '
+                f'{" || ".join([x for x in edge_features])}')
+        else:
+            print(f'\n> Edge features (0): None')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Compute total generation time and average generation time per patch
     total_time_sec = time.time() - start_time_sec

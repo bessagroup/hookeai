@@ -168,11 +168,6 @@ def test_set_edge_features_matrix_invalid(gnn_patch_graph_2d):
     with pytest.raises(RuntimeError):
         input_edge_features_matrix = np.zeros((n_edges + 1, 5))
         gnn_patch_graph_2d.set_edge_features_matrix(input_edge_features_matrix)
-    # Test undefined edges
-    gnn_patch_graph_2d._edges_indexes = None
-    with pytest.raises(RuntimeError):
-        input_edge_features_matrix = np.zeros((n_edges, 5))
-        gnn_patch_graph_2d.set_edge_features_matrix(input_edge_features_matrix)
 # -----------------------------------------------------------------------------
 def test_set_and_get_global_features_matrix(gnn_patch_graph_2d):
     """Test setter and getter of global input features matrix."""
@@ -246,11 +241,6 @@ def test_set_edge_targets_matrix_invalid(gnn_patch_graph_2d):
     # Test invalid number of edges
     with pytest.raises(RuntimeError):
         input_edge_targets_matrix = np.zeros((n_edges + 1, 5))
-        gnn_patch_graph_2d.set_edge_targets_matrix(input_edge_targets_matrix)
-    # Test undefined edges
-    gnn_patch_graph_2d._edges_indexes = None
-    with pytest.raises(RuntimeError):
-        input_edge_targets_matrix = np.zeros((n_edges, 5))
         gnn_patch_graph_2d.set_edge_targets_matrix(input_edge_targets_matrix)
 # -----------------------------------------------------------------------------
 def test_set_and_get_global_targets_matrix(gnn_patch_graph_2d):

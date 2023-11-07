@@ -38,26 +38,30 @@ class GNNPatchGraphData:
     ----------
     _n_dim : int
         Number of spatial dimensions.
-    _nodes_coords : numpy.ndarray(2d), default=None
+    _nodes_coords : numpy.ndarray(2d)
         Coordinates of nodes stored as a numpy.ndarray(2d) with shape
         (n_nodes, n_dim). Coordinates of i-th node are stored in
         nodes_coords[i, :].
-    _node_features_matrix : numpy.ndarray(2d), default=None
+    _n_node : int
+        Number of nodes.
+    _n_edge : int
+        Number of edges.
+    _node_features_matrix : numpy.ndarray(2d)
         Nodes input features matrix stored as a numpy.ndarray(2d) of shape
         (n_nodes, n_features).
-    _edge_features_matrix : numpy.ndarray(2d), default=None
+    _edge_features_matrix : numpy.ndarray(2d)
         Edges input features matrix stored as a numpy.ndarray(2d) of shape
         (n_edges, n_features).
-    _global_features_matrix : numpy.ndarray(2d), default=None
+    _global_features_matrix : numpy.ndarray(2d)
         Global input features matrix stored as a numpy.ndarray(2d) of shape
         (1, n_features).
-    _node_targets_matrix : numpy.ndarray(2d), default=None
+    _node_targets_matrix : numpy.ndarray(2d)
         Nodes targets matrix stored as a numpy.ndarray(2d) of shape
         (n_nodes, n_targets).
-    _edge_targets_matrix : numpy.ndarray(2d), default=None
+    _edge_targets_matrix : numpy.ndarray(2d)
         Edges targets matrix stored as a numpy.ndarray(2d) of shape
         (n_nodes, n_targets).
-    _global_targets_matrix : numpy.ndarray(2d), default=None
+    _global_targets_matrix : numpy.ndarray(2d)
         Global targets matrix stored as a numpy.ndarray(2d) of shape
         (1, n_targets).
     _edges_indexes : numpy.ndarray(2d)
@@ -69,6 +73,14 @@ class GNNPatchGraphData:
     -------
     get_torch_data_object(self)
         Get PyG homogeneous graph data object.
+    set_graph_edges_indexes(self, connect_radius=None, edges_indexes_mesh=None)
+        Set material patch graph edges indexes and number of edges.
+    get_nodes_coords(self)
+        Get material patch graph node coordinates.
+    get_n_node(self)
+        Get material patch graph number of nodes.
+    get_n_edge(self)
+        Get material patch graph number of edges.
     set_graph_edges_indexes(self, connect_radius=None, \
                             edges_indexes_mesh=None)
         Set material patch graph edges indexes.
@@ -123,8 +135,10 @@ class GNNPatchGraphData:
         """
         self._n_dim = n_dim
         self._nodes_coords = nodes_coords[:, :n_dim]
+        self._n_node = self._nodes_coords.shape[0]
         # Initialize graph edges
-        self._edges_indexes=None
+        self._n_edge = None
+        self._edges_indexes = None
         # Initialize features matrices
         self._node_features_matrix = None
         self._edge_features_matrix = None
@@ -179,7 +193,9 @@ class GNNPatchGraphData:
     # -------------------------------------------------------------------------
     def set_graph_edges_indexes(self, connect_radius=None,
                                 edges_indexes_mesh=None):
-        """Set material patch graph edges indexes.
+        """Set material patch graph edges indexes and number of edges.
+        
+        Sets existing edges input features and targets matrices to None.
         
         Parameters
         ----------
@@ -216,8 +232,14 @@ class GNNPatchGraphData:
         # Remove any existent duplicated edges
         edges_indexes = np.unique(edges_indexes, axis=0) 
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set number of edges
+        self._n_edge = edges_indexes.shape[0]
         # Set edges indexes
         self._edges_indexes = edges_indexes
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Initialize edges input features and targets matrices
+        self._edge_features_matrix = None
+        self._edge_targets_matrix = None
     # -------------------------------------------------------------------------
     def get_nodes_coords(self):
         """Get material patch graph node coordinates.
@@ -230,6 +252,26 @@ class GNNPatchGraphData:
             nodes_coords[i, :].
         """
         return copy.deepcopy(self._nodes_coords)
+    # -------------------------------------------------------------------------
+    def get_n_node(self):
+        """Get material patch graph number of nodes.
+        
+        Returns
+        -------
+        n_node : int
+            Number of nodes.
+        """
+        return self._n_node
+    # -------------------------------------------------------------------------
+    def get_n_edge(self):
+        """Get material patch graph number of edges.
+        
+        Returns
+        -------
+        n_edge : int
+            Number of edges.
+        """
+        return self._n_edge
     # -------------------------------------------------------------------------
     def get_graph_edges_indexes(self):
         """Get material patch graph edges indexes.
@@ -248,19 +290,27 @@ class GNNPatchGraphData:
         
         Parameters
         ----------
-        node_features_matrix : numpy.ndarray(2d)
+        node_features_matrix : {numpy.ndarray(2d), None}
             Nodes input features matrix stored as a numpy.ndarray(2d) of shape
             (n_nodes, n_features).
         """
-        if not isinstance(node_features_matrix, np.ndarray):
-            raise RuntimeError('Nodes input features matrix must be provided '
-                               'as a numpy 2d array of shape '
-                               '(n_nodes, n_features).')
-        elif node_features_matrix.shape[0] != self._nodes_coords.shape[0]:
-            raise RuntimeError('Nodes input features matrix shape is not '
-                               'compatible with number of nodes of material '
-                               'patch graph.')
-        self._node_features_matrix = copy.deepcopy(node_features_matrix)
+        if node_features_matrix is None:
+            self._node_features_matrix = None
+        else:
+            # Check nodes input features matrix
+            if not isinstance(node_features_matrix, np.ndarray):
+                raise RuntimeError('Nodes input features matrix must be '
+                                   'provided as a numpy 2d array of shape '
+                                   '(n_nodes, n_features).')
+            elif node_features_matrix.shape[0] != self._n_node:
+                raise RuntimeError(f'Nodes input features matrix shape '
+                                   f'({self._nodes_coords.shape}) is not '
+                                   f'compatible with number of nodes '
+                                   f'of material patch graph.'
+                                   f'({self._n_node}).')
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Set nodes input features matrix
+            self._node_features_matrix = copy.deepcopy(node_features_matrix)
     # -------------------------------------------------------------------------
     def get_node_features_matrix(self):
         """Set nodes input features matrix.
@@ -282,18 +332,29 @@ class GNNPatchGraphData:
             Edges input features matrix stored as a numpy.ndarray(2d) of shape
             (n_edges, n_features).
         """
-        if self._edges_indexes is None:
-            raise RuntimeError('Edges indexes must be set in order to set '
-                               'the corresponding input features matrix.')
-        elif not isinstance(edge_features_matrix, np.ndarray):
-            raise RuntimeError('Edges input features matrix must be provided '
-                               'as a numpy 2d array of shape '
-                               '(n_edges, n_features).')
-        elif edge_features_matrix.shape[0] != self._edges_indexes.shape[0]:
-            raise RuntimeError('Edges input features matrix shape is not '
-                               'compatible with number of edges of material '
-                               'patch graph.')
-        self._edge_features_matrix = copy.deepcopy(edge_features_matrix)
+        if edge_features_matrix is None:
+            self._edge_features_matrix = None
+        else:
+            # Check edges input features matrix
+            if not isinstance(edge_features_matrix, np.ndarray):
+                raise RuntimeError('Edges input features matrix must be '
+                                   'provided as a numpy 2d array of shape '
+                                   '(n_edges, n_features).')
+            elif (self._n_edge is not None
+                  and (edge_features_matrix.shape[0] != self._n_edge)):
+                raise RuntimeError(f'Edges input features matrix shape '
+                                   f'({edge_features_matrix.shape}) is not '
+                                   f'compatible with number of edges '
+                                   f'of material patch graph '
+                                   f'({self._n_edge}).')
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Set edges input features matrix
+            self._edge_features_matrix = copy.deepcopy(edge_features_matrix)
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Set unknown number of edges according with edges input features
+            # matrix
+            if self._n_edge is None:
+                self._n_edge = self._edge_features_matrix.shape[0]
     # -------------------------------------------------------------------------
     def get_edge_features_matrix(self):
         """Get edges input features matrix.
@@ -315,13 +376,22 @@ class GNNPatchGraphData:
             Global input features matrix stored as a numpy.ndarray(2d) of
             shape (1, n_features).
         """
-        if not isinstance(global_features_matrix, np.ndarray):
-            raise RuntimeError('Global input features matrix must be provided '
-                               'as a numpy 2d array of shape (1, n_features).')
-        elif global_features_matrix.shape[0] != 1:
-            raise RuntimeError('Global input features matrix must be provided '
-                               'as a numpy 2d array of shape (1, n_features).')
-        self._global_features_matrix = copy.deepcopy(global_features_matrix)
+        if global_features_matrix is None:
+            self._global_features_matrix = None
+        else:
+            # Check global input features matrix
+            if not isinstance(global_features_matrix, np.ndarray):
+                raise RuntimeError('Global input features matrix must be '
+                                   'provided as a numpy 2d array of shape '
+                                   '(1, n_features).')
+            elif global_features_matrix.shape[0] != 1:
+                raise RuntimeError('Global input features matrix must be '
+                                   'provided as a numpy 2d array of shape '
+                                   '(1, n_features).')
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Set global input features matrix
+            self._global_features_matrix = \
+                copy.deepcopy(global_features_matrix)
     # -------------------------------------------------------------------------    
     def get_global_features_matrix(self):
         """Get global input features matrix.
@@ -343,15 +413,23 @@ class GNNPatchGraphData:
             Nodes targets matrix stored as a numpy.ndarray(2d) of shape
             (n_nodes, n_targets).
         """
-        if not isinstance(node_targets_matrix, np.ndarray):
-            raise RuntimeError('Nodes targets matrix must be provided '
-                               'as a numpy 2d array of shape '
-                               '(n_nodes, n_targets).')
-        elif node_targets_matrix.shape[0] != self._nodes_coords.shape[0]:
-            raise RuntimeError('Nodes targets matrix shape is not '
-                               'compatible with number of nodes of material '
-                               'patch graph.')
-        self._node_targets_matrix = copy.deepcopy(node_targets_matrix)
+        if node_targets_matrix is None:
+            self._node_targets_matrix = None
+        else:
+            # Check nodes targets matrix
+            if not isinstance(node_targets_matrix, np.ndarray):
+                raise RuntimeError('Nodes targets matrix must be provided '
+                                   'as a numpy 2d array of shape '
+                                   '(n_nodes, n_targets).')
+            elif node_targets_matrix.shape[0] != self._n_node:
+                raise RuntimeError(f'Nodes targets matrix shape '
+                                   f'({node_targets_matrix.shape}) is not '
+                                   f'compatible with number of nodes of '
+                                   f'material patch graph '
+                                   f'({self._n_node}).')
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Set nodes targets matrix
+            self._node_targets_matrix = copy.deepcopy(node_targets_matrix)
     # -------------------------------------------------------------------------    
     def get_node_targets_matrix(self):
         """Get node targets matrix.
@@ -373,18 +451,28 @@ class GNNPatchGraphData:
             Edges targets matrix stored as a numpy.ndarray(2d) of shape
             (n_edges, n_targets).
         """
-        if self._edges_indexes is None:
-            raise RuntimeError('Edges indexes must be set in order to set '
-                               'the corresponding targets matrix.')
-        elif not isinstance(edge_targets_matrix, np.ndarray):
-            raise RuntimeError('Edges targets matrix must be provided '
-                               'as a numpy 2d array of shape '
-                               '(n_edges, n_targets).')
-        elif edge_targets_matrix.shape[0] != self._edges_indexes.shape[0]:
-            raise RuntimeError('Edges targets matrix shape is not '
-                               'compatible with number of edges of material '
-                               'patch graph.')
-        self._edge_targets_matrix = copy.deepcopy(edge_targets_matrix)
+        if edge_targets_matrix is None:
+            self._edge_targets_matrix = None
+        else:
+            # Check edges targets matrix
+            if not isinstance(edge_targets_matrix, np.ndarray):
+                raise RuntimeError('Edges targets matrix must be provided '
+                                   'as a numpy 2d array of shape '
+                                   '(n_edges, n_targets).')
+            elif (self._n_edge is not None
+                  and (edge_targets_matrix.shape[0] != self._n_edge)):
+                raise RuntimeError(f'Edges targets matrix shape '
+                                   f'({edge_targets_matrix.shape}) is not '
+                                   f'compatible with number of edges of '
+                                   f'material patch graph '
+                                   f'({self._n_edge}).')
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Set edges targets matrix
+            self._edge_targets_matrix = copy.deepcopy(edge_targets_matrix)
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Set unknown number of edges according with edges targets matrix
+            if self._n_edge is None:
+                self._n_edge = self.edge_targets_matrix.shape[0]
     # -------------------------------------------------------------------------    
     def get_edge_targets_matrix(self):
         """Get edge targets matrix.
@@ -406,13 +494,21 @@ class GNNPatchGraphData:
             Global targets matrix stored as a numpy.ndarray(2d) of shape
             (1, n_targets).
         """
-        if not isinstance(global_targets_matrix, np.ndarray):
-            raise RuntimeError('Global targets matrix must be provided '
-                               'as a numpy 2d array of shape (1, n_targets).')
-        elif global_targets_matrix.shape[0] != 1:
-            raise RuntimeError('Global targets matrix must be provided '
-                               'as a numpy 2d array of shape (1, n_targets).')
-        self._global_targets_matrix = copy.deepcopy(global_targets_matrix)
+        if global_targets_matrix is None:
+            self._global_targets_matrix = None
+        else:
+            # Check global targets matrix
+            if not isinstance(global_targets_matrix, np.ndarray):
+                raise RuntimeError('Global targets matrix must be provided '
+                                   'as a numpy 2d array of shape '
+                                   '(1, n_targets).')
+            elif global_targets_matrix.shape[0] != 1:
+                raise RuntimeError('Global targets matrix must be provided '
+                                   'as a numpy 2d array of shape '
+                                   '(1, n_targets).')
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Set global targets matrix
+            self._global_targets_matrix = copy.deepcopy(global_targets_matrix)
     # -------------------------------------------------------------------------    
     def get_global_targets_matrix(self):
         """Get global targets matrix.
