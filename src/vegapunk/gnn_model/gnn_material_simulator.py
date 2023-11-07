@@ -980,28 +980,37 @@ class GNNMaterialPatchModel(torch.nn.Module):
         self._init_data_scalers()
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Instantiate data scalers
-        scaler_node_in = TorchStandardScaler(n_features=self._n_node_in,
-                                             device_type=self._device_type)
-        scaler_edge_in = TorchStandardScaler(n_features=self._n_edge_in,
-                                             device_type=self._device_type)
-        scaler_node_out = TorchStandardScaler(n_features=self._n_node_out,
-                                              device_type=self._device_type)
+        scaler_node_in = None
+        if self._n_node_in > 0:
+            scaler_node_in = TorchStandardScaler(
+                n_features=self._n_node_in, device_type=self._device_type)
+        scaler_edge_in = None
+        if self._n_edge_in > 0:
+            scaler_edge_in = TorchStandardScaler(
+                n_features=self._n_edge_in, device_type=self._device_type)
+        scaler_node_out = None
+        if self._n_node_out > 0:
+            scaler_node_out = TorchStandardScaler(
+                n_features=self._n_node_out, device_type=self._device_type)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Get scaling parameters and fit data scalers: node input features
-        mean, std = graph_standard_partial_fit(
-            dataset, features_type='node_features_in',
-            n_features=self._n_node_in)
-        scaler_node_in.set_mean_and_std(mean, std)        
+        if self._n_node_in > 0:
+            mean, std = graph_standard_partial_fit(
+                dataset, features_type='node_features_in',
+                n_features=self._n_node_in)
+            scaler_node_in.set_mean_and_std(mean, std)        
         # Get scaling parameters and fit data scalers: edge input features
-        mean, std = graph_standard_partial_fit(
-            dataset, features_type='edge_features_in',
-            n_features=self._n_edge_in)
-        scaler_edge_in.set_mean_and_std(mean, std)
+        if self._n_edge_in > 0:
+            mean, std = graph_standard_partial_fit(
+                dataset, features_type='edge_features_in',
+                n_features=self._n_edge_in)
+            scaler_edge_in.set_mean_and_std(mean, std)
         # Get scaling parameters and fit data scalers: node output features
-        mean, std = graph_standard_partial_fit(
-            dataset, features_type='node_features_out',
-            n_features=self._n_node_out)
-        scaler_node_out.set_mean_and_std(mean, std)
+        if self._n_node_out > 0:
+            mean, std = graph_standard_partial_fit(
+                dataset, features_type='node_features_out',
+                n_features=self._n_node_out)
+            scaler_node_out.set_mean_and_std(mean, std)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         if is_verbose:
             print('\n> Setting fitted standard scalers...\n')
