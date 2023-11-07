@@ -55,10 +55,24 @@ def generate_dataset(case_study_name, sim_dataset_file_path, dataset_directory,
     dataset_simulation_data = \
         read_simulation_dataset_from_file(sim_dataset_file_path)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Set GNN-based material patch data set node and edge features
+    if case_study_name == '2d_elastic_orthogonal':
+        # Set node features
+        node_features = ('coord_hist', 'disp_hist')
+        # Set edge features
+        edge_features = ('edge_vector', 'edge_vector_norm', 'relative_disp',
+                         'relative_disp_norm')
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    elif case_study_name == '2d_elastic':
+        raise RuntimeError('Set case-study node and edge features.')
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    else:
+        raise RuntimeError('Unknown case study.')
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Generate GNN-based material patch data set samples files
     dataset_directory, dataset_samples_files = generate_dataset_samples_files(
-        dataset_directory, dataset_simulation_data,
-        sample_file_basename=sample_file_basename,
+        dataset_directory, node_features, edge_features,
+        dataset_simulation_data, sample_file_basename=sample_file_basename,
         is_save_plot_patch=is_save_plot_patch, is_verbose=is_verbose)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Initialize GNN-based material patch data set

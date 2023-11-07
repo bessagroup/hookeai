@@ -45,7 +45,8 @@ __status__ = 'Planning'
 # =============================================================================
 #
 # =============================================================================
-def generate_dataset_samples_files(dataset_directory, dataset_simulation_data,
+def generate_dataset_samples_files(dataset_directory, node_features,
+                                   edge_features, dataset_simulation_data,
                                    sample_file_basename='material_patch_graph',
                                    is_save_plot_patch=False, is_verbose=False):
     """Generate GNN-based material patch data set samples files.
@@ -56,6 +57,12 @@ def generate_dataset_samples_files(dataset_directory, dataset_simulation_data,
         Directory where the GNN-based material patch data set is stored (all
         data set samples files). All existent files are overridden when saving
         sample data files.
+    node_features : tuple[str]
+        GNN-based material patch data set nodes features. Check class
+        GNNPatchFeaturesGenerator for available node features.
+    edge_features : tuple[str]
+        GNN-based material patch data set edges features. Check class
+        GNNPatchFeaturesGenerator for available edge features.
     dataset_simulation_data : list[dict]
         Material patches finite element simulations output data. Output data of
         each material patch is stored in a dict, where:
@@ -151,12 +158,9 @@ def generate_dataset_samples_files(dataset_directory, dataset_simulation_data,
             nodes_disps_hist=nodes_disps_hist,
             nodes_int_forces_hist=nodes_int_forces_hist)
         # Compute node features matrix
-        node_features = ('coord_hist', 'disp_hist')
         node_features_matrix = features_generator.build_nodes_features_matrix(
             features=node_features, n_time_steps=1)
         # Compute edge features matrix
-        edge_features = ('edge_vector', 'edge_vector_norm', 'relative_disp',
-                         'relative_disp_norm')
         edge_features_matrix = features_generator.build_edges_features_matrix(
             features=edge_features, n_time_steps=1)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
