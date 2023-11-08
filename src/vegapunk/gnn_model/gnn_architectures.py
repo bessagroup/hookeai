@@ -114,8 +114,8 @@ class GraphIndependentNetwork(torch.nn.Module):
     forward(self, node_features_in, edge_features_in)
         Forward propagation.
     """
-    def __init__(self, n_hidden_layers, hidden_layer_size, n_node_in=None,
-                 n_node_out=None, n_edge_in=None, n_edge_out=None,
+    def __init__(self, n_hidden_layers, hidden_layer_size, n_node_in=0,
+                 n_node_out=0, n_edge_in=0, n_edge_out=0,
                  node_hidden_activation=torch.nn.Identity,
                  node_output_activation=torch.nn.Identity,
                  edge_hidden_activation=torch.nn.Identity,
@@ -130,18 +130,18 @@ class GraphIndependentNetwork(torch.nn.Module):
         hidden_layer_size : int
             Number of neurons of hidden layers of multilayer feed-forward
             neural network update functions.
-        n_node_in : int, default=None
-            Number of node input features. Must be provided to setup node
-            update function.
-        n_node_out : int, default=None
-            Number of node output features. Must be provided to setup node
-            update function.
-        n_edge_in : int, default=None
-            Number of edge input features. Must be provided to setup edge
-            update function.
-        n_edge_out : int, default=None
-            Number of edge output features. Must be provided to setup edge
-            update function.
+        n_node_in : int, default=0
+            Number of node input features. Must be greater than zero to setup
+            node update function.
+        n_node_out : int, default=0
+            Number of node output features. Must be greater than zero to setup
+            node update function.
+        n_edge_in : int, default=0
+            Number of edge input features. Must be greater than zero to setup
+            edge update function.
+        n_edge_out : int, default=0
+            Number of edge output features. Must be greater than zero to setup
+            edge update function.
         node_hidden_activation : torch.nn.Module, default=torch.nn.Identity
             Hidden unit activation function of node update function (multilayer
             feed-forward neural network). Defaults to identity (linear) unit
@@ -163,23 +163,23 @@ class GraphIndependentNetwork(torch.nn.Module):
         super(GraphIndependentNetwork, self).__init__()
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Set number of features
-        self._n_node_in = n_node_in
-        self._n_node_out = n_node_out
-        self._n_edge_in = n_edge_in
-        self._n_edge_out = n_edge_out
+        self._n_node_in = int(n_node_in)
+        self._n_node_out = int(n_node_out)
+        self._n_edge_in = int(n_edge_in)
+        self._n_edge_out = int(n_edge_out)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Set node update function as multilayer feed-forward neural network
         # with layer normalization
-        if isinstance(n_node_in, int) and isinstance(n_node_out, int):
+        if self._n_node_in > 0 and self._n_node_out > 0:
             # Build multilayer feed-forward neural network
             fnn = build_fnn(
-                input_size=n_node_in,
-                output_size=n_node_out,
+                input_size=self._n_node_in,
+                output_size=self._n_node_out,
                 output_activation=node_output_activation,
                 hidden_layer_sizes=n_hidden_layers*[hidden_layer_size,],
                 hidden_activation=node_hidden_activation)
             # Build normalization layer (per-feature)
-            norm_layer = torch.nn.BatchNorm1d(num_features=n_node_out,
+            norm_layer = torch.nn.BatchNorm1d(num_features=self._n_node_out,
                                               affine=True)
             # Set node update function
             self._node_fn = torch.nn.Sequential()
@@ -190,16 +190,16 @@ class GraphIndependentNetwork(torch.nn.Module):
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Set edge update function as multilayer feed-forward neural network
         # with layer normalization:
-        if isinstance(n_edge_in, int) and isinstance(n_edge_out, int):
+        if self._n_edge_in > 0 and self._n_edge_out > 0:
             # Build multilayer feed-forward neural network
             fnn = build_fnn(
-                input_size=n_edge_in,
-                output_size=n_edge_out,
+                input_size=self._n_edge_in,
+                output_size=self._n_edge_out,
                 output_activation=edge_output_activation,
                 hidden_layer_sizes=n_hidden_layers*[hidden_layer_size,],
                 hidden_activation=edge_hidden_activation)
             # Build normalization layer (per-feature)
-            norm_layer = torch.nn.BatchNorm1d(num_features=n_edge_out,
+            norm_layer = torch.nn.BatchNorm1d(num_features=self._n_edge_out,
                                               affine=True)
             # Set edge update function
             self._edge_fn = torch.nn.Sequential()
