@@ -377,8 +377,8 @@ class GraphInteractionNetwork(torch_geometric.nn.MessagePassing):
         # Check number of input features
         if self._n_node_in < 1 and self._n_edge_in < 1:
             raise RuntimeError(f'Impossible to setup model without node '
-                               f'{(self._n_node_in)} and edge '
-                               f'({self._n_edge_in}) features.')
+                               f'({self._n_node_in}) and edge '
+                               f'({self._n_edge_in}) input features.')
         # Check number of output features
         if self._n_node_out < 1 or self._n_edge_out < 1:
             raise RuntimeError(f'Number of node ({self._n_node_out}) and '
