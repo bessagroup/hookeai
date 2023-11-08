@@ -148,10 +148,10 @@ class EncodeProcessDecode(torch.nn.Module):
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Set GNN-based material patch model encoder
         self._encoder = \
-            Encoder(n_node_in=n_node_in, n_node_out=hidden_layer_size,
-                    n_edge_in=n_edge_in, n_edge_out=hidden_layer_size,
-                    n_hidden_layers=enc_n_hidden_layers,
+            Encoder(n_hidden_layers=enc_n_hidden_layers,
                     hidden_layer_size=hidden_layer_size,
+                    n_node_in=n_node_in, n_node_out=hidden_layer_size,
+                    n_edge_in=n_edge_in, n_edge_out=hidden_layer_size,
                     node_hidden_activation=enc_node_hidden_activation,
                     node_output_activation=enc_node_output_activation,
                     edge_hidden_activation=enc_edge_hidden_activation,

@@ -99,6 +99,8 @@ def test_build_fnn_invalid(input_size, output_size, output_activation,
                          [(1, 5, 2, 3, 2, 4),
                           (3, 2, 1, 4, 1, 2),
                           (2, 4, 5, 4, 0, 2),
+                          (None, None, 5, 4, 0, 2),
+                          (3, 2, None, None, 1, 2),
                           ])
 def test_graph_independent_network_init(n_node_in, n_node_out, n_edge_in,
                                         n_edge_out, n_hidden_layers,
@@ -108,18 +110,22 @@ def test_graph_independent_network_init(n_node_in, n_node_out, n_edge_in,
     errors = []
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Build Graph Independent Network
-    model = GraphIndependentNetwork(n_node_in=n_node_in, n_node_out=n_node_out,
-                                    n_edge_in=n_edge_in, n_edge_out=n_edge_out,
-                                    n_hidden_layers=n_hidden_layers,
+    model = GraphIndependentNetwork(n_hidden_layers=n_hidden_layers,
                                     hidden_layer_size=hidden_layer_size,
+                                    n_node_in=n_node_in, n_node_out=n_node_out,
+                                    n_edge_in=n_edge_in, n_edge_out=n_edge_out,
                                     node_hidden_activation=torch.nn.ReLU,
                                     node_output_activation=torch.nn.Identity,
                                     edge_hidden_activation=torch.nn.ReLU,
                                     edge_output_activation=torch.nn.Identity)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set Graph Independent Network update functions and number of features
-    update_functions = ((model._node_fn, n_node_in, n_node_out),
-                        (model._edge_fn, n_edge_in, n_edge_out))
+    update_functions = []
+    if model._node_fn is not None:
+        update_functions.append((model._node_fn, n_node_in, n_node_out))
+    if model._edge_fn is not None:
+        update_functions.append((model._edge_fn, n_edge_in, n_edge_out))
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Loop over update functions
     for update_fn, n_features_in, n_features_out in update_functions:        
         # Loop over update function modules
@@ -182,6 +188,8 @@ def test_graph_independent_network_init(n_node_in, n_node_out, n_edge_in,
                          [(10, 1, 5, 20, 2, 3, 2, 4),
                           (2, 3, 2, 2, 1, 4, 1, 2),
                           (3, 2, 4, 6, 5, 4, 0, 2),
+                          (3, None, None, 6, 5, 4, 0, 2),
+                          (2, 3, 2, 2, None, None, 1, 2),
                           ])
 def test_graph_independent_network_forward(n_nodes, n_node_in, n_node_out,
                                            n_edges, n_edge_in, n_edge_out,
@@ -191,38 +199,50 @@ def test_graph_independent_network_forward(n_nodes, n_node_in, n_node_out,
     errors = []
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Build Graph Independent Network
-    model = GraphIndependentNetwork(n_node_in=n_node_in, n_node_out=n_node_out,
-                                    n_edge_in=n_edge_in, n_edge_out=n_edge_out,
-                                    n_hidden_layers=n_hidden_layers,
+    model = GraphIndependentNetwork(n_hidden_layers=n_hidden_layers,
                                     hidden_layer_size=hidden_layer_size,
+                                    n_node_in=n_node_in, n_node_out=n_node_out,
+                                    n_edge_in=n_edge_in, n_edge_out=n_edge_out,
                                     node_hidden_activation=torch.nn.ReLU,
                                     node_output_activation=torch.nn.Identity,
                                     edge_hidden_activation=torch.nn.ReLU,
                                     edge_output_activation=torch.nn.Identity)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Generate random nodes features input matrix
-    node_features_in = torch.rand(n_nodes, n_node_in)
+    node_features_in = None
+    if isinstance(n_node_in, int):
+        node_features_in = torch.rand(n_nodes, n_node_in)
     # Generate random edges features input matrix
-    edge_features_in = torch.rand(n_edges, n_edge_in)
+    edge_features_in = None
+    if isinstance(n_edge_in, int):
+        edge_features_in = torch.rand(n_edges, n_edge_in)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Forward propagation
     node_features_out, edge_features_out = model(node_features_in,
                                                  edge_features_in)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Check node features output matrix 
-    if not isinstance(node_features_out, torch.Tensor):
-        errors.append('Nodes features output matrix is not torch.Tensor.')
-    elif not torch.equal(torch.tensor(node_features_out.size()),
-                         torch.tensor([n_nodes, n_node_out])):
-        errors.append('Nodes features output matrix is not torch.Tensor(2d) '
-                      'of shape (n_nodes, n_features).')
+    # Check node features output matrix
+    if model._node_fn is not None:
+        if not isinstance(node_features_out, torch.Tensor):
+            errors.append('Nodes features output matrix is not torch.Tensor.')
+        elif not torch.equal(torch.tensor(node_features_out.size()),
+                             torch.tensor([n_nodes, n_node_out])):
+            errors.append('Nodes features output matrix is not '
+                          'torch.Tensor(2d) of shape (n_nodes, n_features).')
+    else:
+        if node_features_out is not None:
+            errors.append('Nodes features output matrix is not None.')
     # Check edge features output matrix
-    if not isinstance(edge_features_out, torch.Tensor):
-        errors.append('Edges features output matrix is not torch.Tensor.')
-    elif not torch.equal(torch.tensor(edge_features_out.size()),
-                         torch.tensor([n_edges, n_edge_out])):
-        errors.append('Edges features output matrix is not torch.Tensor(2d) '
-                      'of shape (n_edges, n_features).')
+    if model._edge_fn is not None:
+        if not isinstance(edge_features_out, torch.Tensor):
+            errors.append('Edges features output matrix is not torch.Tensor.')
+        elif not torch.equal(torch.tensor(edge_features_out.size()),
+                             torch.tensor([n_edges, n_edge_out])):
+            errors.append('Edges features output matrix is not '
+                          'torch.Tensor(2d) of shape (n_edges, n_features).')
+    else:
+        if edge_features_out is not None:
+            errors.append('Edges features output matrix is not None.')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     assert not errors, "Errors:\n{}".format("\n".join(errors))
 # -----------------------------------------------------------------------------
