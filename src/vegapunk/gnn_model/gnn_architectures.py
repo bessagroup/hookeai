@@ -311,8 +311,8 @@ class GraphInteractionNetwork(torch_geometric.nn.MessagePassing):
     update(self, node_features_in_aggr, node_features_in, edge_features_out)
         Update node features.
     """
-    def __init__(self, n_node_in, n_node_out, n_edge_out,
-                 n_hidden_layers, hidden_layer_size, n_edge_in=0, 
+    def __init__(self, n_node_out, n_edge_out, n_hidden_layers,
+                 hidden_layer_size, n_node_in=0, n_edge_in=0, 
                  aggregation_scheme='add',
                  node_hidden_activation=torch.nn.Identity,
                  node_output_activation=torch.nn.Identity,
@@ -322,8 +322,6 @@ class GraphInteractionNetwork(torch_geometric.nn.MessagePassing):
         
         Parameters
         ----------
-        n_node_in : int
-            Number of node input features.
         n_node_out : int
             Number of node output features.
         n_edge_out : int
@@ -334,6 +332,8 @@ class GraphInteractionNetwork(torch_geometric.nn.MessagePassing):
         hidden_layer_size : int
             Number of neurons of hidden layers of multilayer feed-forward
             neural network update functions.
+        n_node_in : int, default=0
+            Number of node input features.
         n_edge_in : int, default=0
             Number of edge input features.
         aggregation_scheme : {'add',}, default='add'
@@ -374,16 +374,16 @@ class GraphInteractionNetwork(torch_geometric.nn.MessagePassing):
         self._n_edge_in = int(n_edge_in)
         self._n_edge_out = int(n_edge_out)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Check number of input features
+        if self._n_node_in < 1 and self._n_edge_in < 1:
+            raise RuntimeError(f'Impossible to setup model without node '
+                               f'{(self._n_node_in)} and edge '
+                               f'({self._n_edge_in}) features.')
         # Check number of output features
         if self._n_node_out < 1 or self._n_edge_out < 1:
             raise RuntimeError(f'Number of node ({self._n_node_out}) and '
                                f'edge ({self._n_edge_out}) output features '
-                               f'must be greater than 0.')
-        # Check number of node input features
-        if self._n_node_in < 1:
-            raise RuntimeError('Current implementation of Graph Interaction '
-                               'Network does not support the absence of '
-                               'node input features.')
+                               f'must be greater than 0.')        
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Set node update function as multilayer feed-forward neural network
         # with layer normalization:
@@ -419,7 +419,8 @@ class GraphInteractionNetwork(torch_geometric.nn.MessagePassing):
         self._edge_fn.add_module('FNN', fnn)
         self._edge_fn.add_module('Norm-Layer', norm_layer)
     # -------------------------------------------------------------------------
-    def forward(self, edges_indexes, node_features_in, edge_features_in=None):
+    def forward(self, edges_indexes, node_features_in=None,
+                edge_features_in=None):
         """Forward propagation.
         
         Parameters
@@ -428,7 +429,7 @@ class GraphInteractionNetwork(torch_geometric.nn.MessagePassing):
             Edges indexes matrix stored as torch.Tensor(2d) with shape
             (2, n_edges), where the i-th edge is stored in edges_indexes[:, i]
             as (start_node_index, end_node_index).
-        node_features_in : torch.Tensor
+        node_features_in : torch.Tensor, default=None
             Nodes features input matrix stored as a torch.Tensor(2d) of shape
             (n_nodes, n_features).
         edge_features_in : torch.Tensor, default=None
@@ -444,6 +445,12 @@ class GraphInteractionNetwork(torch_geometric.nn.MessagePassing):
             Edges features output matrix stored as a torch.Tensor(2d) of shape
             (n_edges, n_features).
         """
+        # Check input features matrices
+        if node_features_in is None and edge_features_in is None:
+            raise RuntimeError('Impossible to compute forward propagation of '
+                               'model without node (None) and edge (None) '
+                               'input features matrices.')
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Check edges indexes
         if not isinstance(edges_indexes, torch.Tensor):
             raise RuntimeError('Edges indexes matrix is not a torch.Tensor.')
@@ -452,20 +459,21 @@ class GraphInteractionNetwork(torch_geometric.nn.MessagePassing):
                                'of shape (2, n_edges).')
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Check number of nodes
-        if not isinstance(node_features_in, torch.Tensor):
-            raise RuntimeError('Nodes features input matrix is not a '
-                               'torch.Tensor.')
-        elif node_features_in.shape[0] < 2:
-            raise RuntimeError(f'Number of nodes '
-                                f'({node_features_in.shape[0]}) must be '
-                                f'greater than 1 to compute standard '
-                                f'deviation in the corresponding update '
-                                f'functions normalization layer.')
-        elif node_features_in.shape[1] != self._n_node_in:
-            raise RuntimeError(f'Mismatch of number of node features of '
-                                f'model ({self._n_node_in}) and nodes '
-                                f'input features matrix '
-                                f'({node_features_in.shape[1]}).')
+        if node_features_in is not None:
+            if not isinstance(node_features_in, torch.Tensor):
+                raise RuntimeError('Nodes features input matrix is not a '
+                                   'torch.Tensor.')
+            elif node_features_in.shape[0] < 2:
+                raise RuntimeError(f'Number of nodes '
+                                    f'({node_features_in.shape[0]}) must be '
+                                    f'greater than 1 to compute standard '
+                                    f'deviation in the corresponding update '
+                                    f'functions normalization layer.')
+            elif node_features_in.shape[1] != self._n_node_in:
+                raise RuntimeError(f'Mismatch of number of node features of '
+                                    f'model ({self._n_node_in}) and nodes '
+                                    f'input features matrix '
+                                    f'({node_features_in.shape[1]}).')
         # Check number of edges
         if edge_features_in is not None:
             if not isinstance(edge_features_in, torch.Tensor):
@@ -537,14 +545,28 @@ class GraphInteractionNetwork(torch_geometric.nn.MessagePassing):
             Edges features output matrix stored as a torch.Tensor(2d) of shape
             (n_edges, n_features).
         """
-        # Concatenate features for each edge:
-        # Concatenate node input features
-        edge_features_in_cat = \
-            torch.cat([node_features_in_i, node_features_in_j], dim=-1)
-        # Concatenate edge input features
-        if edge_features_in is not None:
+        # Check input features
+        is_node_features_in = (node_features_in_i is not None
+                               and node_features_in_j is not None)
+        is_edge_features_in = edge_features_in is not None
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Concatenate available input features for each edge
+        if is_node_features_in and is_edge_features_in:
+            # Concatenate nodes and edges input features
             edge_features_in_cat = \
-                torch.cat([edge_features_in_cat, edge_features_in], dim=-1)
+                torch.cat([node_features_in_i, node_features_in_j,
+                           edge_features_in], dim=-1)
+        elif is_node_features_in and not is_edge_features_in:
+            # Concatenate nodes input features
+            edge_features_in_cat = \
+                torch.cat([node_features_in_i, node_features_in_j], dim=-1)
+        elif is_edge_features_in:
+            # Concatenate edges input features
+            edge_features_in_cat = edge_features_in
+        else:
+            raise RuntimeError('Impossible to build edge update function '
+                               'input features matrix without node (None) and '
+                               'edge (None) input features matrices')
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Update edge features
         edge_features_out = self._edge_fn(edge_features_in_cat)
@@ -554,7 +576,7 @@ class GraphInteractionNetwork(torch_geometric.nn.MessagePassing):
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         return edge_features_out
     # -------------------------------------------------------------------------
-    def update(self, node_features_in_aggr, node_features_in):
+    def update(self, node_features_in_aggr, node_features_in=None):
         """Update node features.
         
         The nodes features input matrix resulting from message passing and
@@ -566,9 +588,9 @@ class GraphInteractionNetwork(torch_geometric.nn.MessagePassing):
         ----------
         node_features_in_aggr : torch.Tensor
             Nodes features input matrix resulting from message passing and
-            aggregation, stored as a torch.Tensor(2d) of shape
+            edge-to-node aggregation, stored as a torch.Tensor(2d) of shape
             (n_nodes, n_features).
-        node_features_in : torch.Tensor
+        node_features_in : torch.Tensor, default=None
             Nodes features input matrix stored as a torch.Tensor(2d) of shape
             (n_nodes, n_features).
               
@@ -578,9 +600,13 @@ class GraphInteractionNetwork(torch_geometric.nn.MessagePassing):
             Nodes features output matrix stored as a torch.Tensor(2d) of shape
             (n_nodes, n_features).
         """
-        # Concatenate features for each node
-        node_features_in_cat = torch.cat([node_features_in_aggr,
-                                          node_features_in], dim=-1)
+        # Concatenate features for each node:
+        # Set node features stemming from edge-to-node aggregation
+        node_features_in_cat = node_features_in_aggr
+        # Concatenate available node input features
+        if node_features_in is not None:
+            node_features_in_cat = \
+                torch.cat([node_features_in_cat, node_features_in], dim=-1)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Update node features
         node_features_out = self._node_fn(node_features_in_cat)

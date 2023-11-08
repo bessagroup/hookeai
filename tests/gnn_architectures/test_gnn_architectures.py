@@ -252,6 +252,7 @@ def test_graph_independent_network_forward(n_nodes, n_node_in, n_node_out,
                          [(1, 5, 2, 3, 2, 4, 'add'),
                           (3, 2, 1, 4, 1, 2, 'add'),
                           (2, 4, 5, 4, 0, 2, 'add'),
+                          (0, 4, 5, 4, 0, 2, 'add'),
                           (2, 4, 0, 4, 0, 2, 'add'),
                           ])
 def test_graph_interaction_network_init(n_node_in, n_node_out, n_edge_in,
@@ -262,11 +263,11 @@ def test_graph_interaction_network_init(n_node_in, n_node_out, n_edge_in,
     errors = []
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Build Graph Interaction Network
-    model = GraphInteractionNetwork(n_node_in=n_node_in, n_node_out=n_node_out,
+    model = GraphInteractionNetwork(n_node_out=n_node_out,
                                     n_edge_out=n_edge_out,
                                     n_hidden_layers=n_hidden_layers,
                                     hidden_layer_size=hidden_layer_size,
-                                    n_edge_in=n_edge_in, 
+                                    n_node_in=n_node_in, n_edge_in=n_edge_in, 
                                     aggregation_scheme=aggregation_scheme,
                                     node_hidden_activation=torch.nn.ReLU,
                                     node_output_activation=torch.nn.Identity,
@@ -339,6 +340,7 @@ def test_graph_interaction_network_init(n_node_in, n_node_out, n_edge_in,
                          [(10, 1, 5, 20, 2, 3, 2, 4, 'add'),
                           (2, 3, 2, 2, 1, 4, 1, 2, 'add'),
                           (3, 2, 4, 6, 5, 4, 0, 2, 'add'),
+                          (2, 0, 2, 2, 1, 4, 1, 2, 'add'),
                           (3, 2, 4, 6, 0, 4, 0, 2, 'add'),
                           ])
 def test_graph_interaction_network_forward(n_nodes, n_node_in, n_node_out,
@@ -350,11 +352,11 @@ def test_graph_interaction_network_forward(n_nodes, n_node_in, n_node_out,
     errors = []
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Build Graph Interaction Network
-    model = GraphInteractionNetwork(n_node_in=n_node_in, n_node_out=n_node_out,
+    model = GraphInteractionNetwork(n_node_out=n_node_out,
                                     n_edge_out=n_edge_out,
                                     n_hidden_layers=n_hidden_layers,
                                     hidden_layer_size=hidden_layer_size,
-                                    n_edge_in=n_edge_in,
+                                    n_node_in=n_node_in, n_edge_in=n_edge_in,
                                     aggregation_scheme=aggregation_scheme,
                                     node_hidden_activation=torch.nn.ReLU,
                                     node_output_activation=torch.nn.Identity,
@@ -362,7 +364,9 @@ def test_graph_interaction_network_forward(n_nodes, n_node_in, n_node_out,
                                     edge_output_activation=torch.nn.Identity)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Generate random nodes features input matrix
-    node_features_in = torch.rand(n_nodes, n_node_in)
+    node_features_in = None
+    if n_node_in > 0:
+        node_features_in = torch.rand(n_nodes, n_node_in)
     # Generate random edges features input matrix
     edge_features_in = None
     if n_edge_in > 0:
@@ -400,6 +404,7 @@ def test_graph_interaction_network_forward(n_nodes, n_node_in, n_node_out,
                          [(10, 1, 5, 20, 2, 3, 2, 4, 'add'),
                           (2, 3, 2, 2, 1, 4, 1, 2, 'add'),
                           (3, 2, 4, 6, 5, 4, 0, 2, 'add'),
+                          (2, 0, 2, 2, 1, 4, 1, 2, 'add'),
                           (3, 2, 4, 6, 0, 4, 0, 2, 'add'),
                           ])
 def test_graph_interaction_network_message(n_nodes, n_node_in, n_node_out,
@@ -411,11 +416,11 @@ def test_graph_interaction_network_message(n_nodes, n_node_in, n_node_out,
     errors = []
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Build Graph Interaction Network
-    model = GraphInteractionNetwork(n_node_in=n_node_in, n_node_out=n_node_out,
+    model = GraphInteractionNetwork(n_node_out=n_node_out,
                                     n_edge_out=n_edge_out,
                                     n_hidden_layers=n_hidden_layers,
                                     hidden_layer_size=hidden_layer_size,
-                                    n_edge_in=n_edge_in,
+                                    n_node_in=n_node_in, n_edge_in=n_edge_in,
                                     node_hidden_activation=torch.nn.ReLU,
                                     node_output_activation=torch.nn.Identity,
                                     edge_hidden_activation=torch.nn.ReLU,
@@ -423,9 +428,13 @@ def test_graph_interaction_network_message(n_nodes, n_node_in, n_node_out,
                                     aggregation_scheme=aggregation_scheme)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Generate random source nodes features input matrix
-    node_features_in_i = torch.rand(n_edges, n_node_in)
+    node_features_in_i = None
+    if n_node_in > 0:
+        node_features_in_i = torch.rand(n_edges, n_node_in)
     # Generate random source nodes features input matrix
-    node_features_in_j = torch.rand(n_edges, n_node_in)
+    node_features_in_j = None
+    if n_node_in > 0:
+        node_features_in_j = torch.rand(n_edges, n_node_in)
     # Generate random edges features input matrix
     edge_features_in = None
     if n_edge_in > 0:
@@ -453,6 +462,7 @@ def test_graph_interaction_network_message(n_nodes, n_node_in, n_node_out,
                          [(10, 1, 5, 20, 2, 3, 2, 4, 'add'),
                           (2, 3, 2, 2, 1, 4, 1, 2, 'add'),
                           (3, 2, 4, 6, 5, 4, 0, 2, 'add'),
+                          (2, 0, 2, 2, 1, 4, 1, 2, 'add'),
                           (3, 2, 4, 6, 0, 4, 0, 2, 'add'),
                           ])
 def test_graph_interaction_network_update(n_nodes, n_node_in, n_node_out,
@@ -464,11 +474,11 @@ def test_graph_interaction_network_update(n_nodes, n_node_in, n_node_out,
     errors = []
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Build Graph Interaction Network
-    model = GraphInteractionNetwork(n_node_in=n_node_in, n_node_out=n_node_out,
+    model = GraphInteractionNetwork(n_node_out=n_node_out,
                                     n_edge_out=n_edge_out,
                                     n_hidden_layers=n_hidden_layers,
                                     hidden_layer_size=hidden_layer_size,
-                                    n_edge_in=n_edge_in,
+                                    n_node_in=n_node_in, n_edge_in=n_edge_in,
                                     aggregation_scheme=aggregation_scheme,
                                     node_hidden_activation=torch.nn.ReLU,
                                     node_output_activation=torch.nn.Identity,
@@ -478,7 +488,9 @@ def test_graph_interaction_network_update(n_nodes, n_node_in, n_node_out,
     # Generate random nodes features input matrix (resulting from aggregation)
     node_features_in_aggr = torch.rand(n_nodes, n_edge_out)
     # Generate random nodes features input matrix
-    node_features_in = torch.rand(n_nodes, n_node_in)
+    node_features_in = None
+    if n_node_in > 0:
+        node_features_in = torch.rand(n_nodes, n_node_in)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Forward propagation (node update)
     node_features_out = \

@@ -161,12 +161,12 @@ class EncodeProcessDecode(torch.nn.Module):
         if self._n_message_steps > 0:
             self._processor = \
                 Processor(n_message_steps=n_message_steps,
-                          n_node_in=hidden_layer_size,
                           n_node_out=hidden_layer_size,
-                          n_edge_in=hidden_layer_size,
                           n_edge_out=hidden_layer_size,
                           n_hidden_layers=pro_n_hidden_layers,
                           hidden_layer_size=hidden_layer_size,
+                          n_node_in=hidden_layer_size,
+                          n_edge_in=hidden_layer_size,
                           aggregation_scheme=pro_aggregation_scheme,
                           node_hidden_activation=pro_node_hidden_activation,
                           node_output_activation=pro_node_output_activation,
@@ -215,9 +215,9 @@ class EncodeProcessDecode(torch.nn.Module):
         # Perform processing (message-passing steps)
         if self._n_message_steps > 0:
             node_features, edge_features = \
-                self._processor(node_features_in=node_features,
-                                edge_features_in=edge_features,
-                                edges_indexes=edges_indexes)                
+                self._processor(edges_indexes=edges_indexes,
+                                node_features_in=node_features,
+                                edge_features_in=edge_features)                
         # Perform decoding
         node_features_out = self._decoder(node_features_in=node_features)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -342,11 +342,10 @@ class Processor(torch_geometric.nn.MessagePassing):
         # Set sequence of identical Graph Interaction Networks
         self._processor = torch.nn.ModuleList(
             [GraphInteractionNetwork(
-                n_node_in=n_node_in, n_node_out=n_node_out,
-                n_edge_out=n_edge_out,
+                n_node_out=n_node_out, n_edge_out=n_edge_out,
                 n_hidden_layers=n_hidden_layers,
                 hidden_layer_size=hidden_layer_size,
-                n_edge_in=n_edge_in,
+                n_node_in=n_node_in, n_edge_in=n_edge_in,
                 aggregation_scheme=aggregation_scheme,
                 node_hidden_activation=node_hidden_activation,
                 node_output_activation=node_output_activation,
