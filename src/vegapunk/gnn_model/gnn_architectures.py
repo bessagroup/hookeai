@@ -98,8 +98,16 @@ class GraphIndependentNetwork(torch.nn.Module):
     ----------
     _node_fn : torch.nn.Sequential
         Node update function.
+    _n_node_in : int
+        Number of node input features.
+    _n_node_out : int
+        Number of node output features.
     _edge_fn : torch.nn.Sequential
         Edge update function.
+    _n_edge_in : int
+        Number of edge input features.
+    _n_edge_out : int
+        Number of edge input features.
         
     Methods
     -------
@@ -153,6 +161,12 @@ class GraphIndependentNetwork(torch.nn.Module):
         """
         # Initialize Graph Network block from base class
         super(GraphIndependentNetwork, self).__init__()
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set number of features
+        self._n_node_in = n_node_in
+        self._n_node_out = n_node_out
+        self._n_edge_in = n_edge_in
+        self._n_edge_out = n_edge_out
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Set node update function as multilayer feed-forward neural network
         # with layer normalization
@@ -234,6 +248,11 @@ class GraphIndependentNetwork(torch.nn.Module):
                                    f'greater than 1 to compute standard '
                                    f'deviation in the corresponding update '
                                    f'functions normalization layer.')
+            elif node_features_in.shape[1] != self._n_node_in:
+                raise RuntimeError(f'Mismatch of number of node features of '
+                                   f'model ({self._n_node_in}) and nodes '
+                                   f'input features matrix '
+                                   f'({node_features_in.shape[1]}).')
         # Check number of edges
         if self._edge_fn is not None:
             if not isinstance(edge_features_in, torch.Tensor):
@@ -245,6 +264,11 @@ class GraphIndependentNetwork(torch.nn.Module):
                                    f'greater than 1 to compute standard '
                                    f'deviation in the corresponding update '
                                    f'function normalization layer.')
+            elif edge_features_in.shape[1] != self._n_edge_in:
+                raise RuntimeError(f'Mismatch of number of edge features of '
+                                   f'model ({self._n_edge_in}) and edges '
+                                   f'input features matrix '
+                                   f'({edge_features_in.shape[1]}).')
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Forward propagation: Node update function
         node_features_out = None
