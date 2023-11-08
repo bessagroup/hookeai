@@ -711,10 +711,10 @@ class GNNPatchGraphData:
                                'of dtype int.')
         elif len(edges_indexes.shape) != 2:
             raise RuntimeError('Edges indexes matrix is not a numpy.array '
-                               'of shape (num_edges, 2).')
+                               'of shape (n_edges, 2).')
         elif edges_indexes.shape[1] != 2:
             raise RuntimeError('Edges indexes matrix is not a numpy.array '
-                               'of shape (num_edges, 2).')
+                               'of shape (n_edges, 2).')
 # =============================================================================
 class GNNPatchFeaturesGenerator:
     """GNN-based material patch input and output features generator.
