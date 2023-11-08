@@ -510,7 +510,7 @@ class GraphInteractionNetwork(torch_geometric.nn.MessagePassing):
         features and the corresponding nodes features.
         
         The source and receiver node input features mappings based on the edges
-        indexes matrix are built in the __collect__() method of class
+        indexes matrix are built in the _collect() method of class
         torch_geometric.nn.MessagePassing.
         
         The edges features output matrix is passed as the input tensor to the
