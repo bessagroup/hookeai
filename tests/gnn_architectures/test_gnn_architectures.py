@@ -252,6 +252,7 @@ def test_graph_independent_network_forward(n_nodes, n_node_in, n_node_out,
                          [(1, 5, 2, 3, 2, 4, 'add'),
                           (3, 2, 1, 4, 1, 2, 'add'),
                           (2, 4, 5, 4, 0, 2, 'add'),
+                          (2, 4, 0, 4, 0, 2, 'add'),
                           ])
 def test_graph_interaction_network_init(n_node_in, n_node_out, n_edge_in,
                                         n_edge_out, n_hidden_layers,
@@ -262,9 +263,10 @@ def test_graph_interaction_network_init(n_node_in, n_node_out, n_edge_in,
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Build Graph Interaction Network
     model = GraphInteractionNetwork(n_node_in=n_node_in, n_node_out=n_node_out,
-                                    n_edge_in=n_edge_in, n_edge_out=n_edge_out,
+                                    n_edge_out=n_edge_out,
                                     n_hidden_layers=n_hidden_layers,
                                     hidden_layer_size=hidden_layer_size,
+                                    n_edge_in=n_edge_in, 
                                     aggregation_scheme=aggregation_scheme,
                                     node_hidden_activation=torch.nn.ReLU,
                                     node_output_activation=torch.nn.Identity,
@@ -337,6 +339,7 @@ def test_graph_interaction_network_init(n_node_in, n_node_out, n_edge_in,
                          [(10, 1, 5, 20, 2, 3, 2, 4, 'add'),
                           (2, 3, 2, 2, 1, 4, 1, 2, 'add'),
                           (3, 2, 4, 6, 5, 4, 0, 2, 'add'),
+                          (3, 2, 4, 6, 0, 4, 0, 2, 'add'),
                           ])
 def test_graph_interaction_network_forward(n_nodes, n_node_in, n_node_out,
                                            n_edges, n_edge_in, n_edge_out,
@@ -348,9 +351,10 @@ def test_graph_interaction_network_forward(n_nodes, n_node_in, n_node_out,
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Build Graph Interaction Network
     model = GraphInteractionNetwork(n_node_in=n_node_in, n_node_out=n_node_out,
-                                    n_edge_in=n_edge_in, n_edge_out=n_edge_out,
+                                    n_edge_out=n_edge_out,
                                     n_hidden_layers=n_hidden_layers,
                                     hidden_layer_size=hidden_layer_size,
+                                    n_edge_in=n_edge_in,
                                     aggregation_scheme=aggregation_scheme,
                                     node_hidden_activation=torch.nn.ReLU,
                                     node_output_activation=torch.nn.Identity,
@@ -360,15 +364,17 @@ def test_graph_interaction_network_forward(n_nodes, n_node_in, n_node_out,
     # Generate random nodes features input matrix
     node_features_in = torch.rand(n_nodes, n_node_in)
     # Generate random edges features input matrix
-    edge_features_in = torch.rand(n_edges, n_edge_in)
+    edge_features_in = None
+    if n_edge_in > 0:
+        edge_features_in = torch.rand(n_edges, n_edge_in)
     # Generate random edges indexes
     edges_indexes = torch.randint(low=0, high=n_nodes, size=(2, n_edges),
                                   dtype=torch.long)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Forward propagation
-    node_features_out, edge_features_out = model(node_features_in,
-                                                 edge_features_in,
-                                                 edges_indexes)
+    node_features_out, edge_features_out = \
+        model(edges_indexes=edges_indexes, node_features_in=node_features_in,
+              edge_features_in=edge_features_in)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Check node features output matrix
     if not isinstance(node_features_out, torch.Tensor):
@@ -394,6 +400,7 @@ def test_graph_interaction_network_forward(n_nodes, n_node_in, n_node_out,
                          [(10, 1, 5, 20, 2, 3, 2, 4, 'add'),
                           (2, 3, 2, 2, 1, 4, 1, 2, 'add'),
                           (3, 2, 4, 6, 5, 4, 0, 2, 'add'),
+                          (3, 2, 4, 6, 0, 4, 0, 2, 'add'),
                           ])
 def test_graph_interaction_network_message(n_nodes, n_node_in, n_node_out,
                                            n_edges, n_edge_in, n_edge_out,
@@ -405,9 +412,10 @@ def test_graph_interaction_network_message(n_nodes, n_node_in, n_node_out,
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Build Graph Interaction Network
     model = GraphInteractionNetwork(n_node_in=n_node_in, n_node_out=n_node_out,
-                                    n_edge_in=n_edge_in, n_edge_out=n_edge_out,
+                                    n_edge_out=n_edge_out,
                                     n_hidden_layers=n_hidden_layers,
                                     hidden_layer_size=hidden_layer_size,
+                                    n_edge_in=n_edge_in,
                                     node_hidden_activation=torch.nn.ReLU,
                                     node_output_activation=torch.nn.Identity,
                                     edge_hidden_activation=torch.nn.ReLU,
@@ -419,11 +427,14 @@ def test_graph_interaction_network_message(n_nodes, n_node_in, n_node_out,
     # Generate random source nodes features input matrix
     node_features_in_j = torch.rand(n_edges, n_node_in)
     # Generate random edges features input matrix
-    edge_features_in = torch.rand(n_edges, n_edge_in)
+    edge_features_in = None
+    if n_edge_in > 0:
+        edge_features_in = torch.rand(n_edges, n_edge_in)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Forward propagation (edge update)
-    edge_features_out = model.message(node_features_in_i, node_features_in_j,
-                                      edge_features_in)
+    edge_features_out = model.message(node_features_in_i=node_features_in_i,
+                                      node_features_in_j=node_features_in_j,
+                                      edge_features_in=edge_features_in)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Check edge features output matrix
     if not isinstance(edge_features_out, torch.Tensor):
@@ -442,6 +453,7 @@ def test_graph_interaction_network_message(n_nodes, n_node_in, n_node_out,
                          [(10, 1, 5, 20, 2, 3, 2, 4, 'add'),
                           (2, 3, 2, 2, 1, 4, 1, 2, 'add'),
                           (3, 2, 4, 6, 5, 4, 0, 2, 'add'),
+                          (3, 2, 4, 6, 0, 4, 0, 2, 'add'),
                           ])
 def test_graph_interaction_network_update(n_nodes, n_node_in, n_node_out,
                                           n_edges, n_edge_in, n_edge_out,
@@ -453,9 +465,10 @@ def test_graph_interaction_network_update(n_nodes, n_node_in, n_node_out,
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Build Graph Interaction Network
     model = GraphInteractionNetwork(n_node_in=n_node_in, n_node_out=n_node_out,
-                                    n_edge_in=n_edge_in, n_edge_out=n_edge_out,
+                                    n_edge_out=n_edge_out,
                                     n_hidden_layers=n_hidden_layers,
                                     hidden_layer_size=hidden_layer_size,
+                                    n_edge_in=n_edge_in,
                                     aggregation_scheme=aggregation_scheme,
                                     node_hidden_activation=torch.nn.ReLU,
                                     node_output_activation=torch.nn.Identity,
@@ -468,7 +481,9 @@ def test_graph_interaction_network_update(n_nodes, n_node_in, n_node_out,
     node_features_in = torch.rand(n_nodes, n_node_in)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Forward propagation (node update)
-    node_features_out = model.update(node_features_in_aggr, node_features_in)
+    node_features_out = \
+        model.update(node_features_in_aggr=node_features_in_aggr,
+                     node_features_in=node_features_in)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Check node features output matrix
     if not isinstance(node_features_out, torch.Tensor):

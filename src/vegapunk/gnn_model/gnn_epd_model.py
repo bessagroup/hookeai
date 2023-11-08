@@ -343,9 +343,10 @@ class Processor(torch_geometric.nn.MessagePassing):
         self._processor = torch.nn.ModuleList(
             [GraphInteractionNetwork(
                 n_node_in=n_node_in, n_node_out=n_node_out,
-                n_edge_in=n_edge_in, n_edge_out=n_edge_out,
+                n_edge_out=n_edge_out,
                 n_hidden_layers=n_hidden_layers,
                 hidden_layer_size=hidden_layer_size,
+                n_edge_in=n_edge_in,
                 aggregation_scheme=aggregation_scheme,
                 node_hidden_activation=node_hidden_activation,
                 node_output_activation=node_output_activation,
@@ -392,9 +393,9 @@ class Processor(torch_geometric.nn.MessagePassing):
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Perform graph neural network message-passing step
             node_features_out, edge_features_out = \
-                gnn_model(node_features_in=node_features_out,
-                          edge_features_in=edge_features_out,
-                          edges_indexes=edges_indexes)
+                gnn_model(edges_indexes=edges_indexes,
+                          node_features_in=node_features_out,
+                          edge_features_in=edge_features_out)
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Add residual connections to features output
             if self._is_node_res_connect:
