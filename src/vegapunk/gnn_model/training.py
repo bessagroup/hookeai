@@ -157,7 +157,7 @@ def train_model(n_train_steps, dataset, model_init_args, lr_init,
               '\n--------------------------------------------')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Initialize GNN-based material patch model
-    model = GNNMaterialPatchModel(**model_init_args)
+    model = GNNMaterialPatchModel(**model_init_args)    
     # Set model device
     model.set_device(device_type)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~  
