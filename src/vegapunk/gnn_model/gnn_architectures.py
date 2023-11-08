@@ -89,10 +89,9 @@ def build_fnn(input_size, output_size,
 class GraphIndependentNetwork(torch.nn.Module):
     """Graph Independent Network.
     
-    A Graph Network block with (1) distinct update functions for node, edge and
-    global features implemented as multilayer feed-forward neural networks
-    and (2) no aggregation functions, i.e., independent node, edges and global
-    blocks.
+    A Graph Network block with (1) distinct update functions for node and edge
+    features implemented as multilayer feed-forward neural networks and (2) no
+    aggregation functions, i.e., independent node and edges blocks.
     
     Attributes
     ----------
