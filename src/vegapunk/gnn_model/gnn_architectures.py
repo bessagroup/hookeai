@@ -431,7 +431,10 @@ class GraphInteractionNetwork(torch_geometric.nn.MessagePassing):
             as (start_node_index, end_node_index).
         node_features_in : torch.Tensor, default=None
             Nodes features input matrix stored as a torch.Tensor(2d) of shape
-            (n_nodes, n_features).
+            (n_nodes, n_features). If None, the edge-to-node aggregation is
+            only built up to the highest receiver node index according with
+            edges_indexes. To preserve total number of nodes in edge-to-node
+            aggregation, pass torch.empty(n_nodes, 0) instead of None.
         edge_features_in : torch.Tensor, default=None
             Edges features input matrix stored as a torch.Tensor(2d) of shape
             (n_edges, n_features).
@@ -599,12 +602,20 @@ class GraphInteractionNetwork(torch_geometric.nn.MessagePassing):
         node_features_out : torch.Tensor
             Nodes features output matrix stored as a torch.Tensor(2d) of shape
             (n_nodes, n_features).
-        """
+        """        
         # Concatenate features for each node:
         # Set node features stemming from edge-to-node aggregation
         node_features_in_cat = node_features_in_aggr
         # Concatenate available node input features
         if node_features_in is not None:
+            # Check number of nodes stemming from edge-to-node aggregation
+            if node_features_in_aggr.shape[0] != node_features_in.shape[0]:
+                raise RuntimeError(f'Mismatch between number of nodes '
+                                   f'stemming from edge-to-node aggregation '
+                                   f'({node_features_in_aggr.shape[0]}) '
+                                   f'and nodes features input matrix '
+                                   f'({node_features_in.shape[0]}).')
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             node_features_in_cat = \
                 torch.cat([node_features_in_cat, node_features_in], dim=-1)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

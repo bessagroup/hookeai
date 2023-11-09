@@ -218,8 +218,8 @@ def test_graph_independent_network_forward(n_nodes, n_node_in, n_node_out,
         edge_features_in = torch.rand(n_edges, n_edge_in)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Forward propagation
-    node_features_out, edge_features_out = model(node_features_in,
-                                                 edge_features_in)
+    node_features_out, edge_features_out = model(
+        node_features_in=node_features_in, edge_features_in=edge_features_in)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Check node features output matrix
     if model._node_fn is not None:
@@ -338,9 +338,9 @@ def test_graph_interaction_network_init(n_node_in, n_node_out, n_edge_in,
                          'n_hidden_layers, hidden_layer_size,'
                          'aggregation_scheme',
                          [(10, 1, 5, 20, 2, 3, 2, 4, 'add'),
-                          (2, 3, 2, 2, 1, 4, 1, 2, 'add'),
+                          (4, 3, 2, 2, 1, 4, 1, 2, 'add'),
                           (3, 2, 4, 6, 5, 4, 0, 2, 'add'),
-                          (2, 0, 2, 2, 1, 4, 1, 2, 'add'),
+                          (4, 0, 1, 2, 1, 1, 1, 2, 'add'),
                           (3, 2, 4, 6, 0, 4, 0, 2, 'add'),
                           ])
 def test_graph_interaction_network_forward(n_nodes, n_node_in, n_node_out,
@@ -364,7 +364,7 @@ def test_graph_interaction_network_forward(n_nodes, n_node_in, n_node_out,
                                     edge_output_activation=torch.nn.Identity)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Generate random nodes features input matrix
-    node_features_in = None
+    node_features_in = torch.empty(n_nodes, 0)
     if n_node_in > 0:
         node_features_in = torch.rand(n_nodes, n_node_in)
     # Generate random edges features input matrix
