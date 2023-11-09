@@ -215,8 +215,10 @@ class GraphIndependentNetwork(torch.nn.Module):
         # Check update functions
         if self._node_fn is None and self._edge_fn is None:
             raise RuntimeError('Graph Independent Network was initialized '
-                               'without setting up any update function '
-                               '(neither node or edge).')
+                               'without setting up any node or edge update '
+                               'function. Set positive number of features '
+                               'for at least the node or the edge update '
+                               'function.')
     # -------------------------------------------------------------------------
     def forward(self, node_features_in=None, edge_features_in=None):
         """Forward propagation.
