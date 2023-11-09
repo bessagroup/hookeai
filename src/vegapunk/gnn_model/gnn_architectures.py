@@ -241,7 +241,7 @@ class GraphIndependentNetwork(torch.nn.Module):
             Edges features output matrix stored as a torch.Tensor(2d) of shape
             (n_edges, n_features). None if edge update function is not setup.
         """
-        # Check number of nodes
+        # Check number of nodes and nodes features
         if self._node_fn is not None:
             if not isinstance(node_features_in, torch.Tensor):
                 raise RuntimeError('Nodes features input matrix is not a '
@@ -257,7 +257,7 @@ class GraphIndependentNetwork(torch.nn.Module):
                                    f'model ({self._n_node_in}) and nodes '
                                    f'input features matrix '
                                    f'({node_features_in.shape[1]}).')
-        # Check number of edges
+        # Check number of edges and edges features
         if self._edge_fn is not None:
             if not isinstance(edge_features_in, torch.Tensor):
                 raise RuntimeError('Edges features input matrix is not a '
@@ -466,7 +466,7 @@ class GraphInteractionNetwork(torch_geometric.nn.MessagePassing):
             raise RuntimeError('Edges indexes matrix is not a torch.Tensor '
                                'of shape (2, n_edges).')
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        # Check number of nodes
+        # Check number of nodes and nodes features
         if node_features_in is not None:
             if not isinstance(node_features_in, torch.Tensor):
                 raise RuntimeError('Nodes features input matrix is not a '
@@ -482,7 +482,7 @@ class GraphInteractionNetwork(torch_geometric.nn.MessagePassing):
                                     f'model ({self._n_node_in}) and nodes '
                                     f'input features matrix '
                                     f'({node_features_in.shape[1]}).')
-        # Check number of edges
+        # Check number of edges and edges features
         if edge_features_in is not None:
             if not isinstance(edge_features_in, torch.Tensor):
                 raise RuntimeError('Edges features input matrix is not a '
