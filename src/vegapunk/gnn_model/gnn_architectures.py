@@ -53,6 +53,11 @@ def build_fnn(input_size, output_size,
     fnn : torch.nn.Sequential
         Multilayer feed-forward neural network.
     """
+    # Check input and output size
+    if int(input_size) < 1 or int(output_size) < 1:
+        raise RuntimeError(f'Number of input ({int(input_size)}) and output '
+                           f'({output_size}) features must be at least 1.')
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set number of neurons of each layer
     layer_sizes = []
     layer_sizes.append(input_size)
