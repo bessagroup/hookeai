@@ -115,7 +115,7 @@ class GraphIndependentNetwork(torch.nn.Module):
         
     Methods
     -------
-    forward(self, node_features_in, edge_features_in)
+    forward(self, node_features_in=None, edge_features_in=None)
         Forward propagation.
     """
     def __init__(self, n_hidden_layers, hidden_layer_size, n_node_in=0,
@@ -311,11 +311,12 @@ class GraphInteractionNetwork(torch_geometric.nn.MessagePassing):
         
     Methods
     -------
-    forward(self, node_features_in, edge_features_in, edges_indexes)
+    forward(self, edges_indexes, node_features_in=None, edge_features_in=None)
         Forward propagation.
-    message(self, node_features_in_i, node_features_in_j, edge_features_in)
+    message(self, node_features_in_i, node_features_in_j, \
+            edge_features_in=None)
         Builds messages to node i from each edge (j, i) (edge update).
-    update(self, node_features_in_aggr, node_features_in, edge_features_out)
+    update(self, node_features_in_aggr, node_features_in=None)
         Update node features.
     """
     def __init__(self, n_node_out, n_edge_out, n_hidden_layers,
