@@ -27,6 +27,10 @@ __status__ = 'Planning'
                          'hidden_activation, output_activation, device_type',
                          [(2, 5, 4, 10, 2, 3, 'material_patch_model', True,
                            'add', torch.nn.ReLU, torch.nn.Identity, 'cpu'),
+                          (0, 5, 4, 10, 2, 3, 'material_patch_model', True,
+                           'add', torch.nn.ReLU, torch.nn.Identity, 'cpu'),
+                          (2, 5, 0, 10, 2, 3, 'material_patch_model', True,
+                           'add', torch.nn.ReLU, torch.nn.Identity, 'cpu'),
                           ])
 def test_material_patch_model_init(n_node_in, n_node_out, n_edge_in,
                                    n_message_steps, n_hidden_layers,
@@ -124,6 +128,8 @@ def test_material_patch_model_init(n_node_in, n_node_out, n_edge_in,
                          'n_hidden_layers, hidden_layer_size, model_name,'
                          'is_data_normalization, device_type',
                          [(2, 5, 4, 10, 2, 3, 'material_patch_model', True,
+                           'cpu'),
+                          (2, 0, 4, 10, 2, 3, 'material_patch_model', True,
                            'cpu'),
                           ])
 def test_material_patch_model_init_invalid(n_node_in, n_node_out, n_edge_in,

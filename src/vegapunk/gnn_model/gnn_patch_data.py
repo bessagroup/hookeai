@@ -154,7 +154,10 @@ class GNNPatchGraphData:
         -------
         pyg_graph : torch_geometric.data.Data
             PyG data object describing a homogeneous graph.
-        """        
+        """
+        # Set PyG number of nodes
+        num_nodes = self._n_node
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Set PyG node feature matrix
         x = None
         if self._node_features_matrix is not None:
@@ -185,7 +188,7 @@ class GNNPatchGraphData:
         # Instantiate PyG homogeneous graph data object
         pyg_graph = torch_geometric.data.Data(x=x, edge_index=edge_index,
                                               edge_attr=edge_attr, y=y,
-                                              pos=pos)
+                                              pos=pos, num_nodes=num_nodes)
         # Validate graph data object
         pyg_graph.validate(raise_on_error=True)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

@@ -547,7 +547,8 @@ class GNNMaterialPatchModel(torch.nn.Module):
         if isinstance(graph.x, torch.Tensor):
             node_features_in = graph.x.clone()
         else:
-            node_features_in = None
+            # Preserve total number of nodes
+            node_features_in = torch.empty(graph.num_nodes, 0)
         if isinstance(graph.edge_attr, torch.Tensor):
             edge_features_in = graph.edge_attr.clone()
         else:
@@ -561,7 +562,7 @@ class GNNMaterialPatchModel(torch.nn.Module):
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Normalize input features data
         if is_normalized:
-            if node_features_in is not None:
+            if node_features_in is not None and node_features_in.numel() > 0:
                 node_features_in = self.data_scaler_transform(
                     tensor=node_features_in, features_type='node_features_in',
                     mode='normalize')
