@@ -102,6 +102,8 @@ def test_encoder_init(n_node_in, n_node_out, n_edge_in, n_edge_out,
                          [(10, 1, 5, 20, 2, 3, 2, 4),
                           (2, 3, 2, 2, 1, 4, 1, 2),
                           (3, 2, 4, 6, 5, 4, 0, 2),
+                          (2, 0, 2, 2, 1, 4, 1, 2),
+                          (3, 2, 4, 6, 0, 4, 0, 2),
                           ])
 def test_encoder_forward(n_nodes, n_node_in, n_node_out, n_edges, n_edge_in,
                          n_edge_out, n_hidden_layers, hidden_layer_size):
@@ -116,28 +118,40 @@ def test_encoder_forward(n_nodes, n_node_in, n_node_out, n_edges, n_edge_in,
                     hidden_layer_size=hidden_layer_size)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Generate random nodes features input matrix
-    node_features_in = torch.rand(n_nodes, n_node_in)
+    node_features_in = torch.empty(n_nodes, 0)
+    if isinstance(n_node_in, int):
+        node_features_in = torch.rand(n_nodes, n_node_in)
     # Generate random edges features input matrix
-    edge_features_in = torch.rand(n_edges, n_edge_in)
+    edge_features_in = None
+    if isinstance(n_edge_in, int):
+        edge_features_in = torch.rand(n_edges, n_edge_in)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Forward propagation
-    node_features_out, edge_features_out = model(node_features_in,
-                                                 edge_features_in)
+    node_features_out, edge_features_out = model(
+        node_features_in=node_features_in, edge_features_in=edge_features_in)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Check node features output matrix 
-    if not isinstance(node_features_out, torch.Tensor):
-        errors.append('Nodes features output matrix is not torch.Tensor.')
-    elif not torch.equal(torch.tensor(node_features_out.size()),
-                         torch.tensor([n_nodes, n_node_out])):
-        errors.append('Nodes features output matrix is not torch.Tensor(2d) '
-                      'of shape (n_nodes, n_features).')
+    # Check node features output matrix
+    if model._node_fn is not None:
+        if not isinstance(node_features_out, torch.Tensor):
+            errors.append('Nodes features output matrix is not torch.Tensor.')
+        elif not torch.equal(torch.tensor(node_features_out.size()),
+                             torch.tensor([n_nodes, n_node_out])):
+            errors.append('Nodes features output matrix is not '
+                          'torch.Tensor(2d) of shape (n_nodes, n_features).')
+    else:
+        if node_features_out is not None:
+            errors.append('Nodes features output matrix is not None.')
     # Check edge features output matrix
-    if not isinstance(edge_features_out, torch.Tensor):
-        errors.append('Edges features output matrix is not torch.Tensor.')
-    elif not torch.equal(torch.tensor(edge_features_out.size()),
-                         torch.tensor([n_edges, n_edge_out])):
-        errors.append('Edges features output matrix is not torch.Tensor(2d) '
-                      'of shape (n_edges, n_features).')
+    if model._edge_fn is not None:
+        if not isinstance(edge_features_out, torch.Tensor):
+            errors.append('Edges features output matrix is not torch.Tensor.')
+        elif not torch.equal(torch.tensor(edge_features_out.size()),
+                            torch.tensor([n_edges, n_edge_out])):
+            errors.append('Edges features output matrix is not '
+                          'torch.Tensor(2d) of shape (n_edges, n_features).')
+    else:
+        if edge_features_out is not None:
+            errors.append('Edges features output matrix is not None.')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     assert not errors, "Errors:\n{}".format("\n".join(errors))
 # -----------------------------------------------------------------------------
@@ -150,6 +164,10 @@ def test_encoder_forward(n_nodes, n_node_in, n_node_out, n_edges, n_edge_in,
                           (1, 5, 5, 4, 4, 2, 4, True, True),
                           (2, 3, 3, 4, 4, 1, 2, False, False),
                           (2, 3, 3, 4, 4, 1, 2, True, True),
+                          (2, 0, 3, 4, 4, 1, 2, False, True),
+                          (2, 0, 3, 4, 4, 1, 2, False, False),
+                          (2, 3, 3, 0, 4, 1, 2, True, False),
+                          (2, 3, 3, 0, 4, 1, 2, False, False),
                           ])
 def test_processor_init(n_message_steps, n_node_in, n_node_out, n_edge_in,
                         n_edge_out, n_hidden_layers, hidden_layer_size,
@@ -159,10 +177,11 @@ def test_processor_init(n_message_steps, n_node_in, n_node_out, n_edge_in,
     errors = []
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Build GNN-based processor
-    model = Processor(n_message_steps=n_message_steps, n_node_in=n_node_in,
-                      n_node_out=n_node_out, n_edge_in=n_edge_in,
-                      n_edge_out=n_edge_out, n_hidden_layers=n_hidden_layers,
+    model = Processor(n_message_steps=n_message_steps,
+                      n_node_out=n_node_out, n_edge_out=n_edge_out,
+                      n_hidden_layers=n_hidden_layers,
                       hidden_layer_size=hidden_layer_size,
+                      n_node_in=n_node_in, n_edge_in=n_edge_in,
                       is_node_res_connect=is_node_res_connect,
                       is_edge_res_connect=is_edge_res_connect)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -187,7 +206,8 @@ def test_processor_init(n_message_steps, n_node_in, n_node_out, n_edge_in,
                           (1, 2, 5, 4, 3, 2, 4, True, True),
                           (2, 3, 3, 4, 2, 1, 2, False, False),
                           (2, 3, 1, 4, 4, 1, 2, False, False),
-                          (2, 3, 3, 3, 4, 1, 2, False, False)
+                          (2, 3, 3, 3, 4, 1, 2, False, False),
+                          (2, 0, 3, 0, 4, 1, 2, False, False)
                           ])
 def test_processor_init_invalid(n_message_steps, n_node_in, n_node_out,
                                 n_edge_in, n_edge_out, n_hidden_layers,
@@ -196,10 +216,11 @@ def test_processor_init_invalid(n_message_steps, n_node_in, n_node_out,
     """Test detection of invalid input to GNN-based processor constructor."""
     with pytest.raises(RuntimeError):
         # Build GNN-based processor
-        _ = Processor(n_message_steps=n_message_steps, n_node_in=n_node_in,
-                      n_node_out=n_node_out, n_edge_in=n_edge_in,
-                      n_edge_out=n_edge_out, n_hidden_layers=n_hidden_layers,
+        _ = Processor(n_message_steps=n_message_steps, 
+                      n_node_out=n_node_out, n_edge_out=n_edge_out,
+                      n_hidden_layers=n_hidden_layers,
                       hidden_layer_size=hidden_layer_size,
+                      n_node_in=n_node_in, n_edge_in=n_edge_in,
                       is_node_res_connect=is_node_res_connect,
                       is_edge_res_connect=is_edge_res_connect)
 # -----------------------------------------------------------------------------
@@ -213,6 +234,10 @@ def test_processor_init_invalid(n_message_steps, n_node_in, n_node_out,
                           (1, 10, 5, 5, 20, 4, 4, 2, 4, True, True),
                           (2, 10, 3, 3, 20, 4, 4, 1, 2, False, False),
                           (2, 10, 3, 3, 20, 4, 4, 1, 2, True, True),
+                          (2, 10, 0, 3, 20, 4, 4, 1, 2, False, True),
+                          (2, 10, 3, 3, 20, 0, 4, 1, 2, True, False),
+                          (1, 10, 0, 5, 20, 4, 4, 2, 4, False, True),
+                          (1, 10, 3, 3, 20, 0, 4, 1, 2, True, False),
                           ])
 def test_processor_forward(n_message_steps, n_nodes, n_node_in, n_node_out,
                            n_edges, n_edge_in, n_edge_out, n_hidden_layers,
@@ -223,25 +248,30 @@ def test_processor_forward(n_message_steps, n_nodes, n_node_in, n_node_out,
     errors = []
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Build GNN-based processor
-    model = Processor(n_message_steps=n_message_steps, n_node_in=n_node_in,
-                      n_node_out=n_node_out, n_edge_in=n_edge_in,
-                      n_edge_out=n_edge_out, n_hidden_layers=n_hidden_layers,
+    model = Processor(n_message_steps=n_message_steps, 
+                      n_node_out=n_node_out, n_edge_out=n_edge_out,
+                      n_hidden_layers=n_hidden_layers,
                       hidden_layer_size=hidden_layer_size,
+                      n_node_in=n_node_in, n_edge_in=n_edge_in,
                       is_node_res_connect=is_node_res_connect,
                       is_edge_res_connect=is_edge_res_connect)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Generate random nodes features input matrix
-    node_features_in = torch.rand(n_nodes, n_node_in)
+    node_features_in = torch.empty(n_nodes, 0)
+    if n_node_in > 0:
+        node_features_in = torch.rand(n_nodes, n_node_in)
     # Generate random edges features input matrix
-    edge_features_in = torch.rand(n_edges, n_edge_in)
+    edge_features_in = None
+    if n_edge_in > 0:
+        edge_features_in = torch.rand(n_edges, n_edge_in)
     # Generate random edges indexes
     edges_indexes = torch.randint(low=0, high=n_nodes, size=(2, n_edges),
                                   dtype=torch.long)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Forward propagation
-    node_features_out, edge_features_out = model(node_features_in,
-                                                 edge_features_in,
-                                                 edges_indexes)
+    node_features_out, edge_features_out = model(
+        edges_indexes=edges_indexes, node_features_in=node_features_in,
+        edge_features_in=edge_features_in)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Check node features output matrix 
     if not isinstance(node_features_out, torch.Tensor):
@@ -343,7 +373,7 @@ def test_decoder_forward(n_nodes, n_node_in, n_node_out, n_hidden_layers,
     node_features_in = torch.rand(n_nodes, n_node_in)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Forward propagation
-    node_features_out = model(node_features_in)
+    node_features_out = model(node_features_in=node_features_in)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Check node features output matrix 
     if not isinstance(node_features_out, torch.Tensor):
@@ -361,10 +391,10 @@ def test_epd_init():
     errors = []
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Build GNN-based Encoder-Process-Decoder model
-    model = EncodeProcessDecode(n_message_steps=5, n_node_in=2, n_node_out=4,
-                                n_edge_in=3, enc_n_hidden_layers=2,
-                                pro_n_hidden_layers=3, dec_n_hidden_layers=4,
-                                hidden_layer_size=5,
+    model = EncodeProcessDecode(n_message_steps=5, n_node_out=4,
+                                enc_n_hidden_layers=2, pro_n_hidden_layers=3,
+                                dec_n_hidden_layers=4, hidden_layer_size=5,
+                                n_node_in=2, n_edge_in=3,
                                 enc_node_hidden_activation=torch.nn.ReLU,
                                 enc_node_output_activation=torch.nn.Identity,
                                 enc_edge_hidden_activation=torch.nn.ReLU,
@@ -393,6 +423,9 @@ def test_epd_init():
                          'hidden_layer_size, is_node_res_connect,'
                          'is_edge_res_connect',
                          [(4, 10, 5, 5, 20, 4, 6, 3, True, True),
+                          (4, 10, 5, 5, 20, 4, 6, 3, False, False),
+                          (4, 10, 0, 5, 20, 4, 6, 3, False, True),
+                          (4, 10, 5, 5, 20, 0, 6, 3, True, False),
                           ])
 def test_epd_forward(n_message_steps, n_nodes, n_node_in, n_node_out, n_edges,
                      n_edge_in, n_hidden_layers, hidden_layer_size,
@@ -403,12 +436,12 @@ def test_epd_forward(n_message_steps, n_nodes, n_node_in, n_node_out, n_edges,
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Build GNN-based Encoder-Process-Decoder model
     model = EncodeProcessDecode(n_message_steps=n_message_steps,
-                                n_node_in=n_node_in, n_node_out=n_node_out,
-                                n_edge_in=n_edge_in,
+                                n_node_out=n_node_out,
                                 enc_n_hidden_layers=n_hidden_layers,
                                 pro_n_hidden_layers=n_hidden_layers,
                                 dec_n_hidden_layers=n_hidden_layers,
                                 hidden_layer_size=hidden_layer_size,
+                                n_node_in=n_node_in, n_edge_in=n_edge_in,
                                 enc_node_hidden_activation=torch.nn.ReLU,
                                 enc_node_output_activation=torch.nn.Identity,
                                 enc_edge_hidden_activation=torch.nn.ReLU,
@@ -423,16 +456,21 @@ def test_epd_forward(n_message_steps, n_nodes, n_node_in, n_node_out, n_edges,
                                 is_edge_res_connect=is_edge_res_connect)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Generate random nodes features input matrix
-    node_features_in = torch.rand(n_nodes, n_node_in)
+    node_features_in = torch.empty(n_nodes, 0)
+    if n_node_in > 0:
+        node_features_in = torch.rand(n_nodes, n_node_in)
     # Generate random edges features input matrix
-    edge_features_in = torch.rand(n_edges, n_edge_in)
+    edge_features_in = None
+    if n_edge_in > 0:
+        edge_features_in = torch.rand(n_edges, n_edge_in)
     # Generate random edges indexes
     edges_indexes = torch.randint(low=0, high=n_nodes, size=(2, n_edges),
                                   dtype=torch.long)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Forward propagation
-    node_features_out = model(node_features_in, edge_features_in,
-                              edges_indexes)
+    node_features_out = model(edges_indexes=edges_indexes,
+                              node_features_in=node_features_in,
+                              edge_features_in=edge_features_in)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Check node features output matrix 
     if not isinstance(node_features_out, torch.Tensor):

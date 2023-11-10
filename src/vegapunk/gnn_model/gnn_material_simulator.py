@@ -307,11 +307,12 @@ class GNNMaterialPatchModel(torch.nn.Module):
         # Initialize GNN-based Encoder-Process-Decoder model
         self._gnn_epd_model = EncodeProcessDecode(
             n_message_steps=n_message_steps,
-            n_node_in=n_node_in, n_node_out=n_node_out, n_edge_in=n_edge_in,
+            n_node_out=n_node_out, 
             enc_n_hidden_layers=enc_n_hidden_layers,
             pro_n_hidden_layers=pro_n_hidden_layers,
             dec_n_hidden_layers=dec_n_hidden_layers,
             hidden_layer_size=hidden_layer_size,
+            n_node_in=n_node_in, n_edge_in=n_edge_in,
             pro_aggregation_scheme=pro_aggregation_scheme,
             enc_node_hidden_activation=enc_node_hidden_activation,
             enc_node_output_activation=enc_node_output_activation,
@@ -322,7 +323,8 @@ class GNNMaterialPatchModel(torch.nn.Module):
             pro_edge_hidden_activation=pro_edge_hidden_activation,
             pro_edge_output_activation=pro_edge_output_activation,
             dec_node_hidden_activation=dec_node_hidden_activation,
-            dec_node_output_activation=dec_node_output_activation)
+            dec_node_output_activation=dec_node_output_activation,
+            is_node_res_connect=False, is_edge_res_connect=False)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Initialize data scalers
         self._data_scalers = None
@@ -646,9 +648,9 @@ class GNNMaterialPatchModel(torch.nn.Module):
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Predict material patch internal forces
         node_internal_forces = \
-            self._gnn_epd_model(node_features_in=node_features_in,
-                                edge_features_in=edge_features_in,
-                                edges_indexes=edges_indexes)
+            self._gnn_epd_model(edges_indexes=edges_indexes,
+                                node_features_in=node_features_in,
+                                edge_features_in=edge_features_in)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Denormalize output features data
         if self.is_data_normalization and not is_normalized:

@@ -48,9 +48,10 @@ class EncodeProcessDecode(torch.nn.Module):
     forward(self, node_features_in, edge_features_in, edges_indexes)
         Forward propagation.
     """
-    def __init__(self, n_message_steps, n_node_in, n_node_out, n_edge_in,
-                 enc_n_hidden_layers, pro_n_hidden_layers, dec_n_hidden_layers,
-                 hidden_layer_size, pro_aggregation_scheme='add',
+    def __init__(self, n_message_steps, n_node_out, enc_n_hidden_layers,
+                 pro_n_hidden_layers, dec_n_hidden_layers, hidden_layer_size,
+                 n_node_in=0, n_edge_in=0,
+                 pro_aggregation_scheme='add',
                  enc_node_hidden_activation=torch.nn.Identity,
                  enc_node_output_activation=torch.nn.Identity,
                  enc_edge_hidden_activation=torch.nn.Identity,
@@ -71,12 +72,8 @@ class EncodeProcessDecode(torch.nn.Module):
             Number of message-passing steps. Setting number of message-passing
             steps to 0 results in Encoder-Decoder model (Processor is not
             initialized).
-        n_node_in : int
-            Number of node input features.
         n_node_out : int
             Number of node output features.
-        n_edge_in : int
-            Number of edge input features.
         enc_n_hidden_layers : int
             Encoder: Number of hidden layers of multilayer feed-forward neural
             network update functions.
@@ -89,6 +86,10 @@ class EncodeProcessDecode(torch.nn.Module):
         hidden_layer_size : int
             Number of neurons of hidden layers of multilayer feed-forward
             neural network update functions.
+        n_node_in : int, default=0
+            Number of node input features.
+        n_edge_in : int, default=0
+            Number of edge input features.
         pro_aggregation_scheme : {'add',}, default='add'
             Processor: Message-passing aggregation scheme.
         enc_node_hidden_activation : torch.nn.Module, default=torch.nn.Identity
@@ -135,18 +136,47 @@ class EncodeProcessDecode(torch.nn.Module):
             Processor: Add residual connections between nodes input and
             output features if True, False otherwise. Number of input and
             output features must match to process residual connections.
+            Automatically set to False if number of node input features is
+            zero.
         is_edge_res_connect : bool, default=False
             Processor: Add residual connections in between edges input and
             output features if True, False otherwise. Number of input and
             output features must match to process residual connections.
+            Automatically set to False if number of node input features is
+            zero.
         """
         # Initialize from base class
         super(EncodeProcessDecode, self).__init__()
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        # Store number of message-passing steps
-        self._n_message_steps = n_message_steps
+        # Check number of input features
+        if int(n_node_in) < 1 and int(n_edge_in) < 1:
+            raise RuntimeError(f'Impossible to setup model without node '
+                               f'({int(n_node_in)}) and edge '
+                               f'({int(n_edge_in)}) input features.')
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        # Set GNN-based material patch model encoder
+        # Store number of message-passing steps
+        self._n_message_steps = int(n_message_steps)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set node update function hidden layer input size
+        if int(n_node_in) < 1:
+            # Overwrite hidden layer input size when number of node input
+            # features is zero
+            n_node_hidden_in = 0
+            # Turn off node residual connections
+            is_node_res_connect = False
+        else:
+            n_node_hidden_in = hidden_layer_size
+        # Set edge update function hidden layer input size
+        if int(n_edge_in) < 1:
+            # Overwrite hidden layer input size when number of edge input
+            # features is zero
+            n_edge_hidden_in = 0
+            # Turn off edge residual connections
+            is_edge_res_connect = False
+        else:
+            n_edge_hidden_in = hidden_layer_size
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set model encoder
         self._encoder = \
             Encoder(n_hidden_layers=enc_n_hidden_layers,
                     hidden_layer_size=hidden_layer_size,
@@ -156,8 +186,7 @@ class EncodeProcessDecode(torch.nn.Module):
                     node_output_activation=enc_node_output_activation,
                     edge_hidden_activation=enc_edge_hidden_activation,
                     edge_output_activation=enc_edge_output_activation)
-        # Set GNN-based material patch model processor if positive number of
-        # message-passing steps
+        # Set model processor if positive number of message-passing steps
         if self._n_message_steps > 0:
             self._processor = \
                 Processor(n_message_steps=n_message_steps,
@@ -165,8 +194,8 @@ class EncodeProcessDecode(torch.nn.Module):
                           n_edge_out=hidden_layer_size,
                           n_hidden_layers=pro_n_hidden_layers,
                           hidden_layer_size=hidden_layer_size,
-                          n_node_in=hidden_layer_size,
-                          n_edge_in=hidden_layer_size,
+                          n_node_in=n_node_hidden_in,
+                          n_edge_in=n_edge_hidden_in,
                           aggregation_scheme=pro_aggregation_scheme,
                           node_hidden_activation=pro_node_hidden_activation,
                           node_output_activation=pro_node_output_activation,
@@ -176,7 +205,7 @@ class EncodeProcessDecode(torch.nn.Module):
                           is_edge_res_connect=is_edge_res_connect)
         else:
             self._processor = None
-        # Set GNN-based material patch model decoder
+        # Set model decoder
         self._decoder = \
             Decoder(n_node_in=hidden_layer_size, n_node_out=n_node_out,
                     n_hidden_layers=dec_n_hidden_layers,
@@ -184,40 +213,48 @@ class EncodeProcessDecode(torch.nn.Module):
                     node_hidden_activation=dec_node_hidden_activation,
                     node_output_activation=dec_node_output_activation)
     # -------------------------------------------------------------------------
-    def forward(self, node_features_in, edge_features_in, edges_indexes):
+    def forward(self, edges_indexes, node_features_in=None,
+                edge_features_in=None):
         """Forward propagation.
         
         Processor is skipped if number of message-passing steps is set to zero.
         
         Parameters
         ----------
-        node_features_in : torch.Tensor
-            Nodes features input matrix stored as a torch.Tensor(2d) of shape
-            (n_nodes, n_features).
-        edge_features_in : torch.Tensor
-            Edges features input matrix stored as a torch.Tensor(2d) of shape
-            (n_edges, n_features).
         edges_indexes : torch.Tensor
             Edges indexes matrix stored as torch.Tensor(2d) with shape
             (2, n_edges), where the i-th edge is stored in edges_indexes[:, i]
             as (start_node_index, end_node_index).
-        
+        node_features_in : torch.Tensor, default=None
+            Nodes features input matrix stored as a torch.Tensor(2d) of shape
+            (n_nodes, n_features).
+        edge_features_in : torch.Tensor, default=None
+            Edges features input matrix stored as a torch.Tensor(2d) of shape
+            (n_edges, n_features).
+
         Returns
         -------
         node_features_out : torch.Tensor
             Nodes features output matrix stored as a torch.Tensor(2d) of shape
             (n_nodes, n_features).
         """
+        # Check input features matrices
+        if node_features_in is None and edge_features_in is None:
+            raise RuntimeError('Impossible to compute forward propagation of '
+                               'model without node (None) and edge (None) '
+                               'input features matrices.')
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Perform encoding
         node_features, edge_features = \
             self._encoder(node_features_in=node_features_in,
                           edge_features_in=edge_features_in)
         # Perform processing (message-passing steps)
         if self._n_message_steps > 0:
+            # Compute message-passing step
             node_features, edge_features = \
                 self._processor(edges_indexes=edges_indexes,
                                 node_features_in=node_features,
-                                edge_features_in=edge_features)                
+                                edge_features_in=edge_features)  
         # Perform decoding
         node_features_out = self._decoder(node_features_in=node_features)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -250,14 +287,23 @@ class Processor(torch_geometric.nn.MessagePassing):
     ----------
     _processor : torch.nn.ModuleList
         Sequence of graph neural networks.
+    _n_node_in : int
+        Number of node input features.
+    _n_node_out : int
+        Number of node output features.
+    _n_edge_in : int
+        Number of edge input features.
+    _n_edge_out : int
+        Number of edge output features.
         
     Methods
     -------
-    forward(self, node_features_in, edge_features_in, edges_indexes)
+    forward(self, edges_indexes, node_features_in=None, edge_features_in=None)
         Forward propagation.
     """
-    def __init__(self, n_message_steps, n_node_in, n_node_out, n_edge_in,
-                 n_edge_out, n_hidden_layers, hidden_layer_size,
+    def __init__(self, n_message_steps, n_node_out, n_edge_out,
+                 n_hidden_layers, hidden_layer_size,
+                 n_node_in=0, n_edge_in=0,
                  aggregation_scheme='add',
                  node_hidden_activation=torch.nn.Identity,
                  node_output_activation=torch.nn.Identity,
@@ -270,12 +316,8 @@ class Processor(torch_geometric.nn.MessagePassing):
         ----------
         n_message_steps : int
             Number of message-passing steps.
-        n_node_in : int
-            Number of node input features.
         n_node_out : int
             Number of node output features.
-        n_edge_in : int
-            Number of edge input features.
         n_edge_out : int
             Number of edge output features.
         n_hidden_layers : int
@@ -284,6 +326,10 @@ class Processor(torch_geometric.nn.MessagePassing):
         hidden_layer_size : int
             Number of neurons of hidden layers of multilayer feed-forward
             neural network update functions.
+        n_node_in : int, default=0
+            Number of node input features.
+        n_edge_in : int, default=0
+            Number of edge input features.
         aggregation_scheme : {'add',}, default='add'
             Message-passing aggregation scheme.
         node_hidden_activation : torch.nn.Module, default=torch.nn.Identity
@@ -314,12 +360,30 @@ class Processor(torch_geometric.nn.MessagePassing):
         # Initialize from base class
         super(Processor, self).__init__()
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set number of features
+        self._n_node_in = int(n_node_in)
+        self._n_node_out = int(n_node_out)
+        self._n_edge_in = int(n_edge_in)
+        self._n_edge_out = int(n_edge_out)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Check number of input features
+        if self._n_node_in < 1 and self._n_edge_in < 1:
+            raise RuntimeError(f'Impossible to setup model without node '
+                               f'({self._n_node_in}) and edge '
+                               f'({self._n_edge_in}) input features.')
+        # Check number of output features
+        if self._n_node_out < 1 or self._n_edge_out < 1:
+            raise RuntimeError(f'Number of node ({self._n_node_out}) and '
+                               f'edge ({self._n_edge_out}) output features '
+                               f'must be greater than 0.')
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Check number of message-passing steps
         if n_message_steps < 1:
             raise RuntimeError('Number of message-passing steps must be at '
                                'least 1.')
-        elif n_message_steps > 1 and (n_node_in != n_node_out
-                                      or n_edge_in != n_edge_out):
+        elif (n_message_steps > 1
+              and ((n_node_in > 0 and n_node_in != n_node_out)
+              or (n_edge_in > 0 and n_edge_in != n_edge_out))):
             raise RuntimeError('Number of node/edge input and output features '
                                'must match to process multiple '
                                'message-passing steps in sequence.')
@@ -353,21 +417,25 @@ class Processor(torch_geometric.nn.MessagePassing):
                 edge_output_activation=edge_output_activation)
              for _ in range(n_message_steps)])
     # -------------------------------------------------------------------------
-    def forward(self, node_features_in, edge_features_in, edges_indexes):
+    def forward(self, edges_indexes, node_features_in=None,
+                edge_features_in=None):
         """Forward propagation.
         
         Parameters
         ----------
-        node_features_in : torch.Tensor
-            Nodes features input matrix stored as a torch.Tensor(2d) of shape
-            (n_nodes, n_features).
-        edge_features_in : torch.Tensor
-            Edges features input matrix stored as a torch.Tensor(2d) of shape
-            (n_edges, n_features).
         edges_indexes : torch.Tensor
             Edges indexes matrix stored as torch.Tensor(2d) with shape
             (2, n_edges), where the i-th edge is stored in edges_indexes[:, i]
             as (start_node_index, end_node_index).
+        node_features_in : torch.Tensor, default=None
+            Nodes features input matrix stored as a torch.Tensor(2d) of shape
+            (n_nodes, n_features). If None, the edge-to-node aggregation is
+            only built up to the highest receiver node index according with
+            edges_indexes. To preserve total number of nodes in edge-to-node
+            aggregation, pass torch.empty(n_nodes, 0) instead of None.
+        edge_features_in : torch.Tensor, default=None
+            Edges features input matrix stored as a torch.Tensor(2d) of shape
+            (n_edges, n_features).
 
         Returns
         -------
@@ -378,16 +446,39 @@ class Processor(torch_geometric.nn.MessagePassing):
             Edges features output matrix stored as a torch.Tensor(2d) of shape
             (n_edges, n_features).
         """
-        # Initialize recurrent update features
-        node_features_out = node_features_in.clone()
-        edge_features_out = edge_features_in.clone()
+        # Check number of nodes and edges features
+        if node_features_in is not None \
+                and node_features_in.shape[1] != self._n_node_in:
+            raise RuntimeError(f'Mismatch of number of node features of model '
+                               f'({self._n_node_in}) and nodes input features '
+                               f'matrix ({node_features_in.shape[1]}).')
+        elif edge_features_in is not None \
+                and edge_features_in.shape[1] != self._n_edge_in:
+            raise RuntimeError(f'Mismatch of number of edge features of model '
+                               f'({self._n_edge_in}) and edges input features '
+                               f'matrix ({edge_features_in.shape[1]}).')
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Collect number of nodes to preserve total number of nodes in
+        # edge-to-node aggregation when number of node input features is zero
+        n_nodes = None
+        if self._n_node_in < 1 and node_features_in is not None:
+            n_nodes = node_features_in.shape[0]
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Initialize residual update node features
+        node_features_out = None
+        if node_features_in is not None:
+            node_features_out = node_features_in.clone() 
+        # Initialize residual update edge features
+        edge_features_out = None
+        if edge_features_in is not None:
+            edge_features_out = edge_features_in.clone()            
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Loop over message-passing steps
-        for gnn_model in self._processor:
+        for i, gnn_model in enumerate(self._processor):
             # Save features matrix (residual connection)
             if self._is_node_res_connect:
                 node_features_res = node_features_out.clone()
-            if self._is_edge_res_connect:
+            if self._is_edge_res_connect and self._n_edge_in > 0:
                 edge_features_res = edge_features_out.clone()
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Perform graph neural network message-passing step
@@ -396,10 +487,24 @@ class Processor(torch_geometric.nn.MessagePassing):
                           node_features_in=node_features_out,
                           edge_features_in=edge_features_out)
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Check if last message-passing step
+            is_last_step = i == len(self._processor) - 1
+            # Discard node features output matrix except in the last
+            # message-passing step
+            if self._n_node_in < 1 and not is_last_step:
+                if isinstance(n_nodes, int):
+                    node_features_out = torch.empty(n_nodes, 0)
+                else:
+                    node_features_out = None
+            # Discard edge features output matrix except in the last
+            # message-passing step
+            if self._n_edge_in < 1 and not is_last_step:
+                edge_features_out = None
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Add residual connections to features output
-            if self._is_node_res_connect:
+            if self._is_node_res_connect and self._n_node_in > 0:
                 node_features_out += node_features_res
-            if self._is_edge_res_connect:
+            if self._is_edge_res_connect and self._n_edge_in > 0:
                 edge_features_out += edge_features_res
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         return node_features_out, edge_features_out
