@@ -518,13 +518,13 @@ class GNNMaterialPatchModel(torch.nn.Module):
         
         Returns
         -------
-        node_features_in : torch.Tensor
+        node_features_in : {torch.Tensor, None}
             Nodes features input matrix stored as a torch.Tensor(2d) of shape
             (n_nodes, n_features).
-        edge_features_in : torch.Tensor
+        edge_features_in : {torch.Tensor, None}
             Edges features input matrix stored as a torch.Tensor(2d) of shape
             (n_edges, n_features).
-        edges_indexes : torch.Tensor
+        edges_indexes : {torch.Tensor, None}
             Edges indexes matrix stored as torch.Tensor(2d) with shape
             (2, n_edges), where the i-th edge is stored in edges_indexes[:, i]
             as (start_node_index, end_node_index).
@@ -585,7 +585,7 @@ class GNNMaterialPatchModel(torch.nn.Module):
         
         Returns
         -------
-        node_features_out : torch.Tensor
+        node_features_out : {torch.Tensor, None}
             Nodes features output matrix stored as a torch.Tensor(2d) of shape
             (n_nodes, n_features).
         """
