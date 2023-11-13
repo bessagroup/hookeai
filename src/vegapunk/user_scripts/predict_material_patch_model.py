@@ -95,7 +95,8 @@ def perform_model_prediction(predict_directory, dataset_file_path,
                                      is_normalize_data=True,
                                      filename=filename,
                                      save_dir=plot_dir,
-                                     is_save_fig=True, is_stdout_display=False)
+                                     is_save_fig=True, is_stdout_display=False,
+                                     is_latex=True)
 # =============================================================================
 def set_default_prediction_options():
     """Set default GNN-based material patch model prediction options.
@@ -117,10 +118,10 @@ def set_default_prediction_options():
 # =============================================================================
 if __name__ == "__main__":
     # Set in-distribution/out-of-distribution testing flag
-    is_in_dist_testing = False
+    is_in_dist_testing = True
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set case study name
-    case_study_name = '2d_elastic_orthogonal'
+    case_study_name = '2d_elastic'
     # Set case study directory
     case_study_base_dirs = {
         '2d_elastic_orthogonal': f'/home/bernardoferreira/Documents/temp',

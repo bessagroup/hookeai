@@ -115,13 +115,14 @@ def perform_model_standard_training(case_study_name, dataset_file_path,
     # Plot model training process loss history
     plot_training_loss_history(loss_histories, loss_type.upper(),
                                loss_scale='linear', save_dir=plot_dir,
-                               is_save_fig=True, is_stdout_display=False)
+                               is_save_fig=True, is_stdout_display=False,
+                               is_latex=True)
     # Plot model training process loss and learning rate histories
     plot_training_loss_and_lr_history(loss_history, lr_history, loss_type=None,
                                       is_log_loss=False, loss_scale='linear',
                                       lr_type=lr_scheduler_type,
                                       save_dir=plot_dir, is_save_fig=True,
-                                      is_stdout_display=True)
+                                      is_stdout_display=False, is_latex=True)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Display summary of PyTorch model
     _ = get_model_summary(model, device_type=device_type,
@@ -199,7 +200,8 @@ def perform_model_kfold_cross_validation(case_study_name, dataset_file_path,
     # Generate k-fold cross-validation bar plot
     plot_kfold_cross_validation(k_fold_loss_array, loss_type=loss_type.upper(),
                                 loss_scale='log', save_dir=plot_dir,
-                                is_save_fig=True, is_stdout_display=False)
+                                is_save_fig=True, is_stdout_display=False,
+                                is_latex=True)
 # =============================================================================
 def set_case_study_model_parameters(case_study_name, model_directory,
                                     device_type='cpu'):
@@ -323,7 +325,7 @@ def set_default_training_options():
 if __name__ == "__main__":
     # Set computation processes
     is_standard_training = True
-    is_cross_validation = True
+    is_cross_validation = False
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set case study name
     case_study_name = '2d_elastic'
