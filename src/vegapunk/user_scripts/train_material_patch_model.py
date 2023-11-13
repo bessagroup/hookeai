@@ -74,6 +74,11 @@ def perform_model_standard_training(case_study_name, dataset_file_path,
         n_train_steps = 100
         # Set batch size
         batch_size = 1
+        # Set learning rate
+        lr_init = 1.0e-02
+        # Set learning rate scheduler
+        lr_scheduler_type = 'explr'
+        lr_scheduler_kwargs = {'gamma': 0.99}
     else:
         raise RuntimeError('Unknown case study.')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -318,10 +323,10 @@ def set_default_training_options():
 if __name__ == "__main__":
     # Set computation processes
     is_standard_training = True
-    is_cross_validation = False
+    is_cross_validation = True
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set case study name
-    case_study_name = '2d_elastic_orthogonal'
+    case_study_name = '2d_elastic'
     # Set case study directory
     case_study_base_dirs = {
         '2d_elastic_orthogonal': f'/home/bernardoferreira/Documents/temp',

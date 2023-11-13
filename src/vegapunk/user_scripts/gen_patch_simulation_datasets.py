@@ -331,7 +331,7 @@ def set_default_links_parameters():
     """
     # Set Links binary absolute path
     links_bin_path = '/home/bernardoferreira/Documents/repositories/' \
-        + 'external/CM2S/LINKS/bin/LINKS_debug'
+        + 'external/CM2S/LINKS/bin/LINKS'
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set Links strain formulation and analysis type
     strain_formulation = 'finite'
@@ -340,7 +340,7 @@ def set_default_links_parameters():
     # Set Links input data file parameters
     links_input_params = {}
     links_input_params['number_of_increments'] = 10
-    links_input_params['vtk_output'] = 'ASCII'
+    links_input_params['vtk_output'] = 'NONE'
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     return links_bin_path, strain_formulation, analysis_type, \
         links_input_params
@@ -378,7 +378,7 @@ if __name__ == "__main__":
     is_testing_dataset = False
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set case study name
-    case_study_name = '2d_elastic_orthogonal'
+    case_study_name = '2d_elastic'
     # Set case study directory
     case_study_base_dirs = {
         '2d_elastic_orthogonal': f'/home/bernardoferreira/Documents/temp',

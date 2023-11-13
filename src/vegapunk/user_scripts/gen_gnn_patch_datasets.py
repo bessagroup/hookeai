@@ -64,7 +64,11 @@ def generate_dataset(case_study_name, sim_dataset_file_path, dataset_directory,
                          'relative_disp_norm')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     elif case_study_name == '2d_elastic':
-        raise RuntimeError('Set case-study node and edge features.')
+        # Set node features
+        node_features = ('coord_hist', 'disp_hist')
+        # Set edge features
+        edge_features = ('edge_vector', 'edge_vector_norm', 'relative_disp',
+                         'relative_disp_norm')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     else:
         raise RuntimeError('Unknown case study.')
@@ -108,7 +112,7 @@ if __name__ == "__main__":
     is_split_dataset = False
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set case study name
-    case_study_name = '2d_elastic_orthogonal'
+    case_study_name = '2d_elastic'
     # Set case study directory
     case_study_base_dirs = {
         '2d_elastic_orthogonal': f'/home/bernardoferreira/Documents/temp',
