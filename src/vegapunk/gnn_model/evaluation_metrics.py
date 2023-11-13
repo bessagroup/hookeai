@@ -20,12 +20,15 @@ scatter_xy_data
     Scatter data in xy axes.
 save_figure
     Save Matplotlib figure.
+tex_str
+    Format string according with LaTeX rendering option.
 """
 #
 #                                                                       Modules
 # =============================================================================
 # Standard
 import os
+import shutil
 # Third-party
 import numpy as np
 import matplotlib.pyplot as plt
@@ -42,7 +45,7 @@ def plot_training_loss_history(loss_history, loss_type=None, is_log_loss=False,
                                loss_scale='linear', total_n_train_steps=0, 
                                filename='training_loss_history',
                                save_dir=None, is_save_fig=False,
-                               is_stdout_display=False):
+                               is_stdout_display=False, is_latex=False):
     """Plot model training process loss history.
     
     Parameters
@@ -72,6 +75,10 @@ def plot_training_loss_history(loss_history, loss_type=None, is_log_loss=False,
         Save figure.
     is_stdout_display : bool, default=False
         True if displaying figure to standard output device, False otherwise.
+    is_latex : bool, default=False
+        If True, then render all strings in LaTeX. If LaTex is not available,
+        then this option is silently set to False and all input strings are
+        processed to remove $(...)$ enclosure.
     """
     # Check loss history
     if not isinstance(loss_history, dict):
@@ -127,7 +134,7 @@ def plot_training_loss_history(loss_history, loss_type=None, is_log_loss=False,
     figure, _ = plot_xy_data(data_xy, data_labels=data_labels, x_lims=x_lims,
                              y_lims=y_lims, title=title, x_label=x_label,
                              y_label=y_label, y_scale=y_scale,
-                             x_tick_format='int', is_latex=True)
+                             x_tick_format='int', is_latex=is_latex)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Display figure
     if is_stdout_display:
@@ -145,7 +152,7 @@ def plot_training_loss_and_lr_history(loss_history, lr_history, loss_type=None,
                                       lr_type=None, total_n_train_steps=0,
                                       filename='training_loss_and_lr_history',
                                       save_dir=None, is_save_fig=False,
-                                      is_stdout_display=False):
+                                      is_stdout_display=False, is_latex=False):
     """Plot model training process loss and learning rate histories.
     
     Parameters
@@ -179,6 +186,10 @@ def plot_training_loss_and_lr_history(loss_history, lr_history, loss_type=None,
         Save figure.
     is_stdout_display : bool, default=False
         True if displaying figure to standard output device, False otherwise.
+    is_latex : bool, default=False
+        If True, then render all strings in LaTeX. If LaTex is not available,
+        then this option is silently set to False and all input strings are
+        processed to remove $(...)$ enclosure.
     """
     # Check loss history
     if not isinstance(loss_history, list):
@@ -229,7 +240,7 @@ def plot_training_loss_and_lr_history(loss_history, lr_history, loss_type=None,
                               y1_lims=y1_lims, y2_lims=y2_lims, title=title,
                               x_label=x_label, y1_label=y1_label,
                               y2_label=y2_label, y1_scale=y1_scale,
-                              x_tick_format='int', is_latex=True)
+                              x_tick_format='int', is_latex=is_latex)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Display figure
     if is_stdout_display:
@@ -247,7 +258,7 @@ def plot_loss_convergence_test(testing_loss, training_loss=None,
                                loss_scale='linear',
                                filename='loss_convergence_test',
                                save_dir=None, is_save_fig=False,
-                               is_stdout_display=False):
+                               is_stdout_display=False, is_latex=False):
     """Plot testing and training loss for different training data set sizes.
     
     Parameters
@@ -283,6 +294,10 @@ def plot_loss_convergence_test(testing_loss, training_loss=None,
         Save figure.
     is_stdout_display : bool, default=False
         True if displaying figure to standard output device, False otherwise.
+    is_latex : bool, default=False
+        If True, then render all strings in LaTeX. If LaTex is not available,
+        then this option is silently set to False and all input strings are
+        processed to remove $(...)$ enclosure.
     """
     # Check testing loss data array
     if not isinstance(testing_loss, np.ndarray):
@@ -341,7 +356,7 @@ def plot_loss_convergence_test(testing_loss, training_loss=None,
                               data_labels=data_labels, x_lims=x_lims,
                               y_lims=y_lims, title=title, x_label=x_label,
                               y_label=y_label, y_scale=y_scale,
-                              x_tick_format='int', is_latex=True)
+                              x_tick_format='int', is_latex=is_latex)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Display figure
     if is_stdout_display:
@@ -358,7 +373,7 @@ def plot_truth_vs_prediction(prediction_sets, error_bound=None,
                              is_normalize_data=False,
                              filename='prediction_vs_groundtruth',
                              save_dir=None, is_save_fig=False,
-                             is_stdout_display=False):
+                             is_stdout_display=False, is_latex=False):
     """Plot ground-truth against predictions.
     
     Parameters
@@ -384,6 +399,10 @@ def plot_truth_vs_prediction(prediction_sets, error_bound=None,
         Save figure.
     is_stdout_display : bool, default=False
         True if displaying figure to standard output device, False otherwise.
+    is_latex : bool, default=False
+        If True, then render all strings in LaTeX. If LaTex is not available,
+        then this option is silently set to False and all input strings are
+        processed to remove $(...)$ enclosure.
     """
     # Check loss history
     if not isinstance(prediction_sets, dict):
@@ -452,7 +471,7 @@ def plot_truth_vs_prediction(prediction_sets, error_bound=None,
                                 identity_error=identity_error,
                                 x_lims=x_lims, y_lims=y_lims, title=title,
                                 x_label=x_label, y_label=y_label,
-                                is_latex=True)
+                                is_latex=is_latex)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Display figure
     if is_stdout_display:
@@ -469,7 +488,7 @@ def plot_kfold_cross_validation(k_fold_loss_array, loss_type=None,
                                 loss_scale='linear',
                                 filename='kfold_cross_validation',
                                 save_dir=None, is_save_fig=False,
-                                is_stdout_display=False):
+                                is_stdout_display=False, is_latex=False):
     """Plot k-fold cross-validation results.
     
     Parameters
@@ -491,6 +510,10 @@ def plot_kfold_cross_validation(k_fold_loss_array, loss_type=None,
         Save figure.
     is_stdout_display : bool, default=False
         True if displaying figure to standard output device, False otherwise.
+    is_latex : bool, default=False
+        If True, then render all strings in LaTeX. If LaTex is not available,
+        then this option is silently set to False and all input strings are
+        processed to remove $(...)$ enclosure.
     """
     # Check loss history
     if not isinstance(k_fold_loss_array, np.ndarray):
@@ -525,7 +548,7 @@ def plot_kfold_cross_validation(k_fold_loss_array, loss_type=None,
                                   is_avg_hline=True,
                                   title=title, x_label=x_label,
                                   y_label=y_label, y_scale=loss_scale,
-                                  is_latex=True)
+                                  is_latex=is_latex)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Display figure
     if is_stdout_display:
@@ -575,7 +598,9 @@ def plot_xy_data(data_xy, data_labels=None, x_lims=(None, None),
         y-axis ticks formatting. If None or invalid format, then default
         formatting is set.
     is_latex : bool, default=False
-        If True, then render all strings in LaTeX.
+        If True, then render all strings in LaTeX. If LaTex is not available,
+        then this option is silently set to False and all input strings are
+        processed to remove $(...)$ enclosure.
 
     Returns
     -------
@@ -584,6 +609,9 @@ def plot_xy_data(data_xy, data_labels=None, x_lims=(None, None),
     axes : Matplotlib Axes
         Axes.
     """
+    # Reset matplotlib internal default style
+    plt.rcParams.update(plt.rcParamsDefault)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Check data
     if data_xy.shape[1] % 2 != 0:
         raise RuntimeError('Data array must have an even number of columns, '
@@ -609,12 +637,16 @@ def plot_xy_data(data_xy, data_labels=None, x_lims=(None, None),
     # Set default cycler
     default_cycler = cycler_linestyle*cycler_color
     plt.rc('axes', prop_cycle = default_cycler)
-    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~    
+    # Check LaTeX availability
+    if not bool(shutil.which('latex')):
+        is_latex = False
     # Set LaTeX font
     if is_latex:
         # Default LaTeX Computer Modern Roman
-        plt.rc('text',usetex=True)
-        plt.rc('font',**{'family':'serif','serif':['Computer Modern Roman']})
+        plt.rc('text', usetex=True)
+        plt.rc('font', **{'family': 'serif',
+                          'serif': ['Computer Modern Roman']})        
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Create figure
     figure = plt.figure()
@@ -625,10 +657,10 @@ def plot_xy_data(data_xy, data_labels=None, x_lims=(None, None),
     # Create axes
     axes = figure.add_subplot(1, 1, 1)
     # Set title
-    axes.set_title(title, fontsize=12, pad=10)
+    axes.set_title(tex_str(title, is_latex), fontsize=12, pad=10)
     # Set axes labels
-    axes.set_xlabel(x_label, fontsize=12, labelpad=10)
-    axes.set_ylabel(y_label, fontsize=12, labelpad=10)
+    axes.set_xlabel(tex_str(x_label, is_latex), fontsize=12, labelpad=10)
+    axes.set_ylabel(tex_str(y_label, is_latex), fontsize=12, labelpad=10)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set axes scales
     if x_scale in ('linear', 'log'):
@@ -637,11 +669,14 @@ def plot_xy_data(data_xy, data_labels=None, x_lims=(None, None),
         axes.set_yscale(y_scale)
     # Set tick formatting functions
     def intTickFormat(x, pos):
-        return '${:2d}$'.format(int(x))
+        frmt = tex_str('{:2d}', is_latex)
+        return frmt.format(int(x))
     def floatTickFormat(x, pos):
-        return '${:3.1f}$'.format(x)
+        frmt = tex_str('{:3.1f}', is_latex)
+        return frmt.format(x)
     def expTickFormat(x, pos):
-        return '${:7.2e}$'.format(x)
+        frmt = tex_str('{:7.2e}', is_latex)
+        return frmt.format(x)
     tick_formats = {'int': intTickFormat, 'float': floatTickFormat,
                     'exp': expTickFormat}
     # Set axes tick formats
@@ -666,7 +701,7 @@ def plot_xy_data(data_xy, data_labels=None, x_lims=(None, None),
     for i in range(n_datasets):
         # Plot dataset
         axes.plot(data_xy[:, 2*i], data_xy[:, 2*i + 1],
-                  label=data_labels[i])
+                  label=tex_str(data_labels[i], is_latex))
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set legend
     if not all([x is None for x in data_labels]):
@@ -731,7 +766,9 @@ def plot_xy2_data(data_xy1, data_xy2, x_lims=(None, None),
         y2-axis ticks formatting. If None or invalid format, then default
         formatting is set.
     is_latex : bool, default=False
-        If True, then render all strings in LaTeX.
+        If True, then render all strings in LaTeX. If LaTex is not available,
+        then this option is silently set to False and all input strings are
+        processed to remove $(...)$ enclosure.
 
     Returns
     -------
@@ -740,6 +777,9 @@ def plot_xy2_data(data_xy1, data_xy2, x_lims=(None, None),
     axes : Matplotlib Axes
         Axes.
     """
+    # Reset matplotlib internal default style
+    plt.rcParams.update(plt.rcParamsDefault)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Check data
     if data_xy1.shape[1] != 2:
         raise RuntimeError('Data array for first y-axis dataset must have '
@@ -758,11 +798,15 @@ def plot_xy2_data(data_xy1, data_xy2, x_lims=(None, None),
     default_cycler = cycler_linestyle*cycler_color
     plt.rc('axes', prop_cycle = default_cycler)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Check LaTeX availability
+    if not bool(shutil.which('latex')):
+        is_latex = False
     # Set LaTeX font
     if is_latex:
         # Default LaTeX Computer Modern Roman
-        plt.rc('text',usetex=True)
-        plt.rc('font',**{'family':'serif','serif':['Computer Modern Roman']})
+        plt.rc('text', usetex=True)
+        plt.rc('font', **{'family': 'serif',
+                          'serif': ['Computer Modern Roman']})
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Create figure
     figure = plt.figure()
@@ -775,10 +819,11 @@ def plot_xy2_data(data_xy1, data_xy2, x_lims=(None, None),
     # Set first axes color
     color_y1 = '#4477AA'
     # Set title
-    axes.set_title(title, fontsize=12, pad=10)
+    axes.set_title(tex_str(title, is_latex), fontsize=12, pad=10)
     # Set first axes labels
-    axes.set_xlabel(x_label, fontsize=12, labelpad=10)
-    axes.set_ylabel(y1_label, fontsize=12, labelpad=10, color=color_y1)
+    axes.set_xlabel(tex_str(x_label, is_latex), fontsize=12, labelpad=10)
+    axes.set_ylabel(tex_str(y1_label, is_latex), fontsize=12, labelpad=10,
+                    color=color_y1)
     # Set first axes color
     axes.spines["right"].set_visible(False)
     axes.spines['left'].set(color=color_y1, linewidth=1.1)
@@ -788,7 +833,8 @@ def plot_xy2_data(data_xy1, data_xy2, x_lims=(None, None),
     # Set second axes color
     color_y2 = '#EE6677'
     # Configure second axes label
-    axes2.set_ylabel(y2_label, fontsize=12, labelpad=10, color=color_y2)
+    axes2.set_ylabel(tex_str(y2_label, is_latex), fontsize=12, labelpad=10,
+                     color=color_y2)
     # Set second axes color
     axes2.spines["left"].set_visible(False)
     axes2.spines['right'].set(color=color_y2, linewidth=1.1)
@@ -803,11 +849,14 @@ def plot_xy2_data(data_xy1, data_xy2, x_lims=(None, None),
         axes.set_yscale(y1_scale)
     # Set tick formatting functions
     def intTickFormat(x, pos):
-        return '${:2d}$'.format(int(x))
+        frmt = tex_str('{:2d}', is_latex)
+        return frmt.format(int(x))
     def floatTickFormat(x, pos):
-        return '${:3.1f}$'.format(x)
+        frmt = tex_str('{:3.1f}', is_latex)
+        return frmt.format(x)
     def expTickFormat(x, pos):
-        return '${:7.2e}$'.format(x)
+        frmt = tex_str('{:7.2e}', is_latex)
+        return frmt.format(x)
     tick_formats = {'int': intTickFormat, 'float': floatTickFormat,
                     'exp': expTickFormat}
     # Set axes tick formats
@@ -897,7 +946,9 @@ def plot_xny_data(data_xy_list, range_type='min-max', data_labels=None,
         y-axis ticks formatting. If None or invalid format, then default
         formatting is set.
     is_latex : bool, default=False
-        If True, then render all strings in LaTeX.
+        If True, then render all strings in LaTeX. If LaTex is not available,
+        then this option is silently set to False and all input strings are
+        processed to remove $(...)$ enclosure.
 
     Returns
     -------
@@ -906,6 +957,9 @@ def plot_xny_data(data_xy_list, range_type='min-max', data_labels=None,
     axes : Matplotlib Axes
         Axes.
     """
+    # Reset matplotlib internal default style
+    plt.rcParams.update(plt.rcParamsDefault)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Check data
     if not isinstance(data_xy_list, list):
         raise RuntimeError('Data must be provided as a list of data arrays '
@@ -937,11 +991,15 @@ def plot_xny_data(data_xy_list, range_type='min-max', data_labels=None,
     default_cycler = cycler_linestyle*cycler_color
     plt.rc('axes', prop_cycle = default_cycler)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Check LaTeX availability
+    if not bool(shutil.which('latex')):
+        is_latex = False
     # Set LaTeX font
     if is_latex:
         # Default LaTeX Computer Modern Roman
-        plt.rc('text',usetex=True)
-        plt.rc('font',**{'family':'serif','serif':['Computer Modern Roman']})
+        plt.rc('text', usetex=True)
+        plt.rc('font', **{'family': 'serif',
+                          'serif': ['Computer Modern Roman']})
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Create figure
     figure = plt.figure()
@@ -952,10 +1010,10 @@ def plot_xny_data(data_xy_list, range_type='min-max', data_labels=None,
     # Create axes
     axes = figure.add_subplot(1, 1, 1)
     # Set title
-    axes.set_title(title, fontsize=12, pad=10)
+    axes.set_title(tex_str(title, is_latex), fontsize=12, pad=10)
     # Set axes labels
-    axes.set_xlabel(x_label, fontsize=12, labelpad=10)
-    axes.set_ylabel(y_label, fontsize=12, labelpad=10)
+    axes.set_xlabel(tex_str(x_label, is_latex), fontsize=12, labelpad=10)
+    axes.set_ylabel(tex_str(y_label, is_latex), fontsize=12, labelpad=10)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set axes scales
     if x_scale in ('linear', 'log'):
@@ -964,11 +1022,14 @@ def plot_xny_data(data_xy_list, range_type='min-max', data_labels=None,
         axes.set_yscale(y_scale)
     # Set tick formatting functions
     def intTickFormat(x, pos):
-        return '${:2d}$'.format(int(x))
+        frmt = tex_str('{:2d}', is_latex)
+        return frmt.format(int(x))
     def floatTickFormat(x, pos):
-        return '${:3.1f}$'.format(x)
+        frmt = tex_str('{:3.1f}', is_latex)
+        return frmt.format(x)
     def expTickFormat(x, pos):
-        return '${:7.2e}$'.format(x)
+        frmt = tex_str('{:7.2e}', is_latex)
+        return frmt.format(x)
     tick_formats = {'int': intTickFormat, 'float': floatTickFormat,
                     'exp': expTickFormat}
     # Set axes tick formats
@@ -1012,7 +1073,7 @@ def plot_xny_data(data_xy_list, range_type='min-max', data_labels=None,
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Plot data set
         axes.errorbar(x, y_mean, yerr=y_err, capsize=3,
-                      label=data_labels[i])
+                      label=tex_str(data_labels[i], is_latex))
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set legend
     if not all([x is None for x in data_labels]):
@@ -1072,7 +1133,9 @@ def scatter_xy_data(data_xy, data_labels=None, is_identity_line=False,
         y-axis ticks formatting. If None or invalid format, then default
         formatting is set.
     is_latex : bool, default=False
-        If True, then render all strings in LaTeX.
+        If True, then render all strings in LaTeX. If LaTex is not available,
+        then this option is silently set to False and all input strings are
+        processed to remove $(...)$ enclosure.
 
     Returns
     -------
@@ -1081,6 +1144,9 @@ def scatter_xy_data(data_xy, data_labels=None, is_identity_line=False,
     axes : Matplotlib Axes
         Axes.
     """
+    # Reset matplotlib internal default style
+    plt.rcParams.update(plt.rcParamsDefault)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Check data
     if data_xy.shape[1] % 2 != 0:
         raise RuntimeError('Data array must have an even number of columns, '
@@ -1107,11 +1173,15 @@ def scatter_xy_data(data_xy, data_labels=None, is_identity_line=False,
     default_cycler = cycler_linestyle*cycler_color
     plt.rc('axes', prop_cycle = default_cycler)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Check LaTeX availability
+    if not bool(shutil.which('latex')):
+        is_latex = False
     # Set LaTeX font
     if is_latex:
         # Default LaTeX Computer Modern Roman
-        plt.rc('text',usetex=True)
-        plt.rc('font',**{'family':'serif','serif':['Computer Modern Roman']})
+        plt.rc('text', usetex=True)
+        plt.rc('font', **{'family': 'serif',
+                          'serif': ['Computer Modern Roman']})
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Create figure
     figure = plt.figure()
@@ -1122,10 +1192,10 @@ def scatter_xy_data(data_xy, data_labels=None, is_identity_line=False,
     # Create axes
     axes = figure.add_subplot(1, 1, 1)
     # Set title
-    axes.set_title(title, fontsize=12, pad=10)
+    axes.set_title(tex_str(title, is_latex), fontsize=12, pad=10)
     # Set axes labels
-    axes.set_xlabel(x_label, fontsize=12, labelpad=10)
-    axes.set_ylabel(y_label, fontsize=12, labelpad=10)
+    axes.set_xlabel(tex_str(x_label, is_latex), fontsize=12, labelpad=10)
+    axes.set_ylabel(tex_str(y_label, is_latex), fontsize=12, labelpad=10)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set axes scales
     if x_scale in ('linear', 'log'):
@@ -1134,11 +1204,14 @@ def scatter_xy_data(data_xy, data_labels=None, is_identity_line=False,
         axes.set_yscale(y_scale)
     # Set tick formatting functions
     def intTickFormat(x, pos):
-        return '${:2d}$'.format(int(x))
+        frmt = tex_str('{:2d}', is_latex)
+        return frmt.format(int(x))
     def floatTickFormat(x, pos):
-        return '${:3.1f}$'.format(x)
+        frmt = tex_str('{:3.1f}', is_latex)
+        return frmt.format(x)
     def expTickFormat(x, pos):
-        return '${:7.2e}$'.format(x)
+        frmt = tex_str('{:7.2e}', is_latex)
+        return frmt.format(x)
     tick_formats = {'int': intTickFormat, 'float': floatTickFormat,
                     'exp': expTickFormat}
     # Set axes tick formats
@@ -1163,7 +1236,8 @@ def scatter_xy_data(data_xy, data_labels=None, is_identity_line=False,
     for i in range(n_datasets):
         # Plot dataset
         axes.scatter(data_xy[:, 2*i], data_xy[:, 2*i + 1],
-                     label=data_labels[i], ec='k', zorder=10)
+                     label=tex_str(data_labels[i], is_latex), ec='k',
+                     zorder=10)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set axes limits
     axes.set_xlim(x_lims)
@@ -1221,7 +1295,9 @@ def grouped_bar_chart(groups_labels, groups_data, bar_width=None,
         y-axis scale. If None or invalid format, then default scale is set.
         Scale 'log' overrides any y-axis ticks formatting.
     is_latex : bool, default=False
-        If True, then render all strings in LaTeX.
+        If True, then render all strings in LaTeX. If LaTex is not available,
+        then this option is silently set to False and all input strings are
+        processed to remove $(...)$ enclosure.
 
     Returns
     -------
@@ -1230,6 +1306,9 @@ def grouped_bar_chart(groups_labels, groups_data, bar_width=None,
     axes : Matplotlib Axes
         Axes.
     """
+    # Reset matplotlib internal default style
+    plt.rcParams.update(plt.rcParamsDefault)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Check bar groups labels
     if not isinstance(groups_labels, tuple):
         raise RuntimeError('Bar groups labels must be provided as a tuple of '
@@ -1261,11 +1340,15 @@ def grouped_bar_chart(groups_labels, groups_data, bar_width=None,
     default_cycler = cycler_linestyle*cycler_color
     plt.rc('axes', prop_cycle = default_cycler)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Check LaTeX availability
+    if not bool(shutil.which('latex')):
+        is_latex = False
     # Set LaTeX font
     if is_latex:
         # Default LaTeX Computer Modern Roman
-        plt.rc('text',usetex=True)
-        plt.rc('font',**{'family':'serif','serif':['Computer Modern Roman']})
+        plt.rc('text', usetex=True)
+        plt.rc('font', **{'family': 'serif',
+                          'serif': ['Computer Modern Roman']})
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Create figure
     figure = plt.figure()
@@ -1277,21 +1360,24 @@ def grouped_bar_chart(groups_labels, groups_data, bar_width=None,
     axes = figure.add_subplot(1, 1, 1)
     axes.set_axisbelow(True)
     # Set title
-    axes.set_title(title, fontsize=12, pad=10)
+    axes.set_title(tex_str(title, is_latex), fontsize=12, pad=10)
     # Set axes labels
-    axes.set_xlabel(x_label, fontsize=12, labelpad=10)
-    axes.set_ylabel(y_label, fontsize=12, labelpad=10)
+    axes.set_xlabel(tex_str(x_label, is_latex), fontsize=12, labelpad=10)
+    axes.set_ylabel(tex_str(y_label, is_latex), fontsize=12, labelpad=10)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set axes scales
     if y_scale in ('linear', 'log'):
         axes.set_yscale(y_scale)
     # Set tick formatting functions
     def intTickFormat(x, pos):
-        return '${:2d}$'.format(int(x))
+        frmt = tex_str('{:2d}', is_latex)
+        return frmt.format(int(x))
     def floatTickFormat(x, pos):
-        return '${:3.1f}$'.format(x)
+        frmt = tex_str('{:3.1f}', is_latex)
+        return frmt.format(x)
     def expTickFormat(x, pos):
-        return '${:7.2e}$'.format(x)
+        frmt = tex_str('{:7.2e}', is_latex)
+        return frmt.format(x)
     tick_formats = {'int': intTickFormat, 'float': floatTickFormat,
                     'exp': expTickFormat}
     # Set groups labels locations
@@ -1314,7 +1400,8 @@ def grouped_bar_chart(groups_labels, groups_data, bar_width=None,
         ds_offset = (0.5 + group_id)*bar_width
         # Plot data set bars
         dataset_bars = axes.bar(x + ds_offset, ds_values, width=bar_width,
-                                label=ds_label, align='center')
+                                label=tex_str(ds_label, is_latex),
+                                align='center')
         # Plot data set average line
         if is_avg_hline:
             axes.axhline(np.mean(ds_values), linestyle='--', linewidth=1.0,
@@ -1370,3 +1457,39 @@ def save_figure(figure, filename, format='pdf', save_dir=None):
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Save figure
     figure.savefig(filepath, transparent=False, dpi=300, bbox_inches='tight')
+# =============================================================================
+def tex_str(x, is_latex):
+    """Format string conveniently according with LaTeX rendering option.
+    
+    Parameters
+    ----------
+    x : {str, None}
+        String.
+    is_latex : bool
+        If False, then remove any leading or trailing dollar signs from string.
+        If True, then keep string unchanged.
+        
+    Returns
+    -------
+    new_x : {str, None}
+        Formatted string.
+    """
+    # Initialize formatted string
+    new_x = x
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Format string according with LaTeX rendering option
+    if new_x is None:
+        # Keep string unchanged
+        pass
+    elif isinstance(x, str):
+        if is_latex:
+            # Keep string unchanged
+            new_x = x
+        else:
+            # Remove any leading or trailing dollar signs
+            new_x = new_x.strip('$')
+    else:
+        raise RuntimeError(f'Input must be str or None, not {type(x)}.')
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    return new_x
+    
