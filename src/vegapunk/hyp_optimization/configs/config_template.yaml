@@ -24,11 +24,11 @@ lr_scheduler_type: 'steplr'
 defaults:
   # CHOOSE ONE SWEEPER (COMMENT OUT WITH #):
   # 1. Hydra BasicSweeper (default)
-  - override hydra/sweeper: basic
+  #- override hydra/sweeper: basic
   # 2. Nevergrad
   #- override hydra/sweeper: nevergrad
   # 3. Optuna
-  #- override hydra/sweeper: optuna
+  - override hydra/sweeper: optuna
   # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   # Disable Hydra logging
   - override hydra/hydra_logging: none
@@ -47,7 +47,7 @@ hydra:
   # Hydra single-run mode
   run:
     # Output directory (grouped by date)
-    dir: ~/Desktop/${hydra.job.name}${now:%Y-%m-%d}/${now:%H-%M-%S}
+    dir: /home/bernardoferreira/Desktop/${hydra.job.name}${now:%Y-%m-%d}/${now:%H-%M-%S}
   
   # Hydra multi-run sweep (multi-run mode, -m flag)
   sweep:
@@ -55,7 +55,7 @@ hydra:
     # 1. Formatting: ${now:%Y-%m-%d}, ${now:%H-%M-%S},
     #                ${hydra.job.name}, ${hydra.job.num}
     # Output directory common to all jobs in the multi-run sweep
-    dir: ~/Desktop/${hydra.job.name}/${now:%Y-%m-%d}/${now:%H-%M-%S}
+    dir: /home/bernardoferreira/Desktop/${hydra.job.name}/${now:%Y-%m-%d}/${now:%H-%M-%S}
     # Pattern of job-specific output subdirectory
     subdir: ${hydra.job.num}
   
@@ -63,15 +63,15 @@ hydra:
   # SET CHOSEN SWEEPER SETTINGS (BLOCK COMMENT OUT WITH CTRL+/ ON VSCODE)
   # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   # 1. Hydra BasicSweeper (default)
-  sweeper:
-    # BasicSweeper settings
-    # ...
+  # sweeper:
+  #   # BasicSweeper settings
+  #   # ...
 
-    # BasicSweeper search space parameterization
-    params:
-      batch_size: 1, 2, 3
-      lr: 0.1, 0.2, 0.3
-      lr_scheduler_type: steplr, explr
+  #   # BasicSweeper search space parameterization
+  #   params:
+  #     batch_size: 1, 2, 3
+  #     lr: 0.1, 0.2, 0.3
+  #     lr_scheduler_type: steplr, explr
   # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   # 2. Hydra Nevergrad Sweeper plugin
   # sweeper:
@@ -111,22 +111,26 @@ hydra:
   #       - 'explr'
   # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   # 3. Hydra Optuna Sweeper plugin
-  # sweeper:
-  #   # Optuna sweeper settings
-  #   _target_: hydra_plugins.hydra_optuna_sweeper.optuna_sweeper.OptunaSweeper
-  #   # Maximum number of function evaluations to perform
-  #   n_trials: 10
-  #   # Number of parallel workers for performing function evaluations
-  #   n_jobs: 1
-  #   # Optuna optimizer settings:
-  #   sampler:
-  #     # Optuna optimizer
-  #     _target_: optuna.samplers.TPESampler
-  #     # Optuna optimizer class parameters
-  #     # ...
+  sweeper:
+    # Optuna sweeper settings
+    _target_: hydra_plugins.hydra_optuna_sweeper.optuna_sweeper.OptunaSweeper
+    # Store Optuna dashboard file (python package sqlalchemy==1.4.44)
+    storage: 'sqlite:////home/bernardoferreira/Desktop/optuna_dashboard.db'
 
-  #   # Optuna search space parameterization
-  #   params:
-  #     batch_size: range(1, 10)
-  #     lr: interval(0.0, 1.0)
-  #     lr_scheduler_type: choice('steplr', 'explr')
+
+    # Maximum number of function evaluations to perform
+    n_trials: 10
+    # Number of parallel workers for performing function evaluations
+    n_jobs: 1
+    # Optuna optimizer settings:
+    sampler:
+      # Optuna optimizer
+      _target_: optuna.samplers.TPESampler
+      # Optuna optimizer class parameters
+      # ...
+
+    # Optuna search space parameterization
+    params:
+      batch_size: range(1, 10)
+      lr: interval(0.0, 1.0)
+      lr_scheduler_type: choice('steplr', 'explr')
