@@ -14,3 +14,4 @@ from src.vegapunk import material_patch
 from src.vegapunk import gnn_model
 from src.vegapunk import ioput
 from src.vegapunk import simulators
+from src.vegapunk import hyp_optimization
