@@ -1,4 +1,4 @@
 #
 #                                                                       Modules
 # =============================================================================
-from visualization import optimization_plots
+from hyp_optimization.visualization import optimization_plots
