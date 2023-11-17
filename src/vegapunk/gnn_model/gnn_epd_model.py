@@ -52,16 +52,16 @@ class EncodeProcessDecode(torch.nn.Module):
                  pro_n_hidden_layers, dec_n_hidden_layers, hidden_layer_size,
                  n_node_in=0, n_edge_in=0,
                  pro_aggregation_scheme='add',
-                 enc_node_hidden_activation=torch.nn.Identity,
-                 enc_node_output_activation=torch.nn.Identity,
-                 enc_edge_hidden_activation=torch.nn.Identity,
-                 enc_edge_output_activation=torch.nn.Identity,
-                 pro_node_hidden_activation=torch.nn.Identity,
-                 pro_node_output_activation=torch.nn.Identity,
-                 pro_edge_hidden_activation=torch.nn.Identity,
-                 pro_edge_output_activation=torch.nn.Identity,
-                 dec_node_hidden_activation=torch.nn.Identity,
-                 dec_node_output_activation=torch.nn.Identity,
+                 enc_node_hidden_activation=torch.nn.Identity(),
+                 enc_node_output_activation=torch.nn.Identity(),
+                 enc_edge_hidden_activation=torch.nn.Identity(),
+                 enc_edge_output_activation=torch.nn.Identity(),
+                 pro_node_hidden_activation=torch.nn.Identity(),
+                 pro_node_output_activation=torch.nn.Identity(),
+                 pro_edge_hidden_activation=torch.nn.Identity(),
+                 pro_edge_output_activation=torch.nn.Identity(),
+                 dec_node_hidden_activation=torch.nn.Identity(),
+                 dec_node_output_activation=torch.nn.Identity(),
                  is_node_res_connect=False,
                  is_edge_res_connect=False):
         """Constructor.
@@ -185,7 +185,8 @@ class EncodeProcessDecode(torch.nn.Module):
                     node_hidden_activation=enc_node_hidden_activation,
                     node_output_activation=enc_node_output_activation,
                     edge_hidden_activation=enc_edge_hidden_activation,
-                    edge_output_activation=enc_edge_output_activation)
+                    edge_output_activation=enc_edge_output_activation,
+                    is_skip_unset_update=True)
         # Set model processor if positive number of message-passing steps
         if self._n_message_steps > 0:
             self._processor = \
@@ -305,10 +306,10 @@ class Processor(torch_geometric.nn.MessagePassing):
                  n_hidden_layers, hidden_layer_size,
                  n_node_in=0, n_edge_in=0,
                  aggregation_scheme='add',
-                 node_hidden_activation=torch.nn.Identity,
-                 node_output_activation=torch.nn.Identity,
-                 edge_hidden_activation=torch.nn.Identity,
-                 edge_output_activation=torch.nn.Identity,
+                 node_hidden_activation=torch.nn.Identity(),
+                 node_output_activation=torch.nn.Identity(),
+                 edge_hidden_activation=torch.nn.Identity(),
+                 edge_output_activation=torch.nn.Identity(),
                  is_node_res_connect=False, is_edge_res_connect=False):
         """Constructor.
         
@@ -447,7 +448,7 @@ class Processor(torch_geometric.nn.MessagePassing):
             (n_edges, n_features).
         """
         # Check number of nodes and edges features
-        if node_features_in is not None \
+        if node_features_in is not None and node_features_in.numel() > 0 \
                 and node_features_in.shape[1] != self._n_node_in:
             raise RuntimeError(f'Mismatch of number of node features of model '
                                f'({self._n_node_in}) and nodes input features '
@@ -526,8 +527,8 @@ class Decoder(torch.nn.Module):
         Forward propagation.
     """
     def __init__(self, n_node_in, n_node_out, n_hidden_layers,
-                 hidden_layer_size, node_hidden_activation=torch.nn.Identity,
-                 node_output_activation=torch.nn.Identity):
+                 hidden_layer_size, node_hidden_activation=torch.nn.Identity(),
+                 node_output_activation=torch.nn.Identity()):
         """Constructor.
         
         Parameters

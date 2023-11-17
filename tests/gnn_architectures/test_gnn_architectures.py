@@ -20,8 +20,9 @@ __status__ = 'Planning'
 # =============================================================================
 @pytest.mark.parametrize('input_size, output_size, output_activation,'
                          'hidden_layer_sizes, hidden_activation',
-                         [(1, 1, torch.nn.Identity, [], torch.nn.ReLU),
-                          (2, 3, torch.nn.Tanh, [2, 3, 1], torch.nn.LeakyReLU),
+                         [(1, 1, torch.nn.Identity(), [], torch.nn.ReLU()),
+                          (2, 3, torch.nn.Tanh(), [2, 3, 1],
+                           torch.nn.LeakyReLU()),
                           ])
 def test_build_fnn(input_size, output_size, output_activation,
                    hidden_layer_sizes, hidden_activation):
@@ -35,7 +36,7 @@ def test_build_fnn(input_size, output_size, output_activation,
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Get feed-forward neural network layers
     layers = [layer for layer in fnn.named_children() if 'Layer-' in layer[0]]
-    activations = [layer for layer in fnn.named_children()
+    activations = [layer for layer in fnn.named_modules(remove_duplicate=False)
                    if 'Activation-' in layer[0]]
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Check number of layers
@@ -66,7 +67,7 @@ def test_build_fnn(input_size, output_size, output_activation,
             if layer[1].out_features != output_size:
                 errors.append('Number of output features of output layer was '
                               'not properly set.')
-            if not isinstance(activations[i][1], output_activation):
+            if not isinstance(activations[i][1], type(output_activation)):
                 errors.append('Output unit activation function was not '
                               'properly set.')
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -76,7 +77,7 @@ def test_build_fnn(input_size, output_size, output_activation,
                     or layer[1].out_features != hidden_layer_sizes[i]:
                 errors.append('Number of input/output features of hidden '
                               'layer was not properly set.')
-            if not isinstance(activations[i][1], hidden_activation):
+            if not isinstance(activations[i][1], type(hidden_activation)):
                 errors.append('Hidden unit activation function was not '
                               'properly set.')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -84,7 +85,7 @@ def test_build_fnn(input_size, output_size, output_activation,
 # -----------------------------------------------------------------------------
 @pytest.mark.parametrize('input_size, output_size, output_activation,'
                          'hidden_layer_sizes, hidden_activation',
-                         [(1, 1, 'invalid_type', [], torch.nn.ReLU),
+                         [(1, 1, 'invalid_type', [], torch.nn.ReLU()),
                           (2, 3, torch.nn.Tanh, [2, 3, 1], 'invalid_type'),
                           ])
 def test_build_fnn_invalid(input_size, output_size, output_activation,
@@ -95,16 +96,21 @@ def test_build_fnn_invalid(input_size, output_size, output_activation,
                         hidden_layer_sizes, hidden_activation)
 # -----------------------------------------------------------------------------
 @pytest.mark.parametrize('n_node_in, n_node_out, n_edge_in, n_edge_out,'
-                         'n_hidden_layers, hidden_layer_size',
-                         [(1, 5, 2, 3, 2, 4),
-                          (3, 2, 1, 4, 1, 2),
-                          (2, 4, 5, 4, 0, 2),
-                          (0, 0, 5, 4, 0, 2),
-                          (3, 2, 0, 0, 1, 2),
+                         'n_hidden_layers, hidden_layer_size,'
+                         'is_skip_unset_update',
+                         [(1, 5, 2, 3, 2, 4, False),
+                          (3, 2, 1, 4, 1, 2, False),
+                          (2, 4, 5, 4, 0, 2, False),
+                          (0, 0, 5, 4, 0, 2, False),
+                          (3, 2, 0, 0, 1, 2, False),
+                          (1, 5, 2, 3, 2, 4, True),
+                          (0, 0, 5, 4, 0, 2, True),
+                          (3, 2, 0, 0, 1, 2, True),
                           ])
 def test_graph_independent_network_init(n_node_in, n_node_out, n_edge_in,
                                         n_edge_out, n_hidden_layers,
-                                        hidden_layer_size):
+                                        hidden_layer_size,
+                                        is_skip_unset_update):
     """Test Graph Independent Network constructor."""
     # Initialize errors
     errors = []
@@ -114,10 +120,11 @@ def test_graph_independent_network_init(n_node_in, n_node_out, n_edge_in,
                                     hidden_layer_size=hidden_layer_size,
                                     n_node_in=n_node_in, n_node_out=n_node_out,
                                     n_edge_in=n_edge_in, n_edge_out=n_edge_out,
-                                    node_hidden_activation=torch.nn.ReLU,
-                                    node_output_activation=torch.nn.Identity,
-                                    edge_hidden_activation=torch.nn.ReLU,
-                                    edge_output_activation=torch.nn.Identity)
+                                    node_hidden_activation=torch.nn.ReLU(),
+                                    node_output_activation=torch.nn.Identity(),
+                                    edge_hidden_activation=torch.nn.ReLU(),
+                                    edge_output_activation=torch.nn.Identity(),
+                                    is_skip_unset_update=is_skip_unset_update)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set Graph Independent Network update functions and number of features
     update_functions = []
@@ -184,16 +191,20 @@ def test_graph_independent_network_init(n_node_in, n_node_out, n_edge_in,
 # -----------------------------------------------------------------------------
 @pytest.mark.parametrize('n_nodes, n_node_in, n_node_out,'
                          'n_edges, n_edge_in, n_edge_out,'
-                         'n_hidden_layers, hidden_layer_size',
-                         [(10, 1, 5, 20, 2, 3, 2, 4),
-                          (2, 3, 2, 2, 1, 4, 1, 2),
-                          (3, 2, 4, 6, 5, 4, 0, 2),
-                          (3, 0, 0, 6, 5, 4, 0, 2),
-                          (2, 3, 2, 2, 0, 0, 1, 2),
+                         'n_hidden_layers, hidden_layer_size,'
+                         'is_skip_unset_update',
+                         [(10, 1, 5, 20, 2, 3, 2, 4, False),
+                          (2, 3, 2, 2, 1, 4, 1, 2, False),
+                          (3, 2, 4, 6, 5, 4, 0, 2, False),
+                          (3, 0, 0, 6, 5, 4, 0, 2, False),
+                          (2, 3, 2, 2, 0, 0, 1, 2, False),
+                          (3, 0, 0, 6, 5, 4, 0, 2, True),
+                          (2, 3, 2, 2, 0, 0, 1, 2, True),
                           ])
 def test_graph_independent_network_forward(n_nodes, n_node_in, n_node_out,
                                            n_edges, n_edge_in, n_edge_out,
-                                           n_hidden_layers, hidden_layer_size):
+                                           n_hidden_layers, hidden_layer_size,
+                                           is_skip_unset_update):
     """Test Graph Independent Network forward propagation."""
     # Initialize errors
     errors = []
@@ -203,10 +214,11 @@ def test_graph_independent_network_forward(n_nodes, n_node_in, n_node_out,
                                     hidden_layer_size=hidden_layer_size,
                                     n_node_in=n_node_in, n_node_out=n_node_out,
                                     n_edge_in=n_edge_in, n_edge_out=n_edge_out,
-                                    node_hidden_activation=torch.nn.ReLU,
-                                    node_output_activation=torch.nn.Identity,
-                                    edge_hidden_activation=torch.nn.ReLU,
-                                    edge_output_activation=torch.nn.Identity)
+                                    node_hidden_activation=torch.nn.ReLU(),
+                                    node_output_activation=torch.nn.Identity(),
+                                    edge_hidden_activation=torch.nn.ReLU(),
+                                    edge_output_activation=torch.nn.Identity(),
+                                    is_skip_unset_update=is_skip_unset_update)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Generate random nodes features input matrix
     node_features_in = None
@@ -230,8 +242,13 @@ def test_graph_independent_network_forward(n_nodes, n_node_in, n_node_out,
             errors.append('Nodes features output matrix is not '
                           'torch.Tensor(2d) of shape (n_nodes, n_features).')
     else:
-        if node_features_out is not None:
-            errors.append('Nodes features output matrix is not None.')
+        if node_features_in is not None and is_skip_unset_update:
+            if not torch.allclose(node_features_out, node_features_in):
+                errors.append('Nodes features output matrix is not '
+                              'equal to nodes features input matrix.')
+        else:
+            if node_features_out is not None:
+                errors.append('Nodes features output matrix is not None.')
     # Check edge features output matrix
     if model._edge_fn is not None:
         if not isinstance(edge_features_out, torch.Tensor):
@@ -241,8 +258,13 @@ def test_graph_independent_network_forward(n_nodes, n_node_in, n_node_out,
             errors.append('Edges features output matrix is not '
                           'torch.Tensor(2d) of shape (n_edges, n_features).')
     else:
-        if edge_features_out is not None:
-            errors.append('Edges features output matrix is not None.')
+        if edge_features_in is not None and is_skip_unset_update:
+            if not torch.allclose(edge_features_out, edge_features_in):
+                errors.append('Edges features output matrix is not '
+                              'equal to edges features input matrix.')
+        else:
+            if edge_features_out is not None:
+                errors.append('Edges features output matrix is not None.')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     assert not errors, "Errors:\n{}".format("\n".join(errors))
 # -----------------------------------------------------------------------------
@@ -269,10 +291,10 @@ def test_graph_interaction_network_init(n_node_in, n_node_out, n_edge_in,
                                     hidden_layer_size=hidden_layer_size,
                                     n_node_in=n_node_in, n_edge_in=n_edge_in, 
                                     aggregation_scheme=aggregation_scheme,
-                                    node_hidden_activation=torch.nn.ReLU,
-                                    node_output_activation=torch.nn.Identity,
-                                    edge_hidden_activation=torch.nn.ReLU,
-                                    edge_output_activation=torch.nn.Identity)
+                                    node_hidden_activation=torch.nn.ReLU(),
+                                    node_output_activation=torch.nn.Identity(),
+                                    edge_hidden_activation=torch.nn.ReLU(),
+                                    edge_output_activation=torch.nn.Identity())
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set Graph Interaction Network update functions and number of features
     update_functions = ((model._node_fn, n_node_in + n_edge_out, n_node_out),
@@ -358,10 +380,10 @@ def test_graph_interaction_network_forward(n_nodes, n_node_in, n_node_out,
                                     hidden_layer_size=hidden_layer_size,
                                     n_node_in=n_node_in, n_edge_in=n_edge_in,
                                     aggregation_scheme=aggregation_scheme,
-                                    node_hidden_activation=torch.nn.ReLU,
-                                    node_output_activation=torch.nn.Identity,
-                                    edge_hidden_activation=torch.nn.ReLU,
-                                    edge_output_activation=torch.nn.Identity)
+                                    node_hidden_activation=torch.nn.ReLU(),
+                                    node_output_activation=torch.nn.Identity(),
+                                    edge_hidden_activation=torch.nn.ReLU(),
+                                    edge_output_activation=torch.nn.Identity())
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Generate random nodes features input matrix
     node_features_in = torch.empty(n_nodes, 0)
@@ -421,10 +443,10 @@ def test_graph_interaction_network_message(n_nodes, n_node_in, n_node_out,
                                     n_hidden_layers=n_hidden_layers,
                                     hidden_layer_size=hidden_layer_size,
                                     n_node_in=n_node_in, n_edge_in=n_edge_in,
-                                    node_hidden_activation=torch.nn.ReLU,
-                                    node_output_activation=torch.nn.Identity,
-                                    edge_hidden_activation=torch.nn.ReLU,
-                                    edge_output_activation=torch.nn.Identity,
+                                    node_hidden_activation=torch.nn.ReLU(),
+                                    node_output_activation=torch.nn.Identity(),
+                                    edge_hidden_activation=torch.nn.ReLU(),
+                                    edge_output_activation=torch.nn.Identity(),
                                     aggregation_scheme=aggregation_scheme)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Generate random source nodes features input matrix
@@ -480,10 +502,10 @@ def test_graph_interaction_network_update(n_nodes, n_node_in, n_node_out,
                                     hidden_layer_size=hidden_layer_size,
                                     n_node_in=n_node_in, n_edge_in=n_edge_in,
                                     aggregation_scheme=aggregation_scheme,
-                                    node_hidden_activation=torch.nn.ReLU,
-                                    node_output_activation=torch.nn.Identity,
-                                    edge_hidden_activation=torch.nn.ReLU,
-                                    edge_output_activation=torch.nn.Identity)
+                                    node_hidden_activation=torch.nn.ReLU(),
+                                    node_output_activation=torch.nn.Identity(),
+                                    edge_hidden_activation=torch.nn.ReLU(),
+                                    edge_output_activation=torch.nn.Identity())
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Generate random nodes features input matrix (resulting from aggregation)
     node_features_in_aggr = torch.rand(n_nodes, n_edge_out)

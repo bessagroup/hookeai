@@ -699,9 +699,9 @@ class GNNMaterialPatchModel(torch.nn.Module):
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Get unit activation function
         if activation_type == 'identity':
-            activation_function = torch.nn.Identity
+            activation_function = torch.nn.Identity(**kwargs)
         elif activation_type == 'relu':
-            activation_function = torch.nn.ReLU
+            activation_function = torch.nn.ReLU(**kwargs)
         else:
             raise RuntimeError(f'Unknown or unavailable PyTorch unit '
                                f'activation function: \'{activation_type}\'.'

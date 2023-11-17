@@ -28,9 +28,9 @@ __status__ = 'Planning'
 #
 # =============================================================================
 def build_fnn(input_size, output_size,
-              output_activation=torch.nn.Identity,
+              output_activation=torch.nn.Identity(),
               hidden_layer_sizes=[],
-              hidden_activation=torch.nn.ReLU):
+              hidden_activation=torch.nn.Identity()):
     """Build multilayer feed-forward neural network.
     
     Parameters
@@ -44,9 +44,9 @@ def build_fnn(input_size, output_size,
         activation function.
     hidden_layer_sizes : list[int], default=[]
         Number of neurons of hidden layers.
-    hidden_activation : torch.nn.Module, default=torch.nn.ReLU
-        Hidden unit activation function. Defaults to ReLU (rectified linear
-        unit function) unit activation function.
+    hidden_activation : torch.nn.Module, default=torch.nn.Identity
+        Hidden unit activation function. Defaults to identity (linear) unit
+        activation function.
 
     Returns
     -------
@@ -87,7 +87,7 @@ def build_fnn(input_size, output_size,
                        torch.nn.Linear(layer_sizes[i], layer_sizes[i + 1],
                                        bias=True))
         # Set layer unit activation function
-        fnn.add_module("Activation-" + str(i), activation_functions[i]())
+        fnn.add_module("Activation-" + str(i), activation_functions[i])
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     return fnn
 # =============================================================================
@@ -112,7 +112,10 @@ class GraphIndependentNetwork(torch.nn.Module):
         Number of edge input features.
     _n_edge_out : int
         Number of edge input features.
-        
+    _is_skip_unset_update : bool
+        If True, then return features input matrix when the corresponding
+        update function has not been setup, otherwise return None.
+
     Methods
     -------
     forward(self, node_features_in=None, edge_features_in=None)
@@ -120,10 +123,11 @@ class GraphIndependentNetwork(torch.nn.Module):
     """
     def __init__(self, n_hidden_layers, hidden_layer_size, n_node_in=0,
                  n_node_out=0, n_edge_in=0, n_edge_out=0,
-                 node_hidden_activation=torch.nn.Identity,
-                 node_output_activation=torch.nn.Identity,
-                 edge_hidden_activation=torch.nn.Identity,
-                 edge_output_activation=torch.nn.Identity):
+                 node_hidden_activation=torch.nn.Identity(),
+                 node_output_activation=torch.nn.Identity(),
+                 edge_hidden_activation=torch.nn.Identity(),
+                 edge_output_activation=torch.nn.Identity(),
+                 is_skip_unset_update=False):
         """Constructor.
         
         Parameters
@@ -162,6 +166,10 @@ class GraphIndependentNetwork(torch.nn.Module):
             Output unit activation function of edge update function (multilayer
             feed-forward neural network). Defaults to identity (linear) unit
             activation function.
+        is_skip_unset_update : bool, default=False
+            If True, then return features input matrix when the corresponding
+            update function has not been setup, otherwise return None. Ignored
+            if update function is setup.
         """
         # Initialize Graph Network block from base class
         super(GraphIndependentNetwork, self).__init__()
@@ -210,7 +218,7 @@ class GraphIndependentNetwork(torch.nn.Module):
             self._edge_fn.add_module('FNN', fnn)
             self._edge_fn.add_module('Norm-Layer', norm_layer)
         else:
-            self._edge_fn = None
+            self._edge_fn = None        
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Check update functions
         if self._node_fn is None and self._edge_fn is None:
@@ -219,6 +227,9 @@ class GraphIndependentNetwork(torch.nn.Module):
                                'function. Set positive number of features '
                                'for at least the node or the edge update '
                                'function.')
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set flag to handle unset update function output
+        self._is_skip_unset_update = is_skip_unset_update
     # -------------------------------------------------------------------------
     def forward(self, node_features_in=None, edge_features_in=None):
         """Forward propagation.
@@ -280,10 +291,16 @@ class GraphIndependentNetwork(torch.nn.Module):
         node_features_out = None
         if self._node_fn is not None:
             node_features_out = self._node_fn(node_features_in)
+        else:
+            if self._is_skip_unset_update:
+                node_features_out = node_features_in       
         # Forward propagation: Edge update function
         edge_features_out = None
         if self._edge_fn is not None:
             edge_features_out = self._edge_fn(edge_features_in)
+        else:
+            if self._is_skip_unset_update:
+                edge_features_out = edge_features_in
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         return node_features_out, edge_features_out
 # =============================================================================
@@ -322,10 +339,10 @@ class GraphInteractionNetwork(torch_geometric.nn.MessagePassing):
     def __init__(self, n_node_out, n_edge_out, n_hidden_layers,
                  hidden_layer_size, n_node_in=0, n_edge_in=0, 
                  aggregation_scheme='add',
-                 node_hidden_activation=torch.nn.Identity,
-                 node_output_activation=torch.nn.Identity,
-                 edge_hidden_activation=torch.nn.Identity,
-                 edge_output_activation=torch.nn.Identity):
+                 node_hidden_activation=torch.nn.Identity(),
+                 node_output_activation=torch.nn.Identity(),
+                 edge_hidden_activation=torch.nn.Identity(),
+                 edge_output_activation=torch.nn.Identity()):
         """Constructor.
         
         Parameters

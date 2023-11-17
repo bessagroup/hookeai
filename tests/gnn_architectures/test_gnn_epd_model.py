@@ -3,6 +3,7 @@
 #                                                                       Modules
 # =============================================================================
 # Third-party
+import numpy as np
 import pytest
 import torch
 import torch_geometric.nn
@@ -395,16 +396,16 @@ def test_epd_init():
                                 enc_n_hidden_layers=2, pro_n_hidden_layers=3,
                                 dec_n_hidden_layers=4, hidden_layer_size=5,
                                 n_node_in=2, n_edge_in=3,
-                                enc_node_hidden_activation=torch.nn.ReLU,
-                                enc_node_output_activation=torch.nn.Identity,
-                                enc_edge_hidden_activation=torch.nn.ReLU,
-                                enc_edge_output_activation=torch.nn.Identity,
-                                pro_node_hidden_activation=torch.nn.ReLU,
-                                pro_node_output_activation=torch.nn.Identity,
-                                pro_edge_hidden_activation=torch.nn.ReLU,
-                                pro_edge_output_activation=torch.nn.Identity,
-                                dec_node_hidden_activation=torch.nn.ReLU,
-                                dec_node_output_activation=torch.nn.Identity,
+                                enc_node_hidden_activation=torch.nn.ReLU(),
+                                enc_node_output_activation=torch.nn.Identity(),
+                                enc_edge_hidden_activation=torch.nn.ReLU(),
+                                enc_edge_output_activation=torch.nn.Identity(),
+                                pro_node_hidden_activation=torch.nn.ReLU(),
+                                pro_node_output_activation=torch.nn.Identity(),
+                                pro_edge_hidden_activation=torch.nn.ReLU(),
+                                pro_edge_output_activation=torch.nn.Identity(),
+                                dec_node_hidden_activation=torch.nn.ReLU(),
+                                dec_node_output_activation=torch.nn.Identity(),
                                 is_node_res_connect=False,
                                 is_edge_res_connect=True)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -442,16 +443,16 @@ def test_epd_forward(n_message_steps, n_nodes, n_node_in, n_node_out, n_edges,
                                 dec_n_hidden_layers=n_hidden_layers,
                                 hidden_layer_size=hidden_layer_size,
                                 n_node_in=n_node_in, n_edge_in=n_edge_in,
-                                enc_node_hidden_activation=torch.nn.ReLU,
-                                enc_node_output_activation=torch.nn.Identity,
-                                enc_edge_hidden_activation=torch.nn.ReLU,
-                                enc_edge_output_activation=torch.nn.Identity,
-                                pro_node_hidden_activation=torch.nn.ReLU,
-                                pro_node_output_activation=torch.nn.Identity,
-                                pro_edge_hidden_activation=torch.nn.ReLU,
-                                pro_edge_output_activation=torch.nn.Identity,
-                                dec_node_hidden_activation=torch.nn.ReLU,
-                                dec_node_output_activation=torch.nn.Identity,
+                                enc_node_hidden_activation=torch.nn.ReLU(),
+                                enc_node_output_activation=torch.nn.Identity(),
+                                enc_edge_hidden_activation=torch.nn.ReLU(),
+                                enc_edge_output_activation=torch.nn.Identity(),
+                                pro_node_hidden_activation=torch.nn.ReLU(),
+                                pro_node_output_activation=torch.nn.Identity(),
+                                pro_edge_hidden_activation=torch.nn.ReLU(),
+                                pro_edge_output_activation=torch.nn.Identity(),
+                                dec_node_hidden_activation=torch.nn.ReLU(),
+                                dec_node_output_activation=torch.nn.Identity(),
                                 is_node_res_connect=is_node_res_connect,
                                 is_edge_res_connect=is_edge_res_connect)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
