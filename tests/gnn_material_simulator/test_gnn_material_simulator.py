@@ -24,20 +24,20 @@ __status__ = 'Planning'
 @pytest.mark.parametrize('n_node_in, n_node_out, n_edge_in, n_message_steps,'
                          'n_hidden_layers, hidden_layer_size, model_name,'
                          'is_data_normalization, pro_aggregation_scheme,'
-                         'hidden_activation, output_activation, device_type',
+                         'hidden_activ_type, output_activ_type, device_type',
                          [(2, 5, 4, 10, 2, 3, 'material_patch_model', True,
-                           'add', torch.nn.ReLU, torch.nn.Identity, 'cpu'),
+                           'add', 'relu', 'identity', 'cpu'),
                           (0, 5, 4, 10, 2, 3, 'material_patch_model', True,
-                           'add', torch.nn.ReLU, torch.nn.Identity, 'cpu'),
+                           'add', 'relu', 'identity', 'cpu'),
                           (2, 5, 0, 10, 2, 3, 'material_patch_model', True,
-                           'add', torch.nn.ReLU, torch.nn.Identity, 'cpu'),
+                           'add', 'relu', 'identity', 'cpu'),
                           ])
 def test_material_patch_model_init(n_node_in, n_node_out, n_edge_in,
                                    n_message_steps, n_hidden_layers,
                                    hidden_layer_size, model_name,
                                    is_data_normalization,
-                                   pro_aggregation_scheme, hidden_activation,
-                                   output_activation, device_type, tmp_path):
+                                   pro_aggregation_scheme, hidden_activ_type,
+                                   output_activ_type, device_type, tmp_path):
     """Test GNN-based material patch model constructor."""
     # Initialize errors
     errors = []
@@ -53,47 +53,47 @@ def test_material_patch_model_init(n_node_in, n_node_out, n_edge_in,
                            pro_n_hidden_layers=n_hidden_layers,
                            dec_n_hidden_layers=n_hidden_layers,
                            hidden_layer_size=hidden_layer_size,
-                           model_directory=model_directory,
+                           model_directory=str(model_directory),
                            model_name=model_name,
                            is_data_normalization=is_data_normalization,
                            pro_aggregation_scheme=pro_aggregation_scheme,
-                           enc_node_hidden_activation=hidden_activation,
-                           enc_node_output_activation=output_activation,
-                           enc_edge_hidden_activation=hidden_activation,
-                           enc_edge_output_activation=output_activation,
-                           pro_node_hidden_activation=hidden_activation,
-                           pro_node_output_activation=output_activation,
-                           pro_edge_hidden_activation=hidden_activation,
-                           pro_edge_output_activation=output_activation,
-                           dec_node_hidden_activation=hidden_activation,
-                           dec_node_output_activation=output_activation,
+                           enc_node_hidden_activ_type=hidden_activ_type,
+                           enc_node_output_activ_type=output_activ_type,
+                           enc_edge_hidden_activ_type=hidden_activ_type,
+                           enc_edge_output_activ_type=output_activ_type,
+                           pro_node_hidden_activ_type=hidden_activ_type,
+                           pro_node_output_activ_type=output_activ_type,
+                           pro_edge_hidden_activ_type=hidden_activ_type,
+                           pro_edge_output_activ_type=output_activ_type,
+                           dec_node_hidden_activ_type=hidden_activ_type,
+                           dec_node_output_activ_type=output_activ_type,
                            device_type=device_type)
     model = GNNMaterialPatchModel(**model_init_args)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Check model attributes
-    if not (model._n_node_in == n_node_in,
-            model._n_node_out == n_node_out,
-            model._n_edge_in == n_edge_in,
-            model._n_message_steps == n_message_steps,
-            model._enc_n_hidden_layers == n_hidden_layers,
-            model._pro_n_hidden_layers == n_hidden_layers,
-            model._dec_n_hidden_layers == n_hidden_layers,
-            model._hidden_layer_size == hidden_layer_size,
-            model.model_directory == str(tmp_path),
-            model.model_name == model_name,
-            model.is_data_normalization == is_data_normalization,
-            model._pro_aggregation_scheme == pro_aggregation_scheme,
-            model._enc_node_hidden_activation == hidden_activation,
-            model._enc_node_output_activation == output_activation,
-            model._enc_edge_hidden_activation == hidden_activation,
-            model._enc_edge_output_activation == output_activation,
-            model._pro_node_hidden_activation == hidden_activation,
-            model._pro_node_output_activation == output_activation,
-            model._pro_edge_hidden_activation == hidden_activation,
-            model._pro_edge_output_activation == output_activation,
-            model._dec_node_hidden_activation == hidden_activation,
-            model._dec_node_output_activation == output_activation,
-            model._device == device_type):
+    if not all([model._n_node_in == n_node_in,
+                model._n_node_out == n_node_out,
+                model._n_edge_in == n_edge_in,
+                model._n_message_steps == n_message_steps,
+                model._enc_n_hidden_layers == n_hidden_layers,
+                model._pro_n_hidden_layers == n_hidden_layers,
+                model._dec_n_hidden_layers == n_hidden_layers,
+                model._hidden_layer_size == hidden_layer_size,
+                model.model_directory == str(tmp_path),
+                model.model_name == model_name,
+                model.is_data_normalization == is_data_normalization,
+                model._pro_aggregation_scheme == pro_aggregation_scheme,
+                model._enc_node_hidden_activ_type == hidden_activ_type,
+                model._enc_node_output_activ_type == output_activ_type,
+                model._enc_edge_hidden_activ_type == hidden_activ_type,
+                model._enc_edge_output_activ_type == output_activ_type,
+                model._pro_node_hidden_activ_type == hidden_activ_type,
+                model._pro_node_output_activ_type == output_activ_type,
+                model._pro_edge_hidden_activ_type == hidden_activ_type,
+                model._pro_edge_output_activ_type == output_activ_type,
+                model._dec_node_hidden_activ_type == hidden_activ_type,
+                model._dec_node_output_activ_type == output_activ_type,
+                model._device_type == device_type]):
         errors.append('One or more attributes of GNN-based material patch '
                       'model class were not properly set.')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -169,7 +169,7 @@ def test_material_patch_model_init_invalid(n_node_in, n_node_out, n_edge_in,
         # Test detection of invalid device
         test_init_args = model_init_args.copy()
         test_init_args['device_type'] = 'unknown_device_type'
-        model = GNNMaterialPatchModel(**test_init_args)
+        _ = GNNMaterialPatchModel(**test_init_args)
 # -----------------------------------------------------------------------------
 def test_init_from_file(gnn_material_simulator_norm):
     """Test GNN-based material patch model from initialization file."""

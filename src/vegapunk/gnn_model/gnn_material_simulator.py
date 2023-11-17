@@ -66,44 +66,44 @@ class GNNMaterialPatchModel(torch.nn.Module):
     _hidden_layer_size : int
         Number of neurons of hidden layers of multilayer feed-forward
         neural network update functions.
-    _enc_node_hidden_activation : torch.nn.Module, default=torch.nn.Identity
-        Encoder: Hidden unit activation function of node update function
+    _enc_node_hidden_activ_type : str, default='identity'
+        Encoder: Hidden unit activation function type of node update function
         (multilayer feed-forward neural network). Defaults to identity
         (linear) unit activation function.
-    _enc_node_output_activation : torch.nn.Module, default=torch.nn.Identity
-        Encoder: Output unit activation function of node update function
+    _enc_node_output_activ_type : str, default='identity'
+        Encoder: Output unit activation function type of node update function
         (multilayer feed-forward neural network). Defaults to identity
         (linear) unit activation function.
-    _enc_edge_hidden_activation : torch.nn.Module, default=torch.nn.Identity
-        Encoder: Hidden unit activation function of edge update function
+    _enc_edge_hidden_activ_type : str, default='identity'
+        Encoder: Hidden unit activation function type of edge update function
         (multilayer feed-forward neural network). Defaults to identity
         (linear) unit activation function.
-    _enc_edge_output_activation : torch.nn.Module, default=torch.nn.Identity
-        Encoder: Output unit activation function of edge update function
+    _enc_edge_output_activ_type : str, default='identity'
+        Encoder: Output unit activation function type of edge update function
         (multilayer feed-forward neural network). Defaults to identity
         (linear) unit activation function.
-    _pro_node_hidden_activation : torch.nn.Module, default=torch.nn.Identity
-        Processor: Hidden unit activation function of node update function
+    _pro_node_hidden_activ_type : str, default='identity'
+        Processor: Hidden unit activation function type of node update function
         (multilayer feed-forward neural network). Defaults to identity
         (linear) unit activation function.
-    _pro_node_output_activation : torch.nn.Module, default=torch.nn.Identity
-        Processor: Output unit activation function of node update function
+    _pro_node_output_activ_type : str, default='identity'
+        Processor: Output unit activation function type of node update function
         (multilayer feed-forward neural network). Defaults to identity
         (linear) unit activation function.
-    _pro_edge_hidden_activation : torch.nn.Module, default=torch.nn.Identity
-        Processor: Hidden unit activation function of edge update function
+    _pro_edge_hidden_activ_type : str, default='identity'
+        Processor: Hidden unit activation function type of edge update function
         (multilayer feed-forward neural network). Defaults to identity
         (linear) unit activation function.
-    _pro_edge_output_activation : torch.nn.Module, default=torch.nn.Identity
-        Processor: Output unit activation function of edge update function
+    _pro_edge_output_activ_type : str, default='identity'
+        Processor: Output unit activation function type of edge update function
         (multilayer feed-forward neural network). Defaults to identity
         (linear) unit activation function.
-    _dec_node_hidden_activation : torch.nn.Module, default=torch.nn.Identity
-        Decoder: Hidden unit activation function of node update function
+    _dec_node_hidden_activ_type : str, default='identity'
+        Decoder: Hidden unit activation function type of node update function
         (multilayer feed-forward neural network). Defaults to identity
         (linear) unit activation function.
-    _dec_node_output_activation : torch.nn.Module, default=torch.nn.Identity
-        Decoder: Output unit activation function of node update function
+    _dec_node_output_activ_type : str, default='identity'
+        Decoder: Output unit activation function type of node update function
         (multilayer feed-forward neural network). Defaults to identity
         (linear) unit activation function.
     _gnn_epd_model : EncodeProcessDecode
@@ -169,16 +169,16 @@ class GNNMaterialPatchModel(torch.nn.Module):
                  model_name='material_patch_model',
                  is_data_normalization=False,
                  pro_aggregation_scheme='add',
-                 enc_node_hidden_activation=torch.nn.Identity,
-                 enc_node_output_activation=torch.nn.Identity,
-                 enc_edge_hidden_activation=torch.nn.Identity,
-                 enc_edge_output_activation=torch.nn.Identity,
-                 pro_node_hidden_activation=torch.nn.Identity,
-                 pro_node_output_activation=torch.nn.Identity,
-                 pro_edge_hidden_activation=torch.nn.Identity,
-                 pro_edge_output_activation=torch.nn.Identity,
-                 dec_node_hidden_activation=torch.nn.Identity,
-                 dec_node_output_activation=torch.nn.Identity,
+                 enc_node_hidden_activ_type='identity',
+                 enc_node_output_activ_type='identity',
+                 enc_edge_hidden_activ_type='identity',
+                 enc_edge_output_activ_type='identity',
+                 pro_node_hidden_activ_type='identity',
+                 pro_node_output_activ_type='identity',
+                 pro_edge_hidden_activ_type='identity',
+                 pro_edge_output_activ_type='identity',
+                 dec_node_hidden_activ_type='identity',
+                 dec_node_output_activ_type='identity',
                  is_save_model_init_file=True,
                  device_type='cpu'):
         """Constructor.
@@ -215,46 +215,46 @@ class GNNMaterialPatchModel(torch.nn.Module):
             fit_data_scalers() and are stored as model attributes.
         pro_aggregation_scheme : {'add',}, default='add'
             Processor: Message-passing aggregation scheme.
-        enc_node_hidden_activation : torch.nn.Module, default=torch.nn.Identity
-            Encoder: Hidden unit activation function of node update function
-            (multilayer feed-forward neural network). Defaults to identity
-            (linear) unit activation function.
-        enc_node_output_activation : torch.nn.Module, default=torch.nn.Identity
-            Encoder: Output unit activation function of node update function
-            (multilayer feed-forward neural network). Defaults to identity
-            (linear) unit activation function.
-        enc_edge_hidden_activation : torch.nn.Module, default=torch.nn.Identity
-            Encoder: Hidden unit activation function of edge update function
-            (multilayer feed-forward neural network). Defaults to identity
-            (linear) unit activation function.
-        enc_edge_output_activation : torch.nn.Module, default=torch.nn.Identity
-            Encoder: Output unit activation function of edge update function
-            (multilayer feed-forward neural network). Defaults to identity
-            (linear) unit activation function.
-        pro_node_hidden_activation : torch.nn.Module, default=torch.nn.Identity
-            Processor: Hidden unit activation function of node update function
-            (multilayer feed-forward neural network). Defaults to identity
-            (linear) unit activation function.
-        pro_node_output_activation : torch.nn.Module, default=torch.nn.Identity
-            Processor: Output unit activation function of node update function
-            (multilayer feed-forward neural network). Defaults to identity
-            (linear) unit activation function.
-        pro_edge_hidden_activation : torch.nn.Module, default=torch.nn.Identity
-            Processor: Hidden unit activation function of edge update function
-            (multilayer feed-forward neural network). Defaults to identity
-            (linear) unit activation function.
-        pro_edge_output_activation : torch.nn.Module, default=torch.nn.Identity
-            Processor: Output unit activation function of edge update function
-            (multilayer feed-forward neural network). Defaults to identity
-            (linear) unit activation function.
-        dec_node_hidden_activation : torch.nn.Module, default=torch.nn.Identity
-            Decoder: Hidden unit activation function of node update function
-            (multilayer feed-forward neural network). Defaults to identity
-            (linear) unit activation function.
-        dec_node_output_activation : torch.nn.Module, default=torch.nn.Identity
-            Decoder: Output unit activation function of node update function
-            (multilayer feed-forward neural network). Defaults to identity
-            (linear) unit activation function.
+        enc_node_hidden_activ_type : str, default='identity'
+            Encoder: Hidden unit activation function type of node update
+            function (multilayer feed-forward neural network). Defaults to
+            identity (linear) unit activation function.
+        enc_node_output_activ_type : str, default='identity'
+            Encoder: Output unit activation function type of node update
+            function (multilayer feed-forward neural network). Defaults to
+            identity (linear) unit activation function.
+        enc_edge_hidden_activ_type : str, default='identity'
+            Encoder: Hidden unit activation function type of edge update
+            function (multilayer feed-forward neural network). Defaults to
+            identity (linear) unit activation function.
+        enc_edge_output_activ_type : str, default='identity'
+            Encoder: Output unit activation function type of edge update
+            function (multilayer feed-forward neural network). Defaults to
+            identity (linear) unit activation function.
+        pro_node_hidden_activ_type : str, default='identity'
+            Processor: Hidden unit activation function type of node update
+            function (multilayer feed-forward neural network). Defaults to
+            identity (linear) unit activation function.
+        pro_node_output_activ_type : str, default='identity'
+            Processor: Output unit activation function type of node update
+            function (multilayer feed-forward neural network). Defaults to
+            identity (linear) unit activation function.
+        pro_edge_hidden_activ_type : str, default='identity'
+            Processor: Hidden unit activation function type of edge update
+            function (multilayer feed-forward neural network). Defaults to
+            identity (linear) unit activation function.
+        pro_edge_output_activ_type : str, default='identity'
+            Processor: Output unit activation function type of edge update
+            function (multilayer feed-forward neural network). Defaults to
+            identity (linear) unit activation function.
+        dec_node_hidden_activ_type : str, default='identity'
+            Decoder: Hidden unit activation function type of node update
+            function (multilayer feed-forward neural network). Defaults to
+            identity (linear) unit activation function.
+        dec_node_output_activ_type : str, default='identity'
+            Decoder: Output unit activation function type of node update
+            function (multilayer feed-forward neural network). Defaults to
+            identity (linear) unit activation function.
         is_save_model_init_file: bool, default=True
             If True, saves model initialization file when model is initialized
             (overwritting existent initialization file), False otherwise. When
@@ -278,19 +278,19 @@ class GNNMaterialPatchModel(torch.nn.Module):
         self._dec_n_hidden_layers = dec_n_hidden_layers
         self._hidden_layer_size = hidden_layer_size
         self._pro_aggregation_scheme = pro_aggregation_scheme
-        self._enc_node_hidden_activation=enc_node_hidden_activation
-        self._enc_node_output_activation=enc_node_output_activation
-        self._enc_edge_hidden_activation=enc_edge_hidden_activation
-        self._enc_edge_output_activation=enc_edge_output_activation
-        self._pro_node_hidden_activation=pro_node_hidden_activation
-        self._pro_node_output_activation=pro_node_output_activation
-        self._pro_edge_hidden_activation=pro_edge_hidden_activation
-        self._pro_edge_output_activation=pro_edge_output_activation
-        self._dec_node_hidden_activation=dec_node_hidden_activation
-        self._dec_node_output_activation=dec_node_output_activation
+        self._enc_node_hidden_activ_type = enc_node_hidden_activ_type
+        self._enc_node_output_activ_type = enc_node_output_activ_type
+        self._enc_edge_hidden_activ_type = enc_edge_hidden_activ_type
+        self._enc_edge_output_activ_type = enc_edge_output_activ_type
+        self._pro_node_hidden_activ_type = pro_node_hidden_activ_type
+        self._pro_node_output_activ_type = pro_node_output_activ_type
+        self._pro_edge_hidden_activ_type = pro_edge_hidden_activ_type
+        self._pro_edge_output_activ_type = pro_edge_output_activ_type
+        self._dec_node_hidden_activ_type = dec_node_hidden_activ_type
+        self._dec_node_output_activ_type = dec_node_output_activ_type
         # Set material patch model directory and name
         if os.path.isdir(model_directory):
-            self.model_directory = model_directory
+            self.model_directory = str(model_directory)
         else:
             raise RuntimeError('The material patch model directory has not '
                                'been found.')
@@ -314,16 +314,26 @@ class GNNMaterialPatchModel(torch.nn.Module):
             hidden_layer_size=hidden_layer_size,
             n_node_in=n_node_in, n_edge_in=n_edge_in,
             pro_aggregation_scheme=pro_aggregation_scheme,
-            enc_node_hidden_activation=enc_node_hidden_activation,
-            enc_node_output_activation=enc_node_output_activation,
-            enc_edge_hidden_activation=enc_edge_hidden_activation,
-            enc_edge_output_activation=enc_edge_output_activation,
-            pro_node_hidden_activation=pro_node_hidden_activation,
-            pro_node_output_activation=pro_node_output_activation,
-            pro_edge_hidden_activation=pro_edge_hidden_activation,
-            pro_edge_output_activation=pro_edge_output_activation,
-            dec_node_hidden_activation=dec_node_hidden_activation,
-            dec_node_output_activation=dec_node_output_activation,
+            enc_node_hidden_activation=type(self).get_pytorch_activation(
+                self._enc_node_hidden_activ_type),
+            enc_node_output_activation=type(self).get_pytorch_activation(
+                self._enc_node_output_activ_type),
+            enc_edge_hidden_activation=type(self).get_pytorch_activation(
+                self._enc_edge_hidden_activ_type),
+            enc_edge_output_activation=type(self).get_pytorch_activation(
+                self._enc_edge_output_activ_type),
+            pro_node_hidden_activation=type(self).get_pytorch_activation(
+                self._pro_node_hidden_activ_type),
+            pro_node_output_activation=type(self).get_pytorch_activation(
+                self._pro_node_output_activ_type),
+            pro_edge_hidden_activation=type(self).get_pytorch_activation(
+                self._pro_edge_hidden_activ_type),
+            pro_edge_output_activation=type(self).get_pytorch_activation(
+                self._pro_edge_output_activ_type),
+            dec_node_hidden_activation=type(self).get_pytorch_activation(
+                self._dec_node_hidden_activ_type),
+            dec_node_output_activation=type(self).get_pytorch_activation(
+                self._dec_node_output_activ_type),
             is_node_res_connect=False, is_edge_res_connect=False)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Initialize data scalers
@@ -468,26 +478,26 @@ class GNNMaterialPatchModel(torch.nn.Module):
         model_init_args['pro_aggregation_scheme'] = \
             self._pro_aggregation_scheme
         model_init_args['hidden_layer_size'] = self._hidden_layer_size
-        model_init_args['enc_node_hidden_activation'] = \
-            self._enc_node_hidden_activation
-        model_init_args['enc_node_output_activation'] = \
-            self._enc_node_output_activation
-        model_init_args['enc_edge_hidden_activation'] = \
-            self._enc_edge_hidden_activation
-        model_init_args['enc_edge_output_activation'] = \
-            self._enc_edge_output_activation
-        model_init_args['pro_node_hidden_activation'] = \
-            self._pro_node_hidden_activation
-        model_init_args['pro_node_output_activation'] = \
-            self._pro_node_output_activation
-        model_init_args['pro_edge_hidden_activation'] = \
-            self._pro_edge_hidden_activation
-        model_init_args['pro_edge_output_activation'] = \
-            self._enc_edge_output_activation
-        model_init_args['dec_node_hidden_activation'] = \
-            self._dec_node_hidden_activation
-        model_init_args['dec_node_output_activation'] = \
-            self._dec_node_output_activation
+        model_init_args['enc_node_hidden_activ_type'] = \
+            self._enc_node_hidden_activ_type
+        model_init_args['enc_node_output_activ_type'] = \
+            self._enc_node_output_activ_type
+        model_init_args['enc_edge_hidden_activ_type'] = \
+            self._enc_edge_hidden_activ_type
+        model_init_args['enc_edge_output_activ_type'] = \
+            self._enc_edge_output_activ_type
+        model_init_args['pro_node_hidden_activ_type'] = \
+            self._pro_node_hidden_activ_type
+        model_init_args['pro_node_output_activ_type'] = \
+            self._pro_node_output_activ_type
+        model_init_args['pro_edge_hidden_activ_type'] = \
+            self._pro_edge_hidden_activ_type
+        model_init_args['pro_edge_output_activ_type'] = \
+            self._enc_edge_output_activ_type
+        model_init_args['dec_node_hidden_activ_type'] = \
+            self._dec_node_hidden_activ_type
+        model_init_args['dec_node_output_activ_type'] = \
+            self._dec_node_output_activ_type
         model_init_args['model_directory'] = self.model_directory
         model_init_args['model_name'] = self.model_name
         model_init_args['is_data_normalization'] = self.is_data_normalization
@@ -662,6 +672,42 @@ class GNNMaterialPatchModel(torch.nn.Module):
                     mode='denormalize')
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         return node_internal_forces
+    # -------------------------------------------------------------------------
+    @staticmethod
+    def get_pytorch_activation(activation_type, **kwargs):
+        """Get PyTorch unit activation function.
+    
+        Parameters
+        ----------
+        activation_type : {'identity', 'relu}
+            Unit activation function type:
+            
+            'identity' : Linear (torch.nn.Identity)
+            
+            'relu'     : Rectified linear unit (torch.nn.Identity)
+            
+        **kwargs
+            Arguments of torch.nn._Module initializer.
+            
+        Returns
+        -------
+        activation_function : torch.nn._Module
+            PyTorch unit activation function.
+        """
+        # Set available unit activation function types
+        available = ('identity', 'relu')
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Get unit activation function
+        if activation_type == 'identity':
+            activation_function = torch.nn.Identity
+        elif activation_type == 'relu':
+            activation_function = torch.nn.ReLU
+        else:
+            raise RuntimeError(f'Unknown or unavailable PyTorch unit '
+                               f'activation function: \'{activation_type}\'.'
+                               f'\n\nAvailable: {available}')
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        return activation_function
     # -------------------------------------------------------------------------
     def save_model_state(self, training_step=None, is_best_state=False,
                          is_remove_posterior=True):
