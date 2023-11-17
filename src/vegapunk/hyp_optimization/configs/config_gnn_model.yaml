@@ -1,19 +1,41 @@
-# Documentation:
-# 1. https://github.com/facebookresearch/hydra/blob/main/website/docs/configure_hydra/Intro.md
-# 2. https://hydra.cc/docs/tutorials/basic/running_your_app/multi-run/#sweeping-via-hydrasweeperparams
-# 3. https://facebookresearch.github.io/nevergrad/
-# 4. https://hydra.cc/docs/plugins/nevergrad_sweeper/
-# 5. https://github.com/facebookresearch/hydra/blob/main/plugins/hydra_optuna_sweeper/hydra_plugins/hydra_optuna_sweeper/config.py
-# 6. https://optuna.readthedocs.io/en/stable/reference/samplers/index.html
-# =============================================================================
-# Summary: General Hydra configuration file with multiple sweeper options
+# Summary: Hydra configuration file for hyperparameter optimization of
+#          Graph Neural Network based material patch model
 #
 # Author: Bernardo Ferreira (bernardo_ferreira@brown.edu)
 # =============================================================================
-# Set default parameters
-batch_size: 1
-lr: 0.01
-lr_scheduler_type: 'steplr'
+# Set default parameters:
+
+# Dataset
+training_dataset: 'path'
+validation_dataset: 'path'
+
+# Model parameters
+# Number of node input features
+n_node_in: 4
+# Number of node output features
+n_node_out: 2
+# Number of edge input features 
+n_edge_in: 6
+# Number of message-passing steps
+n_message_steps: 1
+# Number of hidden layers (EPD shared)
+n_hidden_layers: 1
+# Hidden layer size (EPD shared)
+hidden_layer_size: 1
+# Hidden activation function (EPD shared)
+hidden_activation: 'identity'
+# Output activation function (EPD shared)
+output_activation: 'identity'
+
+# Training parameters
+# Batch size
+batch_size: 5
+# Learning rate (initial value)
+lr_init: 0.001
+# Learning rate scheduler
+lr_scheduler_type: 'explr'
+# Optimization algorithm
+opt_algorithm: 'adam'
 
 # Set default parameters groups (subconfig files)
 # 1. The _self_ works was follows: (i) if set as the first default parameter,
@@ -22,6 +44,7 @@ lr_scheduler_type: 'steplr'
 #    parameters are set and then overriden by any parameters in sweeper.
 #
 defaults:
+
   # CHOOSE ONE SWEEPER (COMMENT OUT WITH #):
   # 1. Hydra BasicSweeper (default)
   #- override hydra/sweeper: basic
@@ -69,9 +92,7 @@ hydra:
 
   #   # BasicSweeper search space parameterization
   #   params:
-  #     batch_size: 1, 2, 3
-  #     lr: 0.1, 0.2, 0.3
-  #     lr_scheduler_type: steplr, explr
+  #     ...   
   # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   # 2. Hydra Nevergrad Sweeper plugin
   # sweeper:
@@ -114,7 +135,7 @@ hydra:
   sweeper:
     # Optuna sweeper settings
     _target_: hydra_plugins.hydra_optuna_sweeper.optuna_sweeper.OptunaSweeper
-    # Store Optuna dashboard file (python package sqlalchemy==1.4.44)
+      # Store Optuna dashboard file (python package sqlalchemy==1.4.44)
     storage: 'sqlite:////home/bernardoferreira/Desktop/optuna_dashboard.db'
 
     # Maximum number of function evaluations to perform
@@ -130,6 +151,24 @@ hydra:
 
     # Optuna search space parameterization
     params:
-      batch_size: range(1, 10)
-      lr: interval(0.0, 1.0)
+      # Model parameters:
+      # Number of message-passing steps
+      n_message_steps: range(1, 10)
+      # Number of hidden layers (EPD shared)
+      n_hidden_layers: range(1, 10)
+      # Hidden layer size (EPD shared)
+      hidden_layer_size: range(1, 128)
+      # Hidden activation function (EPD shared)
+      hidden_activation: choice('identity', 'relu')
+      # Output activation function (EPD shared)
+      output_activation: choice('identity', 'relu')
+      
+      # Training parameters:
+      # Batch size
+      batch_size: choice(5, 10, 20)
+      # Learning rate (initial value)
+      lr_init: interval(0.0, 1.0)
+      # Learning rate scheduler
       lr_scheduler_type: choice('steplr', 'explr')
+      # Optimizer algorithm
+      opt_algorithm: 'adam'
