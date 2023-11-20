@@ -346,7 +346,7 @@ def train_model(n_train_steps, dataset, model_init_args, lr_init,
                       lr_history=lr_history)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Get best loss and corresponding training step
-    best_loss = min(loss_history).detach().cpu()
+    best_loss = float(min(loss_history).detach().cpu())
     best_training_step = loss_history.index(best_loss)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     if is_verbose:
