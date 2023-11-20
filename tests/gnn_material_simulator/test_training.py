@@ -4,7 +4,6 @@
 # =============================================================================
 # Standard
 import os
-import pickle
 import random
 # Third-party
 import pytest
@@ -14,9 +13,10 @@ import numpy as np
 from src.vegapunk.gnn_model.gnn_material_simulator import \
     GNNMaterialPatchModel
 from src.vegapunk.gnn_model.training import \
-    get_pytorch_loss, get_pytorch_optimizer, get_learning_rate_scheduler, \
-    save_training_state, load_training_state, save_loss_history, \
-    load_loss_history, load_lr_history, seed_worker
+    get_pytorch_optimizer, get_learning_rate_scheduler, save_training_state, \
+    load_training_state, save_loss_history, load_loss_history, \
+    load_lr_history, seed_worker
+from src.vegapunk.gnn_model.torch_loss import get_pytorch_loss
 # =============================================================================
 #
 #                                                          Authorship & Credits

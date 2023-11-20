@@ -4,8 +4,6 @@ Functions
 ---------
 train_model
     Training of GNN-based material patch model.
-get_pytorch_loss
-    Get PyTorch loss function.
 get_pytorch_optimizer
     Get PyTorch optimizer.
 get_learning_rate_scheduler
@@ -47,6 +45,7 @@ import torch_geometric.loader
 import numpy as np
 # Local
 from gnn_model.gnn_material_simulator import GNNMaterialPatchModel
+from gnn_model.torch_loss import get_pytorch_loss
 from ioput.iostandard import write_summary_file
 #
 #                                                          Authorship & Credits
@@ -374,31 +373,6 @@ def train_model(n_train_steps, dataset, model_init_args, lr_init,
         best_training_step, total_time_sec, avg_time_epoch)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     return model, best_loss, best_training_step
-# =============================================================================
-def get_pytorch_loss(loss_type, **kwargs):
-    """Get PyTorch loss function.
-   
-    Parameters
-    ----------
-    loss_type : {'mse',}
-        Loss function type:
-        
-        'mse'  : MSE (torch.nn.MSELoss)
-        
-    **kwargs
-        Arguments of torch.nn._Loss initializer.
-        
-    Returns
-    -------
-    loss_function : torch.nn._Loss
-        PyTorch loss function.
-    """
-    if loss_type == 'mse':
-        loss_function = torch.nn.MSELoss(**kwargs)
-    else:
-        raise RuntimeError('Unknown or unavailable PyTorch loss function.')
-    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    return loss_function
 # =============================================================================
 def get_pytorch_optimizer(algorithm, params, **kwargs):
     """Get PyTorch optimizer.

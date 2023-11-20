@@ -14,6 +14,8 @@ compute_sample_prediction_loss
     Compute loss of sample node internal forces prediction.
 build_prediction_data_arrays
     Build samples predictions data arrays with predictions and ground-truth.
+seed_worker
+    Set workers seed in PyTorch data loaders to preserve reproducibility.
 write_prediction_summary_file
     Write summary data file for model prediction process.
 """
@@ -34,7 +36,7 @@ import tqdm
 import numpy as np
 # Local
 from gnn_model.gnn_material_simulator import GNNMaterialPatchModel
-from gnn_model.training import get_pytorch_loss, seed_worker
+from gnn_model.torch_loss import get_pytorch_loss
 from ioput.iostandard import make_directory, write_summary_file
 #
 #                                                          Authorship & Credits
@@ -514,6 +516,20 @@ def build_prediction_data_arrays(predictions_dir, prediction_type,
                 np.append(prediction_data_arrays[i], data_array, axis=0)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     return prediction_data_arrays
+# =============================================================================
+def seed_worker(worker_id):
+    """Set workers seed in PyTorch data loaders to preserve reproducibility.
+    
+    Taken from: https://pytorch.org/docs/stable/notes/randomness.html
+    
+    Parameters
+    ----------
+    worker_id : int
+        Worker ID.
+    """
+    worker_seed = torch.initial_seed() % 2**32
+    np.random.seed(worker_seed)
+    random.seed(worker_seed)
 # =============================================================================
 def write_prediction_summary_file(
     predict_subdir, device_type, seed, model_directory, load_model_state,

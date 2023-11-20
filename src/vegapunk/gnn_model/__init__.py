@@ -9,3 +9,4 @@ from gnn_model import gnn_architectures
 from gnn_model import training
 from gnn_model import prediction
 from gnn_model import evaluation_metrics
+from gnn_model import torch_loss
