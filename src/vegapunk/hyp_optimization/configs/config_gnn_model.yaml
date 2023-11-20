@@ -5,10 +5,6 @@
 # =============================================================================
 # Set default parameters:
 
-# Dataset
-training_dataset: 'path'
-validation_dataset: 'path'
-
 # Model parameters
 # Number of node input features
 n_node_in: 4
@@ -28,14 +24,28 @@ hidden_activation: 'identity'
 output_activation: 'identity'
 
 # Training parameters
+# Number of training steps
+n_train_steps: 100
 # Batch size
 batch_size: 5
+# Data set shuffler
+is_sampler_shuffle: true
+# Loss type
+loss_type: 'mse'
+# Loss parameters
+loss_kwargs: {}
 # Learning rate (initial value)
 lr_init: 0.001
 # Learning rate scheduler
 lr_scheduler_type: 'explr'
+# Learning rate scheduler parameters
+lr_scheduler_kwargs:
+  'gamma': 0.99
+
 # Optimization algorithm
 opt_algorithm: 'adam'
+
+# =============================================================================
 
 # Set default parameters groups (subconfig files)
 # 1. The _self_ works was follows: (i) if set as the first default parameter,
@@ -52,11 +62,14 @@ defaults:
   #- override hydra/sweeper: nevergrad
   # 3. Optuna
   - override hydra/sweeper: optuna
+  - override hydra/sweeper/sampler: grid
   # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   # Disable Hydra logging
   - override hydra/hydra_logging: none
   - override hydra/job_logging: none
   - _self_
+
+# =============================================================================
 
 hydra:
 
@@ -145,7 +158,7 @@ hydra:
     # Optuna optimizer settings:
     sampler:
       # Optuna optimizer
-      _target_: optuna.samplers.TPESampler
+      _target_: optuna.samplers.GridSampler
       # Optuna optimizer class parameters
       # ...
 
@@ -153,22 +166,22 @@ hydra:
     params:
       # Model parameters:
       # Number of message-passing steps
-      n_message_steps: range(1, 10)
+      n_message_steps: range(1, 3)
       # Number of hidden layers (EPD shared)
-      n_hidden_layers: range(1, 10)
-      # Hidden layer size (EPD shared)
-      hidden_layer_size: range(1, 128)
-      # Hidden activation function (EPD shared)
-      hidden_activation: choice('identity', 'relu')
-      # Output activation function (EPD shared)
-      output_activation: choice('identity', 'relu')
+      # n_hidden_layers: range(1, 10)
+      # # Hidden layer size (EPD shared)
+      # hidden_layer_size: range(1, 128)
+      # # Hidden activation function (EPD shared)
+      # hidden_activation: choice('identity', 'relu')
+      # # Output activation function (EPD shared)
+      # output_activation: choice('identity', 'relu')
       
-      # Training parameters:
-      # Batch size
-      batch_size: choice(5, 10, 20)
-      # Learning rate (initial value)
-      lr_init: interval(0.0, 1.0)
-      # Learning rate scheduler
-      lr_scheduler_type: choice('steplr', 'explr')
-      # Optimizer algorithm
-      opt_algorithm: 'adam'
+      # # Training parameters:
+      # # Batch size
+      # batch_size: choice(5, 10, 20)
+      # # Learning rate (initial value)
+      # lr_init: interval(0.0, 1.0)
+      # # Learning rate scheduler
+      # lr_scheduler_type: choice('steplr', 'explr')
+      # # Optimizer algorithm
+      # opt_algorithm: 'adam'
