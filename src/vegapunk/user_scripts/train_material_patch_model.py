@@ -240,9 +240,9 @@ def set_case_study_model_parameters(case_study_name, model_directory,
         # Set hidden layer size
         hidden_layer_size = 10
         # Set (shared) hidden unit activation function
-        hidden_activation = torch.nn.ReLU
+        hidden_activation = 'relu'
         # Set (shared) output unit activation function
-        output_activation = torch.nn.Identity
+        output_activation = 'identity'
         # Set data normalization
         is_data_normalization = True
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -263,16 +263,16 @@ def set_case_study_model_parameters(case_study_name, model_directory,
                        'model_directory': model_directory,
                        'model_name': model_name,
                        'is_data_normalization': is_data_normalization,
-                       'enc_node_hidden_activation': hidden_activation,
-                       'enc_node_output_activation': output_activation,
-                       'enc_edge_hidden_activation': hidden_activation,
-                       'enc_edge_output_activation': output_activation,
-                       'pro_node_hidden_activation': hidden_activation,
-                       'pro_node_output_activation': output_activation,
-                       'pro_edge_hidden_activation': hidden_activation,
-                       'pro_edge_output_activation': output_activation,
-                       'dec_node_hidden_activation': hidden_activation,
-                       'dec_node_output_activation': output_activation,
+                       'enc_node_hidden_activ_type': hidden_activation,
+                       'enc_node_output_activ_type': output_activation,
+                       'enc_edge_hidden_activ_type': hidden_activation,
+                       'enc_edge_output_activ_type': output_activation,
+                       'pro_node_hidden_activ_type': hidden_activation,
+                       'pro_node_output_activ_type': output_activation,
+                       'pro_edge_hidden_activ_type': hidden_activation,
+                       'pro_edge_output_activ_type': output_activation,
+                       'dec_node_hidden_activ_type': hidden_activation,
+                       'dec_node_output_activ_type': output_activation,
                        'device_type': device_type}
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     return model_init_args
