@@ -29,6 +29,7 @@ defaults:
   #- override hydra/sweeper: nevergrad
   # 3. Optuna
   - override hydra/sweeper: optuna
+  - override hydra/sweeper/sampler: grid
   # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   # Disable Hydra logging
   - override hydra/hydra_logging: none
@@ -124,7 +125,7 @@ hydra:
     # Optuna optimizer settings:
     sampler:
       # Optuna optimizer
-      _target_: optuna.samplers.TPESampler
+      _target_: optuna.samplers.GridSampler
       # Optuna optimizer class parameters
       # ...
 

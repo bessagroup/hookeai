@@ -8,6 +8,8 @@ Functions
 ---------
 dummy_function
     Dummy function to be minimized.
+display_hydra_job_header(hydra_cfg)
+    Display Hydra hyperparameter optimization job header.
 """
 #
 #                                                                       Modules
@@ -52,6 +54,64 @@ def dummy_function(cfg):
     # Get Hydra configuration singleton
     hydra_cfg = hydra.core.hydra_config.HydraConfig.get()
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Display Hydra hyperparameter optimization job header
+    sweeper, sweeper_optimizer, job_dir = display_hydra_job_header(hydra_cfg)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Get batch size
+    batch_size = cfg.batch_size
+    # Get learning rate
+    lr = cfg.lr
+    # Get learning rate scheduler
+    lr_scheduler_type = cfg.lr_scheduler_type
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Compute objective to be minimized
+    objective = abs(batch_size - 4) + abs(lr - 0.25) + len(lr_scheduler_type)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Display parameters
+    print('\nParameters:')
+    for key, val in cfg.items():
+        print(f'  > {key:{max([len(x) for x in cfg.keys()])}} : {val}')
+    # Display objective
+    print(f'\nFunction evaluation:')
+    print(f'  > Objective : {objective}\n')
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Set summary data
+    summary_data = {}
+    summary_data['sweeper'] = sweeper
+    summary_data['sweeper_optimizer'] = sweeper_optimizer
+    for key, val in cfg.items():
+        summary_data[key] = val
+    summary_data['objective'] = objective
+    # Write summary file
+    write_summary_file(summary_directory=job_dir,
+                       filename='job_summary',
+                       summary_title='Hydra - Hyperparameter Optimization Job',
+                       **summary_data)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    return objective
+# =============================================================================
+def display_hydra_job_header(hydra_cfg):
+    """Display Hydra hyperparameter optimization job header.
+    
+    Parameters
+    ----------
+    hydra_cfg : hydra.core.singleton.Singleton
+        Hydra configuration.
+    is_verbose : bool, default=False
+        If True, enable verbose output.
+        
+    Returns
+    -------
+    sweeper : str
+        Hydra hyperparameter optimization process sweeper.
+    sweeper_optimizer : str
+        Hydra hyperparameter optimization process optimization algorithm.
+    job_dir : str
+        Hydra hyperparameter optimization job output directory.
+    """
+    # Get Hydra configuration singleton
+    hydra_cfg = hydra.core.hydra_config.HydraConfig.get()
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     print(f'\nLaunching Hydra job: #{hydra_cfg.job.id}'
           '\n' + len(f'Launching Hydra job: #{hydra_cfg.job.id}')*'-')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -86,38 +146,7 @@ def dummy_function(cfg):
     print(f'  > Working directory : {cwd}')
     print(f'  > Output directory  : {job_dir}')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Get batch size
-    batch_size = cfg.batch_size
-    # Get learning rate
-    lr = cfg.lr
-    # Get learning rate scheduler
-    lr_scheduler_type = cfg.lr_scheduler_type
-    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Compute objective to be minimized
-    objective = abs(batch_size - 4) + abs(lr - 0.25) + len(lr_scheduler_type)
-    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Display parameters
-    print('\nParameters:')
-    for key, val in cfg.items():
-        print(f'  > {key:{max([len(x) for x in cfg.keys()])}} : {val}')
-    # Display objective
-    print(f'\nFunction evaluation:')
-    print(f'  > Objective : {objective}\n')
-    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Set summary data
-    summary_data = {}
-    summary_data['sweeper'] = sweeper
-    summary_data['sweeper_optimizer'] = sweeper_optimizer
-    for key, val in cfg.items():
-        summary_data[key] = val
-    summary_data['objective'] = objective
-    # Write summary file
-    write_summary_file(summary_directory=job_dir,
-                       filename='job_summary',
-                       summary_title='Hydra - Hyperparameter Optimization Job',
-                       **summary_data)
-    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    return objective
+    return sweeper, sweeper_optimizer, job_dir
 # =============================================================================
 if __name__ == "__main__":
     dummy_function()
