@@ -1,5 +1,10 @@
 """Training of Graph Neural Network based material patch model.
 
+Classes
+-------
+EarlyStopper
+    Early stopping procedure (implicit regularizaton).
+
 Functions
 ---------
 train_model
@@ -39,6 +44,8 @@ import random
 import re
 import time
 import datetime
+import copy
+import shutil
 # Third-party
 import torch
 import torch_geometric.loader
@@ -46,6 +53,8 @@ import numpy as np
 # Local
 from gnn_model.gnn_material_simulator import GNNMaterialPatchModel
 from gnn_model.torch_loss import get_pytorch_loss
+from gnn_model.gnn_patch_dataset import split_dataset
+from gnn_model.prediction import predict
 from ioput.iostandard import write_summary_file
 #
 #                                                          Authorship & Credits
@@ -57,16 +66,17 @@ __status__ = 'Planning'
 def train_model(n_train_steps, dataset, model_init_args, lr_init,
                 opt_algorithm='adam', lr_scheduler_type=None,
                 lr_scheduler_kwargs={}, loss_type='mse', loss_kwargs={},
-                batch_size=1, is_sampler_shuffle=False, load_model_state=None,
-                save_every=None, dataset_file_path=None, device_type='cpu',
-                seed=None, is_verbose=False):
+                batch_size=1, is_sampler_shuffle=False,
+                is_early_stopping=False, early_stopping_kwargs={},
+                load_model_state=None, save_every=None, dataset_file_path=None,
+                device_type='cpu', seed=None, is_verbose=False):
     """Training of GNN-based material patch model.
     
     Parameters
     ----------
     n_train_steps : int
         Number of training steps.
-    dataset : GNNMaterialPatchDataset
+    dataset : torch.utils.data.Dataset
         GNN-based material patch data set. Each sample corresponds to a
         torch_geometric.data.Data object describing a homogeneous graph.
     model_init_args : dict
@@ -97,11 +107,17 @@ def train_model(n_train_steps, dataset, model_init_args, lr_init,
         'mse'  : MSE (torch.nn.MSELoss)
         
     loss_kwargs : dict, default={}
-        Arguments of torch.nn._Loss initializer.   
+        Arguments of torch.nn._Loss initializer.
     batch_size : int, default=1
         Number of samples loaded per batch.
     is_sampler_shuffle : bool, default=False
         If True, shuffles data set samples at every epoch.
+    is_early_stopping : bool, default=False
+        If True, then training process is halted when early stopping criterion
+        is triggered. By default, 20% of the training data set is allocated for
+        the underlying validation procedures.
+    early_stopping_kwargs : dict, default={}
+        Early stopping criterion parameters (key, str, item, value).
     load_model_state : {'best', 'last', int, None}, default=None
         Load available GNN-based material patch model state from the model
         directory. Data scalers are also loaded from model initialization file.
@@ -169,7 +185,7 @@ def train_model(n_train_steps, dataset, model_init_args, lr_init,
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Get model data normalization
     is_data_normalization = model.is_data_normalization
-    # Fit model data scalers
+    # Fit model data scalers  
     if is_data_normalization and load_model_state is None:
         model.fit_data_scalers(dataset)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -232,6 +248,25 @@ def train_model(n_train_steps, dataset, model_init_args, lr_init,
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Update training step counter
         step = int(loaded_step)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Initialize validation loss history
+    validation_loss_history = None
+    # Initialize early stopping criterion
+    if is_early_stopping:
+        if is_verbose:
+            print('\n> Initializing early stopping criterion...')
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Initialize early stopping criterion
+        early_stopper = EarlyStopper(dataset, **early_stopping_kwargs)
+        # Get available training data set (remainder is set aside for early
+        # stopping criterion validation procedures)
+        dataset = early_stopper.get_training_dataset()
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Initialize early stopping flag
+        is_stop_training = False
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    if is_verbose:
+        print(f'\n> Training data set (effective) size: {len(dataset)}')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set data loader
     if isinstance(seed, int):
@@ -319,15 +354,40 @@ def train_model(n_train_steps, dataset, model_init_args, lr_init,
                 save_training_state(model=model, optimizer=optimizer,
                                     training_step=step)
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            # Save model and optimizer current best performant state
-            # (criterion: minimum loss during training process)
+            # Save model and optimizer best performance state corresponding to
+            # minimum training loss
             if loss <= min(loss_history):
                 save_training_state(model=model, optimizer=optimizer,
                                     training_step=step, is_best_state=True)
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Check early stopping criterion
+            if is_early_stopping:
+                # Evaluate early stopping criterion
+                if early_stopper.is_evaluate_criterion(step):
+                    is_stop_training = early_stopper.evaluate_criterion(
+                        model, optimizer, step, loss_type=loss_type,
+                        loss_kwargs=loss_kwargs, device_type=device_type)
+                # If early stopping is triggered, save model and optimizer best
+                # performance corresponding to early stopping criterion
+                if is_stop_training:
+                    # Load best performance model and optimizer states
+                    best_step = early_stopper.load_best_performance_state(
+                        model, optimizer)
+                    # Save model and optimizer best performance states
+                    save_training_state(model, optimizer,
+                                        training_step=best_step,
+                                        is_best_state=True)
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Check training process completion
             if step >= n_train_steps:
                 # Completed prescribed number of training steps
+                is_keep_training = False
+                break
+            elif is_early_stopping and is_stop_training:
+                # Update validation loss history
+                validation_loss_history =\
+                    early_stopper.get_validation_loss_history()
+                # Early stopping criterion triggered
                 is_keep_training = False
                 break
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -335,14 +395,19 @@ def train_model(n_train_steps, dataset, model_init_args, lr_init,
             step += 1
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     if is_verbose:
-        print('\n\n> Finished training process!')
+        if is_early_stopping and is_stop_training:
+            print('\n\n> Early stopping has been triggered!',
+                  '\n\n> Finished training process!')
+        else:
+            print('\n\n> Finished training process!')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Save model and optimizer final states
     save_training_state(model=model, optimizer=optimizer, training_step=step)
     # Save loss and learning rate histories
     save_loss_history(model, n_train_steps, loss_type, loss_history,
                       lr_scheduler_type=lr_scheduler_type,
-                      lr_history=lr_history)
+                      lr_history=lr_history,
+                      validation_loss_history=validation_loss_history)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Get best loss and corresponding training step
     best_loss = float(min(loss_history).detach().cpu())
@@ -648,16 +713,16 @@ def remove_posterior_optim_state_files(model, training_step):
             if step > training_step:
                 os.remove(os.path.join(model.model_directory, filename))
 # =============================================================================
-def save_loss_history(model, total_n_train_steps, loss_type, loss_history,
-                      lr_scheduler_type=None, lr_history=None):
+def save_loss_history(model, total_n_train_steps, loss_type,
+                      training_loss_history,
+                      lr_scheduler_type=None, lr_history=None,
+                      validation_loss_history=None):
     """Save training process loss history record.
     
     Loss history record file is stored in model_directory under the name
     loss_history_record.pkl.
 
     Overwrites existing loss history record file.
-    
-    Does also store learning rate history if provided.
     
     Parameters
     ----------
@@ -670,22 +735,25 @@ def save_loss_history(model, total_n_train_steps, loss_type, loss_history,
         
         'mse'  : MSE (torch.nn.MSELoss)
 
-    loss_history : list[float]
-        Training process loss history.
+    training_loss_history : list[float]
+        Training process training loss history.
     lr_scheduler_type : {'steplr', 'explr', 'linlr'}, default=None
         Type of learning rate scheduler.
     lr_history : list[float], default=None
         Training process learning rate history.
+    validation_loss_history : list[float], default=None
+        Training process validation loss history (e.g., early stopping
+        criterion).
     """
     # Set loss history record file path
     loss_record_path = os.path.join(model.model_directory,
                                     'loss_history_record' + '.pkl')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Build loss history record
+    # Build training loss history record
     loss_history_record = {}
     loss_history_record['total_n_train_steps'] = int(total_n_train_steps)
     loss_history_record['loss_type'] = str(loss_type)
-    loss_history_record['loss_history'] = list(loss_history)
+    loss_history_record['training_loss_history'] = list(training_loss_history)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Store learning rate history record
     if lr_scheduler_type is not None:
@@ -697,12 +765,19 @@ def save_loss_history(model, total_n_train_steps, loss_type, loss_history,
     else:
         loss_history_record['lr_history'] = None
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Store validation loss history
+    if validation_loss_history is not None:
+        loss_history_record['validation_loss_history'] = \
+            list(validation_loss_history)
+    else:
+        loss_history_record['validation_loss_history'] = None
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Save loss history record
     with open(loss_record_path, 'wb') as loss_record_file:
         pickle.dump(loss_history_record, loss_record_file)
 # =============================================================================
 def load_loss_history(model, loss_type, training_step=None):
-    """Load training process loss history record.
+    """Load training process training loss history record.
     
     Loss history record file is stored in model_directory under the name
     loss_history_record.pkl.
@@ -723,13 +798,13 @@ def load_loss_history(model, loss_type, training_step=None):
     Returns
     -------
     loss_history : list[float]
-        Training process loss history.
+        Training process training loss history.
     """
     # Set loss history record file path
     loss_record_path = os.path.join(model.model_directory,
                                     'loss_history_record' + '.pkl')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Load training process loss history
+    # Load training process training loss history
     if os.path.isfile(loss_record_path):
         # Load loss history record
         with open(loss_record_path, 'rb') as loss_record_file:
@@ -742,11 +817,11 @@ def load_loss_history(model, loss_type, training_step=None):
                                + ') is not consistent with current training '
                                'process loss type (' + str(loss_type) + ').')
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        # Check loss history
-        loss_record = loss_history_record['loss_history']
+        # Check training loss history
+        loss_record = loss_history_record['training_loss_history']
         if not isinstance(loss_record, list):
             raise RuntimeError('Loaded loss history is not a list[float].')
-        # Load loss history
+        # Load training loss history
         if training_step is None or training_step + 1 == len(loss_record):
             loss_history = loss_record
         else:
@@ -757,8 +832,8 @@ def load_loss_history(model, loss_type, training_step=None):
                 loss_history = loss_record[:training_step + 1]
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     else:
-        # Build loss history with None entries if loss history record file
-        # cannot be found
+        # Build training loss history with None entries if loss history record
+        # file cannot be found
         if training_step is None:
             raise RuntimeError('Training process loss history file has not '
                                'been found and loaded training step is '
@@ -808,7 +883,8 @@ def load_lr_history(model, training_step=None):
         if lr_record is None and training_step is None:
             # Build learning rate history with None entries if learning rate
             # history is not available
-            lr_history = (len(loss_history_record['loss_history']))*[None,]
+            lr_history = \
+                len(loss_history_record['training_loss_history'])*[None,]
         elif lr_record is None and training_step is not None:
             # Build learning rate history with None entries if learning rate
             # history is not available
@@ -849,7 +925,7 @@ def seed_worker(worker_id):
     random.seed(worker_seed)
 # =============================================================================
 def read_loss_history_from_file(loss_record_path):
-    """Read training loss history from loss history record file.
+    """Read training process loss history from loss history record file.
     
     Loss history record file is stored in model_directory under the name
     loss_history_record.pkl.
@@ -868,8 +944,10 @@ def read_loss_history_from_file(loss_record_path):
         
         'mse'  : MSE (torch.nn.MSELoss)
 
-    loss_history : list[float]
-        Training process loss history.
+    training_loss_history : list[float]
+        Training process training loss history.
+    validation_loss_history : {None, list[float]}
+        Training process validation loss history. Set to None if not available.
     """
     # Check loss history record file
     if not os.path.isfile(loss_record_path):
@@ -884,19 +962,34 @@ def read_loss_history_from_file(loss_record_path):
     if 'loss_type' not in loss_history_record.keys():
         raise RuntimeError('Loss type is not available in loss history '
                            'record.')
-    elif 'loss_history' not in loss_history_record.keys():
+    elif 'training_loss_history' not in loss_history_record.keys():
         raise RuntimeError('Loss history is not available in loss history '
                            'record.')
-    elif not isinstance(loss_history_record['loss_history'], list):
+    elif not isinstance(loss_history_record['training_loss_history'], list):
         raise RuntimeError('Loss history is not a list[float].')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set loss type
     loss_type = str(loss_history_record['loss_type'])
-    # Set loss history
-    loss_history = [x.detach().cpu()
-                    for x in loss_history_record['loss_history']]
+    # Set training loss history
+    training_loss_history = []
+    for x in loss_history_record['training_loss_history']:
+        if isinstance(x, torch.Tensor):
+            training_loss_history.append(x.detach().cpu())
+        else:
+            training_loss_history.append(x)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    return loss_type, loss_history
+    # Set validation loss history
+    if isinstance(loss_history_record['validation_loss_history'], list):
+        validation_loss_history = []
+        for x in loss_history_record['validation_loss_history']:
+            if isinstance(x, torch.Tensor):
+                validation_loss_history.append(x.detach().cpu())
+            else:
+                validation_loss_history.append(x)
+    else:
+        validation_loss_history = None
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    return loss_type, training_loss_history, validation_loss_history
 # =============================================================================
 def read_lr_history_from_file(loss_record_path):
     """Read training learning rate history from loss history record file.
@@ -996,7 +1089,7 @@ def write_training_summary_file(
     dataset_file_path : str
         GNN-based material patch data set file path if such file exists. Only
         used for output purposes.
-    dataset : GNNMaterialPatchDataset
+    dataset : torch.utils.data.Dataset
         GNN-based material patch data set. Each sample corresponds to a
         torch_geometric.data.Data object describing a homogeneous graph.
     best_loss : float
@@ -1029,7 +1122,7 @@ def write_training_summary_file(
         lr_scheduler_kwargs if lr_scheduler_kwargs else None
     summary_data['Training data set file'] = \
         dataset_file_path if dataset_file_path else None
-    summary_data['Training data set size'] = len(dataset)
+    summary_data['Training data set (effective) size'] = len(dataset)
     summary_data['Best loss: '] = \
         f'{best_loss:.8e} (training step {best_training_step})'
     summary_data['Total training time'] = \
@@ -1042,3 +1135,304 @@ def write_training_summary_file(
         summary_directory=model_directory,
         summary_title='Summary: GNN-based material patch model training',
         **summary_data)
+# =============================================================================
+class EarlyStopper:
+    """Early stopping procedure (implicit regularizaton).
+    
+    Attributes
+    ----------
+    _validation_size : float
+        Size of the validation data set for early stopping evaluation, where
+        size is a fraction of the whole data set contained between 0 and 1.
+    _validation_frequency : int
+        Frequency of validation procedures, i.e., frequency with respect to
+        training steps at which model is validated to evaluate early stopping
+        criterion.
+    _trigger_tolerance : int
+        Number of consecutive model validation procedures without performance
+        improvement to trigger early stopping.
+    _validation_steps_history : list
+        Validation training steps history.
+    _validation_loss_history : list
+        Validation loss history.
+    _min_validation_loss : float
+        Minimum validation loss.
+    _n_not_improve : int
+        Number of consecutive model validations without improvement.
+    _best_model_state : dict
+        Model state corresponding to the best performance.
+    _best_optimizer_state : dict
+        Optimizer state corresponding to the best performance.
+    _best_training_step : int
+        Training step corresponding to the best performance.
+            
+    Methods
+    -------
+    get_training_dataset(self)
+        Get GNN-based material patch available training data set.
+    get_validation_loss_history(self)
+        Get validation loss history.
+    is_evaluate_criterion(self, training_step)
+        Check whether to evaluate early stopping criterion.
+    evaluate_criterion(self, training_step)
+        Evaluate early stopping criterion.
+    _validate_model(self, model)
+        Perform model validation.
+    load_best_performance_state(self, model, optimizer)
+        Load minimum validation loss model and optimizer states.
+    """
+    def __init__(self, dataset, validation_size=0.2, validation_frequency=1,
+                 trigger_tolerance=1):
+        """Constructor.
+        
+        Parameters
+        ----------
+        dataset : torch.utils.data.Dataset
+            GNN-based material patch data set. Each sample corresponds to a
+            torch_geometric.data.Data object describing a homogeneous graph.
+        validation_size : float, default=0.2
+            Size of the validation data set for early stopping evaluation,
+            where size is a fraction of the whole data set contained between 0
+            and 1.
+        validation_frequency : int, default=1
+            Frequency of validation procedures, i.e., frequency with respect to
+            training steps at which model is validated to evaluate early
+            stopping criterion.
+        trigger_tolerance : int, default=1
+            Number of consecutive model validation procedures without
+            performance improvement to trigger early stopping.
+        """
+        # Set validation data set size
+        self._validation_size = validation_size
+        # Set validation frequency
+        self._validation_frequency = validation_frequency
+        # Set early stopping trigger tolerance
+        self._trigger_tolerance = trigger_tolerance
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set data set split sizes
+        split_sizes = {'training': (1.0 - validation_size),
+                       'validation': validation_size}
+        # Split data set
+        dataset_split = split_dataset(dataset, split_sizes)
+        # Set training and validation datasets
+        self._training_dataset = dataset_split['training']
+        self._validation_dataset = dataset_split['validation']
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Initialize validation training steps history
+        self._validation_steps_history = []
+        # Initialize validation loss history
+        self._validation_loss_history = []
+        # Initialize minimum validation loss
+        self._min_validation_loss = np.inf
+        # Initialize number of consecutive model validations without
+        # improvement
+        self._n_not_improve = 0
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Initialize minimum validation loss state (best performance)
+        self._best_model_state = None
+        self._best_optimizer_state = None
+        self._best_training_step = None
+    # -------------------------------------------------------------------------
+    def get_training_dataset(self):
+        """Get GNN-based material patch available training data set.
+        
+        Returns
+        -------
+        training_dataset : torch.utils.data.Dataset
+            Training data set.
+        """
+        # Get available training data set
+        training_dataset = self._training_dataset
+        self._training_dataset = None
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        return training_dataset
+    # -------------------------------------------------------------------------
+    def get_validation_loss_history(self):
+        """Get validation loss history.
+        
+        Returns
+        -------
+        validation_loss_history : list[float]
+            Validation loss history.
+        """
+        return copy.deepcopy(self._validation_loss_history)
+    # -------------------------------------------------------------------------
+    def is_evaluate_criterion(self, training_step):
+        """Check whether to evaluate early stopping criterion.
+        
+        Parameters
+        ----------
+        training_step : int
+            Training step.
+            
+        Returns
+        -------
+        is_evaluate_criterion : bool
+            If True, then early stopping criterion should be evaluated, False
+            otherwise.
+        """
+        return (training_step > 0
+                and training_step % self._validation_frequency == 0)
+    # -------------------------------------------------------------------------
+    def evaluate_criterion(self, model, optimizer, training_step,
+                           loss_type='mse', loss_kwargs={}, device_type='cpu'):
+        """Evaluate early stopping criterion.
+        
+        Parameters
+        ----------
+        model : torch.nn.Module
+            GNN-based material patch model.
+        optimizer : torch.optim.Optimizer
+            PyTorch optimizer.
+        training_step : int
+            Training step.
+        loss_type : {'mse',}, default='mse'
+            Loss function type:
+            
+            'mse'  : MSE (torch.nn.MSELoss)
+            
+        loss_kwargs : dict, default={}
+            Arguments of torch.nn._Loss initializer.
+        device_type : {'cpu', 'cuda'}, default='cpu'
+            Type of device on which torch.Tensor is allocated.
+            
+        Returns
+        -------
+        is_stop_training : bool
+            True if early stopping criterion has been triggered, False
+            otherwise.
+        """
+        # Set early stopping flag
+        is_stop_training = False
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Perform model validation
+        avg_valid_loss_sample = self._validate_model(
+            model, optimizer, training_step, loss_type=loss_type,
+            loss_kwargs=loss_kwargs, device_type=device_type)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Update minimum validation loss and performance counter
+        if avg_valid_loss_sample < self._min_validation_loss:
+            # Update minimum validation loss
+            self._min_validation_loss = avg_valid_loss_sample
+            # Reset performance counter
+            self._n_not_improve = 0
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Save best performance state (minimum validation loss)
+            self._best_model_state = copy.deepcopy(model.state_dict())
+            self._best_optimizer_state = \
+                dict(state=copy.deepcopy(optimizer.state_dict()),
+                     training_step=training_step)
+            self._best_training_step = training_step
+        else:
+            # Increment performance counter
+            self._n_not_improve += 1
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Evaluate early stopping criterion
+        if self._n_not_improve >= self._trigger_tolerance:
+            # Trigger early stopping
+            is_stop_training = True
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        return is_stop_training
+    # -------------------------------------------------------------------------
+    def _validate_model(self, model, optimizer, training_step, loss_type='mse',
+                        loss_kwargs={}, device_type='cpu'):
+        """Perform model validation.
+        
+        Parameters
+        ----------
+        model : torch.nn.Module
+            GNN-based material patch model.
+        optimizer : torch.optim.Optimizer
+            PyTorch optimizer.
+        training_step : int
+            Training step.
+        loss_type : {'mse',}, default='mse'
+            Loss function type:
+            
+            'mse'  : MSE (torch.nn.MSELoss)
+            
+        loss_kwargs : dict, default={}
+            Arguments of torch.nn._Loss initializer.
+        device_type : {'cpu', 'cuda'}, default='cpu'
+            Type of device on which torch.Tensor is allocated.
+            
+        Returns
+        -------
+        avg_predict_loss : float
+            Average prediction loss per sample.
+        """
+        # Set material patch model state file name and path
+        model_state_file = model.model_name + '-' + str(int(training_step))
+        # Set material patch model state file path
+        model_state_path = \
+            os.path.join(model.model_directory, model_state_file + '.pt')
+        # Set optimizer state file name and path
+        optimizer_state_file = \
+            model.model_name + '_optim' + '-' + str(int(training_step))
+        optimizer_state_path = \
+            os.path.join(model.model_directory, optimizer_state_file + '.pt')
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Initialize temporary state files flag
+        is_state_file_temp = False
+        # Save model and optimizer state files (required for validation)
+        if not os.path.isfile(model_state_path):
+            # Update temporary state files flag
+            is_state_file_temp = True
+            # Save state files
+            save_training_state(model=model, optimizer=optimizer,
+                                training_step=training_step)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Prediction with GNN-based material patch model
+        predict_subdir, avg_valid_loss_sample = predict(
+            model.model_directory, self._validation_dataset,
+            model.model_directory, load_model_state=training_step,
+            loss_type=loss_type, loss_kwargs=loss_kwargs,
+            is_normalized_loss=model.is_data_normalization,
+            device_type=device_type, seed=None, is_verbose=False)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Update validation training steps history
+        self._validation_steps_history.append(training_step)
+        # Update validation loss history
+        self._validation_loss_history.append(avg_valid_loss_sample)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Remove prediction subdirectory
+        if os.path.isdir(predict_subdir):
+            shutil.rmtree(predict_subdir)
+        # Remove model and optimizer state files (required for validation)
+        if is_state_file_temp:
+            os.remove(model_state_path)
+            os.remove(optimizer_state_path)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        return avg_valid_loss_sample
+    # -------------------------------------------------------------------------
+    def load_best_performance_state(self, model, optimizer):
+        """Load minimum validation loss model and optimizer states.
+        
+        Both model and optimizer are updated 'in-place' with stored state data.
+        
+        Parameters
+        ----------
+        model : torch.nn.Module
+            GNN-based material patch model.
+        optimizer : torch.optim.Optimizer
+            PyTorch optimizer.
+            
+        Returns
+        -------
+        best_training_step : int
+            Training step corresponding to the best performance.
+        """
+        # Check best performance states
+        if self._best_model_state is None:
+            raise RuntimeError('The best performance model state has not been '
+                               'stored.')
+        if self._best_optimizer_state is None:
+            raise RuntimeError('The best performance optimization state has '
+                               'not been stored.')
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Load material patch model state
+        model.load_state_dict(self._best_model_state)
+        # Set loaded optimizer state
+        optimizer.load_state_dict(self._best_optimizer_state['state'])
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        return self._best_training_step
