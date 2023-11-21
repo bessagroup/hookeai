@@ -54,8 +54,8 @@ def perform_model_standard_training(case_study_name, dataset_file_path,
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set default GNN-based material patch model training options
     opt_algorithm, lr_init, lr_scheduler_type, lr_scheduler_kwargs, \
-        loss_type, loss_kwargs, is_sampler_shuffle = \
-            set_default_training_options()
+        loss_type, loss_kwargs, is_sampler_shuffle, is_early_stopping, \
+            early_stopping_kwargs = set_default_training_options()
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set GNN-based material patch model training options
     if case_study_name == '2d_elastic_orthogonal':
@@ -93,6 +93,8 @@ def perform_model_standard_training(case_study_name, dataset_file_path,
                               loss_type=loss_type, loss_kwargs=loss_kwargs,
                               batch_size=batch_size,
                               is_sampler_shuffle=is_sampler_shuffle,
+                              is_early_stopping=is_early_stopping,
+                              early_stopping_kwargs=early_stopping_kwargs,
                               load_model_state=None, save_every=None,
                               dataset_file_path=dataset_file_path,
                               device_type=device_type, seed=None,
@@ -101,9 +103,14 @@ def perform_model_standard_training(case_study_name, dataset_file_path,
     # Set loss history record file path
     loss_record_path = os.path.join(model.model_directory,
                                     'loss_history_record.pkl')
-    # Read training process loss history
-    loss_type, loss_history = read_loss_history_from_file(loss_record_path)
-    loss_histories = {f'$n_s = {len(dataset)}$': loss_history,}
+    # Read training process training and validation loss history
+    loss_type, training_loss_history, validation_loss_history = \
+        read_loss_history_from_file(loss_record_path)
+    # Build training process loss history
+    loss_histories = {}
+    loss_histories['Training'] = training_loss_history
+    if validation_loss_history is not None:
+        loss_histories['Validation'] = validation_loss_history
     # Read training process learning rate history
     lr_scheduler_type, lr_history = read_lr_history_from_file(loss_record_path)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -118,8 +125,9 @@ def perform_model_standard_training(case_study_name, dataset_file_path,
                                is_save_fig=True, is_stdout_display=False,
                                is_latex=True)
     # Plot model training process loss and learning rate histories
-    plot_training_loss_and_lr_history(loss_history, lr_history, loss_type=None,
-                                      is_log_loss=False, loss_scale='linear',
+    plot_training_loss_and_lr_history(training_loss_history, lr_history,
+                                      loss_type=None, is_log_loss=False,
+                                      loss_scale='linear',
                                       lr_type=lr_scheduler_type,
                                       save_dir=plot_dir, is_save_fig=True,
                                       is_stdout_display=False, is_latex=True)
@@ -301,7 +309,7 @@ def set_default_training_options():
 
     lr_scheduler_kwargs : dict
         Arguments of torch.optim.lr_scheduler.LRScheduler initializer.
-    loss_type : {'mse',}, default='mse'
+    loss_type : {'mse',}
         Loss function type:
         
         'mse'  : MSE (torch.nn.MSELoss)
@@ -309,7 +317,12 @@ def set_default_training_options():
     loss_kwargs : dict
         Arguments of torch.nn._Loss initializer.
     is_sampler_shuffle : bool
-        If True, shuffles data set samples at every epoch.    
+        If True, shuffles data set samples at every epoch.
+    is_early_stopping : bool
+        If True, then training process is halted when early stopping criterion
+        is triggered.
+    early_stopping_kwargs : dict
+        Early stopping criterion parameters (key, str, item, value).
     """
     opt_algorithm = 'adam'
     lr_init = 1.0e-04
@@ -318,9 +331,13 @@ def set_default_training_options():
     loss_type = 'mse'
     loss_kwargs = {}
     is_sampler_shuffle = True
+    is_early_stopping = True
+    early_stopping_kwargs = {'validation_size': 0.2, 'validation_frequency': 1,
+                             'trigger_tolerance': 1}
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     return opt_algorithm, lr_init, lr_scheduler_type, lr_scheduler_kwargs, \
-        loss_type, loss_kwargs, is_sampler_shuffle
+        loss_type, loss_kwargs, is_sampler_shuffle, is_early_stopping, \
+        early_stopping_kwargs 
 # =============================================================================
 if __name__ == "__main__":
     # Set computation processes
@@ -345,7 +362,7 @@ if __name__ == "__main__":
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~        
     # Set GNN-based material patch training data set directory
     dataset_directory = os.path.join(os.path.normpath(case_study_dir),
-                                        '1_training_dataset')
+                                     '1_training_dataset')
     # Get GNN-based material patch training data set file path
     regex = (r'^material_patch_graph_dataset_training_n[0-9]+.pkl$',
              r'^material_patch_graph_dataset_n[0-9]+.pkl$')
