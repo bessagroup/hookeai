@@ -33,6 +33,7 @@ from gnn_model.gnn_patch_dataset import GNNMaterialPatchDataset
 from gnn_model.training import train_model
 from gnn_model.prediction import predict
 from gnn_model.cross_validation import kfold_cross_validation
+from ioput.iostandard import make_directory
 #
 #                                                          Authorship & Credits
 # =============================================================================
@@ -121,6 +122,14 @@ def hydra_wrapper(process, dataset_paths, device_type='cpu'):
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Training of GNN-based material patch model
         if process in ('training', 'training-validation'):
+            # Set model training subdirectory
+            training_subdir = os.path.join(os.path.normpath(job_dir), 'model')
+            # Create model training subdirectory
+            training_subdir = make_directory(training_subdir,
+                                             is_overwrite=True)
+            # Set model directory
+            model_init_args['model_directory'] = training_subdir
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Training
             model, best_training_loss, _ = train_model(
                 cfg.n_train_steps, training_dataset, model_init_args,
@@ -137,23 +146,37 @@ def hydra_wrapper(process, dataset_paths, device_type='cpu'):
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Validation
             if process == 'training-validation':
+                # Set model validation subdirectory
+                validation_subdir = os.path.join(os.path.normpath(job_dir),
+                                                 'validation')
+                # Create model validation subdirectory
+                validation_subdir = make_directory(validation_subdir,
+                                                   is_overwrite=True)
+                # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                 # Validation of GNN-based material patch model
                 _, avg_valid_loss_sample = predict(
                     validation_dataset, model.model_directory,
-                    predict_directory=job_dir, load_model_state='best',
-                    loss_type=cfg.loss_type, loss_kwargs=cfg.loss_kwargs,
-                    is_normalized_loss=True, device_type=device_type,
-                    is_verbose=False)
+                    predict_directory=validation_subdir,
+                    load_model_state='best', loss_type=cfg.loss_type,
+                    loss_kwargs=cfg.loss_kwargs, is_normalized_loss=True,
+                    device_type=device_type, is_verbose=False)
                 # Set hyperparameter optimization objective
                 objective = avg_valid_loss_sample
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Cross-validation of GNN-based material patch model
         elif process == 'cross-validation':
+            # Set k-fold cross-validation subdirectory
+            validation_subdir = os.path.join(os.path.normpath(job_dir),
+                                             'cross_validation')
+            # Create k-fold cross-validation subdirectory
+            validation_subdir = make_directory(validation_subdir,
+                                               is_overwrite=True)
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Set number of folds
             n_fold = 4
             # k-fold cross-validation
             k_fold_loss_array = kfold_cross_validation(
-                job_dir, n_fold, cfg.n_train_steps, training_dataset,
+                validation_subdir, n_fold, cfg.n_train_steps, training_dataset,
                 model_init_args, cfg.lr_init, opt_algorithm=cfg.opt_algorithm,
                 lr_scheduler_type=cfg.lr_scheduler_type,
                 lr_scheduler_kwargs=cfg.lr_scheduler_kwargs,
