@@ -563,7 +563,7 @@ def write_prediction_summary_file(
     dataset_file_path : str
         GNN-based material patch data set file path if such file exists. Only
         used for output purposes.
-    dataset : GNNMaterialPatchDataset
+    dataset : torch.utils.data.Dataset
         GNN-based material patch data set. Each sample corresponds to a
         torch_geometric.data.Data object describing a homogeneous graph.
     avg_predict_loss : float

@@ -1013,7 +1013,7 @@ class GNNMaterialPatchModel(torch.nn.Module):
         
         Parameters
         ----------
-        dataset : GNNMaterialPatchDataset
+        dataset : torch.utils.data.Dataset
             GNN-based material patch data set. Each sample corresponds to a
             torch_geometric.data.Data object describing a homogeneous graph.
         is_verbose : bool, default=False
@@ -1463,7 +1463,7 @@ def graph_standard_partial_fit(dataset, features_type, n_features,
     
     Parameters
     ----------
-    dataset : GNNMaterialPatchDataset
+    dataset : torch.utils.data.Dataset
         GNN-based material patch data set. Each sample corresponds to a
         torch_geometric.data.Data object describing a homogeneous graph.
     features_type : str

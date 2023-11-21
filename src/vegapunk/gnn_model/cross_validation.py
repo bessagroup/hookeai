@@ -52,7 +52,7 @@ def kfold_cross_validation(cross_validation_dir, n_fold, n_train_steps,
         cross-validation.
     n_train_steps : int
         Number of training steps.
-    dataset : GNNMaterialPatchDataset
+    dataset : torch.utils.data.Dataset
         GNN-based material patch data set. Each sample corresponds to a
         torch_geometric.data.Data object describing a homogeneous graph.
     model_init_args : dict
@@ -271,7 +271,7 @@ def write_cross_validation_summary_file(
         Loss function type.
     loss_kwargs : dict
         Arguments of torch.nn._Loss initializer.
-    dataset : GNNMaterialPatchDataset
+    dataset : torch.utils.data.Dataset
         GNN-based material patch data set. Each sample corresponds to a
         torch_geometric.data.Data object describing a homogeneous graph.
     dataset_file_path : str
