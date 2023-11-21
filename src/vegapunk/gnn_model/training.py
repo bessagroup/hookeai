@@ -1392,7 +1392,13 @@ class EarlyStopper:
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Update validation training steps history
         self._validation_steps_history.append(training_step)
-        # Update validation loss history
+        # Propagate last validation loss until current training step
+        history_length = len(self._validation_loss_history)
+        history_gap = training_step - history_length
+        if history_length > 0:
+            self._validation_loss_history += \
+                history_gap *[self._validation_loss_history[-1],]
+        # Append validation loss
         self._validation_loss_history.append(avg_valid_loss_sample)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Remove prediction subdirectory
