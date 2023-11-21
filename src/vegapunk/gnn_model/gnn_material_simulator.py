@@ -787,7 +787,7 @@ class GNNMaterialPatchModel(torch.nn.Module):
             
             int         : Model state corresponding to given training step
             
-            None   : Model default state file
+            None        : Model default state file
         
         is_remove_posterior : bool, default=True
             Remove material patch model state files corresponding to training

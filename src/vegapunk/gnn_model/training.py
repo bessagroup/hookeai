@@ -1383,10 +1383,11 @@ class EarlyStopper:
                                 training_step=training_step)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Prediction with GNN-based material patch model
-        predict_subdir, avg_valid_loss_sample = predict(
-            model.model_directory, self._validation_dataset,
-            model.model_directory, load_model_state=training_step,
-            loss_type=loss_type, loss_kwargs=loss_kwargs,
+        _, avg_valid_loss_sample = predict(
+            self._validation_dataset, model.model_directory,
+            predict_directory=None,
+            load_model_state=training_step, loss_type=loss_type,
+            loss_kwargs=loss_kwargs,
             is_normalized_loss=model.is_data_normalization,
             device_type=device_type, seed=None, is_verbose=False)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -1401,9 +1402,6 @@ class EarlyStopper:
         # Append validation loss
         self._validation_loss_history.append(avg_valid_loss_sample)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        # Remove prediction subdirectory
-        if os.path.isdir(predict_subdir):
-            shutil.rmtree(predict_subdir)
         # Remove model and optimizer state files (required for validation)
         if is_state_file_temp:
             os.remove(model_state_path)

@@ -174,10 +174,11 @@ def kfold_cross_validation(cross_validation_dir, n_fold, n_train_steps,
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Prediction with GNN-based material patch model
         _, avg_valid_loss_sample = predict(
-            fold_validation_dir, validation_dataset, model.model_directory,
-            load_model_state='best', loss_type=loss_type,
-            loss_kwargs=loss_kwargs, is_normalized_loss=is_data_normalization,
-            device_type=device_type, seed=None, is_verbose=False)
+            validation_dataset, model.model_directory,
+            predict_directory=fold_validation_dir, load_model_state='best',
+            loss_type=loss_type, loss_kwargs=loss_kwargs,
+            is_normalized_loss=is_data_normalization, device_type=device_type,
+            seed=None, is_verbose=False)
         # Check average validation loss
         if avg_valid_loss_sample is None:
             raise RuntimeError(f'The average validation loss for fold '

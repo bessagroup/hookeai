@@ -47,7 +47,7 @@ __status__ = 'Planning'
 # =============================================================================
 #
 # =============================================================================
-def predict(predict_directory, dataset, model_directory,
+def predict(dataset, model_directory, predict_directory=None,
             load_model_state=None, loss_type='mse', loss_kwargs={},
             is_normalized_loss=False, dataset_file_path=None,
             device_type='cpu', seed=None, is_verbose=False):
@@ -55,24 +55,25 @@ def predict(predict_directory, dataset, model_directory,
     
     Parameters
     ----------
-    predict_directory : str
-        Directory where model predictions results are stored.
     dataset : torch.utils.data.Dataset
         GNN-based material patch data set. Each sample corresponds to a
         torch_geometric.data.Data object describing a homogeneous graph.
     model_directory : str
         Directory where material patch model is stored.
-    load_model_state : {'best', 'last', int, 'default'}, default='default'
+    predict_directory : str, default=None
+        Directory where model predictions results are stored. If None, then
+        all output files are supressed.
+    load_model_state : {'best', 'last', int, None}, default=None
         Load available GNN-based material patch model state from the model
         directory. Options:
         
-        'best'      : Model state corresponding to best performance available
+        'best' : Model state corresponding to best performance available
         
-        'last'      : Model state corresponding to highest training step
+        'last' : Model state corresponding to highest training step
         
-        int         : Model state corresponding to given training step
+        int    : Model state corresponding to given training step
         
-        None        : Model default state file
+        None   : Model default state file
         
     loss_type : {'mse',}, default='mse'
         Loss function type:
@@ -124,7 +125,7 @@ def predict(predict_directory, dataset, model_directory,
         raise RuntimeError('The material patch model directory has not '
                            'been found:\n\n' + model_directory)
     # Check prediction directory
-    if not os.path.exists(predict_directory):
+    if predict_directory is not None and not os.path.exists(predict_directory):
         raise RuntimeError('The model prediction directory has not been '
                            'found:\n\n' + predict_directory)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -146,7 +147,9 @@ def predict(predict_directory, dataset, model_directory,
     model.eval()
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Create model predictions subdirectory for current prediction process
-    predict_subdir = make_predictions_subdir(predict_directory)
+    predict_subdir = None
+    if predict_directory is not None:
+        predict_subdir = make_predictions_subdir(predict_directory)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set data loader
     if isinstance(seed, int):
@@ -198,8 +201,9 @@ def predict(predict_directory, dataset, model_directory,
                 (loss_type, loss, is_normalized_loss)
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Save sample predictions results
-            save_sample_predictions(predictions_dir=predict_subdir,
-                                    sample_id=i, sample_results=results)
+            if predict_directory is not None:
+                save_sample_predictions(predictions_dir=predict_subdir,
+                                        sample_id=i, sample_results=results)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     if is_verbose:
         print('\n> Finished prediction process!\n')
@@ -233,10 +237,12 @@ def predict(predict_directory, dataset, model_directory,
               f'{str(datetime.timedelta(seconds=int(avg_time_sample)))}\n')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Write summary data file for model prediction process
-    write_prediction_summary_file(
-        predict_subdir, device_type, seed, model_directory, load_model_state,
-        loss_type, loss_kwargs, is_normalized_loss, dataset_file_path, dataset,
-        avg_predict_loss, total_time_sec, avg_time_sample)
+    if predict_directory is not None:
+        write_prediction_summary_file(
+            predict_subdir, device_type, seed, model_directory,
+            load_model_state, loss_type, loss_kwargs, is_normalized_loss,
+            dataset_file_path, dataset, avg_predict_loss, total_time_sec,
+            avg_time_sample)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     return predict_subdir, avg_predict_loss
 # =============================================================================

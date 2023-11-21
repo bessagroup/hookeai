@@ -139,10 +139,11 @@ def hydra_wrapper(process, dataset_paths, device_type='cpu'):
             if process == 'training-validation':
                 # Validation of GNN-based material patch model
                 _, avg_valid_loss_sample = predict(
-                    job_dir, validation_dataset, model.model_directory,
-                    load_model_state='best', loss_type=cfg.loss_type,
-                    loss_kwargs=cfg.loss_kwargs, is_normalized_loss=True,
-                    device_type=device_type, is_verbose=False)
+                    validation_dataset, model.model_directory,
+                    predict_directory=job_dir, load_model_state='best',
+                    loss_type=cfg.loss_type, loss_kwargs=cfg.loss_kwargs,
+                    is_normalized_loss=True, device_type=device_type,
+                    is_verbose=False)
                 # Set hyperparameter optimization objective
                 objective = avg_valid_loss_sample
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
