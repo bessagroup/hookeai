@@ -275,6 +275,6 @@ class FiniteElement:
         if np.any([len(index_arrays[i]) != 1 for i in range(self._n_dim)]):
             raise RuntimeError('Node label not found.')
         # Get nodel label index
-        index = tuple([int(x) for x in index_arrays])
+        index = tuple([int(index_arrays[i][0]) for i in range(self._n_dim)])
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         return index
