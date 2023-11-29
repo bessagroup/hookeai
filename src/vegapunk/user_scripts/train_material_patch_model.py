@@ -58,7 +58,7 @@ def perform_model_standard_training(case_study_name, dataset_file_path,
             early_stopping_kwargs = set_default_training_options()
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set GNN-based material patch model training options
-    if case_study_name == '2d_elastic_orthogonal':
+    if case_study_name == 'cs_0_2d_elastic_complete_basis':
         # Set number of training steps
         n_train_steps = 500
         # Set batch size
@@ -68,17 +68,12 @@ def perform_model_standard_training(case_study_name, dataset_file_path,
         # Set learning rate scheduler        
         lr_scheduler_type = 'explr'
         lr_scheduler_kwargs = {'gamma': 0.99}
+        # Set early stopping
+        is_early_stopping = True
+        early_stopping_kwargs = {'validation_size': 0.2,
+                                 'validation_frequency': 0.01*n_train_steps,
+                                 'trigger_tolerance': 3}
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    elif case_study_name == '2d_elastic':
-        # Set number of training steps
-        n_train_steps = 100
-        # Set batch size
-        batch_size = 1
-        # Set learning rate
-        lr_init = 1.0e-02
-        # Set learning rate scheduler
-        lr_scheduler_type = 'explr'
-        lr_scheduler_kwargs = {'gamma': 0.99}
     else:
         raise RuntimeError('Unknown case study.')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -162,11 +157,11 @@ def perform_model_kfold_cross_validation(case_study_name, dataset_file_path,
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set default GNN-based material patch model training options
     opt_algorithm, lr_init, lr_scheduler_type, lr_scheduler_kwargs, \
-        loss_type, loss_kwargs, is_sampler_shuffle = \
-            set_default_training_options()
+        loss_type, loss_kwargs, is_sampler_shuffle, is_early_stopping, \
+        early_stopping_kwargs = set_default_training_options()
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set GNN-based material patch model training options
-    if case_study_name == '2d_elastic_orthogonal':
+    if case_study_name == 'cs_0_2d_elastic_complete_basis':
         # Set number of training steps
         n_train_steps = 500
         # Set batch size
@@ -176,11 +171,11 @@ def perform_model_kfold_cross_validation(case_study_name, dataset_file_path,
         # Set learning rate scheduler        
         lr_scheduler_type = 'explr'
         lr_scheduler_kwargs = {'gamma': 0.99}
-    elif case_study_name == '2d_elastic':
-        # Set number of training steps
-        n_train_steps = 100
-        # Set batch size
-        batch_size = 1
+        # Set early stopping
+        is_early_stopping = True
+        early_stopping_kwargs = {'validation_size': 0.2,
+                                 'validation_frequency': 0.01*n_train_steps,
+                                 'trigger_tolerance': 3}
     else:
         raise RuntimeError('Unknown case study.')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -197,6 +192,8 @@ def perform_model_kfold_cross_validation(case_study_name, dataset_file_path,
         lr_scheduler_kwargs=lr_scheduler_kwargs, loss_type=loss_type,
         loss_kwargs=loss_kwargs, batch_size=batch_size,
         is_sampler_shuffle=is_sampler_shuffle,
+        is_early_stopping=is_early_stopping,
+        early_stopping_kwargs=early_stopping_kwargs,
         dataset_file_path=dataset_file_path,
         device_type=device_type, is_verbose=is_verbose)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -230,7 +227,7 @@ def set_case_study_model_parameters(case_study_name, model_directory,
         GNN-based material patch model class initialization parameters (check
         class GNNMaterialPatchModel).
     """
-    if case_study_name in '2d_elastic_orthogonal':
+    if case_study_name in 'cs_0_2d_elastic_complete_basis':
         # Set GNN-based material patch model name
         model_name = 'material_patch_model'
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -341,19 +338,16 @@ def set_default_training_options():
 # =============================================================================
 if __name__ == "__main__":
     # Set computation processes
-    is_standard_training = True
-    is_cross_validation = False
+    is_standard_training = False
+    is_cross_validation = True
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Set case study name
-    case_study_name = '2d_elastic'
+    # Set case studies base directory
+    base_dir = ('/home/bernardoferreira/Documents/brown/projects/'
+                'gnn_material_patch/case_studies/')
     # Set case study directory
-    case_study_base_dirs = {
-        '2d_elastic_orthogonal': f'/home/bernardoferreira/Documents/temp',
-        '2d_elastic': f'/home/bernardoferreira/Documents/temp',
-        }
-    case_study_dir = \
-        os.path.join(os.path.normpath(case_study_base_dirs[case_study_name]),
-                     f'cs_{case_study_name}')
+    case_study_name = 'cs_0_2d_elastic_complete_basis'
+    case_study_dir = os.path.join(os.path.normpath(base_dir),
+                                  f'{case_study_name}')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Check case study directory
     if not os.path.isdir(case_study_dir):
@@ -374,12 +368,12 @@ if __name__ == "__main__":
                            f'in data set directory:\n\n'
                            f'{dataset_directory}')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Set GNN-based material patch model directory
+    model_directory = os.path.join(os.path.normpath(case_study_dir),
+                                    '2_model')
     # Create model directory
     if is_standard_training:
-        # Set GNN-based material patch model directory
-        model_directory = os.path.join(os.path.normpath(case_study_dir),
-                                    '2_model')
-        # Create model directory
+        # Create model directory (overwrite)
         make_directory(model_directory, is_overwrite=True)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set device type

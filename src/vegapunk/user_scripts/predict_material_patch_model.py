@@ -120,15 +120,13 @@ if __name__ == "__main__":
     # Set in-distribution/out-of-distribution testing flag
     is_in_dist_testing = True
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Set case study name
-    case_study_name = '2d_elastic'
+    # Set case studies base directory
+    base_dir = ('/home/bernardoferreira/Documents/brown/projects/'
+                'gnn_material_patch/case_studies/')
     # Set case study directory
-    case_study_base_dirs = {
-        '2d_elastic_orthogonal': f'/home/bernardoferreira/Documents/temp',
-        '2d_elastic': f'/home/bernardoferreira/Documents/temp',}
-    case_study_dir = \
-        os.path.join(os.path.normpath(case_study_base_dirs[case_study_name]),
-                     f'cs_{case_study_name}')
+    case_study_name = 'cs_0_2d_elastic_complete_basis'
+    case_study_dir = os.path.join(os.path.normpath(base_dir),
+                                  f'{case_study_name}')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Check case study directory
     if not os.path.isdir(case_study_dir):

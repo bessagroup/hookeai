@@ -33,8 +33,10 @@ def kfold_cross_validation(cross_validation_dir, n_fold, n_train_steps,
                            opt_algorithm='adam', lr_scheduler_type='steplr',
                            lr_scheduler_kwargs={}, loss_type='mse',
                            loss_kwargs={}, batch_size=1,
-                           is_sampler_shuffle=False, dataset_file_path=None,
-                           device_type='cpu', is_verbose=False):
+                           is_sampler_shuffle=False,
+                           is_early_stopping=False, early_stopping_kwargs={},
+                           dataset_file_path=None, device_type='cpu',
+                           is_verbose=False):
     """k-fold cross validation of GNN-based material patch model.
     
     Data set is split into k consecutive folds. The first n_samples % n_splits
@@ -81,12 +83,19 @@ def kfold_cross_validation(cross_validation_dir, n_fold, n_train_steps,
         Loss function type:
         
         'mse'  : MSE (torch.nn.MSELoss)
+
     loss_kwargs : dict, default={}
         Arguments of torch.nn._Loss initializer.
     batch_size : int, default=1
         Number of samples loaded per batch.
     is_sampler_shuffle : bool, default=False
         If True, shuffles data set samples at every epoch.
+    is_early_stopping : bool, default=False
+        If True, then training process is halted when early stopping criterion
+        is triggered. By default, 20% of the training data set is allocated for
+        the underlying validation procedures.
+    early_stopping_kwargs : dict, default={}
+        Early stopping criterion parameters (key, str, item, value).
     dataset_file_path : str, default=None
         GNN-based material patch data set file path if such file exists. Only
         used for output purposes.
@@ -169,8 +178,10 @@ def kfold_cross_validation(cross_validation_dir, n_fold, n_train_steps,
             opt_algorithm=opt_algorithm, lr_scheduler_type=lr_scheduler_type,
             lr_scheduler_kwargs=lr_scheduler_kwargs, loss_type=loss_type,
             loss_kwargs=loss_kwargs, batch_size=batch_size,
-            is_sampler_shuffle=is_sampler_shuffle, device_type=device_type,
-            seed=None, is_verbose=False)
+            is_sampler_shuffle=is_sampler_shuffle,
+            is_early_stopping=is_early_stopping,
+            early_stopping_kwargs=early_stopping_kwargs,
+            device_type=device_type, seed=None, is_verbose=False)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Prediction with GNN-based material patch model
         _, avg_valid_loss_sample = predict(

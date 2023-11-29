@@ -52,7 +52,7 @@ def generate_dataset(case_study_name, simulation_directory, n_sample,
             set_default_saving_options()
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Generate material patch simulation data set
-    if case_study_name in ('2d_elastic_orthogonal', '2d_elastic'):
+    if case_study_name in ('cs_0_2d_elastic_complete_basis',):
         # Set number of spatial dimensions
         n_dim = 2
         # Set finite element discretization
@@ -334,12 +334,12 @@ def set_default_links_parameters():
         + 'external/CM2S/LINKS/bin/LINKS'
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set Links strain formulation and analysis type
-    strain_formulation = 'finite'
+    strain_formulation = 'infinitesimal'
     analysis_type = 'plane_strain'
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set Links input data file parameters
     links_input_params = {}
-    links_input_params['number_of_increments'] = 10
+    links_input_params['number_of_increments'] = 1
     links_input_params['vtk_output'] = 'NONE'
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     return links_bin_path, strain_formulation, analysis_type, \
@@ -377,16 +377,13 @@ if __name__ == "__main__":
     # Set training/testing data set flag
     is_testing_dataset = False
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Set case study name
-    case_study_name = '2d_elastic'
+    # Set case studies base directory
+    base_dir = ('/home/bernardoferreira/Documents/brown/projects/'
+                'gnn_material_patch/case_studies/')
     # Set case study directory
-    case_study_base_dirs = {
-        '2d_elastic_orthogonal': f'/home/bernardoferreira/Documents/temp',
-        '2d_elastic': f'/home/bernardoferreira/Documents/temp',
-        }
-    case_study_dir = \
-        os.path.join(os.path.normpath(case_study_base_dirs[case_study_name]),
-                     f'cs_{case_study_name}')
+    case_study_name = 'cs_0_2d_elastic_complete_basis'
+    case_study_dir = os.path.join(os.path.normpath(base_dir),
+                                  f'{case_study_name}')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Check case study directory
     if not os.path.isdir(case_study_dir):
