@@ -25,7 +25,6 @@ import shutil
 import pickle
 import time
 import datetime
-import logging
 # Third-party
 import numpy as np
 import f3dasm
@@ -236,7 +235,7 @@ def generate_material_patch_dataset(
         print('\n> Building design space:')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Initialize design space
-    domain = f3dasm.Domain()
+    domain = f3dasm.design.Domain()
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     if is_verbose:
         print('  > [ input parameter] Setting material patch size...')
@@ -310,10 +309,11 @@ def generate_material_patch_dataset(
         else:
             domain.add_int(name=name, low=lower_bound, high=upper_bound)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Set experiment data directory                                            # Waiting for fix: ExperimentData directory
+    # Set experiment data directory
     experiment_data_dir = os.path.join(simulation_directory, 'experiment_data')
     # Initialize experiment data
-    experiment_data = f3dasm.ExperimentData(domain, path=experiment_data_dir)  
+    experiment_data = f3dasm.ExperimentData(domain,
+                                            project_dir=experiment_data_dir)  
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     if is_verbose:
         print('\n> Sampling design space input data...\n')
@@ -334,14 +334,10 @@ def generate_material_patch_dataset(
     # Initialize material patches finite element simulations data set
     dataset_simulation_data = []
     # Build material patches finite element simulations data set
-    for i in experiment_data.input_data.indices:
+    for i in experiment_data.index:
         # Get material patch sample output data
-        sample_output_data =\
-            experiment_data.get_experiment_sample(i).output_data_loaded
-        # Fix output data key (remove '_path')                                 # Waiting for fix: 'path_' prefix
-        for key in sample_output_data.keys():
-            key_new = key.removeprefix('path_')
-            sample_output_data[key_new] = sample_output_data.pop(key)
+        sample_output_data = \
+            experiment_data.get_experiment_sample(i).output_data
         # Append sample output data
         dataset_simulation_data.append(sample_output_data)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
