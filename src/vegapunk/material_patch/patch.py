@@ -450,3 +450,6 @@ class FiniteElementPatch:
             # Save figure file
             fig.savefig(fig_path, transparent=False, dpi=300,
                         bbox_inches='tight')
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Close plot
+        plt.close(fig)
