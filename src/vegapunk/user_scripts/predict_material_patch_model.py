@@ -124,7 +124,7 @@ if __name__ == "__main__":
     base_dir = ('/home/bernardoferreira/Documents/brown/projects/'
                 'gnn_material_patch/case_studies/')
     # Set case study directory
-    case_study_name = 'cs_0_2d_elastic_complete_basis'
+    case_study_name = 'cs_2d_elastic'
     case_study_dir = os.path.join(os.path.normpath(base_dir),
                                   f'{case_study_name}')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

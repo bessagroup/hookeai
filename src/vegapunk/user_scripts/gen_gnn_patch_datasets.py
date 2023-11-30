@@ -56,7 +56,7 @@ def generate_dataset(case_study_name, sim_dataset_file_path, dataset_directory,
         read_simulation_dataset_from_file(sim_dataset_file_path)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set GNN-based material patch data set node and edge features
-    if case_study_name == 'cs_0_2d_elastic_complete_basis':
+    if case_study_name == 'cs_2d_elastic':
         # Set node features
         node_features = ('coord_hist', 'disp_hist')
         # Set edge features
@@ -102,13 +102,13 @@ if __name__ == "__main__":
     is_testing_dataset = False
     # Set computation processes
     is_generate_dataset = True
-    is_split_dataset = False
+    is_split_dataset = True
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set case studies base directory
     base_dir = ('/home/bernardoferreira/Documents/brown/projects/'
                 'gnn_material_patch/case_studies/')
     # Set case study directory
-    case_study_name = 'cs_0_2d_elastic_complete_basis'
+    case_study_name = 'cs_2d_elastic'
     case_study_dir = os.path.join(os.path.normpath(base_dir),
                                   f'{case_study_name}')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -175,7 +175,7 @@ if __name__ == "__main__":
         dataset = GNNMaterialPatchDataset.load_dataset(dataset_file_path)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Set data set split sizes
-        split_sizes = {'training': 0.6, 'testing': 0.4}
+        split_sizes = {'training': 0.8, 'testing': 0.2}
         # Split data set
         dataset_split = \
             split_dataset(dataset, split_sizes, is_save_subsets=True,

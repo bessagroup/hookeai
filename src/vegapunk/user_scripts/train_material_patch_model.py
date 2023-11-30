@@ -58,21 +58,21 @@ def perform_model_standard_training(case_study_name, dataset_file_path,
             early_stopping_kwargs = set_default_training_options()
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set GNN-based material patch model training options
-    if case_study_name == 'cs_0_2d_elastic_complete_basis':
+    if case_study_name == 'cs_2d_elastic':
         # Set number of training steps
         n_train_steps = 500
         # Set batch size
-        batch_size = 4
+        batch_size = 16
         # Set learning rate
-        lr_init = 1.0e-02
-        # Set learning rate scheduler        
+        lr_init = 1.0e-03
+        # Set learning rate scheduler
         lr_scheduler_type = 'explr'
-        lr_scheduler_kwargs = {'gamma': 0.99}
+        lr_scheduler_kwargs = {'gamma': 0.995}
         # Set early stopping
         is_early_stopping = True
         early_stopping_kwargs = {'validation_size': 0.2,
                                  'validation_frequency': 0.01*n_train_steps,
-                                 'trigger_tolerance': 3}
+                                 'trigger_tolerance': 10}
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     else:
         raise RuntimeError('Unknown case study.')
@@ -161,21 +161,21 @@ def perform_model_kfold_cross_validation(case_study_name, dataset_file_path,
         early_stopping_kwargs = set_default_training_options()
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set GNN-based material patch model training options
-    if case_study_name == 'cs_0_2d_elastic_complete_basis':
+    if case_study_name == 'cs_2d_elastic':
         # Set number of training steps
         n_train_steps = 500
         # Set batch size
-        batch_size = 4
+        batch_size = 16
         # Set learning rate
-        lr_init = 1.0e-02
+        lr_init = 1.0e-03
         # Set learning rate scheduler        
         lr_scheduler_type = 'explr'
-        lr_scheduler_kwargs = {'gamma': 0.99}
+        lr_scheduler_kwargs = {'gamma': 0.995}
         # Set early stopping
         is_early_stopping = True
         early_stopping_kwargs = {'validation_size': 0.2,
                                  'validation_frequency': 0.01*n_train_steps,
-                                 'trigger_tolerance': 3}
+                                 'trigger_tolerance': 10}
     else:
         raise RuntimeError('Unknown case study.')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -227,7 +227,7 @@ def set_case_study_model_parameters(case_study_name, model_directory,
         GNN-based material patch model class initialization parameters (check
         class GNNMaterialPatchModel).
     """
-    if case_study_name in 'cs_0_2d_elastic_complete_basis':
+    if case_study_name in 'cs_2d_elastic':
         # Set GNN-based material patch model name
         model_name = 'material_patch_model'
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -239,11 +239,11 @@ def set_case_study_model_parameters(case_study_name, model_directory,
         # Set number of message-passing steps (number of processor layers)
         n_message_steps = 1
         # Set number of FNN hidden layers
-        enc_n_hidden_layers = 1
-        pro_n_hidden_layers = 1
-        dec_n_hidden_layers = 1
+        enc_n_hidden_layers = 2
+        pro_n_hidden_layers = 2
+        dec_n_hidden_layers = 2
         # Set hidden layer size
-        hidden_layer_size = 10
+        hidden_layer_size = 128
         # Set (shared) hidden unit activation function
         hidden_activation = 'relu'
         # Set (shared) output unit activation function
@@ -322,7 +322,7 @@ def set_default_training_options():
         Early stopping criterion parameters (key, str, item, value).
     """
     opt_algorithm = 'adam'
-    lr_init = 1.0e-04
+    lr_init = 1.0e-05
     lr_scheduler_type = None
     lr_scheduler_kwargs = None
     loss_type = 'mse'
@@ -345,7 +345,7 @@ if __name__ == "__main__":
     base_dir = ('/home/bernardoferreira/Documents/brown/projects/'
                 'gnn_material_patch/case_studies/')
     # Set case study directory
-    case_study_name = 'cs_0_2d_elastic_complete_basis'
+    case_study_name = 'cs_2d_elastic'
     case_study_dir = os.path.join(os.path.normpath(base_dir),
                                   f'{case_study_name}')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

@@ -52,7 +52,7 @@ def generate_dataset(case_study_name, simulation_directory, n_sample,
             set_default_saving_options()
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Generate material patch simulation data set
-    if case_study_name in ('cs_0_2d_elastic_complete_basis',):
+    if case_study_name in ('cs_2d_elastic',):
         # Set number of spatial dimensions
         n_dim = 2
         # Set finite element discretization
@@ -64,13 +64,13 @@ def generate_dataset(case_study_name, simulation_directory, n_sample,
             mode='homogeneous_elastic', n_elems_per_dim=n_elems_per_dim)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Set range of material patch size along each dimension
-        patch_dims_ranges = {'1': (1.0, 2.0), '2': (1.0, 2.0)}
+        patch_dims_ranges = {'1': (1.0, 1.0), '2': (1.0, 1.0)}
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Set range of average deformation along each dimension for each corner
-        avg_deformation_ranges = {'1': ((-0.2, 0.2), (-0.2, 0.2)),
-                                  '2': ((-0.2, 0.2), (-0.2, 0.2)),
-                                  '3': ((-0.2, 0.2), (-0.2, 0.2)),
-                                  '4': ((-0.2, 0.2), (-0.2, 0.2))}
+        avg_deformation_ranges = {'1': ((-0.1, 0.1), (-0.1, 0.1)),
+                                  '2': ((-0.1, 0.1), (-0.1, 0.1)),
+                                  '3': ((-0.1, 0.1), (-0.1, 0.1)),
+                                  '4': ((-0.1, 0.1), (-0.1, 0.1))}
         # Set range of polynomial deformation order for each edge label
         edge_deformation_order_ranges = {'1': (1, 1),
                                          '2': (1, 1),
@@ -307,7 +307,7 @@ def set_patch_material_data(mode, n_elems_per_dim):
         patch_material_data['mat_phases_descriptors']['1'] = \
             {'name': 'ELASTIC',
              'density': 0.0,
-             'young': 210000,
+             'young': 210e6,
              'poisson': 0.3}
     else:
         raise RuntimeError('Unknown patch material identifier.')
@@ -376,12 +376,14 @@ def set_default_saving_options():
 if __name__ == "__main__":
     # Set training/testing data set flag
     is_testing_dataset = False
+    # Set material patch simulation data set size
+    n_sample = 1000
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set case studies base directory
     base_dir = ('/home/bernardoferreira/Documents/brown/projects/'
                 'gnn_material_patch/case_studies/')
     # Set case study directory
-    case_study_name = 'cs_0_2d_elastic_complete_basis'
+    case_study_name = 'cs_2d_elastic'
     case_study_dir = os.path.join(os.path.normpath(base_dir),
                                   f'{case_study_name}')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -415,9 +417,6 @@ if __name__ == "__main__":
             and case_study_name in ('2d_elastic_orthogonal',)):
         generate_deterministic_dataset(case_study_name, simulation_directory,
                                        is_verbose=True)
-    else:    
-        # Set material patch simulation data set size
-        n_sample = 10
-        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    else:
         generate_dataset(case_study_name, simulation_directory, n_sample,
                          is_verbose=True)
