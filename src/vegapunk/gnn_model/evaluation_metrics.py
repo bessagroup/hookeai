@@ -430,7 +430,7 @@ def plot_truth_vs_prediction(prediction_sets, error_bound=None,
     for i, (key, val) in enumerate(prediction_sets.items()):
         # Normalize prediction process data
         if is_normalize_data:
-            val = val/val.max(axis=0)
+            val = val/val.max()
         # Assemble prediction process
         data_xy[:val.shape[0], 2*i] = val[:val.shape[0], 0]
         data_xy[:len(val), 2*i + 1] = val[:val.shape[0], 1]
