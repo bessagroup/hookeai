@@ -432,8 +432,8 @@ def train_model(n_max_epochs, dataset, model_init_args, lr_init,
     best_training_epoch = loss_history_epochs.index(best_loss)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     if is_verbose:
-        print('\n\n> Minimum loss: {:.8e} | Training epoch: {:d}'.format(
-            best_loss, best_training_epoch))
+        print('\n\n> Minimum loss: {:.8e} | Epoch: {:d}'.format(
+              best_loss, best_training_epoch))
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Compute total training time and average training time per epoch
     total_time_sec = time.time() - start_time_sec
@@ -451,9 +451,10 @@ def train_model(n_max_epochs, dataset, model_init_args, lr_init,
     write_training_summary_file(
         device_type, seed, model.model_directory, load_model_state,
         n_max_epochs, is_data_normalization, batch_size, is_sampler_shuffle,
-        loss_type, loss_kwargs, opt_algorithm, lr_init, lr_scheduler_type,
-        lr_scheduler_kwargs, dataset_file_path, dataset, best_loss,
-        best_training_epoch, total_time_sec, avg_time_epoch)
+        loss_type, loss_kwargs, opt_algorithm, lr_init,
+        lr_scheduler_type, lr_scheduler_kwargs, epoch, dataset_file_path,
+        dataset, best_loss, best_training_epoch, total_time_sec,
+        avg_time_epoch)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     return model, best_loss, best_training_epoch
 # =============================================================================
@@ -1057,7 +1058,7 @@ def write_training_summary_file(
     device_type, seed, model_directory, load_model_state, n_max_epochs,
     is_data_normalization, batch_size, is_sampler_shuffle, loss_type,
     loss_kwargs, opt_algorithm, lr_init, lr_scheduler_type,
-    lr_scheduler_kwargs, dataset_file_path, dataset, best_loss,
+    lr_scheduler_kwargs, n_epochs, dataset_file_path, dataset, best_loss,
     best_training_epoch, total_time_sec, avg_time_epoch):
     """Write summary data file for model training process.
     
@@ -1097,6 +1098,8 @@ def write_training_summary_file(
         Type of learning rate scheduler.
     lr_scheduler_kwargs : dict
         Arguments of torch.optim.lr_scheduler.LRScheduler initializer.
+    n_epochs : int
+        Number of completed epochs in the training process.
     dataset_file_path : str
         GNN-based material patch data set file path if such file exists. Only
         used for output purposes.
@@ -1131,6 +1134,7 @@ def write_training_summary_file(
         lr_scheduler_type if lr_scheduler_type else None
     summary_data['lr_scheduler_kwargs'] = \
         lr_scheduler_kwargs if lr_scheduler_kwargs else None
+    summary_data['Number of completed epochs'] = n_epochs
     summary_data['Training data set file'] = \
         dataset_file_path if dataset_file_path else None
     summary_data['Training data set (effective) size'] = len(dataset)
@@ -1162,6 +1166,9 @@ class EarlyStopper:
     _trigger_tolerance : int
         Number of consecutive model validation procedures without performance
         improvement to trigger early stopping.
+    _improvement_tolerance : float
+        Minimum relative improvement required to count as a performance
+        improvement.
     _validation_steps_history : list
         Validation steps history.
     _validation_loss_history : list
@@ -1193,7 +1200,7 @@ class EarlyStopper:
         Load minimum validation loss model and optimizer states.
     """
     def __init__(self, dataset, validation_size=0.2, validation_frequency=1,
-                 trigger_tolerance=1):
+                 trigger_tolerance=1, improvement_tolerance=1e-3):
         """Constructor.
         
         Parameters
@@ -1212,6 +1219,9 @@ class EarlyStopper:
         trigger_tolerance : int, default=1
             Number of consecutive model validation procedures without
             performance improvement to trigger early stopping.
+        improvement_tolerance : float, default=1e-3
+            Minimum relative improvement required to count as a performance
+            improvement.
         """
         # Set validation data set size
         self._validation_size = validation_size
@@ -1219,6 +1229,8 @@ class EarlyStopper:
         self._validation_frequency = validation_frequency
         # Set early stopping trigger tolerance
         self._trigger_tolerance = trigger_tolerance
+        # Set minimum relative improvement tolerance
+        self._improvement_tolerance = improvement_tolerance
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Set data set split sizes
         split_sizes = {'training': (1.0 - validation_size),
@@ -1322,10 +1334,23 @@ class EarlyStopper:
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Update minimum validation loss and performance counter
         if avg_valid_loss_sample < self._min_validation_loss:
+            # Check relative performance improvement with respect to minimum
+            # validation loss
+            if len(self._validation_steps_history) > 1:
+                # Compute relative performance improvement
+                relative_improvement = \
+                    (self._min_validation_loss - avg_valid_loss_sample)/ \
+                    np.abs(self._min_validation_loss)
+                # Update performance counter
+                if relative_improvement > self._improvement_tolerance:
+                    # Reset performance counter (significant improvement)
+                    self._n_not_improve = 0
+                else:
+                    # Reset performance counter (not significant improvement)
+                    self._n_not_improve += 1
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Update minimum validation loss
             self._min_validation_loss = avg_valid_loss_sample
-            # Reset performance counter
-            self._n_not_improve = 0
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Save best performance state (minimum validation loss)
             self._best_model_state = copy.deepcopy(model.state_dict())

@@ -60,7 +60,7 @@ def perform_model_standard_training(case_study_name, dataset_file_path,
     # Set GNN-based material patch model training options
     if case_study_name == 'cs_2d_elastic':
         # Set number of epochs
-        n_max_epochs = 5
+        n_max_epochs = 50
         # Set batch size
         batch_size = 16
         # Set learning rate
@@ -71,8 +71,9 @@ def perform_model_standard_training(case_study_name, dataset_file_path,
         # Set early stopping
         is_early_stopping = True
         early_stopping_kwargs = {'validation_size': 0.2,
-                                 'validation_frequency': 2,
-                                 'trigger_tolerance': 10}
+                                 'validation_frequency': 1,
+                                 'trigger_tolerance': 10,
+                                 'improvement_tolerance':1e-3}
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     else:
         raise RuntimeError('Unknown case study.')
@@ -164,7 +165,7 @@ def perform_model_kfold_cross_validation(case_study_name, dataset_file_path,
     # Set GNN-based material patch model training options
     if case_study_name == 'cs_2d_elastic':
         # Set number of epochs
-        n_max_epochs = 5
+        n_max_epochs = 50
         # Set batch size
         batch_size = 16
         # Set learning rate
@@ -175,8 +176,9 @@ def perform_model_kfold_cross_validation(case_study_name, dataset_file_path,
         # Set early stopping
         is_early_stopping = True
         early_stopping_kwargs = {'validation_size': 0.2,
-                                 'validation_frequency': 2,
-                                 'trigger_tolerance': 10}
+                                 'validation_frequency': 1,
+                                 'trigger_tolerance': 10,
+                                 'improvement_tolerance':1e-3}
     else:
         raise RuntimeError('Unknown case study.')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -328,10 +330,12 @@ def set_default_training_options():
     lr_scheduler_kwargs = None
     loss_type = 'mse'
     loss_kwargs = {}
-    is_sampler_shuffle = True
+    is_sampler_shuffle = False
     is_early_stopping = True
-    early_stopping_kwargs = {'validation_size': 0.2, 'validation_frequency': 1,
-                             'trigger_tolerance': 1}
+    early_stopping_kwargs = {'validation_size': 0.2,
+                             'validation_frequency': 1,
+                             'trigger_tolerance': 10,
+                             'improvement_tolerance':1e-3}
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     return opt_algorithm, lr_init, lr_scheduler_type, lr_scheduler_kwargs, \
         loss_type, loss_kwargs, is_sampler_shuffle, is_early_stopping, \
