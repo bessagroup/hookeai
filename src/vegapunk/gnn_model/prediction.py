@@ -69,9 +69,9 @@ def predict(dataset, model_directory, predict_directory=None,
         
         'best' : Model state corresponding to best performance available
         
-        'last' : Model state corresponding to highest training step
+        'last' : Model state corresponding to highest training epoch
         
-        int    : Model state corresponding to given training step
+        int    : Model state corresponding to given training epoch
         
         None   : Model default state file
         

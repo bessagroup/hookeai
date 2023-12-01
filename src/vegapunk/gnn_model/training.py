@@ -14,11 +14,11 @@ get_pytorch_optimizer
 get_learning_rate_scheduler
     Get PyTorch optimizer learning rate scheduler.
 save_training_state
-    Save model and optimizer states at given training step.
+    Save model and optimizer states at given training epoch.
 load_training_state
     Load model and optimizer states from available training data.
 remove_posterior_optim_state_files
-    Delete optimizer training step state files posterior to given step.
+    Delete optimizer training epoch state files posterior to given epoch.
 save_loss_history
     Save training process loss history record.
 load_loss_history
@@ -45,7 +45,6 @@ import re
 import time
 import datetime
 import copy
-import shutil
 # Third-party
 import torch
 import torch_geometric.loader
@@ -63,7 +62,7 @@ __author__ = 'Bernardo Ferreira (bernardo_ferreira@brown.edu)'
 __credits__ = ['Bernardo Ferreira', ]
 __status__ = 'Planning'
 # =============================================================================
-def train_model(n_train_steps, dataset, model_init_args, lr_init,
+def train_model(n_max_epochs, dataset, model_init_args, lr_init,
                 opt_algorithm='adam', lr_scheduler_type=None,
                 lr_scheduler_kwargs={}, loss_type='mse', loss_kwargs={},
                 batch_size=1, is_sampler_shuffle=False,
@@ -74,8 +73,8 @@ def train_model(n_train_steps, dataset, model_init_args, lr_init,
     
     Parameters
     ----------
-    n_train_steps : int
-        Number of training steps.
+    n_max_epochs : int
+        Maximum number of training epochs.
     dataset : torch.utils.data.Dataset
         GNN-based material patch data set. Each sample corresponds to a
         torch_geometric.data.Data object describing a homogeneous graph.
@@ -125,16 +124,15 @@ def train_model(n_train_steps, dataset, model_init_args, lr_init,
         
         'best'      : Model state corresponding to best performance available
         
-        'last'      : Model state corresponding to highest training step
+        'last'      : Model state corresponding to highest training epoch
         
-        int         : Model state corresponding to given training step
+        int         : Model state corresponding to given training epoch
         
         None        : Model default state file
 
     save_every : int, default=None
-        Save GNN-based material patch model every save_every training steps.
-        If None, then saves only last training step and best performance
-        states.
+        Save GNN-based material patch model every save_every epochs.
+        If None, then saves only last epoch and best performance states.
     dataset_file_path : str, default=None
         GNN-based material patch data set file path if such file exists. Only
         used for output purposes.
@@ -153,8 +151,8 @@ def train_model(n_train_steps, dataset, model_init_args, lr_init,
         GNN-based material patch model.
     best_loss : float
         Best loss during training process.
-    best_training_step : int
-        Training step corresponding to best loss during training process.
+    best_training_epoch : int
+        Training epoch corresponding to best loss during training process.
     """
     # Set random number generators initialization for reproducibility
     if isinstance(seed, int):
@@ -212,13 +210,18 @@ def train_model(n_train_steps, dataset, model_init_args, lr_init,
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Initialize loss function
     loss_function = get_pytorch_loss(loss_type, **loss_kwargs)
-    # Initialize loss and learning rate histories
-    loss_history = []
-    lr_history = []
+    # Initialize loss and learning rate histories (per epoch)
+    loss_history_epochs = []
+    lr_history_epochs = []
+    # Initialize loss and learning rate histories (per training step)
+    loss_history_steps = []
+    lr_history_steps = []
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Initialize training flag
     is_keep_training = True
-    # Initialize training step counter
+    # Initialize number of training epochs
+    epoch = 0
+    # Initialize number of training steps
     step = 0
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Load GNN-based material patch model state
@@ -237,17 +240,17 @@ def train_model(n_train_steps, dataset, model_init_args, lr_init,
             print('\n> Loading model state...')
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Load GNN-based material patch model state
-        loaded_step = load_training_state(model, opt_algorithm, optimizer,
-                                          load_model_state)
+        loaded_epoch = load_training_state(model, opt_algorithm, optimizer,
+                                           load_model_state)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Load loss history
-        loss_history = load_loss_history(model, loss_type,
-                                         training_step=loaded_step)
+        loss_history_epochs = load_loss_history(model, loss_type,
+                                                epoch=loaded_epoch)
         # Load learning rate history
-        lr_history = load_lr_history(model, training_step=loaded_step)
+        lr_history_epochs = load_lr_history(model, epoch=loaded_epoch)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        # Update training step counter
-        step = int(loaded_step)
+        # Update training epoch counter
+        epoch = int(loaded_epoch)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Initialize validation loss history
     validation_loss_history = None
@@ -284,6 +287,9 @@ def train_model(n_train_steps, dataset, model_init_args, lr_init,
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Loop over training iterations
     while is_keep_training:
+        # Store epoch initial training step
+        epoch_init_step = step
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Loop over graph batches. A graph batch is a data object describing a
         # batch of graphs as one large (disconnected) graph.
         for pyg_graph in data_loader:
@@ -336,63 +342,70 @@ def train_model(n_train_steps, dataset, model_init_args, lr_init,
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             if is_verbose:
                 total_time_sec = time.time() - start_time_sec
-                print('> Training step: {:{width}d}/{:d} | '
+                print('> Epoch: {:{width}d}/{:d} | Training step: {:d} | '
                       'Loss: {:.8e} | Elapsed time (s): {:}'.format(
-                    step, n_train_steps, loss,
+                    epoch, n_max_epochs, step, loss,
                     str(datetime.timedelta(seconds=int(total_time_sec))),
-                    width=len(str(n_train_steps))), end='\r')
+                    width=len(str(n_max_epochs))), end='\r')
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Save training step loss and learning rate
-            loss_history.append(loss)
+            loss_history_steps.append(loss.clone().detach().cpu())
             if is_lr_scheduler:
-                lr_history.append(lr_scheduler.get_last_lr())
+                lr_history_steps.append(lr_scheduler.get_last_lr())
             else:
-                lr_history.append(lr_init)
-            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            # Save model and optimizer current states
-            if save_every is not None and step % save_every == 0:
-                save_training_state(model=model, optimizer=optimizer,
-                                    training_step=step)
-            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            # Save model and optimizer best performance state corresponding to
-            # minimum training loss
-            if loss <= min(loss_history):
-                save_training_state(model=model, optimizer=optimizer,
-                                    training_step=step, is_best_state=True)
-            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            # Check early stopping criterion
-            if is_early_stopping:
-                # Evaluate early stopping criterion
-                if early_stopper.is_evaluate_criterion(step):
-                    is_stop_training = early_stopper.evaluate_criterion(
-                        model, optimizer, step, loss_type=loss_type,
-                        loss_kwargs=loss_kwargs, device_type=device_type)
-                # If early stopping is triggered, save model and optimizer best
-                # performance corresponding to early stopping criterion
-                if is_stop_training:
-                    # Load best performance model and optimizer states
-                    best_step = early_stopper.load_best_performance_state(
-                        model, optimizer)
-                    # Save model and optimizer best performance states
-                    save_training_state(model, optimizer,
-                                        training_step=best_step,
-                                        is_best_state=True)
-            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            # Check training process completion
-            if step >= n_train_steps:
-                # Completed prescribed number of training steps
-                is_keep_training = False
-                break
-            elif is_early_stopping and is_stop_training:
-                # Update validation loss history
-                validation_loss_history =\
-                    early_stopper.get_validation_loss_history()
-                # Early stopping criterion triggered
-                is_keep_training = False
-                break
+                lr_history_steps.append(lr_init)
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Increment training step counter
             step += 1
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Save training epoch loss (epoch average loss value)
+        epoch_avg_loss = np.mean(loss_history_steps[epoch_init_step:])
+        loss_history_epochs.append(epoch_avg_loss)
+        # Save training epoch learning rate (epoch last value)
+        if is_lr_scheduler:
+            lr_history_epochs.append(lr_scheduler.get_last_lr())
+        else:
+            lr_history_epochs.append(lr_init)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Save model and optimizer current states
+        if save_every is not None and epoch % save_every == 0:
+            save_training_state(model=model, optimizer=optimizer, epoch=epoch)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Save model and optimizer best performance state corresponding to
+        # minimum training loss
+        if epoch_avg_loss <= min(loss_history_epochs):
+            save_training_state(model=model, optimizer=optimizer,
+                                epoch=epoch, is_best_state=True)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Check early stopping criterion
+        if is_early_stopping:
+            # Evaluate early stopping criterion
+            if early_stopper.is_evaluate_criterion(epoch):
+                is_stop_training = early_stopper.evaluate_criterion(
+                    model, optimizer, epoch, loss_type=loss_type,
+                    loss_kwargs=loss_kwargs, device_type=device_type)
+            # If early stopping is triggered, save model and optimizer best
+            # performance corresponding to early stopping criterion
+            if is_stop_training:
+                # Load best performance model and optimizer states
+                best_epoch = early_stopper.load_best_performance_state(
+                    model, optimizer)
+                # Save model and optimizer best performance states
+                save_training_state(model, optimizer, epoch=best_epoch,
+                                    is_best_state=True)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Check training process flow
+        if epoch >= n_max_epochs:
+            # Completed maximum number of epochs
+            is_keep_training = False
+            break
+        elif is_early_stopping and is_stop_training:
+            # Early stopping criterion triggered
+            is_keep_training = False
+            break
+        else:
+            # Increment epoch counter
+            epoch += 1
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     if is_verbose:
         if is_early_stopping and is_stop_training:
@@ -401,25 +414,30 @@ def train_model(n_train_steps, dataset, model_init_args, lr_init,
         else:
             print('\n\n> Finished training process!')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Get validation loss history
+    if is_early_stopping:
+        validation_loss_history = \
+            early_stopper.get_validation_loss_history()
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Save model and optimizer final states
-    save_training_state(model=model, optimizer=optimizer, training_step=step)
+    save_training_state(model=model, optimizer=optimizer, epoch=epoch)
     # Save loss and learning rate histories
-    save_loss_history(model, n_train_steps, loss_type, loss_history,
+    save_loss_history(model, n_max_epochs, loss_type, loss_history_epochs,
                       lr_scheduler_type=lr_scheduler_type,
-                      lr_history=lr_history,
+                      lr_history_epochs=lr_history_epochs,
                       validation_loss_history=validation_loss_history)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Get best loss and corresponding training step
-    best_loss = float(min(loss_history).detach().cpu())
-    best_training_step = loss_history.index(best_loss)
+    # Get best loss and corresponding training epoch
+    best_loss = float(min(loss_history_epochs))
+    best_training_epoch = loss_history_epochs.index(best_loss)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     if is_verbose:
-        print('\n\n> Minimum loss: {:.8e} | Training step: {:d}'.format(
-            best_loss, best_training_step))
+        print('\n\n> Minimum loss: {:.8e} | Training epoch: {:d}'.format(
+            best_loss, best_training_epoch))
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Compute total training time and average training time per epoch
     total_time_sec = time.time() - start_time_sec
-    avg_time_epoch = total_time_sec/step
+    avg_time_epoch = total_time_sec/epoch
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     if is_verbose:
         print(f'\n> Model directory: {model.model_directory}')
@@ -432,12 +450,12 @@ def train_model(n_train_steps, dataset, model_init_args, lr_init,
     # Write summary data file for model training process
     write_training_summary_file(
         device_type, seed, model.model_directory, load_model_state,
-        n_train_steps, is_data_normalization, batch_size, is_sampler_shuffle,
+        n_max_epochs, is_data_normalization, batch_size, is_sampler_shuffle,
         loss_type, loss_kwargs, opt_algorithm, lr_init, lr_scheduler_type,
         lr_scheduler_kwargs, dataset_file_path, dataset, best_loss,
-        best_training_step, total_time_sec, avg_time_epoch)
+        best_training_epoch, total_time_sec, avg_time_epoch)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    return model, best_loss, best_training_step
+    return model, best_loss, best_training_epoch
 # =============================================================================
 def get_pytorch_optimizer(algorithm, params, **kwargs):
     """Get PyTorch optimizer.
@@ -519,24 +537,23 @@ def get_learning_rate_scheduler(optimizer, scheduler_type, **kwargs):
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     return scheduler
 # =============================================================================
-def save_training_state(model, optimizer, training_step=None,
+def save_training_state(model, optimizer, epoch=None,
                         is_best_state=False, is_remove_posterior=True):
-    """Save model and optimizer states at given training step.
+    """Save model and optimizer states at given training epoch.
     
     Material patch model state file is stored in model_directory under the
-    name < model_name >.pt or < model_name >-< training_step >.pt if
-    training_step is known.
+    name < model_name >.pt or < model_name >-< epoch >.pt if epoch is known.
     
     Material patch model state file corresponding to the best performance
     is stored in model_directory under the name < model_name >-best.pt or
-    < model_name >-< training_step >-best.pt if training_step is known.
+    < model_name >-< epoch >-best.pt if epoch is known.
         
     Optimizer state file is stored in model_directory under the name
-    < model_name >_optim-< training_step >.pt.
+    < model_name >_optim-< epoch >.pt.
     
     Optimizer state file corresponding to the best performance is stored in
     model_directory under the name < model_name >_optim-best.pt or
-    < model_name >_optim-< training_step >-best.pt if training_step is known.
+    < model_name >_optim-< epoch >-best.pt if epoch is known.
     
     Parameters
     ----------
@@ -544,25 +561,24 @@ def save_training_state(model, optimizer, training_step=None,
         Model.
     optimizer : torch.optim.Optimizer
         PyTorch optimizer.
-    training_step : int, default=None
-        Training step.
+    epoch : int, default=None
+        Training epoch.
     is_best_state : bool, default=False
         If True, save material patch model state file corresponding to the best
         performance instead of regular state file.
     is_remove_posterior : bool, default=True
         Remove material patch model and optimizer state files corresponding to
-        training steps posterior to the saved state file. Effective only if
-        saved training step is known.
+        training epochs posterior to the saved state file. Effective only if
+        saved epoch is known.
     """
     # Save GNN-based material patch model
-    model.save_model_state(training_step=training_step,
-                           is_best_state=is_best_state)
+    model.save_model_state(epoch=epoch, is_best_state=is_best_state)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set optimizer state file
     optimizer_state_file = model.model_name + '_optim'
-    # Append training step
-    if isinstance(training_step, int):
-        optimizer_state_file += '-' + str(training_step)
+    # Append epoch
+    if isinstance(epoch, int):
+        optimizer_state_file += '-' + str(epoch)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set optimizer state file corresponding to best performance
     if is_best_state:
@@ -573,7 +589,7 @@ def save_training_state(model, optimizer, training_step=None,
         directory_list = os.listdir(model.model_directory)
         # Loop over files in material patch model directory
         for filename in directory_list:
-            # Check if file is optimizer training step best state file
+            # Check if file is optimizer epoch best state file
             is_best_state_file = \
                 bool(re.search(r'^' + model.model_name + r'_optim'
                                + r'-?[0-9]*' + r'-best' + r'\.pt', filename))
@@ -586,24 +602,23 @@ def save_training_state(model, optimizer, training_step=None,
                                   optimizer_state_file + '.pt')
     # Save optimizer state
     optimizer_state = dict(state=optimizer.state_dict(),
-                           training_step=training_step)
+                           epoch=epoch)
     torch.save(optimizer_state, optimizer_path)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Delete model and optimizer training step state files posterior to saved
-    # training step
-    if isinstance(training_step, int) and is_remove_posterior:
-        remove_posterior_optim_state_files(model, training_step)
+    # Delete model and optimizer epoch state files posterior to saved epoch
+    if isinstance(epoch, int) and is_remove_posterior:
+        remove_posterior_optim_state_files(model, epoch)
 # =============================================================================
 def load_training_state(model, opt_algorithm, optimizer,
                         load_model_state=None, is_remove_posterior=True):
     """Load model and optimizer states from available training data.
     
     Material patch model state file is stored in model_directory under the
-    name < model_name >.pt, < model_name >-< training_step >.pt,
-    < model_name >-best.pt or < model_name >-< training_step >-best.pt.
+    name < model_name >.pt, < model_name >-< epoch >.pt,
+    < model_name >-best.pt or < model_name >-< epoch >-best.pt.
 
     Optimizer state file is stored in model_directory under the name
-    < model_name >_optim.pt or < model_name >_optim-< training_step >.pt.
+    < model_name >_optim.pt or < model_name >_optim-< epoch >.pt.
     
     Both model and optimizer are updated 'in-place' with loaded state data.
     
@@ -624,33 +639,33 @@ def load_training_state(model, opt_algorithm, optimizer,
         
         'best'      : Model state corresponding to best performance available
         
-        'last'      : Model state corresponding to highest training step
+        'last'      : Model state corresponding to highest training epoch
         
-        int         : Model state corresponding to given training step
+        int         : Model state corresponding to given training epoch
         
-        None   : Model default state file
+        None        : Model default state file
 
     is_remove_posterior : bool, default=True
         Remove material patch model state files corresponding to training
-        steps posterior to the loaded state file. Effective only if
-        loaded training step is known.
+        epochs posterior to the loaded state file. Effective only if
+        loaded training epoch is known.
 
     Returns
     -------
-    loaded_step : int
-        Training step corresponding to loaded state data. Defaults to 0 if
-        training step is unknown.
+    loaded_epoch : int
+        Training epoch corresponding to loaded state data. Defaults to 0 if
+        training epoch is unknown.
     """
     # Load GNN-based material patch model state        
-    loaded_step = \
+    loaded_epoch = \
         model.load_model_state(load_model_state=load_model_state,
                                is_remove_posterior=is_remove_posterior)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set optimizer state file
     optimizer_state_file = model.model_name + '_optim'
-    # Append training step
-    if isinstance(loaded_step, int):
-        optimizer_state_file += '-' + str(loaded_step)
+    # Append epoch
+    if isinstance(loaded_epoch, int):
+        optimizer_state_file += '-' + str(loaded_epoch)
     # Append best performance
     if load_model_state == 'best':
         optimizer_state_file += '-' + 'best'
@@ -674,48 +689,45 @@ def load_training_state(model, opt_algorithm, optimizer,
         # Set loaded optimizer state
         optimizer.load_state_dict(optimizer_state['state'])
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        # Delete optimizer training step state files posterior to loaded
-        # training step
-        if isinstance(loaded_step, int) and is_remove_posterior:
-            remove_posterior_optim_state_files(model, loaded_step)
+        # Delete optimizer epoch state files posterior to loaded epoch
+        if isinstance(loaded_epoch, int) and is_remove_posterior:
+            remove_posterior_optim_state_files(model, loaded_epoch)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Set loaded training step to 0 if unknown from state file
-    if loaded_step is None:
-        loaded_step = 0
+    # Set loaded epoch to 0 if unknown from state file
+    if loaded_epoch is None:
+        loaded_epoch = 0
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    return loaded_step
+    return loaded_epoch
 # =============================================================================
-def remove_posterior_optim_state_files(model, training_step):
-    """Delete optimizer training step state files posterior to given step.
+def remove_posterior_optim_state_files(model, epoch):
+    """Delete optimizer training epoch state files posterior to given epoch.
     
     Parameters
     ----------
     model : torch.nn.Module
         Model.
-    training_step : int
-        Training step.
+    epoch : int
+        Training epoch.
     """
     # Get files in material patch model directory
     directory_list = os.listdir(model.model_directory)
     # Loop over files in material patch model directory
     for filename in directory_list:
-        # Check if file is optimizer training step state file
+        # Check if file is optimizer epoch state file
         is_state_file = bool(re.search(r'^' + model.model_name + r'_optim'
                              + r'-[0-9]+' + r'\.pt', filename))
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        # Delete optimizer training step state file posterior to given training
-        # step
+        # Delete optimizer epoch state file posterior to given epoch
         if is_state_file:
-            # Get optimizer state training step
-            step = int(os.path.splitext(filename)[0].split('-')[-1])
+            # Get optimizer state epoch
+            file_epoch = int(os.path.splitext(filename)[0].split('-')[-1])
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            # Delete optimizer training step state file
-            if step > training_step:
+            # Delete optimizer epoch state file
+            if file_epoch > epoch:
                 os.remove(os.path.join(model.model_directory, filename))
 # =============================================================================
-def save_loss_history(model, total_n_train_steps, loss_type,
-                      training_loss_history,
-                      lr_scheduler_type=None, lr_history=None,
+def save_loss_history(model, n_max_epochs, loss_type, training_loss_history,
+                      lr_scheduler_type=None, lr_history_epochs=None,
                       validation_loss_history=None):
     """Save training process loss history record.
     
@@ -728,19 +740,19 @@ def save_loss_history(model, total_n_train_steps, loss_type,
     ----------
     model : torch.nn.Module
         Model.
-    total_n_train_steps : int
-        Total number of training steps prescribed for training process.
+    n_max_epochs : int
+        Maximum number of epochs of training process.
     loss_type : {'mse',}, default='mse'
         Loss function type:
         
         'mse'  : MSE (torch.nn.MSELoss)
 
     training_loss_history : list[float]
-        Training process training loss history.
+        Training process training loss history (per epoch).
     lr_scheduler_type : {'steplr', 'explr', 'linlr'}, default=None
         Type of learning rate scheduler.
-    lr_history : list[float], default=None
-        Training process learning rate history.
+    lr_history_epochs : list[float], default=None
+        Training process learning rate history (per epoch).
     validation_loss_history : list[float], default=None
         Training process validation loss history (e.g., early stopping
         criterion).
@@ -751,7 +763,7 @@ def save_loss_history(model, total_n_train_steps, loss_type,
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Build training loss history record
     loss_history_record = {}
-    loss_history_record['total_n_train_steps'] = int(total_n_train_steps)
+    loss_history_record['n_max_epochs'] = int(n_max_epochs)
     loss_history_record['loss_type'] = str(loss_type)
     loss_history_record['training_loss_history'] = list(training_loss_history)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -760,10 +772,10 @@ def save_loss_history(model, total_n_train_steps, loss_type,
         loss_history_record['lr_scheduler_type'] = str(lr_scheduler_type)
     else:
         loss_history_record['lr_scheduler_type'] = None
-    if lr_history is not None:
-        loss_history_record['lr_history'] = list(lr_history)
+    if lr_history_epochs is not None:
+        loss_history_record['lr_history_epochs'] = list(lr_history_epochs)
     else:
-        loss_history_record['lr_history'] = None
+        loss_history_record['lr_history_epochs'] = None
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Store validation loss history
     if validation_loss_history is not None:
@@ -776,7 +788,7 @@ def save_loss_history(model, total_n_train_steps, loss_type,
     with open(loss_record_path, 'wb') as loss_record_file:
         pickle.dump(loss_history_record, loss_record_file)
 # =============================================================================
-def load_loss_history(model, loss_type, training_step=None):
+def load_loss_history(model, loss_type, epoch=None):
     """Load training process training loss history record.
     
     Loss history record file is stored in model_directory under the name
@@ -791,14 +803,14 @@ def load_loss_history(model, loss_type, training_step=None):
         
         'mse'  : MSE (torch.nn.MSELoss)
         
-    training_step : int, default=None
-        Training step to which loss history is loaded (included), with the
-        first training step being 0. If None, then loads the full loss history.
+    epoch : int, default=None
+        Epoch to which loss history is loaded (included), with the first epoch
+        being 0. If None, then loads the full loss history.
 
     Returns
     -------
-    loss_history : list[float]
-        Training process training loss history.
+    training_loss_history : list[float]
+        Training process training loss history (per epoch).
     """
     # Set loss history record file path
     loss_record_path = os.path.join(model.model_directory,
@@ -822,28 +834,27 @@ def load_loss_history(model, loss_type, training_step=None):
         if not isinstance(loss_record, list):
             raise RuntimeError('Loaded loss history is not a list[float].')
         # Load training loss history
-        if training_step is None or training_step + 1 == len(loss_record):
-            loss_history = loss_record
+        if epoch is None or epoch + 1 == len(loss_record):
+            training_loss_history = loss_record
         else:
-            if training_step + 1 > len(loss_record):
-                raise RuntimeError('Target training step is beyond available '
-                                   'loss history.')
+            if epoch + 1 > len(loss_record):
+                raise RuntimeError('Target epoch is beyond available loss '
+                                   'history.')
             else:
-                loss_history = loss_record[:training_step + 1]
+                training_loss_history = loss_record[:epoch + 1]
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     else:
         # Build training loss history with None entries if loss history record
         # file cannot be found
-        if training_step is None:
+        if epoch is None:
             raise RuntimeError('Training process loss history file has not '
-                               'been found and loaded training step is '
-                               'unknown.')
+                               'been found and loaded epoch is unknown.')
         else:
-            loss_history = (training_step + 1)*[None,]
+            training_loss_history = (epoch + 1)*[None,]
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    return loss_history
+    return training_loss_history
 # =============================================================================
-def load_lr_history(model, training_step=None):
+def load_lr_history(model, epoch=None):
     """Load training process learning rate history record.
     
     Loss history record file is stored in model_directory under the name
@@ -853,15 +864,15 @@ def load_lr_history(model, training_step=None):
     ----------
     model : torch.nn.Module
         Model.        
-    training_step : int, default=None
-        Training step to which learning history is loaded (included), with the
-        first training step being 0. If None, then loads the full learning rate
+    epoch : int, default=None
+        Training epoch to which loss history is loaded (included), with the
+        first training epoch being 0. If None, then loads the full loss
         history.
 
     Returns
     -------
-    lr_history : list[float]
-        Training process learning rate history.
+    lr_history_epochs : list[float]
+        Training process learning rate history (per epoch).
     """
     # Set loss history record file path
     loss_record_path = os.path.join(model.model_directory,
@@ -874,41 +885,40 @@ def load_lr_history(model, training_step=None):
             loss_history_record = pickle.load(loss_record_file)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Check learning rate history
-        lr_record = loss_history_record['lr_history']
+        lr_record = loss_history_record['lr_history_epochs']
         if not isinstance(lr_record, list) and lr_record is not None:
             raise RuntimeError('Loaded learning rate history is not a '
                                'list[float] or None.')
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~    
         # Load learning rate history
-        if lr_record is None and training_step is None:
+        if lr_record is None and epoch is None:
             # Build learning rate history with None entries if learning rate
             # history is not available
-            lr_history = \
-                len(loss_history_record['training_loss_history'])*[None,]
-        elif lr_record is None and training_step is not None:
+            lr_history_epochs = len(
+                loss_history_record['training_loss_history'])*[None,]
+        elif lr_record is None and epoch is not None:
             # Build learning rate history with None entries if learning rate
             # history is not available
-            lr_history = (training_step + 1)*[None,]
+            lr_history_epochs = (epoch + 1)*[None,]
         else:
-            if training_step is None or training_step + 1 == len(lr_record):
-                lr_history = lr_record
-            elif training_step + 1 > len(lr_record):
-                    raise RuntimeError('Target training step is beyond '
-                                       'available learning rate history.')
+            if epoch is None or epoch + 1 == len(lr_record):
+                lr_history_epochs = lr_record
+            elif epoch + 1 > len(lr_record):
+                    raise RuntimeError('Target epoch is beyond available '
+                                       'learning rate history.')
             else:
-                lr_history = lr_record[:training_step + 1]
+                lr_history_epochs = lr_record[:epoch + 1]
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     else:
         # Build learning rate history with None entries if loss history record
         # file cannot be found
-        if training_step is None:
+        if epoch is None:
             raise RuntimeError('Training process loss history file has not '
-                               'been found and loaded training step is '
-                               'unknown.')
+                               'been found and loaded epoch is unknown.')
         else:
-            lr_history = (training_step + 1)*[None,]
+            lr_history_epochs = (epoch + 1)*[None,]
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    return lr_history
+    return lr_history_epochs
 # =============================================================================
 def seed_worker(worker_id):
     """Set workers seed in PyTorch data loaders to preserve reproducibility.
@@ -945,7 +955,7 @@ def read_loss_history_from_file(loss_record_path):
         'mse'  : MSE (torch.nn.MSELoss)
 
     training_loss_history : list[float]
-        Training process training loss history.
+        Training process training loss history (per epoch).
     validation_loss_history : {None, list[float]}
         Training process validation loss history. Set to None if not available.
     """
@@ -965,7 +975,8 @@ def read_loss_history_from_file(loss_record_path):
     elif 'training_loss_history' not in loss_history_record.keys():
         raise RuntimeError('Loss history is not available in loss history '
                            'record.')
-    elif not isinstance(loss_history_record['training_loss_history'], list):
+    elif not isinstance(loss_history_record['training_loss_history'],
+                        list):
         raise RuntimeError('Loss history is not a list[float].')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set loss type
@@ -1012,9 +1023,9 @@ def read_lr_history_from_file(loss_record_path):
         'explr'   : Exponential decay (torch.optim.lr_scheduler.ExponentialLR)
         
         'linlr'   : Linear decay (torch.optim.lr_scheduler.LinearLR)
-        
-    lr_history : list[float]
-        Training process learning rate history.
+
+    lr_history_epochs : list[float]
+        Training process learning rate history (per epoch).
     """
     # Check loss history record file
     if not os.path.isfile(loss_record_path):
@@ -1029,25 +1040,25 @@ def read_lr_history_from_file(loss_record_path):
     if 'lr_scheduler_type' not in loss_history_record.keys():
         raise RuntimeError('Learning rate scheduler type is not available in '
                            'loss history record.')
-    elif 'lr_history' not in loss_history_record.keys():
+    elif 'lr_history_epochs' not in loss_history_record.keys():
         raise RuntimeError('Learning rate history is not available in loss '
                            'history record.')
-    elif not isinstance(loss_history_record['lr_history'], list):
+    elif not isinstance(loss_history_record['lr_history_epochs'], list):
         raise RuntimeError('Learning rate history is not a list[float].')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set learning rate scheduler type
     lr_scheduler_type = loss_history_record['lr_scheduler_type']
     # Set learning rate history
-    lr_history = loss_history_record['lr_history']
+    lr_history_epochs = loss_history_record['lr_history_epochs']
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    return lr_scheduler_type, lr_history
+    return lr_scheduler_type, lr_history_epochs
 # =============================================================================
 def write_training_summary_file(
-    device_type, seed, model_directory, load_model_state, n_train_steps,
+    device_type, seed, model_directory, load_model_state, n_max_epochs,
     is_data_normalization, batch_size, is_sampler_shuffle, loss_type,
     loss_kwargs, opt_algorithm, lr_init, lr_scheduler_type,
     lr_scheduler_kwargs, dataset_file_path, dataset, best_loss,
-    best_training_step, total_time_sec, avg_time_epoch):
+    best_training_epoch, total_time_sec, avg_time_epoch):
     """Write summary data file for model training process.
     
     Parameters
@@ -1063,8 +1074,8 @@ def write_training_summary_file(
     load_model_state : {'best', 'last', int, None}
         Load available GNN-based material patch model state from the model
         directory. Data scalers are also loaded from model initialization file.
-    n_train_steps : int
-        Number of training steps.
+    n_max_epochs : int
+        Maximum number of training epochs.
     is_data_normalization : bool
         If True, then input and output features are normalized for training
         False otherwise. Data scalers need to be fitted with fit_data_scalers()
@@ -1094,8 +1105,8 @@ def write_training_summary_file(
         torch_geometric.data.Data object describing a homogeneous graph.
     best_loss : float
         Best loss during training process.
-    best_training_step : int
-        Training step corresponding to best loss during training process.
+    best_training_epoch : int
+        Training epoch corresponding to best loss during training process.
     total_time_sec : int
         Total training time in seconds.
     avg_time_epoch : float
@@ -1108,7 +1119,7 @@ def write_training_summary_file(
     summary_data['model_directory'] = model_directory
     summary_data['load_model_state'] = \
         load_model_state if load_model_state else None
-    summary_data['n_train_steps'] = n_train_steps
+    summary_data['n_max_epochs'] = n_max_epochs
     summary_data['is_data_normalization'] = is_data_normalization
     summary_data['batch_size'] = batch_size
     summary_data['is_sampler_shuffle'] = is_sampler_shuffle
@@ -1124,7 +1135,7 @@ def write_training_summary_file(
         dataset_file_path if dataset_file_path else None
     summary_data['Training data set (effective) size'] = len(dataset)
     summary_data['Best loss: '] = \
-        f'{best_loss:.8e} (training step {best_training_step})'
+        f'{best_loss:.8e} (training epoch {best_training_epoch})'
     summary_data['Total training time'] = \
         str(datetime.timedelta(seconds=int(total_time_sec)))
     summary_data['Avg. training time per epoch'] = \
@@ -1146,13 +1157,13 @@ class EarlyStopper:
         size is a fraction of the whole data set contained between 0 and 1.
     _validation_frequency : int
         Frequency of validation procedures, i.e., frequency with respect to
-        training steps at which model is validated to evaluate early stopping
+        training epochs at which model is validated to evaluate early stopping
         criterion.
     _trigger_tolerance : int
         Number of consecutive model validation procedures without performance
         improvement to trigger early stopping.
     _validation_steps_history : list
-        Validation training steps history.
+        Validation steps history.
     _validation_loss_history : list
         Validation loss history.
     _min_validation_loss : float
@@ -1163,8 +1174,8 @@ class EarlyStopper:
         Model state corresponding to the best performance.
     _best_optimizer_state : dict
         Optimizer state corresponding to the best performance.
-    _best_training_step : int
-        Training step corresponding to the best performance.
+    _best_training_epoch : int
+        Training epoch corresponding to the best performance.
             
     Methods
     -------
@@ -1172,9 +1183,9 @@ class EarlyStopper:
         Get GNN-based material patch available training data set.
     get_validation_loss_history(self)
         Get validation loss history.
-    is_evaluate_criterion(self, training_step)
+    is_evaluate_criterion(self, epoch)
         Check whether to evaluate early stopping criterion.
-    evaluate_criterion(self, training_step)
+    evaluate_criterion(self, epoch)
         Evaluate early stopping criterion.
     _validate_model(self, model)
         Perform model validation.
@@ -1196,7 +1207,7 @@ class EarlyStopper:
             and 1.
         validation_frequency : int, default=1
             Frequency of validation procedures, i.e., frequency with respect to
-            training steps at which model is validated to evaluate early
+            training epochs at which model is validated to evaluate early
             stopping criterion.
         trigger_tolerance : int, default=1
             Number of consecutive model validation procedures without
@@ -1231,7 +1242,7 @@ class EarlyStopper:
         # Initialize minimum validation loss state (best performance)
         self._best_model_state = None
         self._best_optimizer_state = None
-        self._best_training_step = None
+        self._best_training_epoch = None
     # -------------------------------------------------------------------------
     def get_training_dataset(self):
         """Get GNN-based material patch available training data set.
@@ -1257,13 +1268,13 @@ class EarlyStopper:
         """
         return copy.deepcopy(self._validation_loss_history)
     # -------------------------------------------------------------------------
-    def is_evaluate_criterion(self, training_step):
+    def is_evaluate_criterion(self, epoch):
         """Check whether to evaluate early stopping criterion.
         
         Parameters
         ----------
-        training_step : int
-            Training step.
+        epoch : int
+            Training epoch.
             
         Returns
         -------
@@ -1271,10 +1282,9 @@ class EarlyStopper:
             If True, then early stopping criterion should be evaluated, False
             otherwise.
         """
-        return (training_step > 0
-                and training_step % self._validation_frequency == 0)
+        return epoch % self._validation_frequency == 0
     # -------------------------------------------------------------------------
-    def evaluate_criterion(self, model, optimizer, training_step,
+    def evaluate_criterion(self, model, optimizer, epoch,
                            loss_type='mse', loss_kwargs={}, device_type='cpu'):
         """Evaluate early stopping criterion.
         
@@ -1284,8 +1294,8 @@ class EarlyStopper:
             GNN-based material patch model.
         optimizer : torch.optim.Optimizer
             PyTorch optimizer.
-        training_step : int
-            Training step.
+        epoch : int
+            Training epoch.
         loss_type : {'mse',}, default='mse'
             Loss function type:
             
@@ -1307,7 +1317,7 @@ class EarlyStopper:
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Perform model validation
         avg_valid_loss_sample = self._validate_model(
-            model, optimizer, training_step, loss_type=loss_type,
+            model, optimizer, epoch, loss_type=loss_type,
             loss_kwargs=loss_kwargs, device_type=device_type)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Update minimum validation loss and performance counter
@@ -1320,9 +1330,8 @@ class EarlyStopper:
             # Save best performance state (minimum validation loss)
             self._best_model_state = copy.deepcopy(model.state_dict())
             self._best_optimizer_state = \
-                dict(state=copy.deepcopy(optimizer.state_dict()),
-                     training_step=training_step)
-            self._best_training_step = training_step
+                dict(state=copy.deepcopy(optimizer.state_dict()), epoch=epoch)
+            self._best_training_epoch = epoch
         else:
             # Increment performance counter
             self._n_not_improve += 1
@@ -1334,7 +1343,7 @@ class EarlyStopper:
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         return is_stop_training
     # -------------------------------------------------------------------------
-    def _validate_model(self, model, optimizer, training_step, loss_type='mse',
+    def _validate_model(self, model, optimizer, epoch, loss_type='mse',
                         loss_kwargs={}, device_type='cpu'):
         """Perform model validation.
         
@@ -1344,8 +1353,8 @@ class EarlyStopper:
             GNN-based material patch model.
         optimizer : torch.optim.Optimizer
             PyTorch optimizer.
-        training_step : int
-            Training step.
+        epoch : int
+            Training epoch.
         loss_type : {'mse',}, default='mse'
             Loss function type:
             
@@ -1362,13 +1371,13 @@ class EarlyStopper:
             Average prediction loss per sample.
         """
         # Set material patch model state file name and path
-        model_state_file = model.model_name + '-' + str(int(training_step))
+        model_state_file = model.model_name + '-' + str(int(epoch))
         # Set material patch model state file path
         model_state_path = \
             os.path.join(model.model_directory, model_state_file + '.pt')
         # Set optimizer state file name and path
         optimizer_state_file = \
-            model.model_name + '_optim' + '-' + str(int(training_step))
+            model.model_name + '_optim' + '-' + str(int(epoch))
         optimizer_state_path = \
             os.path.join(model.model_directory, optimizer_state_file + '.pt')
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -1379,26 +1388,24 @@ class EarlyStopper:
             # Update temporary state files flag
             is_state_file_temp = True
             # Save state files
-            save_training_state(model=model, optimizer=optimizer,
-                                training_step=training_step)
+            save_training_state(model=model, optimizer=optimizer, epoch=epoch)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Prediction with GNN-based material patch model
         _, avg_valid_loss_sample = predict(
             self._validation_dataset, model.model_directory,
-            predict_directory=None,
-            load_model_state=training_step, loss_type=loss_type,
-            loss_kwargs=loss_kwargs,
+            predict_directory=None, load_model_state=epoch,
+            loss_type=loss_type, loss_kwargs=loss_kwargs,
             is_normalized_loss=model.is_data_normalization,
             device_type=device_type, seed=None, is_verbose=False)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        # Update validation training steps history
-        self._validation_steps_history.append(training_step)
-        # Propagate last validation loss until current training step
+        # Update validation epochs history
+        self._validation_steps_history.append(epoch)
+        # Propagate last validation loss until current epoch
         history_length = len(self._validation_loss_history)
-        history_gap = training_step - history_length
+        history_gap = epoch - history_length
         if history_length > 0:
             self._validation_loss_history += \
-                history_gap *[self._validation_loss_history[-1],]
+                history_gap*[self._validation_loss_history[-1],]
         # Append validation loss
         self._validation_loss_history.append(avg_valid_loss_sample)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -1423,8 +1430,8 @@ class EarlyStopper:
             
         Returns
         -------
-        best_training_step : int
-            Training step corresponding to the best performance.
+        best_training_epoch : int
+            Training epoch corresponding to the best performance.
         """
         # Check best performance states
         if self._best_model_state is None:
@@ -1439,4 +1446,4 @@ class EarlyStopper:
         # Set loaded optimizer state
         optimizer.load_state_dict(self._best_optimizer_state['state'])
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        return self._best_training_step
+        return self._best_training_epoch

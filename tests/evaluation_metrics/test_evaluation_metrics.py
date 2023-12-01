@@ -21,16 +21,14 @@ __status__ = 'Planning'
 # =============================================================================
 #
 # =============================================================================
-@pytest.mark.parametrize('history_sizes, loss_type, is_log_loss, loss_scale, '
-                         'total_n_train_steps',
-                         [((10, 20), 'MSE', False, 'linear', 30),
-                          ((5, 5), 'RMSE', True, 'linear', 5),
-                          ((15, 5), None, True, 'log', 10),
-                          ((15, 5), None, False, 'log', 10),
+@pytest.mark.parametrize('history_sizes, loss_type, is_log_loss, loss_scale',
+                         [((10, 20), 'MSE', False, 'linear'),
+                          ((5, 5), 'RMSE', True, 'linear'),
+                          ((15, 5), None, True, 'log'),
+                          ((15, 5), None, False, 'log'),
                           ])
 def test_plot_training_loss_history(tmp_path, monkeypatch, history_sizes,
-                                    loss_type, is_log_loss, loss_scale,
-                                    total_n_train_steps):
+                                    loss_type, is_log_loss, loss_scale):
     """Test plot of model training process loss history."""
     # Set training processes loss histories    
     loss_history = {
@@ -45,13 +43,11 @@ def test_plot_training_loss_history(tmp_path, monkeypatch, history_sizes,
         plot_training_loss_history(loss_history, loss_type=loss_type,
                                    is_log_loss=is_log_loss,
                                    loss_scale=loss_scale,
-                                   total_n_train_steps=total_n_train_steps,
                                    save_dir=tmp_path, is_save_fig=True,
                                    is_stdout_display=True)
         plot_training_loss_history(loss_history, loss_type=loss_type,
                                    is_log_loss=is_log_loss,
                                    loss_scale=loss_scale,
-                                   total_n_train_steps=total_n_train_steps,
                                    save_dir=tmp_path, is_save_fig=True,
                                    is_stdout_display=True)
     except:
@@ -67,19 +63,18 @@ def test_plot_training_loss_history(tmp_path, monkeypatch, history_sizes,
         plot_training_loss_history(loss_history={'dataset_1': 'invalid_type',})
 # =============================================================================
 @pytest.mark.parametrize('loss_hist_size, lr_hist_size, loss_type, '
-                         'is_log_loss, loss_scale, lr_type, '
-                         'total_n_train_steps',
-                         [(10, 10, 'MSE', False, 'linear', 'Step', 5),
-                          (5, 5, 'RMSE', True, 'log', 'Step', 10),
-                          (5, 5, None, True, 'log', None, 20),
-                          (15, 15, None, False, 'log', 'Step', 30),
+                         'is_log_loss, loss_scale, lr_type',
+                         [(10, 10, 'MSE', False, 'linear', 'Step'),
+                          (5, 5, 'RMSE', True, 'log', 'Step'),
+                          (5, 5, None, True, 'log', None),
+                          (15, 15, None, False, 'log', 'Step'),
                           ])
 def test_plot_training_loss_and_lr_history(tmp_path, monkeypatch,
                                            loss_hist_size, lr_hist_size,
                                            loss_type, is_log_loss, loss_scale,
-                                           lr_type, total_n_train_steps):
+                                           lr_type):
     """Test plot of model training process loss and learning rate histories."""
-    # Set training processes loss and learning rate histories    
+    # Set training processes loss and learning rate histories
     loss_history = list(np.random.uniform(low=0.0, high=1.0e4,
                                           size=loss_hist_size))
     lr_history = list(np.random.uniform(low=0.0, high=1.0, size=lr_hist_size))
@@ -91,13 +86,11 @@ def test_plot_training_loss_and_lr_history(tmp_path, monkeypatch,
         plot_training_loss_and_lr_history(
             loss_history, lr_history, loss_type=loss_type,
             is_log_loss=is_log_loss, loss_scale=loss_scale, lr_type=lr_type,
-            total_n_train_steps=total_n_train_steps, save_dir=tmp_path,
-            is_save_fig=True, is_stdout_display=True)
+            save_dir=tmp_path, is_save_fig=True, is_stdout_display=True)
         plot_training_loss_and_lr_history(
             loss_history, lr_history, loss_type=loss_type,
             is_log_loss=is_log_loss, loss_scale=loss_scale, lr_type=lr_type,
-            total_n_train_steps=total_n_train_steps, save_dir=tmp_path,
-            is_save_fig=True, is_stdout_display=True)
+            save_dir=tmp_path, is_save_fig=True, is_stdout_display=True)
     except:
         is_error_raised = True
     assert not is_error_raised, 'Error while attempting to generate plot of ' \

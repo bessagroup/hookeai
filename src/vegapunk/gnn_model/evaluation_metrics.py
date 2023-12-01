@@ -3,7 +3,7 @@
 Functions
 ---------
 plot_training_loss_history
-    Plot model training process loss history (loss vs training steps).
+    Plot model training process loss history.
 plot_training_loss_and_lr_history
     Plot model training process loss and learning rate histories.
 plot_loss_convergence_test
@@ -42,7 +42,7 @@ __credits__ = ['Bernardo Ferreira', ]
 __status__ = 'Planning'
 # =============================================================================
 def plot_training_loss_history(loss_history, loss_type=None, is_log_loss=False,
-                               loss_scale='linear', total_n_train_steps=0, 
+                               loss_scale='linear',
                                filename='training_loss_history',
                                save_dir=None, is_save_fig=False,
                                is_stdout_display=False, is_latex=False):
@@ -52,9 +52,9 @@ def plot_training_loss_history(loss_history, loss_type=None, is_log_loss=False,
     ----------
     loss_history : dict
         One or more training processes loss histories, where each loss history
-        (key, str) is stored as a list of training steps loss values
-        (item, list). Dictionary keys are taken as labels for the corresponding
-        training processes loss histories.
+        (key, str) is stored as a list of epochs loss values (item, list).
+        Dictionary keys are taken as labels for the corresponding training
+        processes loss histories.
     loss_type : str, default=None
         Loss type. If provided, then loss type is added to the y-axis label.
     is_log_loss : bool, default=False
@@ -62,10 +62,6 @@ def plot_training_loss_history(loss_history, loss_type=None, is_log_loss=False,
         otherwise.
     loss_scale : {'linear', 'log'}, default='linear'
         Loss axis scale type.
-    total_n_train_steps : int, default=0
-        Total number of training steps prescribed for training process. If
-        provided, then it sets the x-axis upper limit if greater than number
-        of steps in loss history.
     filename : str, default='training_loss_history'
         Figure name.
     save_dir : str, default=None
@@ -90,12 +86,11 @@ def plot_training_loss_history(loss_history, loss_type=None, is_log_loss=False,
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Get number of training processes
     n_loss_history = len(loss_history.keys())
-    # Get maximum number of training steps
-    max_n_train_steps = max([len(x) for x in loss_history.values()])
+    # Get maximum number of training epochs
+    max_n_train_epochs = max([len(x) for x in loss_history.values()])
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Initialize data array and data labels
-    data_xy = np.full((max(max_n_train_steps, total_n_train_steps),
-                       2*n_loss_history), fill_value=None)
+    data_xy = np.full((max_n_train_epochs, 2*n_loss_history), fill_value=None)
     data_labels = []
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Loop over training processes
@@ -110,12 +105,12 @@ def plot_training_loss_history(loss_history, loss_type=None, is_log_loss=False,
         data_labels.append(key)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set axes limits and scale
-    x_lims = (0, max_n_train_steps)
+    x_lims = (0, max_n_train_epochs)
     y_lims = (None, None)
     y_scale = loss_scale
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set axes labels
-    x_label = 'Training steps'
+    x_label = 'Epochs'
     if loss_type is None:
         if is_log_loss:
             y_label = 'log(Loss)'
@@ -149,7 +144,7 @@ def plot_training_loss_history(loss_history, loss_type=None, is_log_loss=False,
 # =============================================================================
 def plot_training_loss_and_lr_history(loss_history, lr_history, loss_type=None,
                                       is_log_loss=False, loss_scale='linear',
-                                      lr_type=None, total_n_train_steps=0,
+                                      lr_type=None,
                                       filename='training_loss_and_lr_history',
                                       save_dir=None, is_save_fig=False,
                                       is_stdout_display=False, is_latex=False):
@@ -158,11 +153,11 @@ def plot_training_loss_and_lr_history(loss_history, lr_history, loss_type=None,
     Parameters
     ----------
     loss_history : list[float]
-        Training process loss history stored as a list of training steps loss
-        values.
+        Training process loss history stored as a list of training epochs
+        loss values.
     lr_history : list[float]
         Training process learning rate history stored as a list of training
-        steps learning rate values.
+        epochs learning rate values.
     loss_type : str, default=None
         Loss type. If provided, then loss type is added to the y-axis label.
     is_log_loss : bool, default=False
@@ -173,10 +168,6 @@ def plot_training_loss_and_lr_history(loss_history, lr_history, loss_type=None,
     lr_type : str, default=None
         Learning rate scheduler type. If provided, then learning rate scheduler
         type is added to the y-axis label.    
-    total_n_train_steps : int, default=0
-        Total number of training steps prescribed for training process. If
-        provided, then it sets the x-axis upper limit if greater than number
-        of steps in loss history.
     filename : str, default='training_loss_history'
         Figure name.
     save_dir : str, default=None
@@ -198,8 +189,8 @@ def plot_training_loss_and_lr_history(loss_history, lr_history, loss_type=None,
     if not isinstance(lr_history, list):
         raise RuntimeError('Learning rate history is not a list[float].')
     elif len(lr_history) != len(loss_history):
-        raise RuntimeError('Number of training steps of learning rate history '
-                           'is not consistent with loss history.')
+        raise RuntimeError('Number of epochs of learning rate history is not '
+                           'consistent with loss history.')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set data arrays
     x = tuple([*range(0, len(loss_history))])
@@ -210,13 +201,13 @@ def plot_training_loss_and_lr_history(loss_history, lr_history, loss_type=None,
     data_xy2 = np.column_stack((x, tuple(lr_history)))
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set axes limits and scale
-    x_lims = (0, max(len(loss_history), total_n_train_steps))
+    x_lims = (0, len(loss_history))
     y1_lims = (None, None)
     y2_lims = (None, None)
     y1_scale = loss_scale
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set axes labels
-    x_label = 'Training steps'
+    x_label = 'Epochs'
     if loss_type is None:
         if is_log_loss:
             y1_label = 'log(Loss)'
@@ -1254,7 +1245,7 @@ def scatter_xy_data(data_xy, data_labels=None, is_identity_line=False,
             axes.fill_between(x=x, y1=(1 + identity_error)*x,
                               y2=(1 - identity_error)*x,
                               color='#BBBBBB', 
-                              label=f'{identity_error*100:.0f}\% error',
+                              label=f'{identity_error*100:.0f}% error',
                               zorder=-15)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set legend

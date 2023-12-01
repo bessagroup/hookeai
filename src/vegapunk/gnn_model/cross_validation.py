@@ -28,7 +28,7 @@ __author__ = 'Bernardo Ferreira (bernardo_ferreira@brown.edu)'
 __credits__ = ['Bernardo Ferreira', ]
 __status__ = 'Planning'
 # =============================================================================
-def kfold_cross_validation(cross_validation_dir, n_fold, n_train_steps,
+def kfold_cross_validation(cross_validation_dir, n_fold, n_max_epochs,
                            dataset, model_init_args, lr_init,
                            opt_algorithm='adam', lr_scheduler_type='steplr',
                            lr_scheduler_kwargs={}, loss_type='mse',
@@ -52,8 +52,8 @@ def kfold_cross_validation(cross_validation_dir, n_fold, n_train_steps,
     n_fold : int
         Number of folds into which the data set is split to perform
         cross-validation.
-    n_train_steps : int
-        Number of training steps.
+    n_max_epochs : int
+        Maximum number of training epochs.
     dataset : torch.utils.data.Dataset
         GNN-based material patch data set. Each sample corresponds to a
         torch_geometric.data.Data object describing a homogeneous graph.
@@ -174,7 +174,7 @@ def kfold_cross_validation(cross_validation_dir, n_fold, n_train_steps,
         model_init_args['model_directory'] = fold_model_dir
         # Training of GNN-based material patch model
         model, best_training_loss, _ = train_model(
-            n_train_steps, training_dataset, model_init_args, lr_init,
+            n_max_epochs, training_dataset, model_init_args, lr_init,
             opt_algorithm=opt_algorithm, lr_scheduler_type=lr_scheduler_type,
             lr_scheduler_kwargs=lr_scheduler_kwargs, loss_type=loss_type,
             loss_kwargs=loss_kwargs, batch_size=batch_size,
@@ -250,14 +250,14 @@ def kfold_cross_validation(cross_validation_dir, n_fold, n_train_steps,
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Write summary data file for model cross-validation
     write_cross_validation_summary_file(
-        cross_validation_dir, device_type, n_fold, n_train_steps,
+        cross_validation_dir, device_type, n_fold, n_max_epochs,
         is_data_normalization, batch_size, loss_type, loss_kwargs, dataset,
         dataset_file_path, k_fold_loss_array, total_time_sec, avg_time_fold)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     return k_fold_loss_array
 # =============================================================================
 def write_cross_validation_summary_file(
-    cross_validation_dir, device_type, n_fold, n_train_steps,
+    cross_validation_dir, device_type, n_fold, n_max_epochs,
     is_data_normalization, batch_size, loss_type, loss_kwargs, dataset,
     dataset_file_path, k_fold_loss_array, total_time_sec, avg_time_fold):
     """Write summary data file for model cross-validation process.
@@ -271,8 +271,8 @@ def write_cross_validation_summary_file(
     n_fold : int
         Number of folds into which the data set is split to perform
         cross-validation.
-    n_train_steps : int
-        Number of training steps.
+    n_max_epochs : int
+        Maximum number of training epochs.
     is_data_normalization : bool
         If True, then input and output features are normalized for training
         False otherwise. Data scalers need to be fitted with fit_data_scalers()
@@ -302,7 +302,7 @@ def write_cross_validation_summary_file(
     summary_data = {}
     summary_data['device_type'] = device_type
     summary_data['n_fold'] = n_fold
-    summary_data['n_train_steps'] = n_train_steps
+    summary_data['n_max_epochs'] = n_max_epochs
     summary_data['is_data_normalization'] = is_data_normalization
     summary_data['batch_size'] = batch_size
     summary_data['loss_type'] = loss_type

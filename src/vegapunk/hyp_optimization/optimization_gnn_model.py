@@ -132,7 +132,7 @@ def hydra_wrapper(process, dataset_paths, device_type='cpu'):
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Training
             model, best_training_loss, _ = train_model(
-                cfg.n_train_steps, training_dataset, model_init_args,
+                cfg.n_max_epochs, training_dataset, model_init_args,
                 cfg.lr_init, opt_algorithm=cfg.opt_algorithm,
                 lr_scheduler_type=cfg.lr_scheduler_type,
                 lr_scheduler_kwargs=cfg.lr_scheduler_kwargs,
@@ -176,7 +176,7 @@ def hydra_wrapper(process, dataset_paths, device_type='cpu'):
             n_fold = 4
             # k-fold cross-validation
             k_fold_loss_array = kfold_cross_validation(
-                validation_subdir, n_fold, cfg.n_train_steps, training_dataset,
+                validation_subdir, n_fold, cfg.n_max_epochs, training_dataset,
                 model_init_args, cfg.lr_init, opt_algorithm=cfg.opt_algorithm,
                 lr_scheduler_type=cfg.lr_scheduler_type,
                 lr_scheduler_kwargs=cfg.lr_scheduler_kwargs,

@@ -721,13 +721,13 @@ def test_save_and_load_model_state(tmp_path):
     # Save material patch model state to file
     model.save_model_state()
     # Load material patch model state from file
-    loaded_training_step = model.load_model_state()
+    loaded_epoch = model.load_model_state()
     # Get model state
     loaded_state_dict = model.state_dict()
-    # Check loaded model state training step
-    if loaded_training_step is not None:
-        errors.append('GNN-based material patch model unknown training step '
-                      'was not properly recovered from file.')
+    # Check loaded model state epoch
+    if loaded_epoch is not None:
+        errors.append('GNN-based material patch model unknown epoch was not '
+                      'properly recovered from file.')
     # Check loaded model state parameters
     if str(saved_state_dict) != str(loaded_state_dict):
         errors.append('GNN-based material patch model state was not properly'
@@ -738,15 +738,15 @@ def test_save_and_load_model_state(tmp_path):
     # Get model state
     saved_state_dict_0 = model.state_dict()
     # Save material patch model state to file
-    model.save_model_state(training_step=0)
-    model.save_model_state(training_step=0, is_best_state=True)
+    model.save_model_state(epoch=0)
+    model.save_model_state(epoch=0, is_best_state=True)
     # Load material patch model state from file
-    loaded_training_step = model.load_model_state(load_model_state=0)
+    loaded_epoch = model.load_model_state(load_model_state=0)
     # Get model state
     loaded_state_dict_0 = model.state_dict()
-    # Check loaded model state training step
-    if loaded_training_step != 0:
-        errors.append('GNN-based material patch model initial training step '
+    # Check loaded model state epoch
+    if loaded_epoch != 0:
+        errors.append('GNN-based material patch model initial epoch '
                       'was not properly recovered from file.')
     # Check loaded model state parameters
     if str(saved_state_dict_0) != str(loaded_state_dict_0):
@@ -759,73 +759,73 @@ def test_save_and_load_model_state(tmp_path):
     # Get model state
     saved_state_dict_1 = model.state_dict()
     # Save material patch model state to file
-    model.save_model_state(training_step=1)
-    model.save_model_state(training_step=1, is_best_state=True)
+    model.save_model_state(epoch=1)
+    model.save_model_state(epoch=1, is_best_state=True)
     # Load material patch model state from file
-    loaded_training_step = model.load_model_state(load_model_state=1)
+    loaded_epoch = model.load_model_state(load_model_state=1)
     # Get model state
     loaded_state_dict_1 = model.state_dict()
-    # Check loaded model state training step
-    if loaded_training_step != 1:
-        errors.append('GNN-based material patch model first training step '
+    # Check loaded model state epoch
+    if loaded_epoch != 1:
+        errors.append('GNN-based material patch model first epoch '
                       'was not properly recovered from file.')
     # Check loaded model state parameters
     if str(saved_state_dict_1) != str(loaded_state_dict_1):
-        errors.append('GNN-based material patch model first training step '
+        errors.append('GNN-based material patch model first epoch '
                       'state was not properly recovered from file.')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Load material patch model state from file
-    loaded_training_step = model.load_model_state(load_model_state=0,
-                                                  is_remove_posterior=False)
+    loaded_epoch = model.load_model_state(load_model_state=0,
+                                          is_remove_posterior=False)
     # Get model state
     loaded_state_dict_0 = model.state_dict()
-    # Check loaded model state training step
-    if loaded_training_step != 0:
-        errors.append('GNN-based material patch model old training step '
+    # Check loaded model state epoch
+    if loaded_epoch != 0:
+        errors.append('GNN-based material patch model old epoch '
                       'was not properly recovered from file.')
     # Check loaded model state parameters
     if str(saved_state_dict_0) != str(loaded_state_dict_0):
-        errors.append('GNN-based material patch model old training step '
+        errors.append('GNN-based material patch model old epoch '
                       'state was not properly recovered from file.')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Load material patch model state from file
-    loaded_training_step = model.load_model_state(load_model_state='last')
+    loaded_epoch = model.load_model_state(load_model_state='last')
     # Get model state
     loaded_state_dict_1 = model.state_dict()
-    # Check loaded model state training step
-    if loaded_training_step != 1:
-        errors.append('GNN-based material patch model latest training step '
+    # Check loaded model state epoch
+    if loaded_epoch != 1:
+        errors.append('GNN-based material patch model latest epoch '
                       'was not properly recovered from file.')
     # Check loaded model state parameters
     if str(saved_state_dict_1) != str(loaded_state_dict_1):
-        errors.append('GNN-based material patch model latest training step '
+        errors.append('GNN-based material patch model latest epoch '
                       'state was not properly recovered from file.')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Load material patch model state from file
-    loaded_training_step = model.load_model_state(load_model_state='best')
+    loaded_epoch = model.load_model_state(load_model_state='best')
     # Get model state
     loaded_state_dict_best = model.state_dict()
-    # Check loaded model state training step
-    if loaded_training_step != 1:
-        errors.append('GNN-based material patch model best training step '
+    # Check loaded model state epoch
+    if loaded_epoch != 1:
+        errors.append('GNN-based material patch model best epoch '
                       'was not properly recovered from file.')
     # Check loaded model state parameters
     if str(saved_state_dict_1) != str(loaded_state_dict_best):
-        errors.append('GNN-based material patch model best training step '
+        errors.append('GNN-based material patch model best epoch '
                       'state was not properly recovered from file.')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Load material patch model state from file
-    loaded_training_step = model.load_model_state(load_model_state=0,
-                                                  is_remove_posterior=True)
+    loaded_epoch = model.load_model_state(load_model_state=0,
+                                          is_remove_posterior=True)
     # Get model state
     loaded_state_dict_0 = model.state_dict()
-    # Check loaded model state training step
-    if loaded_training_step != 0:
-        errors.append('GNN-based material patch model old training step '
+    # Check loaded model state epoch
+    if loaded_epoch != 0:
+        errors.append('GNN-based material patch model old epoch '
                       'was not properly recovered from file.')
     # Check loaded model state parameters
     if str(saved_state_dict_0) != str(loaded_state_dict_0):
-        errors.append('GNN-based material patch model old training step '
+        errors.append('GNN-based material patch model old epoch '
                       'state was not properly recovered from file.')   
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     assert not errors, "Errors:\n{}".format("\n".join(errors))
@@ -844,7 +844,7 @@ def test_save_and_load_model_state_invalid(tmp_path):
     model = GNNMaterialPatchModel(**model_init_args)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     with pytest.raises(RuntimeError):
-        # Test loading unexistent material patch model training step state file
+        # Test loading unexistent material patch model epoch state file
         _ = model.load_model_state(load_model_state=0)
     with pytest.raises(RuntimeError):
         # Test loading unexistent material patch model best state file
@@ -857,8 +857,7 @@ def test_save_and_load_model_state_invalid(tmp_path):
                                     f'{model.model_name}-1-best.pt'))
         _ = model.load_model_state(load_model_state='best')
     with pytest.raises(RuntimeError):
-        # Test loading unexistent material patch model latest training step
-        # state file
+        # Test loading unexistent material patch model latest epoch state file
         _ = model.load_model_state(load_model_state='last')
     with pytest.raises(RuntimeError):
         # Test loading unexistent material patch model default state file

@@ -59,8 +59,8 @@ def perform_model_standard_training(case_study_name, dataset_file_path,
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set GNN-based material patch model training options
     if case_study_name == 'cs_2d_elastic':
-        # Set number of training steps
-        n_train_steps = 500
+        # Set number of epochs
+        n_max_epochs = 5
         # Set batch size
         batch_size = 16
         # Set learning rate
@@ -71,7 +71,7 @@ def perform_model_standard_training(case_study_name, dataset_file_path,
         # Set early stopping
         is_early_stopping = True
         early_stopping_kwargs = {'validation_size': 0.2,
-                                 'validation_frequency': 0.01*n_train_steps,
+                                 'validation_frequency': 2,
                                  'trigger_tolerance': 10}
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     else:
@@ -81,7 +81,7 @@ def perform_model_standard_training(case_study_name, dataset_file_path,
     dataset = GNNMaterialPatchDataset.load_dataset(dataset_file_path)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Training of GNN-based material patch model
-    model, _, _ = train_model(n_train_steps, dataset, model_init_args, lr_init,
+    model, _, _ = train_model(n_max_epochs, dataset, model_init_args, lr_init,
                               opt_algorithm=opt_algorithm,
                               lr_scheduler_type=lr_scheduler_type,
                               lr_scheduler_kwargs=lr_scheduler_kwargs,
@@ -107,7 +107,8 @@ def perform_model_standard_training(case_study_name, dataset_file_path,
     if validation_loss_history is not None:
         loss_histories['Validation'] = validation_loss_history
     # Read training process learning rate history
-    lr_scheduler_type, lr_history = read_lr_history_from_file(loss_record_path)
+    lr_scheduler_type, lr_history_epochs = \
+        read_lr_history_from_file(loss_record_path)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Create plot directory
     plot_dir = os.path.join(os.path.normpath(model_directory), 'plots')
@@ -120,9 +121,9 @@ def perform_model_standard_training(case_study_name, dataset_file_path,
                                is_save_fig=True, is_stdout_display=False,
                                is_latex=True)
     # Plot model training process loss and learning rate histories
-    plot_training_loss_and_lr_history(training_loss_history, lr_history,
-                                      loss_type=None, is_log_loss=False,
-                                      loss_scale='linear',
+    plot_training_loss_and_lr_history(training_loss_history,
+                                      lr_history_epochs, loss_type=None,
+                                      is_log_loss=False, loss_scale='linear',
                                       lr_type=lr_scheduler_type,
                                       save_dir=plot_dir, is_save_fig=True,
                                       is_stdout_display=False, is_latex=True)
@@ -162,8 +163,8 @@ def perform_model_kfold_cross_validation(case_study_name, dataset_file_path,
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set GNN-based material patch model training options
     if case_study_name == 'cs_2d_elastic':
-        # Set number of training steps
-        n_train_steps = 500
+        # Set number of epochs
+        n_max_epochs = 5
         # Set batch size
         batch_size = 16
         # Set learning rate
@@ -174,7 +175,7 @@ def perform_model_kfold_cross_validation(case_study_name, dataset_file_path,
         # Set early stopping
         is_early_stopping = True
         early_stopping_kwargs = {'validation_size': 0.2,
-                                 'validation_frequency': 0.01*n_train_steps,
+                                 'validation_frequency': 2,
                                  'trigger_tolerance': 10}
     else:
         raise RuntimeError('Unknown case study.')
@@ -186,7 +187,7 @@ def perform_model_kfold_cross_validation(case_study_name, dataset_file_path,
     n_fold = 4
     # Perform k-fold cross validation of GNN-based material patch model
     k_fold_loss_array = kfold_cross_validation(
-        cross_validation_dir, n_fold, n_train_steps, dataset, model_init_args,
+        cross_validation_dir, n_fold, n_max_epochs, dataset, model_init_args,
         lr_init, opt_algorithm=opt_algorithm,
         lr_scheduler_type=lr_scheduler_type,
         lr_scheduler_kwargs=lr_scheduler_kwargs, loss_type=loss_type,
@@ -338,8 +339,8 @@ def set_default_training_options():
 # =============================================================================
 if __name__ == "__main__":
     # Set computation processes
-    is_standard_training = False
-    is_cross_validation = True
+    is_standard_training = True
+    is_cross_validation = False
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set case studies base directory
     base_dir = ('/home/bernardoferreira/Documents/brown/projects/'

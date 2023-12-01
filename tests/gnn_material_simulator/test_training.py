@@ -62,9 +62,10 @@ def test_seed_worker(torch_seed):
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     assert not errors, "Errors:\n{}".format("\n".join(errors))
 # -----------------------------------------------------------------------------
-@pytest.mark.parametrize('total_n_train_steps, loss_type, loss_history,'
-                         'training_step, target_load_history, '
-                         'lr_scheduler_type, lr_history, target_lr_history',
+@pytest.mark.parametrize('n_max_epochs, loss_type, loss_history_epochs,'
+                         'epoch, target_load_history, '
+                         'lr_scheduler_type, lr_history_epochs, '
+                         'target_lr_history',
                          [(4, 'mse', [0.0, 2.0, 4.0, 6.0],
                            None, [0.0, 2.0, 4.0, 6.0], None, None, 4*[None,]),
                           (4, 'mse', [0.0, 2.0, 4.0, 6.0],
@@ -77,18 +78,18 @@ def test_seed_worker(torch_seed):
                            2, [0.0, 2.0, 4.0], 'steplr', None, 3*[None,]),
                           ])
 def test_save_and_load_loss_history(gnn_material_simulator,
-                                    total_n_train_steps, loss_type,
-                                    loss_history, training_step,
+                                    n_max_epochs, loss_type,
+                                    loss_history_epochs, epoch,
                                     target_load_history, lr_scheduler_type,
-                                    lr_history, target_lr_history):
+                                    lr_history_epochs, target_lr_history):
     """Test saving and loading of training process loss history."""
     # Initialize errors
     errors = []
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Save training process loss history
-    save_loss_history(gnn_material_simulator, total_n_train_steps, loss_type,
-                      loss_history, lr_scheduler_type=lr_scheduler_type,
-                      lr_history=lr_history)
+    save_loss_history(gnn_material_simulator, n_max_epochs, loss_type,
+                      loss_history_epochs, lr_scheduler_type=lr_scheduler_type,
+                      lr_history_epochs=lr_history_epochs)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set loss history record file path
     loss_record_path = os.path.join(gnn_material_simulator.model_directory,
@@ -99,17 +100,15 @@ def test_save_and_load_loss_history(gnn_material_simulator,
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Load training process loss history
     loaded_loss_history = load_loss_history(gnn_material_simulator, loss_type,
-                                            training_step=training_step)
+                                            epoch=epoch)
     # Load training process learning rate history
-    loaded_lr_history = load_lr_history(gnn_material_simulator,
-                                        training_step=training_step)
+    loaded_lr_history = load_lr_history(gnn_material_simulator, epoch=epoch)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Check loaded loss history
     if not np.allclose(loaded_loss_history, target_load_history):
         errors.append('Loss history was not properly recovered from file.')
-
     # Check loaded learning rate history
-    if lr_history is not None:
+    if lr_history_epochs is not None:
         if not np.allclose(loaded_lr_history, target_lr_history):
             errors.append('Learning rate history was not properly recovered '
                           'from file.')
@@ -125,16 +124,15 @@ def test_save_and_load_loss_history(gnn_material_simulator,
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Attempt to load unexistent training process loss and learning rate
     # histories
-    if training_step is not None:
-        loaded_loss_history = \
-            load_loss_history(gnn_material_simulator, loss_type,
-                              training_step=training_step)
-        if not loaded_loss_history == (training_step + 1)*[None,]:
+    if epoch is not None:
+        loaded_loss_history = load_loss_history(gnn_material_simulator,
+                                                loss_type, epoch=epoch)
+        if not loaded_loss_history == (epoch + 1)*[None,]:
             errors.append('Loss history was not properly set in the absence '
                           'of loss history record file.')
         loaded_lr_history = load_lr_history(gnn_material_simulator,
-                                            training_step=training_step)        
-        if not loaded_lr_history == (training_step + 1)*[None,]:
+                                            epoch=epoch)        
+        if not loaded_lr_history == (epoch + 1)*[None,]:
             errors.append('Learning rate history was not properly set in the '
                           'absence of loss history record file.')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -143,25 +141,25 @@ def test_save_and_load_loss_history(gnn_material_simulator,
 def test_invalid_load_loss_history(gnn_material_simulator):
     """Test invalid loading of training process loss history."""
     # Set valid parameters to save and load training process loss history
-    total_n_train_steps = 4
+    n_max_epochs = 4
     loss_type = 'mse'
     loss_history = [0.0, 2.0, 4.0, 6.0]
-    training_step = 2
+    epoch = 2
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Save training process loss history
-    save_loss_history(gnn_material_simulator, total_n_train_steps, loss_type,
+    save_loss_history(gnn_material_simulator, n_max_epochs, loss_type,
                       loss_history)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Test inconsistent loss history type
     test_loss_type = 'not_mse'
     with pytest.raises(RuntimeError):
         _ = load_loss_history(gnn_material_simulator, test_loss_type,
-                              training_step=training_step)
-    # Test training step beyong available loss history
-    test_training_step = 4
+                              epoch=epoch)
+    # Test epoch beyong available loss history
+    test_epoch = 4
     with pytest.raises(RuntimeError):
         _ = load_loss_history(gnn_material_simulator, loss_type,
-                              training_step=test_training_step)
+                              epoch=test_epoch)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Remove loss history record file
     loss_record_path = os.path.join(gnn_material_simulator.model_directory,
@@ -171,29 +169,27 @@ def test_invalid_load_loss_history(gnn_material_simulator):
     # Test loading unexistent training process loss history with unknown
     # training step
     with pytest.raises(RuntimeError):
-        _ = load_loss_history(gnn_material_simulator, loss_type,
-                              training_step=None)
+        _ = load_loss_history(gnn_material_simulator, loss_type, epoch=None)
 # -----------------------------------------------------------------------------
 def test_invalid_load_lr_history(gnn_material_simulator):
     """Test invalid loading of training process learning rate history."""
     # Set valid parameters to save and load training process loss and learning
     # rate histories
-    total_n_train_steps = 4
+    n_max_epochs = 4
     loss_type = 'mse'
     loss_history = [0.0, 2.0, 4.0, 6.0]
     lr_scheduler_type = 'steplr'
     lr_history = [0.0, 0.1, 0.2, 0.3]
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Save training process loss history
-    save_loss_history(gnn_material_simulator, total_n_train_steps, loss_type,
+    save_loss_history(gnn_material_simulator, n_max_epochs, loss_type,
                       loss_history, lr_scheduler_type=lr_scheduler_type,
-                      lr_history=lr_history)
+                      lr_history_epochs=lr_history)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Test training step beyong available learning rate history
-    test_training_step = 4
+    test_epoch = 4
     with pytest.raises(RuntimeError):
-        _ = load_lr_history(gnn_material_simulator,
-                            training_step=test_training_step)
+        _ = load_lr_history(gnn_material_simulator, epoch=test_epoch)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Remove loss history record file
     loss_record_path = os.path.join(gnn_material_simulator.model_directory,
@@ -203,7 +199,7 @@ def test_invalid_load_lr_history(gnn_material_simulator):
     # Test loading unexistent training process learning rate history with
     # unknown training step
     with pytest.raises(RuntimeError):
-        _ = load_lr_history(gnn_material_simulator, training_step=None)
+        _ = load_lr_history(gnn_material_simulator, epoch=None)
 # -----------------------------------------------------------------------------
 @pytest.mark.parametrize('opt_algorithm', ['adam',])
 def test_save_and_load_model_state(tmp_path, opt_algorithm):
@@ -247,12 +243,11 @@ def test_save_and_load_model_state(tmp_path, opt_algorithm):
         errors.append('Optimizer state file has not been found.')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Load model and optimizer states
-    loaded_step = load_training_state(model, opt_algorithm, optimizer)
+    loaded_epoch = load_training_state(model, opt_algorithm, optimizer)
     # # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ 
-    # Check loaded model state training step
-    if loaded_step != 0:
-        errors.append('Unknown training step was not properly recovered from '
-                      'file.')
+    # Check loaded model state epoch
+    if loaded_epoch != 0:
+        errors.append('Unknown epoch was not properly recovered from file.')
     # Check model state parameters
     if str(saved_model_state) != str(model.state_dict()):
         errors.append('Model state was not properly recovered from file.')
@@ -260,16 +255,16 @@ def test_save_and_load_model_state(tmp_path, opt_algorithm):
     if str(saved_optimizer_state) != str(optimizer.state_dict()):
         errors.append('Optimizer state was not properly recovered from file.')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Initialize model and optimizer saved training step states
+    # Initialize model and optimizer saved epoch states
     saved_model_states = []
     saved_optimizer_states = []
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Set number of training steps
-    n_train_steps = 5
+    # Set number of epochs
+    n_max_epochs = 5
     # Set random best states during training process
     best_training_states = (1, 3)
-    # Loop over training steps
-    for step in range(n_train_steps):
+    # Loop over epochs
+    for epoch in range(n_max_epochs):
         # Build GNN-based material patch model (reinitializing parameters to
         # emulate parameters update)
         model = GNNMaterialPatchModel(**model_init_args)
@@ -278,10 +273,10 @@ def test_save_and_load_model_state(tmp_path, opt_algorithm):
         if opt_algorithm == 'adam':
             optimizer = torch.optim.Adam(model.parameters(recurse=True))
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        # Save model and optimizer states at given training step
-        save_training_state(model, optimizer, step)
-        if step in best_training_states:
-            save_training_state(model, optimizer, step, is_best_state=True)
+        # Save model and optimizer states at given epoch
+        save_training_state(model, optimizer, epoch)
+        if epoch in best_training_states:
+            save_training_state(model, optimizer, epoch, is_best_state=True)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Store model state
         saved_model_states.append(model.state_dict())
@@ -290,7 +285,7 @@ def test_save_and_load_model_state(tmp_path, opt_algorithm):
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Set model state state file path
         model_state_path = os.path.join(model.model_directory, model.model_name
-                                        + '-' + str(step) + '.pt')
+                                        + '-' + str(epoch) + '.pt')
         # Check model state file
         if not os.path.isfile(model_state_path):
             errors.append('Model state file has not been found.')        
@@ -298,17 +293,17 @@ def test_save_and_load_model_state(tmp_path, opt_algorithm):
         # Set optimizer state file path
         optimizer_state_path = \
             os.path.join(model.model_directory, model.model_name
-                        + '_optim-' + str(step) + '.pt')
+                         + '_optim-' + str(epoch) + '.pt')
         # Check optimizer state file
         if not os.path.isfile(optimizer_state_path):
             errors.append('Optimizer state file has not been found.')
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Check best performance state files
-        if step in best_training_states:
+        if epoch in best_training_states:
             # Set model state state file path
             model_state_path = \
                 os.path.join(model.model_directory,
-                             model.model_name + '-' + str(step) + '-best'
+                             model.model_name + '-' + str(epoch) + '-best'
                              + '.pt')
             # Check model state file
             if not os.path.isfile(model_state_path):
@@ -316,8 +311,8 @@ def test_save_and_load_model_state(tmp_path, opt_algorithm):
             # Set optimizer state file path
             optimizer_state_path = \
                 os.path.join(model.model_directory,
-                             model.model_name + '_optim-' + str(step) + '-best'
-                             + '.pt')
+                             model.model_name + '_optim-' + str(epoch)
+                             + '-best' + '.pt')
             # Check optimizer state file
             if not os.path.isfile(optimizer_state_path):
                 errors.append('Optimizer state file has not been found.')
@@ -330,44 +325,41 @@ def test_save_and_load_model_state(tmp_path, opt_algorithm):
             optimizer = torch.optim.Adam(model.parameters(recurse=True))
         # Load model and optimizer states
         loaded_step = load_training_state(model, opt_algorithm, optimizer,
-                                          load_model_state=step)
+                                          load_model_state=epoch)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ 
-        # Check loaded model state training step
-        if loaded_step != step:
-            errors.append('Training step was not properly recovered from '
-                          'file.')
+        # Check loaded model state epoch
+        if loaded_step != epoch:
+            errors.append('Epoch was not properly recovered from file.')
         # Check model state parameters
-        if str(saved_model_states[step]) != str(model.state_dict()):
-            errors.append('Training step model state was not properly '
-                          'recovered from file.')
+        if str(saved_model_states[epoch]) != str(model.state_dict()):
+            errors.append('Epoch model state was not properly recovered from '
+                          'file.')
         # Check optimizer state parameters
-        if str(saved_optimizer_states[step]) != str(optimizer.state_dict()):
-            errors.append('Training step optimizer state was not properly '
-                          'recovered from file.')
+        if str(saved_optimizer_states[epoch]) != str(optimizer.state_dict()):
+            errors.append('Epoch optimizer state was not properly recovered '
+                          'from file.')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Load model and optimizer states
     loaded_step = load_training_state(model, opt_algorithm, optimizer,
                                       load_model_state='last')
-    # Check loaded model state training step
+    # Check loaded model state epoch
     if loaded_step != 4:
-        errors.append('Last training step was not properly recovered from '
-                      'file.')
+        errors.append('Last epoch was not properly recovered from file.')
     # Check model state parameters
     if str(saved_model_states[4]) != str(model.state_dict()):
-        errors.append('Last training step model state was not properly '
-                      'recovered from file.')
+        errors.append('Last epoch model state was not properly recovered from '
+                      'file.')
     # Check optimizer state parameters
     if str(saved_optimizer_states[4]) != str(optimizer.state_dict()):
-        errors.append('Last training step optimizer state was not properly '
-                      'recovered from file.')
+        errors.append('Last epoch optimizer state was not properly recovered '
+                      'from file.')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Load model and optimizer states
     loaded_step = load_training_state(model, opt_algorithm, optimizer,
                                       load_model_state='best')
-    # Check loaded model state training step
+    # Check loaded model state epoch
     if loaded_step != 3:
-        errors.append('Best state training step was not properly recovered '
-                      'from file.')
+        errors.append('Best state epoch was not properly recovered from file.')
     # Check model state parameters
     if str(saved_model_states[3]) != str(model.state_dict()):
         errors.append('Best model state was not properly recovered from file.')
@@ -379,18 +371,17 @@ def test_save_and_load_model_state(tmp_path, opt_algorithm):
     # Load model and optimizer states
     loaded_step = load_training_state(model, opt_algorithm, optimizer,
                                       load_model_state=2)
-    # Check loaded model state training step
+    # Check loaded model state epoch
     if loaded_step != 2:
-        errors.append('Old training step was not properly recovered from '
-                      'file.')
+        errors.append('Old epoch was not properly recovered from file.')
     # Check model state parameters
     if str(saved_model_states[2]) != str(model.state_dict()):
-        errors.append('Old training step model state was not properly '
-                      'recovered from file.')
+        errors.append('Old epoch model state was not properly recovered from '
+                      'file.')
     # Check optimizer state parameters
     if str(saved_optimizer_states[2]) != str(optimizer.state_dict()):
-        errors.append('Old training step optimizer state was not properly '
-                      'recovered from file.')    
+        errors.append('Old epoch optimizer state was not properly recovered '
+                      'from file.')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     assert not errors, "Errors:\n{}".format("\n".join(errors))
 # -----------------------------------------------------------------------------
@@ -402,21 +393,21 @@ def test_invalid_load_model_state(gnn_material_simulator, opt_algorithm):
     # Initialize optimizer
     if opt_algorithm == 'adam':
         optimizer = torch.optim.Adam(model.parameters(recurse=True))
-    # Set training step
-    training_step = 0
+    # Set epoch
+    epoch = 0
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Save model and optimizer states at given training step
-    save_training_state(model, optimizer, training_step)
+    # Save model and optimizer states at given epoch
+    save_training_state(model, optimizer, epoch)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Test detection of unknown optimizer
     with pytest.raises(RuntimeError):
          _ = load_training_state(model, 'unknown_optimizer', optimizer,
-                                 load_model_state=training_step)
+                                 load_model_state=epoch)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Remove optimizer state file path
     optimizer_state_path = os.path.join(model.model_directory,
                                         model.model_name + '_optim-'
-                                        + str(training_step) + '.pt')
+                                        + str(epoch) + '.pt')
     os.remove(optimizer_state_path)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Test loading unexistent optimizer state file

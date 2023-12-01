@@ -24,8 +24,8 @@ hidden_activation: 'identity'
 output_activation: 'identity'
 
 # Training parameters
-# Number of training steps
-n_train_steps: 100
+# Number of training epochs
+n_max_epochs: 100
 # Batch size
 batch_size: 5
 # Data set shuffler
