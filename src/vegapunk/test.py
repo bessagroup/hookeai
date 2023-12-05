@@ -533,3 +533,71 @@ print(torch.std(a, correction=0))
 print(torch.std(a, unbiased=False))
 print(torch.std(a, correction=2))
 
+
+print('\n\n')
+from material_patch.patch_generator import rotation_tensor_from_euler_angles
+
+
+import random
+
+rot_alpha = random.uniform(0, 360)
+euler_deg = (rot_alpha, 0, 0)
+rotation = rotation_tensor_from_euler_angles(euler_deg)[:2, :2]
+
+translation = np.random.uniform(low=0.0, high=5.0, size=(2))
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+mesh_nodes_coords_ref = {}
+mesh_nodes_coords_ref['1'] = np.array([0.0, 0.0])
+mesh_nodes_coords_ref['2'] = np.array([4.0, 0.0])
+mesh_nodes_coords_ref['3'] = np.array([4.0, 2.0])
+mesh_nodes_coords_ref['4'] = np.array([0.0, 2.0])
+
+
+mesh_nodes_coords_ref['1'] = np.array([0.0, 0.0])
+mesh_nodes_coords_ref['2'] = np.array([4.0, 1.5])
+mesh_nodes_coords_ref['3'] = np.array([1.0, 3.0])
+mesh_nodes_coords_ref['4'] = np.array([2.0, 2.0])
+
+mesh_nodes_labels = list(mesh_nodes_coords_ref.keys())
+mesh_nodes_labels.append(mesh_nodes_labels[0])
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+import shapely
+# Build polygon coordinates array
+coords_array = np.empty((0, 2))
+for coords in mesh_nodes_coords_ref.values():
+    coords_array = np.append(coords_array, coords.reshape(-1, 2), axis=0)
+coords_array = np.append(coords_array, coords_array[0:1, :], axis=0)
+# Generate polygon
+polygon = shapely.geometry.Polygon(coords_array)
+# Get polygon centroid
+pc = np.array(polygon.centroid.coords).reshape(-1)
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# Compute coordinates after rigid body motion
+mesh_nodes_coords_rbm = {}
+for node, coords in mesh_nodes_coords_ref.items():
+    mesh_nodes_coords_rbm[node] = pc + np.matmul(rotation, coords - pc)
+    mesh_nodes_coords_rbm[node] += translation
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# Plot patch
+fig, ax = plt.subplots()
+
+ax.plot(pc[0], pc[1], marker='D', color='b')
+
+ax.plot([mesh_nodes_coords_ref[str(label)][0]
+            for label in mesh_nodes_labels],
+        [mesh_nodes_coords_ref[str(label)][1]
+            for label in mesh_nodes_labels],
+        '-o', color='k')
+
+ax.plot([mesh_nodes_coords_rbm[str(label)][0]
+            for label in mesh_nodes_labels],
+        [mesh_nodes_coords_rbm[str(label)][1]
+            for label in mesh_nodes_labels],
+        '-o', color='r')
+
+ax.set_aspect('equal', adjustable='box') 
+
+plt.show()

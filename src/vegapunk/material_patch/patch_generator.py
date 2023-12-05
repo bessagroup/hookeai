@@ -15,6 +15,7 @@ rotation_tensor_from_euler_angles
 # =============================================================================
 # Standard
 import copy
+import random
 # Third-party
 import numpy as np
 import matplotlib.pyplot as plt
@@ -71,8 +72,10 @@ class FiniteElementPatchGenerator:
     generate_deformed_patch(self, elem_type, n_elems_per_dim, \
                             corners_lab_bc=None, corners_lab_disp_range=None, \
                             edges_lab_def_order=None, \
-                            edges_lab_disp_range=None, max_iter=10, \
-                            is_verbose=False)
+                            edges_lab_disp_range=None, \
+                            translation_range=None, \
+                            rotation_angles_range=None, \
+                            max_iter=10, is_verbose=False)
         Generate finite element deformed patch.
     _build_corners_bc(self, corners_lab_bc=None)
         Build boundary conditions on patch corners.
@@ -102,6 +105,8 @@ class FiniteElementPatchGenerator:
     _polynomial_sampler(order, left_point, right_point, lower_bound=None, \
                         upper_bound=None, is_plot=False)
         Generate random polynomial by sampling points within given bounds.
+    _build_boundary_coords_array(self, edges_coords)
+        Build patch boundary nodes coordinates array.
     _is_admissible_simulation(self, edges_coords)
         Check whether simulation of patch is physically admissible.
     _get_orthogonal_dims(self, dim)
@@ -160,6 +165,8 @@ class FiniteElementPatchGenerator:
                                 corners_lab_disp_range=None,
                                 edges_lab_def_order=None,
                                 edges_lab_disp_range=None,
+                                translation_range=None,
+                                rotation_angles_range=None,
                                 max_iter=10, is_verbose=False):
         """Generate finite element deformed patch.
         
@@ -174,12 +181,12 @@ class FiniteElementPatchGenerator:
             corner label (key, str[int]). Corners are labeled from 1 to number
             of corners. The tuple[int](n_dim) prescribes 0 (free) or 1 (fixed)
             for each degree of freedom. Corners are labeled from 1 to number of
-            corners.Unspecified corners are assumed free by default.
+            corners. Unspecified corners are assumed free by default.
         corners_lab_disp_range : dict, default=None
             Displacement range along each dimension (item, tuple[tuple(2)]) for
             each corner label (key, str[int]). Corners are labeled from 1 to
             number of corners. Range is specified as tuple(min, max) for each
-            dimension.  If None, a null displacement range is set by default.
+            dimension. If None, a null displacement range is set by default.
         edges_lab_def_order : {int, dict}, default=None
             Deformation polynomial order (item, int) for each edge label
             (key, str[int]). Edges are labeled from 1 to number of edges.
@@ -195,6 +202,17 @@ class FiniteElementPatchGenerator:
             displacement corresponds to outward/inward direction with respect
             to the patch. Null displacement range is assumed for unspecified
             edges. If None, null displacement range is set by default.
+        translation_range : dict, default=None
+            Translational displacement range (item, tuple[float](2)) along each
+            dimension (key, str[int]). Range is specified as tuple(min, max)
+            for each dimension. Null range is assumed for unspecified
+            dimensions. If None, then there is no translational motion.
+        rotation_angles_range : dict, default=None
+            Rotational angle range (item, tuple[float](2)) for each Euler angle
+            (key, str). Euler angles follow Bunge convention (Z1-X2-Z3) and are
+            labelled ('alpha', 'beta', 'gamma'), respectively. Null range is
+            assumed for unspecified angles. If None, then there is no
+            rotational motion.        
         max_iter : int, default=10
             Maximum number of iterations to get a geometrically admissible
             deformed patch configuration.
@@ -340,7 +358,47 @@ class FiniteElementPatchGenerator:
                         # Store edge nodes coordinates (deformed configuration)
                         edges_coords_def[str(i)].append(nodes_coords_def)
                     else:
-                        raise RuntimeError('Missing 3D implementation.')
+                        raise RuntimeError('Missing 3D implementation.')        
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Compute random rigid body motions
+            translation, rotation = self._get_random_rigid_motions(
+                translation_range, rotation_angles_range)
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Get patch (geometrical) centroid
+            if rotation is not None:
+                if self._n_dim == 2:
+                    # Build boundary nodes coordinates array
+                    coords_array = \
+                        self._build_boundary_coords_array(edges_coords_def)
+                    # Generate boundary polygon
+                    polygon = shapely.geometry.Polygon(coords_array)
+                    # Get boundary polygon centroid (center of rotation)
+                    centroid = np.array(polygon.centroid.coords).reshape(-1)
+                else:
+                    raise RuntimeError('Missing 3D implementation.')
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Apply rigid body motions (translation and rotation)
+            for i in range(self._n_dim):
+                # Loop over edges
+                for coords_array in edges_coords_def[str(i)]:
+                    # Get number of boundary edge nodes
+                    n_nodes = coords_array.shape[0]
+                    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                    # Rigid body rotation
+                    if rotation is not None:
+                        # Build centroid tile array
+                        centroid_tile = np.tile(centroid, (n_nodes, 1))
+                        # Apply rigid body rotation around centroid
+                        coords_array[:, :] = \
+                            centroid_tile + self._rotate_coords_array(
+                                coords_array - centroid_tile, rotation)
+                    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                    # Rigid body translation
+                    if translation is not None:
+                        # Build translation tile array
+                        translation_tile = np.tile(translation, (n_nodes, 1))
+                        # Apply rigid body translation
+                        coords_array += translation_tile
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~   
             # Check whether simulation of patch is physically admissible
             is_admissible = self._is_admissible_simulation(edges_coords_def)
@@ -1127,22 +1185,93 @@ class FiniteElementPatchGenerator:
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         return coefficients
     # -------------------------------------------------------------------------
-    def _is_admissible_simulation(self, edges_coords_def):
-        """Check whether simulation of patch is physically admissible.
+    def _get_random_rigid_motions(self, translation_range,
+                                  rotation_angles_range):
+        """Get random rigid body motion tensors (translation and rotation).
         
         Parameters
         ----------
-        edges_coords_def : dict[list[numpy.ndarray(2d)]]
-            For each dimension (key, str[int]), store the corresponding edges
-            coordinates (item, list[numpy.ndarray(2d)]) (deformed
-            configuration). Each edge coordinates are stored as a
-            numpy.ndarray(n_edge_nodes, n_dim). Corner nodes are assumed part
-            of the edge.
-            
+        translation_range : dict, default=None
+            Translational displacement range (item, tuple[float](2)) along each
+            dimension (key, str[int]). Range is specified as tuple(min, max)
+            for each dimension. Null range is assumed for unspecified
+            dimensions. If None, then there is no translational motion.
+        rotation_angles_range : dict, default=None
+            Rotational angle range (item, tuple[float](2)) for each Euler angle
+            (key, str). Euler angles follow Bunge convention (Z1-X2-Z3) and are
+            labelled ('alpha', 'beta', 'gamma'), respectively. Null range is
+            assumed for unspecified angles. If None, then there is no
+            rotational motion.
+        
         Returns
         -------
-        is_admissible : bool
-            If True, the patch simulation is physically admissible.
+        translation : numpy.ndarray(1d)
+            Translation array (numpy.ndarray(n_dim)).
+        rotation : numpy.ndarray(2d)
+            Rotation tensor (for given rotation angle theta, active
+            transformation (+ theta) and passive transformation (- theta)).
+        """
+        # Set translation array
+        if translation_range is None:
+            translation = None
+        else:
+            # Initialize translation array
+            translation = np.zeros(self._n_dim)
+            # Loop over dimensions
+            for i in range(self._n_dim):
+                # Sample translation along dimension
+                if str(i + 1) in translation_range.keys():
+                    # Get translation bounds
+                    bounds = (translation_range[str(i + 1)][0],
+                              translation_range[str(i + 1)][1])
+                    # Sample translation along dimension: uniform distribution
+                    translation[i] = \
+                        np.random.uniform(low=bounds[0], high=bounds[1])
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set rotation tensor
+        if rotation_angles_range is None:
+            rotation = None
+        else:
+            # Initialize Euler angles
+            rotation_angles = np.zeros(3)
+            # Loop over Euler angles
+            for i, angle in enumerate(('alpha', 'beta', 'gamma')):
+                # Process only first Euler angle under two dimensions
+                if self._n_dim == 2 and angle != 'alpha':
+                    continue
+                # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                # Sample Euler angle
+                if angle in rotation_angles_range.keys():
+                    # Get angle bounds
+                    bounds = (rotation_angles_range[angle][0],
+                              rotation_angles_range[angle][1])
+                    # Sample angle: uniform distribution
+                    rotation_angles[i] = \
+                        np.random.uniform(low=bounds[0], high=bounds[1])
+            # Compute rotation tensor
+            rotation = rotation_tensor_from_euler_angles(
+                tuple(rotation_angles))[:2, :2]
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        return translation, rotation
+    # -------------------------------------------------------------------------
+    def _build_boundary_coords_array(self, edges_coords):
+        """Build patch boundary nodes coordinates array.
+        
+        In the two-dimensional case, boundary nodes are sorted in clockwise
+        order and define a closed polygon.
+        
+        Parameters
+        ----------
+        edges_coords : dict
+            For each dimension (key, str[int]), store the corresponding edges
+            coordinates (item, list[numpy.ndarray(2d)]). Each edge coordinates
+            are stored as a numpy.ndarray(n_edge_nodes, n_dim). Corner nodes
+            are assumed part of the edge.
+        
+        Returns
+        -------
+        boundary_coords_array : numpy.ndarray(2d)
+            Boundary nodes coordinates array (numpy.ndarray(n_points, n_dim)).
         """
         if self._n_dim == 2:
             # Initialize polygon coordinates
@@ -1166,7 +1295,7 @@ class FiniteElementPatchGenerator:
                     # Append edge 
                     if is_target_edge:
                         # Get edge nodes coordinates
-                        edge_coords = edges_coords_def[dim][index]                        
+                        edge_coords = edges_coords[dim][index]                        
                         # Set nodes sorting
                         is_flip = target != corners
                         # Sort edge nodes according to clockwise order
@@ -1180,6 +1309,32 @@ class FiniteElementPatchGenerator:
             # Close polygon coordinates
             coords_array = np.append(coords_array, coords_array[0:1, :],
                                      axis=0)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        else:
+            raise RuntimeError('Missing 3D implementation.')
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        return coords_array
+    # -------------------------------------------------------------------------
+    def _is_admissible_simulation(self, edges_coords_def):
+        """Check whether simulation of patch is physically admissible.
+        
+        Parameters
+        ----------
+        edges_coords_def : dict[list[numpy.ndarray(2d)]]
+            For each dimension (key, str[int]), store the corresponding edges
+            coordinates (item, list[numpy.ndarray(2d)]) (deformed
+            configuration). Each edge coordinates are stored as a
+            numpy.ndarray(n_edge_nodes, n_dim). Corner nodes are assumed part
+            of the edge.
+            
+        Returns
+        -------
+        is_admissible : bool
+            If True, the patch simulation is physically admissible.
+        """
+        if self._n_dim == 2:
+            # Build boundary nodes coordinates array
+            coords_array = self._build_boundary_coords_array(edges_coords_def)
             # Generate polygon
             polygon = shapely.geometry.Polygon(coords_array)
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -1234,7 +1389,7 @@ class FiniteElementPatchGenerator:
             
         Returns
         -------
-        rotation : numpy.ndarray (2d)
+        rotation : numpy.ndarray(2d)
             Rotation tensor (for given rotation angle theta, active
             transformation (- theta) and passive transformation (+ theta)).
         """

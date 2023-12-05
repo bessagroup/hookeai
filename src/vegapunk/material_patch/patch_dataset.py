@@ -25,6 +25,7 @@ import shutil
 import pickle
 import time
 import datetime
+import random
 # Third-party
 import numpy as np
 import f3dasm
@@ -47,6 +48,7 @@ def generate_material_patch_dataset(
     n_elems_per_dim, patch_material_data, simulation_directory, n_sample=1,
     patch_dims_ranges=None, avg_deformation_ranges=None,
     edge_deformation_order_ranges=None, edge_deformation_magnitude_ranges=None,
+    translation_range=None, rotation_angles_range=None,
     max_iter_per_patch=10, is_remove_failed_samples=False,
     links_input_params=None, is_save_simulation_dataset=False,
     is_append_n_sample=True, is_save_simulation_files=False,
@@ -117,8 +119,9 @@ def generate_material_patch_dataset(
         Number of material patch samples.
     patch_dims_ranges : dict, default=None
         Range of material patch size (item, tuple[float](2)) along each
-        dimension. The range is specified as a tuple(lower_bound, upper_bound).
-        Range defaults to (1.0, 1.0) if not specified.
+        dimension (key, str). The range is specified as a
+        tuple(lower_bound, upper_bound). Range defaults to (1.0, 1.0) if not
+        specified.
     avg_deformation_ranges : dict, default=None
         Range of average deformation along each dimension
         (item, tuple[tuple(2)]) for each corner label (key, str[int]). Corners
@@ -141,6 +144,17 @@ def generate_material_patch_dataset(
         orthogonal to its dimension in the reference configuration. The range
         is specified as a tuple(lower_bound, upper_bound) and where
         positive/negative values are associated with tension/compression.
+    translation_range : dict, default=None
+        Translational displacement range (item, tuple[float](2)) along each
+        dimension (key, str[int]). Range is specified as tuple(min, max)
+        for each dimension. Null range is assumed for unspecified
+        dimensions. If None, then there is no translational motion.
+    rotation_angles_range : dict, default=None
+        Rotational angle range (item, tuple[float](2)) for each Euler angle
+        (key, str). Euler angles follow Bunge convention (Z1-X2-Z3) and are
+        labelled ('alpha', 'beta', 'gamma'), respectively. Null range is
+        assumed for unspecified angles. If None, then there is no
+        rotational motion.
     max_iter_per_patch : int, default=10
         Maximum number of iterations to get a geometrically admissible
         deformed patch configuration.
@@ -206,6 +220,12 @@ def generate_material_patch_dataset(
     if edge_deformation_magnitude_ranges is None:
         edge_deformation_magnitude_ranges = \
             default_parameters['edge_deformation_magnitude_ranges']
+    if translation_range is None:
+        translation_range = \
+            default_parameters['translation_range']
+    if rotation_angles_range is None:
+        rotation_angles_range = \
+            default_parameters['rotation_angles_range']
     if elem_type is None:
         elem_type = default_parameters['elem_type']
     if n_elems_per_dim is None:
@@ -247,8 +267,8 @@ def generate_material_patch_dataset(
         # Set name
         name = 'patch_size_' + str(i + 1)
         # Set bounds
-        lower_bound=patch_dims_ranges[str(i + 1)][0]
-        upper_bound=patch_dims_ranges[str(i + 1)][1]
+        lower_bound = patch_dims_ranges[str(i + 1)][0]
+        upper_bound = patch_dims_ranges[str(i + 1)][1]
         # Add design input parameter
         if np.isclose(lower_bound, upper_bound):
             domain.add_constant(name=name, value=lower_bound)
@@ -275,8 +295,8 @@ def generate_material_patch_dataset(
             # Set name
             name = 'corner_' + label + '_deformation_' + str(i + 1)
             # Set bounds
-            lower_bound=avg_deformation_ranges[label][i][0]
-            upper_bound=avg_deformation_ranges[label][i][1]
+            lower_bound = avg_deformation_ranges[label][i][0]
+            upper_bound = avg_deformation_ranges[label][i][1]
             # Add design input parameter
             if np.isclose(lower_bound, upper_bound):
                 domain.add_constant(name=name, value=lower_bound) 
@@ -301,13 +321,43 @@ def generate_material_patch_dataset(
         # Set name
         name = 'edge_' + label + '_deformation_order'
         # Set bounds
-        lower_bound=edge_deformation_order_ranges[label][0]
-        upper_bound=edge_deformation_order_ranges[label][1]
+        lower_bound = edge_deformation_order_ranges[label][0]
+        upper_bound = edge_deformation_order_ranges[label][1]
         # Add design input parameter
         if np.isclose(lower_bound, upper_bound):
             domain.add_constant(name=name, value=lower_bound)
         else:
             domain.add_int(name=name, low=lower_bound, high=upper_bound)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Set input parameter: Material patch rigid body translation
+    #
+    # Loop over dimensions
+    for i in range(n_dim):
+        # Set name
+        name = f'translation_{i}'
+        # Set bounds
+        lower_bound = translation_range[str(i + 1)][0]
+        upper_bound = translation_range[str(i + 1)][1]
+        # Add design input parameter
+        if np.isclose(lower_bound, upper_bound):
+            domain.add_constant(name=name, value=lower_bound)
+        else:
+            domain.add_float(name=name, low=lower_bound, high=upper_bound)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Set input parameter: Material patch rigid body rotation
+    #
+    # Loop over dimensions
+    for euler_angle in ('alpha', 'beta', 'gamma'):
+        # Set name
+        name = f'rotation_angle_{euler_angle}'
+        # Set bounds
+        lower_bound = rotation_angles_range[euler_angle][0]
+        upper_bound = rotation_angles_range[euler_angle][1]
+        # Add design input parameter
+        if np.isclose(lower_bound, upper_bound):
+            domain.add_constant(name=name, value=lower_bound)
+        else:
+            domain.add_float(name=name, low=lower_bound, high=upper_bound)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set experiment data directory
     experiment_data_dir = os.path.join(simulation_directory, 'experiment_data')
@@ -428,8 +478,9 @@ def generate_material_patch_dataset(
         simulation_directory, n_sample, n_dim, strain_formulation,
         analysis_type, patch_dims_ranges, elem_type, n_elems_per_dim,
         avg_deformation_ranges, edge_deformation_order_ranges,
-        edge_deformation_magnitude_ranges, patch_material_data, n_success,
-        n_failure, n_fail_patch, n_fail_simulation, total_time_sec,
+        edge_deformation_magnitude_ranges, translation_range,
+        rotation_angles_range, patch_material_data,
+        n_success, n_failure, n_fail_patch, n_fail_simulation, total_time_sec,
         avg_time_sec)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     return dataset_simulation_data
@@ -479,6 +530,10 @@ class MaterialPatchSimulator(f3dasm.datageneration.DataGenerator):
         """
         # Get material patch design sample ID
         sample_id = experiment_sample.job_number
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Reseed random generators
+        random.seed()
+        np.random.seed()
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Get number of spatial dimensions                                         
         n_dim = kwargs['n_dim']
@@ -565,6 +620,28 @@ class MaterialPatchSimulator(f3dasm.datageneration.DataGenerator):
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Set edge displacement range
             edges_lab_disp_range[label] = (min_disp, max_disp)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Initialize rigid body translation
+        translation_range = {}
+        # Loop over dimensions
+        for i in range(n_dim):
+            # Set parameter name
+            name = f'translation_{i}'
+            # Get translation along dimension
+            disp = experiment_sample.get(name)
+            # Set translation along dimension
+            translation_range[str(i + 1)] = 2*(disp,)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Initialize rigid body rotation
+        rotation_angles_range = {}
+        # Loop over Euler angles
+        for euler_angle in ('alpha', 'beta', 'gamma'):
+            # Set name
+            name = f'rotation_angle_{euler_angle}'
+            # Get rotation angle
+            angle = experiment_sample.get(name)
+            # Set translation along dimension
+            rotation_angles_range[euler_angle] = 2*(angle,)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~        
         # Initialize material patch generator
         patch_generator = FiniteElementPatchGenerator(n_dim, patch_dims)
@@ -573,7 +650,9 @@ class MaterialPatchSimulator(f3dasm.datageneration.DataGenerator):
             elem_type, n_elems_per_dim,
             corners_lab_disp_range=corners_lab_disp_range,
             edges_lab_def_order=edges_lab_def_order,
-            edges_lab_disp_range=edges_lab_disp_range)
+            edges_lab_disp_range=edges_lab_disp_range,
+            translation_range=translation_range,
+            rotation_angles_range=rotation_angles_range)
         # Save plot of deformed material patch
         is_save_plot_patch = kwargs['is_save_plot_patch']
         if is_save_plot_patch and is_admissible:
@@ -663,6 +742,11 @@ def get_default_design_parameters(n_dim):
     # Set default polynomial deformation magnitude (edges)
     edge_deformation_magnitude_ranges = {label: (0, 0)
                                          for label in edges_labels}
+    # Set default rigid body translation
+    translation_range = {str(i + 1): (0.0, 0.0) for i in range(n_dim)}
+    # Set default rigid body rotation
+    rotation_angles_range = {angle: (0.0, 0.0)
+                             for angle in ('alpha', 'beta', 'gamma')}
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Store default parameters
     default_parameters = {
@@ -671,7 +755,9 @@ def get_default_design_parameters(n_dim):
         'patch_dims_ranges': patch_dims_ranges,
         'avg_deformation_ranges': avg_deformation_ranges,
         'edge_deformation_order_ranges': edge_deformation_order_ranges,
-        'edge_deformation_magnitude_ranges': edge_deformation_magnitude_ranges}
+        'edge_deformation_magnitude_ranges': edge_deformation_magnitude_ranges,
+        'translation_range': translation_range,
+        'rotation_angles_range': rotation_angles_range}
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     return default_parameters
 # =============================================================================
@@ -715,8 +801,9 @@ def write_patch_dataset_summary_file(
     simulation_directory, n_sample, n_dim, strain_formulation, analysis_type,
     patch_dims_ranges, elem_type, n_elems_per_dim, avg_deformation_ranges,
     edge_deformation_order_ranges, edge_deformation_magnitude_ranges,
-    patch_material_data, n_success, n_failure, n_fail_patch, n_fail_simulation,
-    total_time_sec, avg_time_sample):
+    translation_range, rotation_angles_range, patch_material_data, n_success,
+    n_failure, n_fail_patch, n_fail_simulation, total_time_sec,
+    avg_time_sample):
     """Write summary data file for material patch data set generation.
     
     Parameters
@@ -734,8 +821,9 @@ def write_patch_dataset_summary_file(
         Links analysis type.
     patch_dims_ranges : dict
         Range of material patch size (item, tuple[float](2)) along each
-        dimension. The range is specified as a tuple(lower_bound, upper_bound).
-        Range defaults to (1.0, 1.0) if not specified.
+        dimension (key, str). The range is specified as a
+        tuple(lower_bound, upper_bound). Range defaults to (1.0, 1.0) if not
+        specified.
     elem_type : str
         Finite element type employed to discretize the material patch in a
         regular finite element mesh.
@@ -750,8 +838,7 @@ def write_patch_dataset_summary_file(
         the material patch size along the corresponding dimension. The range
         for each dimension is specified as a tuple(lower_bound, upper_bound)
         and where positive/negative values are associated with
-        tension/compression. Range defaults to (0, 0) if not specified along a
-        given dimension.
+        tension/compression.
     edge_deformation_order_ranges : dict
         Range of polynomial deformation order (item, tuple[int](2)) prescribed
         for each edge label (key, str[int]). Edges are labeled from 1 to number
@@ -768,6 +855,17 @@ def write_patch_dataset_summary_file(
         is specified as a tuple(lower_bound, upper_bound) and where
         positive/negative values are associated with tension/compression. Range
         defaults to (0, 0) if not specified along a given dimension.
+    translation_range : dict
+        Translational displacement range (item, tuple[float](2)) along each
+        dimension (key, str[int]). Range is specified as tuple(min, max)
+        for each dimension. Null range is assumed for unspecified
+        dimensions. If None, then there is no translational motion.
+    rotation_angles_range : dict
+        Rotational angle range (item, tuple[float](2)) for each Euler angle
+        (key, str). Euler angles follow Bunge convention (Z1-X2-Z3) and are
+        labelled ('alpha', 'beta', 'gamma'), respectively. Null range is
+        assumed for unspecified angles. If None, then there is no
+        rotational motion.
     patch_material_data : dict
         Finite element patch material data. Expecting
         'mesh_elem_material': numpy.ndarray [int](n_elems_per_dim) (finite
@@ -804,6 +902,8 @@ def write_patch_dataset_summary_file(
         edge_deformation_order_ranges
     summary_data['edge_deformation_magnitude_ranges'] = \
         edge_deformation_magnitude_ranges
+    summary_data['translation_range'] = translation_range
+    summary_data['rotation_angles_range'] = rotation_angles_range
     summary_data['patch_material_data'] = patch_material_data
     summary_data['Prescribed number of material patch samples'] = n_sample
     summary_data['Successful material patch samples'] = \

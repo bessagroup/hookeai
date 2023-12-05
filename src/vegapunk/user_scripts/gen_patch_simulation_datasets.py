@@ -52,7 +52,7 @@ def generate_dataset(case_study_name, simulation_directory, n_sample,
             set_default_saving_options()
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Generate material patch simulation data set
-    if case_study_name in ('cs_2d_elastic',):
+    if case_study_name in ('cs_2d_elastic', 'temp'):
         # Set number of spatial dimensions
         n_dim = 2
         # Set finite element discretization
@@ -82,6 +82,12 @@ def generate_dataset(case_study_name, simulation_directory, n_sample,
                                              '3': (-0.2, 0.2),
                                              '4': (-0.2, 0.2)}
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set rigid body translation
+        translation_range = {'1': (0.0, 0.0), '2': (0.0, 0.0)}
+        # Set rigid body rotation
+        rotation_angles_range = {'alpha': (0.0, 0.0), 'beta': (0.0, 0.0),
+                                 'gamma': (0.0, 0.0)}
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Save patch plot
         is_save_plot_patch = True
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~    
@@ -98,6 +104,8 @@ def generate_dataset(case_study_name, simulation_directory, n_sample,
         edge_deformation_order_ranges=edge_deformation_order_ranges,
         edge_deformation_magnitude_ranges=
         edge_deformation_magnitude_ranges,
+        translation_range=translation_range,
+        rotation_angles_range=rotation_angles_range,
         is_remove_failed_samples = is_remove_failed_samples,
         links_input_params=links_input_params,
         is_save_simulation_dataset=is_save_simulation_dataset,
@@ -377,13 +385,13 @@ if __name__ == "__main__":
     # Set training/testing data set flag
     is_testing_dataset = False
     # Set material patch simulation data set size
-    n_sample = 1000
+    n_sample = 10
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set case studies base directory
     base_dir = ('/home/bernardoferreira/Documents/brown/projects/'
                 'gnn_material_patch/case_studies/')
     # Set case study directory
-    case_study_name = 'cs_2d_elastic'
+    case_study_name = 'temp'
     case_study_dir = os.path.join(os.path.normpath(base_dir),
                                   f'{case_study_name}')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

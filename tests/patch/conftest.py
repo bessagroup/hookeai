@@ -46,12 +46,20 @@ def squad4_patch():
                             '3': (0.1, 0.1),
                             '4': (-0.1, -0.1)}
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Set rigid body translation
+    translation_range = {'1': (-0.1, 0.1), '2': (-0.1, 0.1)}
+    # Set rigid body rotation
+    rotation_angles_range = {'alpha': (0.0, 10), 'beta': (0.0, 0.0),
+                             'gamma': (0.0, 0.0)}
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Generate randomly deformed material patch
     is_admissible, patch = patch_generator.generate_deformed_patch(
         elem_type, n_elems_per_dim, corners_lab_bc=corners_lab_bc,
         corners_lab_disp_range=corners_lab_disp_range,
         edges_lab_def_order=edges_lab_def_order,
-        edges_lab_disp_range=edges_lab_disp_range)
+        edges_lab_disp_range=edges_lab_disp_range,
+        translation_range=translation_range,
+        rotation_angles_range=rotation_angles_range)
     if not is_admissible:
         raise RuntimeError('Non-admissible SQUAD4 material patch.')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
