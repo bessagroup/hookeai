@@ -12,14 +12,15 @@ if root_dir not in sys.path:
     sys.path.insert(0, root_dir)
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 import os
-import re
 # Third-party
 import torch
 # Local
 from gnn_model.gnn_patch_dataset import GNNMaterialPatchDataset
 from gnn_model.prediction import predict, build_prediction_data_arrays
 from gnn_model.evaluation_metrics import plot_truth_vs_prediction
-from ioput.iostandard import make_directory, find_unique_file_with_regex
+from material_patch.quality_tests import perform_quality_tests
+from ioput.iostandard import make_directory, find_unique_file_with_regex, \
+    write_summary_file
 #
 #                                                          Authorship & Credits
 # =============================================================================
@@ -97,6 +98,21 @@ def perform_model_prediction(predict_directory, dataset_file_path,
                                      save_dir=plot_dir,
                                      is_save_fig=True, is_stdout_display=False,
                                      is_latex=True)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Perform set of GNN-based material patch model quality tests
+    quality_tests_results = perform_quality_tests(
+        predictions_dir=predict_subdir, quality_tests='all', is_save_fig=True)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Set summary data
+    summary_data = {}
+    summary_data['Equilibrium of internal forces (mean, std)'] = \
+        quality_tests_results['sum_internal_forces']
+    # Write quality tests summary file
+    summary_title = ('Summary: Quality tests scores of GNN-based material ' \
+                     'patch model prediction')
+    write_summary_file(summary_directory=predict_subdir,
+                       filename='quality_tests_summary',
+                       summary_title=summary_title, **summary_data)
 # =============================================================================
 def set_default_prediction_options():
     """Set default GNN-based material patch model prediction options.
