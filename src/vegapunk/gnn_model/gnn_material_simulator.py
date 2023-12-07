@@ -1340,14 +1340,21 @@ class TorchStandardScaler:
         # Build mean and standard deviation tensors for standardization
         mean = torch.tile(self._mean, (n_samples, 1)).to(self._device)
         std = torch.tile(self._std, (n_samples, 1)).to(self._device)
+        # Set non-null standard deviation mask
+        non_null_mask = (std != 0)
         # Standardize features tensor
-        transformed_tensor = torch.div(tensor - mean, std)
+        transformed_tensor = tensor - mean
+        transformed_tensor[non_null_mask] = \
+            torch.div(transformed_tensor[non_null_mask], std[non_null_mask])
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Check transformed tensor
         if not torch.equal(torch.tensor(transformed_tensor.size()),
                            torch.tensor(tensor.size())):
             raise RuntimeError('Input and transformed tensors do not have the '
                                'same shape.')
+        elif torch.any(torch.isnan(transformed_tensor)):
+            raise RuntimeError('One or more NaN elements were detected in '
+                               'the transformed tensor.')
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         return transformed_tensor
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
