@@ -18,6 +18,8 @@ plot_xny_data
     Plot data in xy axes with given range of y-values for each x-value.
 scatter_xy_data
     Scatter data in xy axes.
+plot_boxplots
+    Plot set of box plots.
 save_figure
     Save Matplotlib figure.
 tex_str
@@ -1227,7 +1229,8 @@ def scatter_xy_data(data_xy, data_labels=None, is_identity_line=False,
     for i in range(n_datasets):
         # Plot dataset
         axes.scatter(data_xy[:, 2*i], data_xy[:, 2*i + 1],
-                     label=tex_str(data_labels[i], is_latex), ec='k',
+                     s=10, facecolor='#4477AA', edgecolor='k', linewidth=0.5,
+                     label=tex_str(data_labels[i], is_latex),
                      zorder=10)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set axes limits
@@ -1412,6 +1415,163 @@ def grouped_bar_chart(groups_labels, groups_data, bar_width=None,
     axes.legend(loc='best', frameon=True, fancybox=True,
                 facecolor='inherit', edgecolor='inherit', fontsize=10,
                 framealpha=1.0)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Return figure and axes handlers
+    return figure, axes
+# =============================================================================
+def plot_boxplots(data_boxplots, data_labels=None, is_mean_line=False,
+                  y_lims=(None, None), title=None, x_label=None, y_label=None,
+                  y_scale='linear', y_tick_format=None, is_latex=False):
+    """Plot set of box plots.
+
+    Parameters
+    ----------
+    data_boxplots : numpy.ndarray(2d)
+        Data array where each box plot data is stored columnwise such that the
+        i-th boxplot is stored in the i-th column.
+    data_labels : list, default=None
+        Labels of each box plot provided in data_boxplots and sorted
+        accordingly. If None, then no labels are displayed.
+    is_mean_line : bool, default=False
+        If True, then plot mean line for each boxplot.
+    y_lims : tuple, default=(None, None)
+        y-axis limits in data coordinates.
+    title : str, default=None
+        Plot title.
+    x_label : str, default=None
+        x-axis label.
+    y_label : str, default=None
+        y-axis label.
+    y_scale : str {'linear', 'log'}, default='linear'
+        y-axis scale. If None or invalid format, then default scale is set.
+        Scale 'log' overrides any y-axis ticks formatting.
+    y_tick_format : {'int', 'float', 'exp'}, default=None
+        y-axis ticks formatting. If None or invalid format, then default
+        formatting is set.
+    is_latex : bool, default=False
+        If True, then render all strings in LaTeX. If LaTex is not available,
+        then this option is silently set to False and all input strings are
+        processed to remove $(...)$ enclosure.
+
+    Returns
+    -------
+    figure : Matplotlib Figure
+        Figure.
+    axes : Matplotlib Axes
+        Axes.
+    """
+    # Reset matplotlib internal default style
+    plt.rcParams.update(plt.rcParamsDefault)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Get number of boxplots
+    n_boxplots = data_boxplots.shape[1]
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Check datasets labels
+    if data_labels is not None:
+        if len(data_labels) != n_boxplots:
+            raise RuntimeError('Number of labels is not consistent with '
+                               'number of boxplots.')
+    else:
+        data_labels = n_boxplots*[None,]
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Set default color cycle
+    cycler_color = cycler.cycler('color',['#4477AA', '#EE6677', '#228833',
+                                          '#CCBB44', '#66CCEE', '#AA3377',
+                                          '#BBBBBB', '#000000'])
+    # Set default linestyle cycle
+    cycler_linestyle = cycler.cycler('linestyle',['-','--','-.'])
+    # Set default cycler
+    default_cycler = cycler_linestyle*cycler_color
+    plt.rc('axes', prop_cycle = default_cycler)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Check LaTeX availability
+    if not bool(shutil.which('latex')):
+        is_latex = False
+    # Set LaTeX font
+    if is_latex:
+        # Default LaTeX Computer Modern Roman
+        plt.rc('text', usetex=True)
+        plt.rc('font', **{'family': 'serif',
+                          'serif': ['Computer Modern Roman']})
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Create figure
+    figure = plt.figure()
+    # Set figure size (inches) - stdout print purpose
+    figure.set_figheight(6, forward=True)
+    figure.set_figwidth(6, forward=True)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Create axes
+    axes = figure.add_subplot(1, 1, 1)
+    # Set title
+    axes.set_title(tex_str(title, is_latex), fontsize=12, pad=10)
+    # Set axes labels
+    axes.set_xlabel(tex_str(x_label, is_latex), fontsize=12, labelpad=10)
+    axes.set_ylabel(tex_str(y_label, is_latex), fontsize=12, labelpad=10)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Set axes scales
+    if y_scale in ('linear', 'log'):
+        axes.set_yscale(y_scale)
+    # Set tick formatting functions
+    def intTickFormat(x, pos):
+        frmt = tex_str('{:2d}', is_latex)
+        return frmt.format(int(x))
+    def floatTickFormat(x, pos):
+        frmt = tex_str('{:3.1f}', is_latex)
+        return frmt.format(x)
+    def expTickFormat(x, pos):
+        frmt = tex_str('{:7.2e}', is_latex)
+        return frmt.format(x)
+    tick_formats = {'int': intTickFormat, 'float': floatTickFormat,
+                    'exp': expTickFormat}
+    # Set axes tick formats
+    if y_scale != 'log' and y_tick_format in ('int', 'float', 'exp'):
+        axes.yaxis.set_major_formatter(
+            ticker.FuncFormatter(tick_formats[y_tick_format]))
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Configure grid major lines
+    axes.grid(which='major', axis='both', linestyle='-', linewidth=0.5,
+              color='0.5', zorder=0)     
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Set median line properties
+    medianprops = dict(linestyle='-', linewidth=1, color='k')
+    # Set outliers properties
+    flierprops = dict(marker='o', markersize=5)
+    # Set mean line properties
+    meanlineprops = None
+    if is_mean_line:
+        meanlineprops = dict(linestyle='-', linewidth=1.5, color='#d62728')
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Plot set of box plots
+    bp = axes.boxplot(data_boxplots, labels=data_labels,
+                      flierprops=flierprops, medianprops=medianprops,
+                      showmeans=is_mean_line, meanline=is_mean_line,
+                      meanprops=meanlineprops, patch_artist=True,
+                      zorder=10)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Set box plots face color
+    for patch in bp['boxes']:
+        patch.set(facecolor='#4477AA')
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Plot mean line annotation
+    for i, line in enumerate(bp['means']):
+        # Get mean line coordinates
+        x0, _ = line.get_xydata()[0, :]
+        x1, y1 = line.get_xydata()[1, :]
+        # Set annotation text coordinates
+        x_text = x1 + 0.1*(x1 - x0)
+        y_text = y1
+        # Set annotation text
+        if is_latex:
+            text = '$\mu$'
+        else:
+            text = 'μ'
+        # Plot mean line annotation
+        axes.annotate(text, xy=(x_text, y_text), color='#d62728', va='center',
+                      size=12)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Set axes limits
+    if y_lims != (None, None):
+        axes.set_ylim(y_lims)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Return figure and axes handlers
     return figure, axes
