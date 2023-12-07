@@ -13,6 +13,8 @@ get_dataset_sample_files_from_dir
     Get GNN-based material patch data set samples files from directory.
 split_dataset
     Randomly split data set into non-overlapping parts.
+get_subset_indices_mapping
+    Get mapping from subset indexes to whole parent data set indices.
 get_pyg_data_loader
     Get GNN-based material patch data set PyG data loader.
 write_graph_dataset_summary_file
@@ -577,7 +579,7 @@ def split_dataset(dataset, split_sizes, is_save_subsets=False,
     Returns
     -------
     dataset_split : dict
-        Data subsets (key, str, item, torch.utils.data.Dataset).
+        Data subsets (key, str, item, torch.utils.data.Subset).
     """
     # Initialize data subsets names and sizes
     subsets_names = []
@@ -636,6 +638,34 @@ def split_dataset(dataset, split_sizes, is_save_subsets=False,
                 pickle.dump(val, subset_file)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~    
     return dataset_split
+# =============================================================================
+def get_subset_indices_mapping(subset):
+    """Get mapping from subset indexes to whole parent data set indices.
+    
+    Parameters
+    ----------
+    subset : torch.utils.data.Subset
+        Subset of data set.
+        
+    Returns
+    -------
+    indices_map : dict
+        Mapping between each subset index (key, str[int]) and the corresponding
+        whole data set index (item, str[int]).
+    """
+    # Check subset
+    if not isinstance(subset, torch.utils.data.Subset):
+        raise RuntimeError(f'The provided subset ({type(subset)}) must be of '
+                           f'type torch.utils.data.Subset.')
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ 
+    # Initialize mapping indices
+    indices_map = {}
+    # Loop over subset indices
+    for i, index in enumerate(subset.indices):
+        # Assign parent data set index
+        indices_map[str(i)] = index
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~    
+    return indices_map
 # =============================================================================
 def get_pyg_data_loader(dataset, batch_size=1, is_shuffle=False,
                         is_verbose=False, **kwargs):
