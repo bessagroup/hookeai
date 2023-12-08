@@ -13,6 +13,7 @@ GNNPatchFeaturesGenerator
 # Standard
 import os
 import copy
+import itertools
 # Third-party
 import numpy as np
 import scipy.spatial
@@ -730,7 +731,7 @@ class GNNPatchFeaturesGenerator:
     _n_dim : int
         Number of spatial dimensions.
     _nodes_coords : numpy.ndarray(2d)
-        Coordinates of nodes stored as a numpy.ndarray(2d) with shape
+        Nodes current coordinates stored as a numpy.ndarray(2d) with shape
         (n_nodes, n_dim). Coordinates of i-th node are stored in
         nodes_coords[i, :].
     _nodes_coords_hist : numpy.ndarray(3d)
@@ -1079,7 +1080,27 @@ class GNNPatchFeaturesGenerator:
             raise RuntimeError('Invalid specification of number of steps.')
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         for feature in features:
-            if feature == 'edge_vector':
+            if feature == 'edge_vector_init':
+                # Initialize edge feature matrix
+                feature_matrix = np.zeros((n_edge, n_dim))
+                # Loop over edges
+                for k, (i, j) in enumerate(self._edges_indexes):
+                    # Assemble edge feature
+                    feature_matrix[k, :] = \
+                        self._nodes_coords_hist[i, :n_dim, 0] \
+                        - self._nodes_coords_hist[j, :n_dim, 0]
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            elif feature == 'edge_vector_init_norm':
+                # Initialize edge feature matrix
+                feature_matrix = np.zeros((n_edge, 1))
+                # Loop over edges
+                for k, (i, j) in enumerate(self._edges_indexes):
+                    # Assemble edge feature
+                    feature_matrix[k, :] = np.linalg.norm(
+                        self._nodes_coords_hist[i, :n_dim, 0]
+                        - self._nodes_coords_hist[j, :n_dim, 0])
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            elif feature == 'edge_vector':
                 # Initialize edge feature matrix
                 feature_matrix = np.zeros((n_edge, n_dim))
                 # Loop over edges
@@ -1127,6 +1148,68 @@ class GNNPatchFeaturesGenerator:
                     feature_matrix[k, :] = np.linalg.norm(
                         self._nodes_disps_hist[i, :n_dim, -1]
                         - self._nodes_disps_hist[j, :n_dim, -1])
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            elif feature == 'disp_gradient_init':
+                # Check required data
+                if self._nodes_disps_hist is None:
+                    raise RuntimeError('Nodes displacements must be set in '
+                                       'order to build feature '
+                                       + str(feature))
+                # Initialize edge feature matrix
+                feature_matrix = np.zeros((n_edge, n_dim**2))
+                # Loop over edges
+                for k, (i, j) in enumerate(self._edges_indexes):
+                    # Loop over dimensional product
+                    for m, (p, q) in enumerate(itertools.product(
+                            range(n_dim), range(n_dim))):
+                        # Compute displacement difference
+                        disp_diff = (self._nodes_disps_hist[i, p, -1]
+                                     - self._nodes_disps_hist[j, p, -1])
+                        # Compute coordinates difference
+                        coord_diff = (self._nodes_coords_hist[i, q, 0]
+                                      - self._nodes_coords_hist[j, q, 0])                        
+                        # Compute gradient
+                        if disp_diff == 0:
+                            # Null gradient
+                            gradient = 0
+                        elif abs(coord_diff/disp_diff) < 1e-8:
+                            # Set null gradient if coordinates difference is
+                            # very small compared to displacements difference
+                            # (avoid exploding or unknown gradient)
+                            gradient = 0
+                        else:
+                            gradient = disp_diff/coord_diff
+                        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                        # Assemble edge feature
+                        feature_matrix[k, m] = gradient
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            elif feature == 'edge_vector_norm_ratio':
+                # Initialize edge feature matrix
+                feature_matrix = np.zeros((n_edge, 1))
+                # Loop over edges
+                for k, (i, j) in enumerate(self._edges_indexes):
+                    # Compute current coordinates difference norm
+                    coord_diff_norm = np.linalg.norm(
+                        self._nodes_coords_hist[i, :n_dim, -1]
+                        - self._nodes_coords_hist[j, :n_dim, -1])
+                    # Compute initial coordinates difference norm
+                    coord_init_diff_norm = np.linalg.norm(
+                        self._nodes_coords_hist[i, :n_dim, 0]
+                        - self._nodes_coords_hist[j, :n_dim, 0])
+                    # Compute norm ratio
+                    if coord_diff_norm == 0:
+                        # Null norm ratio
+                        norm_ratio = 0
+                    elif abs(coord_init_diff_norm/coord_diff_norm) < 1e-8:
+                        # Set null norm ratio if initial coordinates difference
+                        # is very small compared to current coordinates
+                        # difference (avoid exploding or unknown gradient)
+                        norm_ratio = 0
+                    else:
+                        norm_ratio = coord_diff_norm/coord_init_diff_norm
+                    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                    # Assemble edge feature
+                    feature_matrix[k, :] = norm_ratio
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~     
             # Assemble edge feature
             edge_features_matrix = \
@@ -1147,6 +1230,16 @@ class GNNPatchFeaturesGenerator:
         available_features : tuple[str]
             Available edges features:
             
+            'edge_vector_init' : numpy.ndarray(1d) of shape (n_dim,) \
+                                 resulting from the difference of initial \
+                                 coordinates between the starting node and \
+                                 the end node.
+                                 
+            'edge_vector_init_norm' : float corresponding to the norm of the \
+                                      difference of initial coordinates \
+                                      between the starting node and the end \
+                                      node.
+            
             'edge_vector' : numpy.ndarray(1d) of shape (n_dim,) resulting \
                             from the difference of current coordinates \
                             between the starting node and the end node.
@@ -1162,8 +1255,21 @@ class GNNPatchFeaturesGenerator:
             'relative_disp_norm' : float corresponding to the norm of the \
                                    difference of current displacements \
                                    between the starting node and the end node.
+            
+            'disp_gradient_init' : numpy.ndarray(1d) of shape (n_dim**2,) \
+                                   that corresponds to the gradient of \
+                                   displacements with respect to the initial \
+                                   coordinates.
+                                   
+            'edge_vector_norm_ratio' : float corresponding to the ratio of \
+                                       the norms of the difference of \
+                                       coordinates between the starting node \
+                                       and the end node for current and
+                                       initial times.
         """
-        available_features = ('edge_vector', 'edge_vector_norm',
-                              'relative_disp', 'relative_disp_norm')
+        available_features = ('edge_vector_init', 'edge_vector_init_norm',
+                              'edge_vector', 'edge_vector_norm',
+                              'relative_disp', 'relative_disp_norm',
+                              'disp_gradient_init', 'edge_vector_norm_ratio')
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         return available_features
