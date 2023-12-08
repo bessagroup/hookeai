@@ -821,9 +821,13 @@ class GNNPatchFeaturesGenerator:
         ----------
         features : tuple[str]
             Nodes features.
-        n_time_steps : int, default=1
+        n_time_steps : {int, dict}, default=1
             Number of history time steps to account for in history-based
-            features. Defaults to the last time step only.
+            features, starting with the last time step available. If int, then
+            the same number of time steps is considered for all history-based
+            features. If dict, then number of time steps (item, int) is
+            specified for each history-based feature (key, str), defaulting
+            to 1. Defaults to the last time step only.
         features_kwargs : dict, default={}
             Parameters (item, dict) associated with the computation of node
             features (key, str).
@@ -850,48 +854,68 @@ class GNNPatchFeaturesGenerator:
         for feature in features:
             if feature not in available_features:
                 raise RuntimeError('Unavailable node feature: ' + str(feature))
-        # Check number of time steps
-        if not isinstance(n_time_steps, int) or n_time_steps < 1:
-            raise RuntimeError('Invalid number of history time steps.')
+        # Process number of time steps
+        if isinstance(n_time_steps, int):
+            if n_time_steps < 1:
+                raise RuntimeError(f'Invalid number of history time steps '
+                                   f'({n_time_steps}).')
+            else:
+                n_time_steps = {feature: n_time_steps for feature in features}
+        elif isinstance(n_time_steps, dict):
+            for feature in features:
+                if feature not in n_time_steps.keys():
+                    n_time_steps[feature] = 1
+        else:
+            raise RuntimeError('Invalid specification of number of steps.')
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         for feature in features:
-            if feature == 'coord_hist':
+            if feature == 'coord_init':
+                # Initialize node feature matrix
+                feature_matrix = np.zeros((n_nodes, n_dim))
+                # Loop over nodes
+                for i in range(n_nodes):
+                    feature_matrix[i, :] = \
+                        self._nodes_coords_hist[i, :n_dim, 0]
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            elif feature == 'coord_hist':
+                # Get number of time steps
+                n_steps = n_time_steps[feature]
                 # Check required data
-                if n_time_steps > self._nodes_coords_hist.shape[1]:
+                if n_steps > self._nodes_coords_hist.shape[1]:
                     raise RuntimeError('Number of time steps exceeds length '
                                        'of feature history data: '
                                        + str(feature))
                 # Initialize node feature matrix
-                feature_matrix = np.zeros((n_nodes, n_time_steps*n_dim))
+                feature_matrix = np.zeros((n_nodes, n_steps*n_dim))
                 # Loop over nodes
                 for i in range(n_nodes):
                     # Loop over last time steps
-                    for j in range(n_time_steps):
+                    for j in range(n_steps):
                         # Assemble node feature
                         feature_matrix[i, j*n_dim:(j + 1)*n_dim] = \
-                            self._nodes_coords_hist[i, :n_dim,
-                                                    -n_time_steps + j]
+                            self._nodes_coords_hist[i, :n_dim, -n_steps + j]
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             elif feature == 'disp_hist':
+                # Get number of time steps
+                n_steps = n_time_steps[feature]
                 # Check required data
                 if self._nodes_disps_hist is None:
                     raise RuntimeError('Nodes displacements must be set in '
                                        'order to build feature '
                                        + str(feature))
-                elif n_time_steps > self._nodes_disps_hist.shape[1]:
+                elif n_steps > self._nodes_disps_hist.shape[1]:
                     raise RuntimeError('Number of time steps exceeds length '
                                        'of feature history data: '
                                        + str(feature))
                 # Initialize node feature matrix
-                feature_matrix = np.zeros((n_nodes, n_time_steps*n_dim))
+                feature_matrix = np.zeros((n_nodes, n_steps*n_dim))
                 # Loop over nodes
                 for i in range(n_nodes):
                     # Loop over last time steps
-                    for j in range(n_time_steps):
+                    for j in range(n_steps):
                         # Assemble node feature
                         feature_matrix[i, j*n_dim:(j + 1)*n_dim] = \
-                            self._nodes_disps_hist[i, :n_dim,
-                                                   -n_time_steps + j]
+                            self._nodes_disps_hist[i, :n_dim, -n_steps + j]
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             elif feature == 'int_force':
                 # Check required data
@@ -959,6 +983,9 @@ class GNNPatchFeaturesGenerator:
         available_features : tuple[str]
             Available nodes features.
             
+            'coord_init'     : numpy.ndarray(1d) of shape (n_dim,) with the \
+                               node initial coordinates.
+
             'coord_hist'     : numpy.ndarray(1d) of shape \
                                (n_time_steps*n_dim,) with the node \
                                coordinates history.
@@ -968,28 +995,36 @@ class GNNPatchFeaturesGenerator:
                                displacements history.
             
             'int_force'      : numpy.ndarray(1d) of shape (n_dim,) with the \
-                               node internal forces.
+                               current node internal forces.
                            
             'polycoord_disp' : numpy.ndarray(1d) of shape (n_dim*0.5n*(n+1),) \
-                               with a n-order polynomial basis of node \
-                               coordinates (bias term excluded) multiplied \
-                               by each node displacement component.
+                               with a n-order polynomial basis of current \
+                               node coordinates (bias term excluded) \
+                               multiplied by each node displacement component.
         """
-        available_features = ('coord_hist', 'disp_hist', 'int_force',
-                              'polycoord_disp')
+        available_features = ('coord_init', 'coord_hist', 'disp_hist',
+                              'int_force', 'polycoord_disp')
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         return available_features
     # -------------------------------------------------------------------------
-    def build_edges_features_matrix(self, features=(), n_time_steps=1):
+    def build_edges_features_matrix(self, features=(), n_time_steps=1,
+                                    features_kwargs={}):
         """Build edges features matrix.
         
         Parameters
         ----------
         features : tuple[str]
             Edges features.
-        n_time_steps : int, default=1
+        n_time_steps : {int, dict}, default=1
             Number of history time steps to account for in history-based
-            features. Defaults to the last time step only.
+            features, starting with the last time step available. If int, then
+            the same number of time steps is considered for all history-based
+            features. If dict, then number of time steps (item, int) is
+            specified for each history-based feature (key, str), defaulting
+            to 1. Defaults to the last time step only.
+        features_kwargs : dict, default={}
+            Parameters (item, dict) associated with the computation of edge
+            features (key, str).
         
         Returns
         -------
@@ -1029,6 +1064,19 @@ class GNNPatchFeaturesGenerator:
         for feature in features:
             if feature not in available_features:
                 raise RuntimeError('Unavailable edge feature: ' + str(feature))
+        # Process number of time steps
+        if isinstance(n_time_steps, int):
+            if n_time_steps < 1:
+                raise RuntimeError(f'Invalid number of history time steps '
+                                   f'({n_time_steps}).')
+            else:
+                n_time_steps = {feature: n_time_steps for feature in features}
+        elif isinstance(n_time_steps, dict):
+            for feature in features:
+                if feature not in n_time_steps.keys():
+                    n_time_steps[feature] = 1
+        else:
+            raise RuntimeError('Invalid specification of number of steps.')
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         for feature in features:
             if feature == 'edge_vector':
