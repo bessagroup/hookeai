@@ -815,7 +815,7 @@ class GNNPatchFeaturesGenerator:
             self._n_edge = self._edges_indexes.shape[0]
     # -------------------------------------------------------------------------
     def build_nodes_features_matrix(self, features=(), n_time_steps=1,
-                                    feature_kwargs={}):
+                                    features_kwargs={}):
         """Build nodes features matrix.
         
         Parameters
@@ -939,16 +939,18 @@ class GNNPatchFeaturesGenerator:
                                        'order to build feature '
                                        + str(feature))
                 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-                # Set feature parameters
-                features_kwargs = {}
-                features_kwargs[feature] = {'coord_order': 3,}
+                # Set default feature parameters
+                feature_kwargs = {'coord_order': 1, 'is_bias': False}
+                # Set feature parameters (override defaults)
+                if feature in features_kwargs.keys():
+                    # Override default parameters
+                    for parameter, value in features_kwargs[feature].items():
+                        feature_kwargs[parameter] = value
                 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-                # Set coordinates polynomial basis order and bias inclusion
-                coord_order = features_kwargs[feature]['coord_order']
-                is_bias = False
                 # Initialize polynomial basis generator
                 poly_basis = sklearn.preprocessing.PolynomialFeatures(
-                    degree=coord_order, include_bias=is_bias)
+                    degree=feature_kwargs['coord_order'],
+                    include_bias=feature_kwargs['is_bias'])
                 # Get node coordinates (last time step)
                 nodes_coords_last = self._nodes_coords_hist[:, :n_dim, -1]
                 # Compute node coordinates polynomial basis
@@ -1165,20 +1167,29 @@ class GNNPatchFeaturesGenerator:
                         # Compute displacement difference
                         disp_diff = (self._nodes_disps_hist[i, p, -1]
                                      - self._nodes_disps_hist[j, p, -1])
-                        # Compute coordinates difference
-                        coord_diff = (self._nodes_coords_hist[i, q, 0]
-                                      - self._nodes_coords_hist[j, q, 0])                        
+                        # Compute initial coordinates difference
+                        coord_init_diff = (self._nodes_coords_hist[i, q, 0]
+                                           - self._nodes_coords_hist[j, q, 0])
+                        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                        # Set flags to avoid numerical issues
+                        is_disp_close = \
+                            np.isclose(self._nodes_disps_hist[i, p, -1],
+                                       self._nodes_disps_hist[j, p, -1])
+                        is_coord_close = \
+                            np.isclose(self._nodes_coords_hist[i, q, 0],
+                                       self._nodes_coords_hist[j, q, 0])
+                        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                         # Compute gradient
-                        if disp_diff == 0:
+                        if is_disp_close:
                             # Null gradient
                             gradient = 0
-                        elif abs(coord_diff/disp_diff) < 1e-8:
+                        elif is_coord_close or coord_init_diff == 0:
                             # Set null gradient if coordinates difference is
                             # very small compared to displacements difference
                             # (avoid exploding or unknown gradient)
                             gradient = 0
                         else:
-                            gradient = disp_diff/coord_diff
+                            gradient = disp_diff/coord_init_diff
                         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                         # Assemble edge feature
                         feature_matrix[k, m] = gradient
@@ -1186,6 +1197,7 @@ class GNNPatchFeaturesGenerator:
             elif feature == 'edge_vector_norm_ratio':
                 # Initialize edge feature matrix
                 feature_matrix = np.zeros((n_edge, 1))
+                # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                 # Loop over edges
                 for k, (i, j) in enumerate(self._edges_indexes):
                     # Compute current coordinates difference norm
@@ -1196,11 +1208,20 @@ class GNNPatchFeaturesGenerator:
                     coord_init_diff_norm = np.linalg.norm(
                         self._nodes_coords_hist[i, :n_dim, 0]
                         - self._nodes_coords_hist[j, :n_dim, 0])
+                    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                    # Set flags to avoid numerical issues
+                    is_coord_close = \
+                        np.allclose(self._nodes_coords_hist[i, :n_dim, -1],
+                                    self._nodes_coords_hist[j, :n_dim, -1])
+                    is_coord_init_close = \
+                        np.allclose(self._nodes_coords_hist[i, :n_dim, 0],
+                                    self._nodes_coords_hist[j, :n_dim, 0])
+                    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                     # Compute norm ratio
-                    if coord_diff_norm == 0:
+                    if is_coord_close:
                         # Null norm ratio
                         norm_ratio = 0
-                    elif abs(coord_init_diff_norm/coord_diff_norm) < 1e-8:
+                    elif is_coord_init_close or coord_init_diff_norm == 0:
                         # Set null norm ratio if initial coordinates difference
                         # is very small compared to current coordinates
                         # difference (avoid exploding or unknown gradient)
