@@ -56,9 +56,9 @@ def generate_dataset(case_study_name, sim_dataset_file_path, dataset_directory,
         read_simulation_dataset_from_file(sim_dataset_file_path)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set GNN-based material patch data set node and edge features
-    if case_study_name == 'cs_2d_elastic':
+    if case_study_name in ('cs_2d_elastic', 'temp'):
         # Set node features
-        node_features = ('coord_hist', 'disp_hist')
+        node_features = ('coord_init', 'disp_hist')
         # Set edge features
         edge_features = ('edge_vector', 'edge_vector_norm', 'relative_disp',
                          'relative_disp_norm')
@@ -108,7 +108,7 @@ if __name__ == "__main__":
     base_dir = ('/home/bernardoferreira/Documents/brown/projects/'
                 'gnn_material_patch/case_studies/')
     # Set case study directory
-    case_study_name = 'cs_2d_elastic'
+    case_study_name = 'temp'
     case_study_dir = os.path.join(os.path.normpath(base_dir),
                                   f'{case_study_name}')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

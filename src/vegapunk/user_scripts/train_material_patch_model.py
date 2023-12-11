@@ -58,7 +58,7 @@ def perform_model_standard_training(case_study_name, dataset_file_path,
             early_stopping_kwargs = set_default_training_options()
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set GNN-based material patch model training options
-    if case_study_name == 'cs_2d_elastic':
+    if case_study_name in ('cs_2d_elastic', 'temp'):
         # Set number of epochs
         n_max_epochs = 50
         # Set batch size
@@ -230,7 +230,7 @@ def set_case_study_model_parameters(case_study_name, model_directory,
         GNN-based material patch model class initialization parameters (check
         class GNNMaterialPatchModel).
     """
-    if case_study_name in 'cs_2d_elastic':
+    if case_study_name in ('cs_2d_elastic', 'temp'):
         # Set GNN-based material patch model name
         model_name = 'material_patch_model'
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -350,7 +350,7 @@ if __name__ == "__main__":
     base_dir = ('/home/bernardoferreira/Documents/brown/projects/'
                 'gnn_material_patch/case_studies/')
     # Set case study directory
-    case_study_name = 'cs_2d_elastic'
+    case_study_name = 'temp'
     case_study_dir = os.path.join(os.path.normpath(base_dir),
                                   f'{case_study_name}')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
