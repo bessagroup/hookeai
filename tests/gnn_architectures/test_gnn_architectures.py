@@ -96,35 +96,39 @@ def test_build_fnn_invalid(input_size, output_size, output_activation,
                         hidden_layer_sizes, hidden_activation)
 # -----------------------------------------------------------------------------
 @pytest.mark.parametrize('n_node_in, n_node_out, n_edge_in, n_edge_out,'
+                         'n_global_in, n_global_out,'
                          'n_hidden_layers, hidden_layer_size,'
                          'is_skip_unset_update',
-                         [(1, 5, 2, 3, 2, 4, False),
-                          (3, 2, 1, 4, 1, 2, False),
-                          (2, 4, 5, 4, 0, 2, False),
-                          (0, 0, 5, 4, 0, 2, False),
-                          (3, 2, 0, 0, 1, 2, False),
-                          (1, 5, 2, 3, 2, 4, True),
-                          (0, 0, 5, 4, 0, 2, True),
-                          (3, 2, 0, 0, 1, 2, True),
+                         [(1, 5, 2, 3, 0, 0, 2, 4, False),
+                          (3, 2, 1, 4, 2, 3, 1, 2, False),
+                          (2, 4, 5, 4, 0, 0, 0, 2, False),
+                          (0, 0, 5, 4, 3, 1, 0, 2, False),
+                          (3, 2, 0, 0, 0, 0, 1, 2, False),
+                          (1, 5, 2, 3, 0, 0, 2, 4, True),
+                          (0, 0, 5, 4, 2, 3, 0, 2, True),
+                          (3, 2, 0, 0, 0, 0, 1, 2, True),
                           ])
 def test_graph_independent_network_init(n_node_in, n_node_out, n_edge_in,
-                                        n_edge_out, n_hidden_layers,
-                                        hidden_layer_size,
+                                        n_edge_out, n_global_in, n_global_out,
+                                        n_hidden_layers, hidden_layer_size,
                                         is_skip_unset_update):
     """Test Graph Independent Network constructor."""
     # Initialize errors
     errors = []
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Build Graph Independent Network
-    model = GraphIndependentNetwork(n_hidden_layers=n_hidden_layers,
-                                    hidden_layer_size=hidden_layer_size,
-                                    n_node_in=n_node_in, n_node_out=n_node_out,
-                                    n_edge_in=n_edge_in, n_edge_out=n_edge_out,
-                                    node_hidden_activation=torch.nn.ReLU(),
-                                    node_output_activation=torch.nn.Identity(),
-                                    edge_hidden_activation=torch.nn.ReLU(),
-                                    edge_output_activation=torch.nn.Identity(),
-                                    is_skip_unset_update=is_skip_unset_update)
+    model = GraphIndependentNetwork(
+        n_hidden_layers=n_hidden_layers, hidden_layer_size=hidden_layer_size,
+        n_node_in=n_node_in, n_node_out=n_node_out,
+        n_edge_in=n_edge_in, n_edge_out=n_edge_out,
+        n_global_in=n_global_in, n_global_out=n_global_out,
+        node_hidden_activation=torch.nn.ReLU(),
+        node_output_activation=torch.nn.Identity(),
+        edge_hidden_activation=torch.nn.ReLU(),
+        edge_output_activation=torch.nn.Identity(),
+        global_hidden_activation=torch.nn.ReLU(),
+        global_output_activation=torch.nn.Identity(),
+        is_skip_unset_update=is_skip_unset_update)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set Graph Independent Network update functions and number of features
     update_functions = []
@@ -132,6 +136,8 @@ def test_graph_independent_network_init(n_node_in, n_node_out, n_edge_in,
         update_functions.append((model._node_fn, n_node_in, n_node_out))
     if model._edge_fn is not None:
         update_functions.append((model._edge_fn, n_edge_in, n_edge_out))
+    if model._global_fn is not None:
+        update_functions.append((model._global_fn, n_global_in, n_global_out))
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Loop over update functions
     for update_fn, n_features_in, n_features_out in update_functions:        
@@ -183,26 +189,33 @@ def test_graph_independent_network_init(n_node_in, n_node_out, n_edge_in,
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Check normalization layer
             elif name == 'Norm-Layer':
-                if module.num_features != n_features_out:
-                    errors.append('Number of features of normalization layer '
-                                  'was not properly set.')
+                if isinstance(module, torch.nn.BatchNorm1d):
+                    if module.num_features != n_features_out:
+                        errors.append('Number of features of normalization '
+                                      'layer was not properly set.')
+                elif isinstance(module, torch.nn.LayerNorm):
+                    if module.normalized_shape != (n_features_out,):
+                        errors.append('Number of features of normalization '
+                                      'layer was not properly set.')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     assert not errors, "Errors:\n{}".format("\n".join(errors))
 # -----------------------------------------------------------------------------
 @pytest.mark.parametrize('n_nodes, n_node_in, n_node_out,'
                          'n_edges, n_edge_in, n_edge_out,'
+                         'n_global_in, n_global_out,'
                          'n_hidden_layers, hidden_layer_size,'
                          'is_skip_unset_update',
-                         [(10, 1, 5, 20, 2, 3, 2, 4, False),
-                          (2, 3, 2, 2, 1, 4, 1, 2, False),
-                          (3, 2, 4, 6, 5, 4, 0, 2, False),
-                          (3, 0, 0, 6, 5, 4, 0, 2, False),
-                          (2, 3, 2, 2, 0, 0, 1, 2, False),
-                          (3, 0, 0, 6, 5, 4, 0, 2, True),
-                          (2, 3, 2, 2, 0, 0, 1, 2, True),
+                         [(10, 1, 5, 20, 2, 3, 0, 0, 2, 4, False),
+                          (2, 3, 2, 2, 1, 4, 3, 2, 1, 2, False),
+                          (3, 2, 4, 6, 5, 4, 0, 0, 0, 2, False),
+                          (3, 0, 0, 6, 5, 4, 1, 3, 0, 2, False),
+                          (2, 3, 2, 2, 0, 0, 0, 0, 1, 2, False),
+                          (3, 0, 0, 6, 5, 4, 2, 3, 0, 2, True),
+                          (2, 3, 2, 2, 0, 0, 0, 0, 1, 2, True),
                           ])
 def test_graph_independent_network_forward(n_nodes, n_node_in, n_node_out,
                                            n_edges, n_edge_in, n_edge_out,
+                                           n_global_in, n_global_out,
                                            n_hidden_layers, hidden_layer_size,
                                            is_skip_unset_update):
     """Test Graph Independent Network forward propagation."""
@@ -210,15 +223,18 @@ def test_graph_independent_network_forward(n_nodes, n_node_in, n_node_out,
     errors = []
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Build Graph Independent Network
-    model = GraphIndependentNetwork(n_hidden_layers=n_hidden_layers,
-                                    hidden_layer_size=hidden_layer_size,
-                                    n_node_in=n_node_in, n_node_out=n_node_out,
-                                    n_edge_in=n_edge_in, n_edge_out=n_edge_out,
-                                    node_hidden_activation=torch.nn.ReLU(),
-                                    node_output_activation=torch.nn.Identity(),
-                                    edge_hidden_activation=torch.nn.ReLU(),
-                                    edge_output_activation=torch.nn.Identity(),
-                                    is_skip_unset_update=is_skip_unset_update)
+    model = GraphIndependentNetwork(
+        n_hidden_layers=n_hidden_layers, hidden_layer_size=hidden_layer_size,
+        n_node_in=n_node_in, n_node_out=n_node_out,
+        n_edge_in=n_edge_in, n_edge_out=n_edge_out,
+        n_global_in=n_global_in, n_global_out=n_global_out,
+        node_hidden_activation=torch.nn.ReLU(),
+        node_output_activation=torch.nn.Identity(),
+        edge_hidden_activation=torch.nn.ReLU(),
+        edge_output_activation=torch.nn.Identity(),
+        global_hidden_activation=torch.nn.ReLU(),
+        global_output_activation=torch.nn.Identity(),
+        is_skip_unset_update=is_skip_unset_update)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Generate random nodes features input matrix
     node_features_in = None
@@ -228,10 +244,15 @@ def test_graph_independent_network_forward(n_nodes, n_node_in, n_node_out,
     edge_features_in = None
     if isinstance(n_edge_in, int):
         edge_features_in = torch.rand(n_edges, n_edge_in)
+    # Generate random global features input matrix
+    global_features_in = None
+    if isinstance(n_global_in, int):
+        global_features_in = torch.rand(1, n_global_in)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Forward propagation
-    node_features_out, edge_features_out = model(
-        node_features_in=node_features_in, edge_features_in=edge_features_in)
+    node_features_out, edge_features_out, global_features_out = model(
+        node_features_in=node_features_in, edge_features_in=edge_features_in,
+        global_features_in=global_features_in)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Check node features output matrix
     if model._node_fn is not None:
@@ -265,6 +286,22 @@ def test_graph_independent_network_forward(n_nodes, n_node_in, n_node_out,
         else:
             if edge_features_out is not None:
                 errors.append('Edges features output matrix is not None.')
+    # Check global features output matrix
+    if model._global_fn is not None:
+        if not isinstance(global_features_out, torch.Tensor):
+            errors.append('Global features output matrix is not torch.Tensor.')
+        elif not torch.equal(torch.tensor(global_features_out.size()),
+                             torch.tensor([1, n_global_out])):
+            errors.append('Global features output matrix is not '
+                          'torch.Tensor(2d) of shape (1, n_features).')
+    else:
+        if global_features_in is not None and is_skip_unset_update:
+            if not torch.allclose(global_features_out, global_features_in):
+                errors.append('Global features output matrix is not '
+                              'equal to global features input matrix.')
+        else:
+            if global_features_out is not None:
+                errors.append('Global features output matrix is not None.')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     assert not errors, "Errors:\n{}".format("\n".join(errors))
 # -----------------------------------------------------------------------------

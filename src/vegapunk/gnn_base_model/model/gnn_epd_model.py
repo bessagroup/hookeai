@@ -215,7 +215,7 @@ class EncodeProcessDecode(torch.nn.Module):
                     node_output_activation=dec_node_output_activation)
     # -------------------------------------------------------------------------
     def forward(self, edges_indexes, node_features_in=None,
-                edge_features_in=None):
+                edge_features_in=None, global_features_in=None):
         """Forward propagation.
         
         Processor is skipped if number of message-passing steps is set to zero.
@@ -232,6 +232,9 @@ class EncodeProcessDecode(torch.nn.Module):
         edge_features_in : torch.Tensor, default=None
             Edges features input matrix stored as a torch.Tensor(2d) of shape
             (n_edges, n_features).
+        global_features_in : torch.Tensor, default=None
+            Global features input matrix stored as a torch.Tensor(2d) of shape
+            (1, n_features). Ignored if global update function is not setup.
 
         Returns
         -------
@@ -246,9 +249,10 @@ class EncodeProcessDecode(torch.nn.Module):
                                'input features matrices.')
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Perform encoding
-        node_features, edge_features = \
+        node_features, edge_features, global_features = \
             self._encoder(node_features_in=node_features_in,
-                          edge_features_in=edge_features_in)
+                          edge_features_in=edge_features_in,
+                          global_features_in=global_features_in)
         # Perform processing (message-passing steps)
         if self._n_message_steps > 0:
             # Compute message-passing step

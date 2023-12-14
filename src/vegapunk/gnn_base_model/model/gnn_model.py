@@ -629,11 +629,11 @@ class GNNEPDBaseModel(torch.nn.Module):
         Parameters
         ----------
         input_graph : torch_geometric.data.Data
-            Material patch homogeneous graph.
+            Homogeneous graph.
         is_normalized : bool, default=False
-            If True, get normalized output features from material patch graph,
-            False otherwise.
-            
+            If True, get normalized output features from graph, False
+            otherwise.
+
         Returns
         -------
         node_features_out : torch.Tensor
