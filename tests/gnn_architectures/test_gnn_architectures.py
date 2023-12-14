@@ -6,7 +6,7 @@
 import pytest
 import torch
 # Local
-from src.vegapunk.gnn_model.gnn_architectures import \
+from src.vegapunk.gnn_base_model.model.gnn_architectures import \
     build_fnn, GraphIndependentNetwork, GraphInteractionNetwork
 # =============================================================================
 #

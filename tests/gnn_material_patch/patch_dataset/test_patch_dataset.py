@@ -1,12 +1,12 @@
-"""Setting fixtures for pytest."""
+"""Test generation of set of deformed finite element material patches."""
 #
 #                                                                       Modules
 # =============================================================================
 # Third-party
 import pytest
 # Local
-from src.vegapunk.gnn_material_patch.discretization.finite_element import \
-    FiniteElement
+from gnn_material_patch.material_patch.patch_dataset import \
+    get_default_design_parameters
 # =============================================================================
 #
 #                                                          Authorship & Credits
@@ -17,23 +17,23 @@ __status__ = 'Planning'
 # =============================================================================
 #
 # =============================================================================
-@pytest.fixture
-def elem_type_2d():
-    """One 2D finite element type."""
-    return 'SQUAD4'
+# TO-DO:
+# Test full generation and simulatation of a set of deformed finite element
+# material patches.
+#
+# Note 1: Basically reproduce patch_dataset.py __main__ test
+#
+# Note 2: This test is conditional on the existence of the Links binary path
+#
+# Note 3: Simulation directory must be set as str(tmp_path)
+#
 # -----------------------------------------------------------------------------
-@pytest.fixture
-def available_elem_type():
-    """Available finite element types."""
-    return set(FiniteElement._available_elem_type())
+def test_get_default_design_parameters_type():
+    """Test design space default parameters type."""
+    default_parameters = get_default_design_parameters(2)
+    assert isinstance(default_parameters, dict)
 # -----------------------------------------------------------------------------
-@pytest.fixture
-def available_elems(available_elem_type):
-    """Available FiniteElement instances."""
-    return tuple([FiniteElement(elem_type)
-                  for elem_type in available_elem_type]) 
-
-
-
-
-    
+def test_missing_3d_implementation():
+    """Test that 3D implementation is missing."""
+    with pytest.raises(RuntimeError):
+        get_default_design_parameters(3)

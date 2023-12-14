@@ -21,7 +21,7 @@ import re
 import numpy as np
 # Local
 from ioput.iostandard import make_directory, new_file_path_with_int
-from material_patch.finite_element import FiniteElement
+from gnn_material_patch.discretization.finite_element import FiniteElement
 from simulators.links.models.links_elastic import LinksElastic
 #
 #                                                          Authorship & Credits

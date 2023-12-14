@@ -8,7 +8,7 @@ import pytest
 import torch
 import torch_geometric.nn
 # Local
-from src.vegapunk.gnn_model.gnn_epd_model import \
+from src.vegapunk.gnn_base_model.model.gnn_epd_model import \
     EncodeProcessDecode, Encoder, Processor, Decoder
 # =============================================================================
 #

@@ -1,0 +1,1128 @@
+"""General plotting tools.
+
+Functions
+---------
+plot_xy_data
+    Plot data in xy axes.
+plot_xy2_data
+    Plot data in xy axes with two y axes.
+plot_xny_data
+    Plot data in xy axes with given range of y-values for each x-value.
+scatter_xy_data
+    Scatter data in xy axes.
+grouped_bar_chart
+    Plot grouped bar chart.
+plot_boxplots
+    Plot set of box plots.
+save_figure
+    Save Matplotlib figure.
+tex_str
+    Format string according with LaTeX rendering option.
+"""
+#
+#                                                                       Modules
+# =============================================================================
+# Standard
+import os
+import shutil
+# Third-party
+import numpy as np
+import matplotlib.pyplot as plt
+import matplotlib.ticker as ticker
+import cycler
+#
+#                                                          Authorship & Credits
+# =============================================================================
+__author__ = 'Bernardo Ferreira (bernardo_ferreira@brown.edu)'
+__credits__ = ['Bernardo Ferreira', ]
+__status__ = 'Planning'
+# =============================================================================
+def plot_xy_data(data_xy, data_labels=None, x_lims=(None, None),
+                 y_lims=(None, None), title=None, x_label=None, y_label=None,
+                 x_scale='linear', y_scale='linear', x_tick_format=None,
+                 y_tick_format=None, is_latex=False):
+    """Plot data in xy axes.
+
+    Parameters
+    ----------
+    data_xy : numpy.ndarray(2d)
+        Data array where the plot data is stored columnwise such that the i-th
+        data set (x_i, y_i) is stored in columns (2*i, 2*i + 1), respectively.
+    data_labels : list, default=None
+        Labels of data sets (x_i, y_i) provided in data_xy and sorted
+        accordingly. If None, then no labels are displayed.
+    x_lims : tuple, default=(None, None)
+        x-axis limits in data coordinates.
+    y_lims : tuple, default=(None, None)
+        y-axis limits in data coordinates.
+    title : str, default=None
+        Plot title.
+    x_label : str, default=None
+        x-axis label.
+    y_label : str, default=None
+        y-axis label.
+    x_scale : str {'linear', 'log'}, default='linear'
+        x-axis scale. If None or invalid format, then default scale is set.
+        Scale 'log' overrides any x-axis ticks formatting.
+    y_scale : str {'linear', 'log'}, default='linear'
+        y-axis scale. If None or invalid format, then default scale is set.
+        Scale 'log' overrides any y-axis ticks formatting.
+    x_tick_format : {'int', 'float', 'exp'}, default=None
+        x-axis ticks formatting. If None or invalid format, then default
+        formatting is set.
+    y_tick_format : {'int', 'float', 'exp'}, default=None
+        y-axis ticks formatting. If None or invalid format, then default
+        formatting is set.
+    is_latex : bool, default=False
+        If True, then render all strings in LaTeX. If LaTex is not available,
+        then this option is silently set to False and all input strings are
+        processed to remove $(...)$ enclosure.
+
+    Returns
+    -------
+    figure : Matplotlib Figure
+        Figure.
+    axes : Matplotlib Axes
+        Axes.
+    """
+    # Reset matplotlib internal default style
+    plt.rcParams.update(plt.rcParamsDefault)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Check data
+    if data_xy.shape[1] % 2 != 0:
+        raise RuntimeError('Data array must have an even number of columns, '
+                           'two for each dataset (x_i, y_i).')
+    else:
+        # Get number of data sets
+        n_datasets = int(data_xy.shape[1]/2)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Check datasets labels
+    if data_labels is not None:
+        if len(data_labels) != n_datasets:
+            raise RuntimeError('Number of data set labels is not consistent '
+                               'with number of data sets.')
+    else:
+        data_labels = n_datasets*[None,]
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Set default color cycle
+    cycler_color = cycler.cycler('color',['#4477AA', '#EE6677', '#228833',
+                                          '#CCBB44', '#66CCEE', '#AA3377',
+                                          '#BBBBBB', '#000000'])
+    # Set default linestyle cycle
+    cycler_linestyle = cycler.cycler('linestyle',['-','--','-.'])
+    # Set default cycler
+    default_cycler = cycler_linestyle*cycler_color
+    plt.rc('axes', prop_cycle = default_cycler)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~    
+    # Check LaTeX availability
+    if not bool(shutil.which('latex')):
+        is_latex = False
+    # Set LaTeX font
+    if is_latex:
+        # Default LaTeX Computer Modern Roman
+        plt.rc('text', usetex=True)
+        plt.rc('font', **{'family': 'serif',
+                          'serif': ['Computer Modern Roman']})        
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Create figure
+    figure = plt.figure()
+    # Set figure size (inches) - stdout print purpose
+    figure.set_figheight(6, forward=True)
+    figure.set_figwidth(6, forward=True)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Create axes
+    axes = figure.add_subplot(1, 1, 1)
+    # Set title
+    axes.set_title(tex_str(title, is_latex), fontsize=12, pad=10)
+    # Set axes labels
+    axes.set_xlabel(tex_str(x_label, is_latex), fontsize=12, labelpad=10)
+    axes.set_ylabel(tex_str(y_label, is_latex), fontsize=12, labelpad=10)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Set axes scales
+    if x_scale in ('linear', 'log'):
+        axes.set_xscale(x_scale)
+    if y_scale in ('linear', 'log'):
+        axes.set_yscale(y_scale)
+    # Set tick formatting functions
+    def intTickFormat(x, pos):
+        frmt = tex_str('{:2d}', is_latex)
+        return frmt.format(int(x))
+    def floatTickFormat(x, pos):
+        frmt = tex_str('{:3.1f}', is_latex)
+        return frmt.format(x)
+    def expTickFormat(x, pos):
+        frmt = tex_str('{:7.2e}', is_latex)
+        return frmt.format(x)
+    tick_formats = {'int': intTickFormat, 'float': floatTickFormat,
+                    'exp': expTickFormat}
+    # Set axes tick formats
+    if x_scale != 'log' and x_tick_format in ('int', 'float', 'exp'):
+        axes.xaxis.set_major_formatter(
+            ticker.FuncFormatter(tick_formats[x_tick_format]))
+    if y_scale != 'log' and y_tick_format in ('int', 'float', 'exp'):
+        axes.yaxis.set_major_formatter(
+            ticker.FuncFormatter(tick_formats[y_tick_format]))
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Configure grid major lines
+    axes.grid(which='major', axis='both', linestyle='-', linewidth=0.5,
+              color='0.5', zorder=-20)
+    # Configure grid minor lines
+    axis_option = {'log-log': 'both', 'log-linear': 'x', 'linear-log': 'y'}
+    xy_scale = f'{x_scale}-{y_scale}'
+    if xy_scale in axis_option.keys():
+        axes.grid(which='minor', axis=axis_option[xy_scale], linestyle='-',
+                  linewidth=0.5, color='0.5', zorder=-20)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Loop over data sets
+    for i in range(n_datasets):
+        # Plot dataset
+        axes.plot(data_xy[:, 2*i], data_xy[:, 2*i + 1],
+                  label=tex_str(data_labels[i], is_latex))
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Set legend
+    if not all([x is None for x in data_labels]):
+        axes.legend(loc='upper left', frameon=True, fancybox=True,
+                    facecolor='inherit', edgecolor='inherit', fontsize=10,
+                    framealpha=1.0)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Set axes limits
+    if x_lims != (None, None):
+        axes.set_xlim(x_lims)
+    if y_lims != (None, None):
+        axes.set_ylim(y_lims)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Return figure and axes handlers
+    return figure, axes
+# =============================================================================
+def plot_xy2_data(data_xy1, data_xy2, x_lims=(None, None),
+                  y1_lims=(None, None), y2_lims=(None, None), title=None,
+                  x_label=None, y1_label=None, y2_label=None, x_scale='linear',
+                  y1_scale='linear', y2_scale='linear', x_tick_format=None,
+                  y1_tick_format=None, y2_tick_format=None, is_latex=False):
+    """Plot data in xy axes with two y axes.
+
+    Parameters
+    ----------
+    data_xy1 : numpy.ndarray(2d)
+        Data array containing the plot data associated with the first y-axis
+        stored columnwise as (x_i, y_i).
+    data_xy2 : numpy.ndarray(2d)
+        Data array containing the plot data associated with the second y-axis
+        stored columnwise as (x_i, y_i).
+    x_lims : tuple, default=(None, None)
+        x-axis limits in data coordinates.
+    y1_lims : tuple, default=(None, None)
+        y1-axis limits in data coordinates.
+    y2_lims : tuple, default=(None, None)
+        y2-axis limits in data coordinates.
+    title : str, default=None
+        Plot title.
+    x_label : str, default=None
+        x-axis label.
+    y1_label : str, default=None
+        y1-axis label.
+    y2_label : str, default=None
+        y2-axis label.
+    x_scale : str {'linear', 'log'}, default='linear'
+        x-axis scale. If None or invalid format, then default scale is set.
+        Scale 'log' overrides any x-axis ticks formatting.
+    y1_scale : str {'linear', 'log'}, default='linear'
+        y1-axis scale. If None or invalid format, then default scale is set.
+        Scale 'log' overrides any y1-axis ticks formatting.
+    y2_scale : str {'linear', 'log'}, default='linear'
+        y2-axis scale. If None or invalid format, then default scale is set.
+        Scale 'log' overrides any y2-axis ticks formatting.
+    x_tick_format : {'int', 'float', 'exp'}, default=None
+        x-axis ticks formatting. If None or invalid format, then default
+        formatting is set.
+    y1_tick_format : {'int', 'float', 'exp'}, default=None
+        y1-axis ticks formatting. If None or invalid format, then default
+        formatting is set.
+    y2_tick_format : {'int', 'float', 'exp'}, default=None
+        y2-axis ticks formatting. If None or invalid format, then default
+        formatting is set.
+    is_latex : bool, default=False
+        If True, then render all strings in LaTeX. If LaTex is not available,
+        then this option is silently set to False and all input strings are
+        processed to remove $(...)$ enclosure.
+
+    Returns
+    -------
+    figure : Matplotlib Figure
+        Figure.
+    axes : Matplotlib Axes
+        Axes.
+    """
+    # Reset matplotlib internal default style
+    plt.rcParams.update(plt.rcParamsDefault)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Check data
+    if data_xy1.shape[1] != 2:
+        raise RuntimeError('Data array for first y-axis dataset must have '
+                           'shape (n_points, 2).')
+    if data_xy2.shape[1] != 2:
+        raise RuntimeError('Data array for second y-axis dataset must have '
+                           'shape (n_points, 2).')
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Set default color cycle
+    cycler_color = cycler.cycler('color',['#4477AA', '#EE6677', '#228833',
+                                          '#CCBB44', '#66CCEE', '#AA3377',
+                                          '#BBBBBB', '#000000'])
+    # Set default linestyle cycle
+    cycler_linestyle = cycler.cycler('linestyle',['-','--','-.'])
+    # Set default cycler
+    default_cycler = cycler_linestyle*cycler_color
+    plt.rc('axes', prop_cycle = default_cycler)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Check LaTeX availability
+    if not bool(shutil.which('latex')):
+        is_latex = False
+    # Set LaTeX font
+    if is_latex:
+        # Default LaTeX Computer Modern Roman
+        plt.rc('text', usetex=True)
+        plt.rc('font', **{'family': 'serif',
+                          'serif': ['Computer Modern Roman']})
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Create figure
+    figure = plt.figure()
+    # Set figure size (inches) - stdout print purpose
+    figure.set_figheight(6, forward=True)
+    figure.set_figwidth(6, forward=True)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Create first axes
+    axes = figure.add_subplot(1, 1, 1)
+    # Set first axes color
+    color_y1 = '#4477AA'
+    # Set title
+    axes.set_title(tex_str(title, is_latex), fontsize=12, pad=10)
+    # Set first axes labels
+    axes.set_xlabel(tex_str(x_label, is_latex), fontsize=12, labelpad=10)
+    axes.set_ylabel(tex_str(y1_label, is_latex), fontsize=12, labelpad=10,
+                    color=color_y1)
+    # Set first axes color
+    axes.spines["right"].set_visible(False)
+    axes.spines['left'].set(color=color_y1, linewidth=1.1)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Create second axes (sharing the x axis)
+    axes2 = axes.twinx()
+    # Set second axes color
+    color_y2 = '#EE6677'
+    # Configure second axes label
+    axes2.set_ylabel(tex_str(y2_label, is_latex), fontsize=12, labelpad=10,
+                     color=color_y2)
+    # Set second axes color
+    axes2.spines["left"].set_visible(False)
+    axes2.spines['right'].set(color=color_y2, linewidth=1.1)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Set first axes color
+    axes.tick_params(which='both', axis='y', color=color_y1,
+                     labelcolor=color_y1)
+    # Set first axes scales
+    if x_scale in ('linear', 'log'):
+        axes.set_xscale(x_scale)
+    if y1_scale in ('linear', 'log'):
+        axes.set_yscale(y1_scale)
+    # Set tick formatting functions
+    def intTickFormat(x, pos):
+        frmt = tex_str('{:2d}', is_latex)
+        return frmt.format(int(x))
+    def floatTickFormat(x, pos):
+        frmt = tex_str('{:3.1f}', is_latex)
+        return frmt.format(x)
+    def expTickFormat(x, pos):
+        frmt = tex_str('{:7.2e}', is_latex)
+        return frmt.format(x)
+    tick_formats = {'int': intTickFormat, 'float': floatTickFormat,
+                    'exp': expTickFormat}
+    # Set axes tick formats
+    if x_scale != 'log' and x_tick_format in ('int', 'float', 'exp'):
+        axes.xaxis.set_major_formatter(
+            ticker.FuncFormatter(tick_formats[x_tick_format]))
+    if y1_scale != 'log' and y1_tick_format in ('int', 'float', 'exp'):
+        axes.yaxis.set_major_formatter(
+            ticker.FuncFormatter(tick_formats[y1_tick_format]))
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Set second axes color
+    axes2.tick_params(which='both', axis='y', color=color_y2,
+                      labelcolor=color_y2)
+    # Set second axes scales
+    if y2_scale in ('linear', 'log'):
+        axes2.set_yscale(y2_scale)
+    if y2_scale != 'log' and y2_tick_format in ('int', 'float', 'exp'):
+        axes2.yaxis.set_major_formatter(
+            ticker.FuncFormatter(tick_formats[y2_tick_format]))    
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Configure grid major lines
+    axes.grid(which='major', axis='both', linestyle='-', linewidth=0.5,
+              color='0.5', zorder=-20)
+    # Configure grid minor lines
+    axis_option = {'log-log': 'both', 'log-linear': 'x', 'linear-log': 'y'}
+    xy_scale = f'{x_scale}-{y1_scale}'
+    if xy_scale in axis_option.keys():
+        axes.grid(which='minor', axis=axis_option[xy_scale], linestyle='-',
+                  linewidth=0.5, color='0.5', zorder=-20)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Plot dataset in first axes
+    axes.plot(data_xy1[:, 0], data_xy1[:, 1], color=color_y1)
+    # Plot dataset in second axes
+    axes2.plot(data_xy2[:, 0], data_xy2[:, 1], color=color_y2)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Set first axes limits
+    if x_lims != (None, None):
+        axes.set_xlim(x_lims)
+    if y1_lims != (None, None):
+        axes.set_ylim(y1_lims)
+    # Set second axes limits
+    if y2_lims != (None, None):
+        axes2.set_ylim(y2_lims)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Return figure and axes handlers
+    return figure, axes
+# =============================================================================
+def plot_xny_data(data_xy_list, range_type='min-max', data_labels=None,
+                  x_lims=(None, None), y_lims=(None, None), title=None,
+                  x_label=None, y_label=None, x_scale='linear',
+                  y_scale='linear', x_tick_format=None, y_tick_format=None,
+                  is_latex=False):
+    """Plot data in xy axes with given range of y-values for each x-value.
+
+    Parameters
+    ----------
+    data_xy_list : list[np.ndarray(2d)]
+        List of data arrays. Each data array contains plot data stored
+        columnwise such that data_array[:, 0] holds the x-axis data and
+        data_array[:, 1:] holds the y-axis data. For each x-value, the mean and
+        variance of the y-values are plotted.
+    range_type : {'min-max', 'mean-std'}, default='min-max'
+        Type of range of y-values to be plotted for each x-value.
+    data_labels : list, default=None
+        Labels of data arrays provided in data_xy_list and sorted accordingly.
+        If None, then no labels are displayed.
+    x_lims : tuple, default=(None, None)
+        x-axis limits in data coordinates.
+    y_lims : tuple, default=(None, None)
+        y-axis limits in data coordinates.
+    title : str, default=None
+        Plot title.
+    x_label : str, default=None
+        x-axis label.
+    y_label : str, default=None
+        y-axis label.
+    x_scale : str {'linear', 'log'}, default='linear'
+        x-axis scale. If None or invalid format, then default scale is set.
+        Scale 'log' overrides any x-axis ticks formatting.
+    y_scale : str {'linear', 'log'}, default='linear'
+        y-axis scale. If None or invalid format, then default scale is set.
+        Scale 'log' overrides any y-axis ticks formatting.
+    x_tick_format : {'int', 'float', 'exp'}, default=None
+        x-axis ticks formatting. If None or invalid format, then default
+        formatting is set.
+    y_tick_format : {'int', 'float', 'exp'}, default=None
+        y-axis ticks formatting. If None or invalid format, then default
+        formatting is set.
+    is_latex : bool, default=False
+        If True, then render all strings in LaTeX. If LaTex is not available,
+        then this option is silently set to False and all input strings are
+        processed to remove $(...)$ enclosure.
+
+    Returns
+    -------
+    figure : Matplotlib Figure
+        Figure.
+    axes : Matplotlib Axes
+        Axes.
+    """
+    # Reset matplotlib internal default style
+    plt.rcParams.update(plt.rcParamsDefault)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Check data
+    if not isinstance(data_xy_list, list):
+        raise RuntimeError('Data must be provided as a list of data arrays '
+                           'stored as numpy.ndarray(2d).')
+    elif not all([isinstance(x, np.ndarray) for x in data_xy_list]):
+        raise RuntimeError('Data must be provided as a list of data arrays '
+                           'stored as numpy.ndarray(2d).')
+    elif not all([len(x.shape) == 2 for x in data_xy_list]):
+        raise RuntimeError('Data must be provided as a list of data arrays '
+                           'stored as numpy.ndarray(2d).')
+    # Get number of data sets
+    n_datasets = len(data_xy_list)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Check datasets labels
+    if data_labels is not None:
+        if len(data_labels) != n_datasets:
+            raise RuntimeError('Number of data set labels is not consistent '
+                               'with list of data arrays.')
+    else:
+        data_labels = n_datasets*[None,]
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Set default color cycle
+    cycler_color = cycler.cycler('color',['#4477AA', '#EE6677', '#228833',
+                                          '#CCBB44', '#66CCEE', '#AA3377',
+                                          '#BBBBBB', '#000000'])
+    # Set default linestyle cycle
+    cycler_linestyle = cycler.cycler('linestyle',['-','--','-.'])
+    # Set default cycler
+    default_cycler = cycler_linestyle*cycler_color
+    plt.rc('axes', prop_cycle = default_cycler)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Check LaTeX availability
+    if not bool(shutil.which('latex')):
+        is_latex = False
+    # Set LaTeX font
+    if is_latex:
+        # Default LaTeX Computer Modern Roman
+        plt.rc('text', usetex=True)
+        plt.rc('font', **{'family': 'serif',
+                          'serif': ['Computer Modern Roman']})
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Create figure
+    figure = plt.figure()
+    # Set figure size (inches) - stdout print purpose
+    figure.set_figheight(6, forward=True)
+    figure.set_figwidth(6, forward=True)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Create axes
+    axes = figure.add_subplot(1, 1, 1)
+    # Set title
+    axes.set_title(tex_str(title, is_latex), fontsize=12, pad=10)
+    # Set axes labels
+    axes.set_xlabel(tex_str(x_label, is_latex), fontsize=12, labelpad=10)
+    axes.set_ylabel(tex_str(y_label, is_latex), fontsize=12, labelpad=10)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Set axes scales
+    if x_scale in ('linear', 'log'):
+        axes.set_xscale(x_scale)
+    if y_scale in ('linear', 'log'):
+        axes.set_yscale(y_scale)
+    # Set tick formatting functions
+    def intTickFormat(x, pos):
+        frmt = tex_str('{:2d}', is_latex)
+        return frmt.format(int(x))
+    def floatTickFormat(x, pos):
+        frmt = tex_str('{:3.1f}', is_latex)
+        return frmt.format(x)
+    def expTickFormat(x, pos):
+        frmt = tex_str('{:7.2e}', is_latex)
+        return frmt.format(x)
+    tick_formats = {'int': intTickFormat, 'float': floatTickFormat,
+                    'exp': expTickFormat}
+    # Set axes tick formats
+    if x_scale != 'log' and x_tick_format in ('int', 'float', 'exp'):
+        axes.xaxis.set_major_formatter(
+            ticker.FuncFormatter(tick_formats[x_tick_format]))
+    if y_scale != 'log' and y_tick_format in ('int', 'float', 'exp'):
+        axes.yaxis.set_major_formatter(
+            ticker.FuncFormatter(tick_formats[y_tick_format]))
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Configure grid major lines
+    axes.grid(which='major', axis='both', linestyle='-', linewidth=0.5,
+              color='0.5', zorder=-20)
+    # Configure grid minor lines
+    axis_option = {'log-log': 'both', 'log-linear': 'x', 'linear-log': 'y'}
+    xy_scale = f'{x_scale}-{y_scale}'
+    if xy_scale in axis_option.keys():
+        axes.grid(which='minor', axis=axis_option[xy_scale], linestyle='-',
+                  linewidth=0.5, color='0.5', zorder=-20)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Loop over data sets
+    for i in range(n_datasets):
+        # Get data array
+        data_xy = data_xy_list[i]
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Get x-values
+        x = data_xy[:, 0]
+        # Get y-values range
+        if range_type == 'min-max':
+           y_mean = np.mean(data_xy[:, 1:], axis=1)
+           y_err = np.concatenate(
+               (np.min(data_xy[:, 1:], axis=1).reshape(1, -1),
+                np.max(data_xy[:, 1:], axis=1).reshape(1, -1)), axis=0)
+        elif range_type == 'mean-std':
+           y_mean = np.mean(data_xy[:, 1:], axis=1)
+           y_err = np.concatenate(
+               (1.96*np.std(data_xy[:, 1:], axis=1).reshape(1, -1),
+                1.96*np.std(data_xy[:, 1:], axis=1).reshape(1, -1)), axis=0)
+        else:
+            raise RuntimeError('Unknown type of range.')
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Plot data set
+        axes.errorbar(x, y_mean, yerr=y_err, capsize=3,
+                      label=tex_str(data_labels[i], is_latex))
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Set legend
+    if not all([x is None for x in data_labels]):
+        axes.legend(loc='upper left', frameon=True, fancybox=True,
+                    facecolor='inherit', edgecolor='inherit', fontsize=10,
+                    framealpha=1.0)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Set axes limits
+    if x_lims != (None, None):
+        axes.set_xlim(x_lims)
+    if y_lims != (None, None):
+        axes.set_ylim(y_lims)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Return figure and axes handlers
+    return figure, axes
+# =============================================================================
+def scatter_xy_data(data_xy, data_labels=None, is_identity_line=False,
+                    identity_error=None, x_lims=(None, None),
+                    y_lims=(None, None), title=None, x_label=None,
+                    y_label=None, x_scale='linear', y_scale='linear',
+                    x_tick_format=None, y_tick_format=None, is_latex=False):
+    """Scatter data in xy axes.
+
+    Parameters
+    ----------
+    data_xy : numpy.ndarray(2d)
+        Data array where the plot data is stored columnwise such that the i-th
+        data set (x_i, y_i) is stored in columns (2*i, 2*i + 1), respectively.
+    data_labels : list, default=None
+        Labels of data sets (x_i, y_i) provided in data_xy and sorted
+        accordingly. If None, then no labels are displayed.
+    is_identity_line : bool, default=False
+        Plot identity line.
+    identity_error : float, default=None
+        Relative error between x-data and y-data defining a symmetric
+        error-based shaded area with respect to the identity line.
+    x_lims : tuple, default=(None, None)
+        x-axis limits in data coordinates.
+    y_lims : tuple, default=(None, None)
+        y-axis limits in data coordinates.
+    title : str, default=None
+        Plot title.
+    x_label : str, default=None
+        x-axis label.
+    y_label : str, default=None
+        y-axis label.
+    x_scale : str {'linear', 'log'}, default='linear'
+        x-axis scale. If None or invalid format, then default scale is set.
+        Scale 'log' overrides any x-axis ticks formatting.
+    y_scale : str {'linear', 'log'}, default='linear'
+        y-axis scale. If None or invalid format, then default scale is set.
+        Scale 'log' overrides any y-axis ticks formatting.
+    x_tick_format : {'int', 'float', 'exp'}, default=None
+        x-axis ticks formatting. If None or invalid format, then default
+        formatting is set.
+    y_tick_format : {'int', 'float', 'exp'}, default=None
+        y-axis ticks formatting. If None or invalid format, then default
+        formatting is set.
+    is_latex : bool, default=False
+        If True, then render all strings in LaTeX. If LaTex is not available,
+        then this option is silently set to False and all input strings are
+        processed to remove $(...)$ enclosure.
+
+    Returns
+    -------
+    figure : Matplotlib Figure
+        Figure.
+    axes : Matplotlib Axes
+        Axes.
+    """
+    # Reset matplotlib internal default style
+    plt.rcParams.update(plt.rcParamsDefault)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Check data
+    if data_xy.shape[1] % 2 != 0:
+        raise RuntimeError('Data array must have an even number of columns, '
+                           'two for each dataset (x_i, y_i).')
+    else:
+        # Get number of data sets
+        n_datasets = int(data_xy.shape[1]/2)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Check datasets labels
+    if data_labels is not None:
+        if len(data_labels) != n_datasets:
+            raise RuntimeError('Number of data set labels is not consistent '
+                               'with number of data sets.')
+    else:
+        data_labels = n_datasets*[None,]
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Set default color cycle
+    cycler_color = cycler.cycler('color',['#4477AA', '#EE6677', '#228833',
+                                          '#CCBB44', '#66CCEE', '#AA3377',
+                                          '#BBBBBB', '#000000'])
+    # Set default linestyle cycle
+    cycler_linestyle = cycler.cycler('linestyle',['-','--','-.'])
+    # Set default cycler
+    default_cycler = cycler_linestyle*cycler_color
+    plt.rc('axes', prop_cycle = default_cycler)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Check LaTeX availability
+    if not bool(shutil.which('latex')):
+        is_latex = False
+    # Set LaTeX font
+    if is_latex:
+        # Default LaTeX Computer Modern Roman
+        plt.rc('text', usetex=True)
+        plt.rc('font', **{'family': 'serif',
+                          'serif': ['Computer Modern Roman']})
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Create figure
+    figure = plt.figure()
+    # Set figure size (inches) - stdout print purpose
+    figure.set_figheight(6, forward=True)
+    figure.set_figwidth(6, forward=True)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Create axes
+    axes = figure.add_subplot(1, 1, 1)
+    # Set title
+    axes.set_title(tex_str(title, is_latex), fontsize=12, pad=10)
+    # Set axes labels
+    axes.set_xlabel(tex_str(x_label, is_latex), fontsize=12, labelpad=10)
+    axes.set_ylabel(tex_str(y_label, is_latex), fontsize=12, labelpad=10)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Set axes scales
+    if x_scale in ('linear', 'log'):
+        axes.set_xscale(x_scale)
+    if y_scale in ('linear', 'log'):
+        axes.set_yscale(y_scale)
+    # Set tick formatting functions
+    def intTickFormat(x, pos):
+        frmt = tex_str('{:2d}', is_latex)
+        return frmt.format(int(x))
+    def floatTickFormat(x, pos):
+        frmt = tex_str('{:3.1f}', is_latex)
+        return frmt.format(x)
+    def expTickFormat(x, pos):
+        frmt = tex_str('{:7.2e}', is_latex)
+        return frmt.format(x)
+    tick_formats = {'int': intTickFormat, 'float': floatTickFormat,
+                    'exp': expTickFormat}
+    # Set axes tick formats
+    if x_scale != 'log' and x_tick_format in ('int', 'float', 'exp'):
+        axes.xaxis.set_major_formatter(
+            ticker.FuncFormatter(tick_formats[x_tick_format]))
+    if y_scale != 'log' and y_tick_format in ('int', 'float', 'exp'):
+        axes.yaxis.set_major_formatter(
+            ticker.FuncFormatter(tick_formats[y_tick_format]))
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Configure grid major lines
+    axes.grid(which='major', axis='both', linestyle='-', linewidth=0.5,
+              color='0.5', zorder=0)
+    # Configure grid minor lines
+    axis_option = {'log-log': 'both', 'log-linear': 'x', 'linear-log': 'y'}
+    xy_scale = f'{x_scale}-{y_scale}'
+    if xy_scale in axis_option.keys():
+        axes.grid(which='minor', axis=axis_option[xy_scale], linestyle='-',
+                  linewidth=0.5, color='0.5', zorder=-20)        
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Loop over data sets
+    for i in range(n_datasets):
+        # Plot dataset
+        axes.scatter(data_xy[:, 2*i], data_xy[:, 2*i + 1],
+                     s=10, facecolor='#4477AA', edgecolor='k', linewidth=0.5,
+                     label=tex_str(data_labels[i], is_latex),
+                     zorder=10)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Set axes limits
+    axes.set_xlim(x_lims)
+    axes.set_ylim(y_lims)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Plot identity line and identity error bounds
+    if is_identity_line:
+        # Plot identity line
+        axes.axline((0, 0), slope=1, color='k', linestyle='--',
+                    label='Identity line', zorder=5)
+        # Plot identity error bounds
+        if identity_error is not None:            
+            x = np.linspace(0.0, axes.axis()[1])
+            axes.fill_between(x=x, y1=(1 + identity_error)*x,
+                              y2=(1 - identity_error)*x,
+                              color='#BBBBBB',
+                              label=f'{identity_error*100:.0f}\\% error',
+                              zorder=-15)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Set legend
+    if not all([x is None for x in data_labels]) or identity_error is not None:
+        axes.legend(loc='upper left', frameon=True, fancybox=True,
+                    facecolor='inherit', edgecolor='inherit', fontsize=10,
+                    framealpha=1.0)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Return figure and axes handlers
+    return figure, axes
+# =============================================================================
+def grouped_bar_chart(groups_labels, groups_data, bar_width=None,
+                      is_avg_hline=False, y_lims=(None, None), title=None,
+                      x_label=None, y_label=None, y_scale='linear',
+                      y_tick_format=None, is_latex=False):
+    """Plot grouped bar chart.
+
+    Parameters
+    ----------
+    groups_labels = tuple[str]
+        Bar groups labels.
+    groups_data = dict
+        Store groups data (item, tuple) for data set (key, str). Dictionary
+        keys are taken as labels for each data set.
+    bar_width : float, default=None
+        Width of bars.
+    is_avg_hline, default=False
+        Plot horizontal line for average value of each data set.
+    y_lims : tuple, default=(None, None)
+        y-axis limits in data coordinates.
+    title : str, default=None
+        Plot title.
+    x_label : str, default=None
+        x-axis label.
+    y_label : str, default=None
+        y-axis label.
+    y_scale : str {'linear', 'log'}, default='linear'
+        y-axis scale. If None or invalid format, then default scale is set.
+        Scale 'log' overrides any y-axis ticks formatting.
+    is_latex : bool, default=False
+        If True, then render all strings in LaTeX. If LaTex is not available,
+        then this option is silently set to False and all input strings are
+        processed to remove $(...)$ enclosure.
+
+    Returns
+    -------
+    figure : Matplotlib Figure
+        Figure.
+    axes : Matplotlib Axes
+        Axes.
+    """
+    # Reset matplotlib internal default style
+    plt.rcParams.update(plt.rcParamsDefault)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Check bar groups labels
+    if not isinstance(groups_labels, tuple):
+        raise RuntimeError('Bar groups labels must be provided as a tuple of '
+                           'strings.')
+    else:
+        # Get number of bar groups
+        n_groups = len(groups_labels)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Check bar groups data
+    if not isinstance(groups_data, dict):
+        raise RuntimeError('Bar groups data must be provided as a dictionary '
+                           'of tuples.')
+    elif not all([isinstance(x, tuple) and len(x) == n_groups
+                  for x in groups_data.values()]):
+        raise RuntimeError('Bar groups data must be provided as a dictionary '
+                           'of tuples with size (n_groups,).')
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Set bar width
+    if bar_width is None:
+        bar_width = 1/(2 + len(groups_data.keys()))
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Set default color cycle
+    cycler_color = cycler.cycler('color',['#4477AA', '#EE6677', '#228833',
+                                          '#CCBB44', '#66CCEE', '#AA3377',
+                                          '#BBBBBB', '#000000'])
+    # Set default linestyle cycle
+    cycler_linestyle = cycler.cycler('linestyle',['-','--','-.'])
+    # Set default cycler
+    default_cycler = cycler_linestyle*cycler_color
+    plt.rc('axes', prop_cycle = default_cycler)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Check LaTeX availability
+    if not bool(shutil.which('latex')):
+        is_latex = False
+    # Set LaTeX font
+    if is_latex:
+        # Default LaTeX Computer Modern Roman
+        plt.rc('text', usetex=True)
+        plt.rc('font', **{'family': 'serif',
+                          'serif': ['Computer Modern Roman']})
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Create figure
+    figure = plt.figure()
+    # Set figure size (inches) - stdout print purpose
+    figure.set_figheight(6, forward=True)
+    figure.set_figwidth(6, forward=True)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Create axes
+    axes = figure.add_subplot(1, 1, 1)
+    axes.set_axisbelow(True)
+    # Set title
+    axes.set_title(tex_str(title, is_latex), fontsize=12, pad=10)
+    # Set axes labels
+    axes.set_xlabel(tex_str(x_label, is_latex), fontsize=12, labelpad=10)
+    axes.set_ylabel(tex_str(y_label, is_latex), fontsize=12, labelpad=10)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Set axes scales
+    if y_scale in ('linear', 'log'):
+        axes.set_yscale(y_scale)
+    # Set tick formatting functions
+    def intTickFormat(x, pos):
+        frmt = tex_str('{:2d}', is_latex)
+        return frmt.format(int(x))
+    def floatTickFormat(x, pos):
+        frmt = tex_str('{:3.1f}', is_latex)
+        return frmt.format(x)
+    def expTickFormat(x, pos):
+        frmt = tex_str('{:7.2e}', is_latex)
+        return frmt.format(x)
+    tick_formats = {'int': intTickFormat, 'float': floatTickFormat,
+                    'exp': expTickFormat}
+    # Set groups labels locations
+    x = np.arange(n_groups)
+    axes.set_xticks(x + bar_width, groups_labels)
+    # Set axes tick formats
+    if y_scale != 'log' and y_tick_format in ('int', 'float', 'exp'):
+        axes.yaxis.set_major_formatter(
+            ticker.FuncFormatter(tick_formats[y_tick_format]))
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Configure grid major lines
+    axes.grid(which='major', axis='y', linestyle='-', linewidth=0.5,
+              color='0.5')
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Initialize bar groups position counter
+    group_id = 0
+    # Loop over data sets
+    for ds_label, ds_values in groups_data.items():
+        # Set data set bar offset
+        ds_offset = (0.5 + group_id)*bar_width
+        # Plot data set bars
+        dataset_bars = axes.bar(x + ds_offset, ds_values, width=bar_width,
+                                label=tex_str(ds_label, is_latex),
+                                align='center')
+        # Plot data set average line
+        if is_avg_hline:
+            axes.axhline(np.mean(ds_values), linestyle='--', linewidth=1.0,
+                         color=dataset_bars[-1].get_facecolor())
+        # Increment position counter
+        group_id += 1
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Add average line to legend (dummy plot)
+    if is_avg_hline:
+        axes.plot(np.mean(list(groups_data.values())[0]),
+                  linestyle='--', color='k', label='Average')
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Set axes limits
+    axes.set_ylim(y_lims)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Set legend
+    axes.legend(loc='best', frameon=True, fancybox=True,
+                facecolor='inherit', edgecolor='inherit', fontsize=10,
+                framealpha=1.0)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Return figure and axes handlers
+    return figure, axes
+# =============================================================================
+def plot_boxplots(data_boxplots, data_labels=None, is_mean_line=False,
+                  y_lims=(None, None), title=None, x_label=None, y_label=None,
+                  y_scale='linear', y_tick_format=None, is_latex=False):
+    """Plot set of box plots.
+
+    Parameters
+    ----------
+    data_boxplots : numpy.ndarray(2d)
+        Data array where each box plot data is stored columnwise such that the
+        i-th boxplot is stored in the i-th column.
+    data_labels : list, default=None
+        Labels of each box plot provided in data_boxplots and sorted
+        accordingly. If None, then no labels are displayed.
+    is_mean_line : bool, default=False
+        If True, then plot mean line for each boxplot.
+    y_lims : tuple, default=(None, None)
+        y-axis limits in data coordinates.
+    title : str, default=None
+        Plot title.
+    x_label : str, default=None
+        x-axis label.
+    y_label : str, default=None
+        y-axis label.
+    y_scale : str {'linear', 'log'}, default='linear'
+        y-axis scale. If None or invalid format, then default scale is set.
+        Scale 'log' overrides any y-axis ticks formatting.
+    y_tick_format : {'int', 'float', 'exp'}, default=None
+        y-axis ticks formatting. If None or invalid format, then default
+        formatting is set.
+    is_latex : bool, default=False
+        If True, then render all strings in LaTeX. If LaTex is not available,
+        then this option is silently set to False and all input strings are
+        processed to remove $(...)$ enclosure.
+
+    Returns
+    -------
+    figure : Matplotlib Figure
+        Figure.
+    axes : Matplotlib Axes
+        Axes.
+    """
+    # Reset matplotlib internal default style
+    plt.rcParams.update(plt.rcParamsDefault)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Get number of boxplots
+    n_boxplots = data_boxplots.shape[1]
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Check datasets labels
+    if data_labels is not None:
+        if len(data_labels) != n_boxplots:
+            raise RuntimeError('Number of labels is not consistent with '
+                               'number of boxplots.')
+    else:
+        data_labels = n_boxplots*[None,]
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Set default color cycle
+    cycler_color = cycler.cycler('color',['#4477AA', '#EE6677', '#228833',
+                                          '#CCBB44', '#66CCEE', '#AA3377',
+                                          '#BBBBBB', '#000000'])
+    # Set default linestyle cycle
+    cycler_linestyle = cycler.cycler('linestyle',['-','--','-.'])
+    # Set default cycler
+    default_cycler = cycler_linestyle*cycler_color
+    plt.rc('axes', prop_cycle = default_cycler)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Check LaTeX availability
+    if not bool(shutil.which('latex')):
+        is_latex = False
+    # Set LaTeX font
+    if is_latex:
+        # Default LaTeX Computer Modern Roman
+        plt.rc('text', usetex=True)
+        plt.rc('font', **{'family': 'serif',
+                          'serif': ['Computer Modern Roman']})
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Create figure
+    figure = plt.figure()
+    # Set figure size (inches) - stdout print purpose
+    figure.set_figheight(6, forward=True)
+    figure.set_figwidth(6, forward=True)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Create axes
+    axes = figure.add_subplot(1, 1, 1)
+    # Set title
+    axes.set_title(tex_str(title, is_latex), fontsize=12, pad=10)
+    # Set axes labels
+    axes.set_xlabel(tex_str(x_label, is_latex), fontsize=12, labelpad=10)
+    axes.set_ylabel(tex_str(y_label, is_latex), fontsize=12, labelpad=10)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Set axes scales
+    if y_scale in ('linear', 'log'):
+        axes.set_yscale(y_scale)
+    # Set tick formatting functions
+    def intTickFormat(x, pos):
+        frmt = tex_str('{:2d}', is_latex)
+        return frmt.format(int(x))
+    def floatTickFormat(x, pos):
+        frmt = tex_str('{:3.1f}', is_latex)
+        return frmt.format(x)
+    def expTickFormat(x, pos):
+        frmt = tex_str('{:7.2e}', is_latex)
+        return frmt.format(x)
+    tick_formats = {'int': intTickFormat, 'float': floatTickFormat,
+                    'exp': expTickFormat}
+    # Set axes tick formats
+    if y_scale != 'log' and y_tick_format in ('int', 'float', 'exp'):
+        axes.yaxis.set_major_formatter(
+            ticker.FuncFormatter(tick_formats[y_tick_format]))
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Configure grid major lines
+    axes.grid(which='major', axis='both', linestyle='-', linewidth=0.5,
+              color='0.5', zorder=0)     
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Set median line properties
+    medianprops = dict(linestyle='-', linewidth=1, color='k')
+    # Set outliers properties
+    flierprops = dict(marker='o', markersize=5)
+    # Set mean line properties
+    meanlineprops = None
+    if is_mean_line:
+        meanlineprops = dict(linestyle='-', linewidth=1.5, color='#d62728')
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Plot set of box plots
+    bp = axes.boxplot(data_boxplots, labels=data_labels,
+                      flierprops=flierprops, medianprops=medianprops,
+                      showmeans=is_mean_line, meanline=is_mean_line,
+                      meanprops=meanlineprops, patch_artist=True,
+                      zorder=10)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Set box plots face color
+    for patch in bp['boxes']:
+        patch.set(facecolor='#4477AA')
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Plot mean line annotation
+    for i, line in enumerate(bp['means']):
+        # Get mean line coordinates
+        x0, _ = line.get_xydata()[0, :]
+        x1, y1 = line.get_xydata()[1, :]
+        # Set annotation text coordinates
+        x_text = x1 + 0.1*(x1 - x0)
+        y_text = y1
+        # Set annotation text
+        if is_latex:
+            text = '$\mu$'
+        else:
+            text = 'μ'
+        # Plot mean line annotation
+        axes.annotate(text, xy=(x_text, y_text), color='#d62728', va='center',
+                      size=12)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Set axes limits
+    if y_lims != (None, None):
+        axes.set_ylim(y_lims)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Return figure and axes handlers
+    return figure, axes
+# =============================================================================
+def save_figure(figure, filename, format='pdf', save_dir=None):
+    """Save Matplotlib figure.
+    
+    Parameters
+    ----------
+    figure : Matplotlib Figure
+        Figure.
+    filename : str
+        Figure name.
+    format : {'pdf', 'png'}, default='pdf'
+        File format.
+    save_dir : str, default=None
+        Directory where figure is saved. If None, then figure is saved in
+        current working directory.
+    """
+    # Set figure directory
+    if save_dir is None:
+        save_dir = os.getcwd()
+    else:
+        if not os.path.isdir(save_dir):
+            raise RuntimeError('The provided directory has not been found:'
+                               '\n\n' + save_dir)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Set figure path
+    filepath = os.path.join(save_dir, f'{str(filename)}.{format}')
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Set figure size (inches)
+    figure.set_figheight(3.6, forward=False)
+    figure.set_figwidth(3.6, forward=False)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Save figure
+    figure.savefig(filepath, transparent=False, dpi=300, bbox_inches='tight')
+# =============================================================================
+def tex_str(x, is_latex):
+    """Format string conveniently according with LaTeX rendering option.
+    
+    Parameters
+    ----------
+    x : {str, None}
+        String.
+    is_latex : bool
+        If False, then remove any leading or trailing dollar signs from string.
+        If True, then keep string unchanged.
+        
+    Returns
+    -------
+    new_x : {str, None}
+        Formatted string.
+    """
+    # Initialize formatted string
+    new_x = x
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Format string according with LaTeX rendering option
+    if new_x is None:
+        # Keep string unchanged
+        pass
+    elif isinstance(x, str):
+        if is_latex:
+            # Keep string unchanged
+            new_x = x
+        else:
+            # Remove any leading or trailing dollar signs
+            new_x = new_x.strip('$')
+    else:
+        raise RuntimeError(f'Input must be str or None, not {type(x)}.')
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    return new_x

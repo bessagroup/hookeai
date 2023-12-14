@@ -7,7 +7,8 @@ import os
 # Third-party
 import pytest
 # Local
-from src.vegapunk.ioput.iostandard import make_directory, new_file_path_with_int
+from src.vegapunk.ioput.iostandard import make_directory, \
+    new_file_path_with_int
 # =============================================================================
 #
 #                                                          Authorship & Credits
