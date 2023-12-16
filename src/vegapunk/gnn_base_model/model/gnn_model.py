@@ -667,6 +667,9 @@ class GNNEPDBaseModel(torch.nn.Module):
         edge_features_in : {torch.Tensor, None}
             Edges features input matrix stored as a torch.Tensor(2d) of shape
             (n_edges, n_features).
+        global_features_in : {torch.Tensor, None}
+            Global features input matrix stored as a torch.Tensor(2d) of shape
+            (1, n_features).
         edges_indexes : {torch.Tensor, None}
             Edges indexes matrix stored as torch.Tensor(2d) with shape
             (2, n_edges), where the i-th global is stored in
@@ -696,6 +699,10 @@ class GNNEPDBaseModel(torch.nn.Module):
             edge_features_in = graph.edge_attr.clone()
         else:
             edge_features_in = None
+        if isinstance(graph.global_features_matrix, torch.Tensor):
+            global_features_in = graph.global_features_matrix.clone()
+        else:
+            global_features_in = None
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Get graph edges indexes
         if isinstance(graph.edge_index, torch.Tensor):
@@ -707,14 +714,22 @@ class GNNEPDBaseModel(torch.nn.Module):
         if is_normalized:
             if node_features_in is not None and node_features_in.numel() > 0:
                 node_features_in = self.data_scaler_transform(
-                    tensor=node_features_in, features_type='node_features_in',
+                    tensor=node_features_in,
+                    features_type='node_features_in',
                     mode='normalize')
             if edge_features_in is not None:
                 edge_features_in = self.data_scaler_transform(
-                    tensor=edge_features_in, features_type='edge_features_in',
+                    tensor=edge_features_in,
+                    features_type='edge_features_in',
+                    mode='normalize')
+            if global_features_in is not None:
+                global_features_in = self.data_scaler_transform(
+                    tensor=global_features_in,
+                    features_type='global_features_in',
                     mode='normalize')
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        return node_features_in, edge_features_in, edges_indexes
+        return (node_features_in, edge_features_in, global_features_in,
+                edges_indexes)
     # -------------------------------------------------------------------------
     def get_output_features_from_graph(self, graph, is_normalized=False):
         """Get output features from graph.
@@ -732,23 +747,48 @@ class GNNEPDBaseModel(torch.nn.Module):
         node_features_out : {torch.Tensor, None}
             Nodes features output matrix stored as a torch.Tensor(2d) of shape
             (n_nodes, n_features).
+        edge_features_out : {torch.Tensor, None}
+            Edges features output matrix stored as a torch.Tensor(2d) of shape
+            (n_edges, n_features).
+        global_features_out : {torch.Tensor, None}
+            Global features output matrix stored as a torch.Tensor(2d) of shape
+            (1, n_features).
         """
         # Check input graph
         if not isinstance(graph, torch_geometric.data.Data):
             raise RuntimeError('Input graph is not torch_geometric.data.Data.')
-        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~       
         # Get features from graph
         if isinstance(graph.y, torch.Tensor):
             node_features_out = graph.y.clone()
         else:
             node_features_out = None
+        if isinstance(graph.edge_targets_matrix, torch.Tensor):
+            edge_features_out = graph.edge_targets_matrix.clone()
+        else:
+            edge_features_out = None
+        if isinstance(graph.global_targets_matrix, torch.Tensor):
+            global_features_out = graph.global_targets_matrix.clone()
+        else:
+            global_features_out = None
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Check consistency with simulator
         if (node_features_out is not None
                 and node_features_out.shape[1] != self._n_node_out):
             raise RuntimeError(f'Input graph ({node_features_out.shape[1]}) '
-                               f'and simulator ({self._n_node_in}) number of '
+                               f'and simulator ({self._n_node_out}) number of '
                                f'output node features are not consistent.')
+        if (edge_features_out is not None
+                and edge_features_out.shape[1] != self._n_edge_out):
+            raise RuntimeError(f'Input graph ({edge_features_out.shape[1]}) '
+                               f'and simulator ({self._n_edge_out}) number of '
+                               f'output edge features are not consistent.')
+        if (global_features_out is not None
+                and global_features_out.shape[1] != self._n_global_out):
+            raise RuntimeError(f'Input graph ({global_features_out.shape[1]}) '
+                               f'and simulator ({self._n_global_out}) number '
+                               f'of output global features are not '
+                               f'consistent.')
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~  
         # Normalize output features data
         if is_normalized:                
@@ -757,8 +797,18 @@ class GNNEPDBaseModel(torch.nn.Module):
                     tensor=node_features_out,
                     features_type='node_features_out',
                     mode='normalize')
+            if edge_features_out is not None:
+                edge_features_out = self.data_scaler_transform(
+                    tensor=edge_features_out,
+                    features_type='edge_features_out',
+                    mode='normalize')
+            if global_features_out is not None:
+                global_features_out = self.data_scaler_transform(
+                    tensor=global_features_out,
+                    features_type='global_features_out',
+                    mode='normalize')
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        return node_features_out
+        return node_features_out, edge_features_out, global_features_out
     # -------------------------------------------------------------------------
     def predict_node_output_features(self, input_graph, is_normalized=False):
         """Predict node output features.
@@ -786,8 +836,8 @@ class GNNEPDBaseModel(torch.nn.Module):
             self.check_normalized_return()
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Get features from input graph
-        node_features_in, edge_features_in, edges_indexes = \
-            self.get_input_features_from_graph(
+        node_features_in, edge_features_in, global_features_in, \
+            edges_indexes = self.get_input_features_from_graph(
                 input_graph, is_normalized=self.is_data_normalization)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Predict node output features
@@ -1127,7 +1177,10 @@ class GNNEPDBaseModel(torch.nn.Module):
         self._data_scalers = {}
         self._data_scalers['node_features_in'] = None
         self._data_scalers['edge_features_in'] = None
+        self._data_scalers['global_features_in'] = None
         self._data_scalers['node_features_out'] = None
+        self._data_scalers['edge_features_out'] = None
+        self._data_scalers['global_features_out'] = None
     # -------------------------------------------------------------------------
     def fit_data_scalers(self, dataset, is_verbose=False):
         """Fit model data scalers.
@@ -1163,10 +1216,22 @@ class GNNEPDBaseModel(torch.nn.Module):
         if self._n_edge_in > 0:
             scaler_edge_in = TorchStandardScaler(
                 n_features=self._n_edge_in, device_type=self._device_type)
+        scaler_global_in = None
+        if self._n_global_in > 0:
+            scaler_global_in = TorchStandardScaler(
+                n_features=self._n_global_in, device_type=self._device_type)
         scaler_node_out = None
         if self._n_node_out > 0:
             scaler_node_out = TorchStandardScaler(
                 n_features=self._n_node_out, device_type=self._device_type)
+        scaler_edge_out = None
+        if self._n_edge_out > 0:
+            scaler_edge_out = TorchStandardScaler(
+                n_features=self._n_edge_out, device_type=self._device_type)
+        scaler_global_out = None
+        if self._n_global_out > 0:
+            scaler_global_out = TorchStandardScaler(
+                n_features=self._n_global_out, device_type=self._device_type)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Get scaling parameters and fit data scalers: node input features
         if self._n_node_in > 0:
@@ -1180,12 +1245,30 @@ class GNNEPDBaseModel(torch.nn.Module):
                 dataset, features_type='edge_features_in',
                 n_features=self._n_edge_in)
             scaler_edge_in.set_mean_and_std(mean, std)
+        # Get scaling parameters and fit data scalers: global input features
+        if self._n_global_in > 0:
+            mean, std = graph_standard_partial_fit(
+                dataset, features_type='global_features_in',
+                n_features=self._n_edge_in)
+            scaler_global_in.set_mean_and_std(mean, std)
         # Get scaling parameters and fit data scalers: node output features
         if self._n_node_out > 0:
             mean, std = graph_standard_partial_fit(
                 dataset, features_type='node_features_out',
                 n_features=self._n_node_out)
             scaler_node_out.set_mean_and_std(mean, std)
+        # Get scaling parameters and fit data scalers: edge output features
+        if self._n_edge_out > 0:
+            mean, std = graph_standard_partial_fit(
+                dataset, features_type='edge_features_out',
+                n_features=self._n_edge_out)
+            scaler_edge_out.set_mean_and_std(mean, std)
+        # Get scaling parameters and fit data scalers: global output features
+        if self._n_global_out > 0:
+            mean, std = graph_standard_partial_fit(
+                dataset, features_type='global_features_out',
+                n_features=self._n_global_out)
+            scaler_global_out.set_mean_and_std(mean, std)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         if is_verbose:
             print('\n> Setting fitted standard scalers...\n')
@@ -1193,7 +1276,10 @@ class GNNEPDBaseModel(torch.nn.Module):
         # Set fitted data scalers
         self._data_scalers['node_features_in'] = scaler_node_in
         self._data_scalers['edge_features_in'] = scaler_edge_in
+        self._data_scalers['global_features_in'] = scaler_global_in
         self._data_scalers['node_features_out'] = scaler_node_out
+        self._data_scalers['edge_features_out'] = scaler_edge_out
+        self._data_scalers['global_features_out'] = scaler_global_out
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Update model initialization file with fitted data scalers
         self.save_model_init_file()
@@ -1206,11 +1292,17 @@ class GNNEPDBaseModel(torch.nn.Module):
         features_type : str
             Features for which data scaler is required:
             
-            'node_features_in'  : Node features input matrix
+            'node_features_in'    : Node features input matrix
             
-            'edge_features_in'  : Edge features input matrix
+            'edge_features_in'    : Edge features input matrix
             
-            'node_features_out' : Node features output matrix
+            'global_features_in'  : Global features input matrix
+            
+            'node_features_out'   : Node features output matrix
+
+            'edge_features_out'   : Edge features output matrix
+
+            'global_features_out' : Global features output matrix
 
         Returns
         -------
@@ -1240,11 +1332,17 @@ class GNNEPDBaseModel(torch.nn.Module):
         features_type : str
             Features for which data scaler is required:
             
-            'node_features_in'  : Node features input matrix
+            'node_features_in'    : Node features input matrix
             
-            'edge_features_in'  : Edge features input matrix
+            'edge_features_in'    : Edge features input matrix
             
-            'node_features_out' : Node features output matrix
+            'global_features_in'  : Global features input matrix
+            
+            'node_features_out'   : Node features output matrix
+
+            'edge_features_out'   : Edge features output matrix
+
+            'global_features_out' : Global features output matrix
 
         mode : {'normalize', 'denormalize'}, default=normalize
             Data scaling transformation type.
@@ -1602,11 +1700,17 @@ def graph_standard_partial_fit(dataset, features_type, n_features,
     features_type : str
         Features for which data scaler is required:
         
-        'node_features_in'  : Node features input matrix
+        'node_features_in'    : Node features input matrix
         
-        'edge_features_in'  : Edge features input matrix
+        'edge_features_in'    : Edge features input matrix
         
-        'node_features_out' : Node features output matrix
+        'global_features_in'  : Global features input matrix
+        
+        'node_features_out'   : Node features output matrix
+
+        'edge_features_out'   : Edge features output matrix
+
+        'global_features_out' : Global features output matrix
     
     n_features : int
         Number of features to standardize.
@@ -1643,13 +1747,32 @@ def graph_standard_partial_fit(dataset, features_type, n_features,
             raise RuntimeError('Graph sample must be instance of '
                                'torch_geometric.data.Data.')
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set features mapping
+        features_map = {'node_features_in': 'x',
+                        'edge_features_in': 'edge_attr',
+                        'global_features_in': 'global_features_matrix',
+                        'node_features_out': 'y',
+                        'edge_features_out': 'edge_targets_matrix',
+                        'global_features_out': 'global_targets_matrix'}
+        # Check sample graph feature
+        if features_map[features_type] not in pyg_graph.keys():
+            raise RuntimeError(f'Unknown or unexistent attribute '
+                               f'{features_map[features_type]} from graph '
+                               f'sample.')
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Get features tensor
         if features_type == 'node_features_in':
             features_tensor = pyg_graph.x
         elif features_type == 'edge_features_in':
             features_tensor = pyg_graph.edge_attr
+        elif features_type == 'global_features_in':
+            features_tensor = pyg_graph.global_features_matrix
         elif features_type == 'node_features_out':
             features_tensor = pyg_graph.y
+        elif features_type == 'edge_features_out':
+            features_tensor = pyg_graph.edge_targets_matrix
+        elif features_type == 'global_features_out':
+            features_tensor = pyg_graph.global_targets_matrix
         else:
             raise RuntimeError('Unknown features type.')
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
