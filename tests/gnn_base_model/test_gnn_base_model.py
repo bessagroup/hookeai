@@ -21,24 +21,27 @@ __status__ = 'Planning'
 # =============================================================================
 #
 # =============================================================================
-@pytest.mark.parametrize('n_node_in, n_node_out, n_edge_in, n_message_steps,'
-                         'n_hidden_layers, hidden_layer_size, model_name,'
-                         'is_data_normalization, pro_aggregation_scheme,'
-                         'hidden_activ_type, output_activ_type, device_type',
-                         [(2, 5, 4, 10, 2, 3, 'material_patch_model', True,
-                           'add', 'relu', 'identity', 'cpu'),
-                          (0, 5, 4, 10, 2, 3, 'material_patch_model', True,
-                           'add', 'relu', 'identity', 'cpu'),
-                          (2, 5, 0, 10, 2, 3, 'material_patch_model', True,
-                           'add', 'relu', 'identity', 'cpu'),
-                          ])
-def test_material_patch_model_init(n_node_in, n_node_out, n_edge_in,
-                                   n_message_steps, n_hidden_layers,
-                                   hidden_layer_size, model_name,
-                                   is_data_normalization,
-                                   pro_aggregation_scheme, hidden_activ_type,
-                                   output_activ_type, device_type, tmp_path):
-    """Test GNN-based material patch model constructor."""
+@pytest.mark.parametrize(
+    'n_node_in, n_node_out, n_edge_in, n_edge_out, n_global_in, n_global_out,'
+    'n_message_steps,'
+    'n_hidden_layers, hidden_layer_size, model_name,'
+    'is_data_normalization, pro_edge_to_node_aggr, pro_node_to_global_aggr,'
+    'hidden_activ_type, output_activ_type, device_type',
+    [(2, 5, 4, 3, 1, 2, 10, 2, 3,
+      'material_patch_model', True, 'add', 'add', 'relu', 'identity', 'cpu'),
+     (0, 5, 4, 0, 3, 0, 10, 2, 3,
+      'material_patch_model', True, 'add', 'add', 'relu', 'identity', 'cpu'),
+     (2, 5, 0, 0, 1, 4, 10, 2, 3,
+      'material_patch_model', True, 'add', 'add', 'relu', 'identity', 'cpu'),
+     ])
+def test_gnn_base_model_init(n_node_in, n_node_out, n_edge_in, n_edge_out,
+                             n_global_in, n_global_out, n_message_steps,
+                             n_hidden_layers, hidden_layer_size, model_name,
+                             is_data_normalization,
+                             pro_edge_to_node_aggr, pro_node_to_global_aggr,
+                             hidden_activ_type, output_activ_type, device_type,
+                             tmp_path):
+    """Test GNN-based EPD model constructor."""
     # Initialize errors
     errors = []
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -47,7 +50,8 @@ def test_material_patch_model_init(n_node_in, n_node_out, n_edge_in,
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Build GNN-based material patch model
     model_init_args = dict(n_node_in=n_node_in, n_node_out=n_node_out,
-                           n_edge_in=n_edge_in,
+                           n_edge_in=n_edge_in, n_edge_out=n_edge_out,
+                           n_global_in=n_global_in, n_global_out=n_global_out,
                            n_message_steps=n_message_steps,
                            enc_n_hidden_layers=n_hidden_layers,
                            pro_n_hidden_layers=n_hidden_layers,
@@ -56,17 +60,26 @@ def test_material_patch_model_init(n_node_in, n_node_out, n_edge_in,
                            model_directory=str(model_directory),
                            model_name=model_name,
                            is_data_normalization=is_data_normalization,
-                           pro_aggregation_scheme=pro_aggregation_scheme,
+                           pro_edge_to_node_aggr=pro_edge_to_node_aggr,
+                           pro_node_to_global_aggr=pro_node_to_global_aggr,
                            enc_node_hidden_activ_type=hidden_activ_type,
                            enc_node_output_activ_type=output_activ_type,
                            enc_edge_hidden_activ_type=hidden_activ_type,
                            enc_edge_output_activ_type=output_activ_type,
+                           enc_global_hidden_activ_type=hidden_activ_type,
+                           enc_global_output_activ_type=output_activ_type,
                            pro_node_hidden_activ_type=hidden_activ_type,
                            pro_node_output_activ_type=output_activ_type,
                            pro_edge_hidden_activ_type=hidden_activ_type,
                            pro_edge_output_activ_type=output_activ_type,
+                           pro_global_hidden_activ_type=hidden_activ_type,
+                           pro_global_output_activ_type=output_activ_type,
                            dec_node_hidden_activ_type=hidden_activ_type,
                            dec_node_output_activ_type=output_activ_type,
+                           dec_edge_hidden_activ_type=hidden_activ_type,
+                           dec_edge_output_activ_type=output_activ_type,
+                           dec_global_hidden_activ_type=hidden_activ_type,
+                           dec_global_output_activ_type=output_activ_type,
                            device_type=device_type)
     model = GNNEPDBaseModel(**model_init_args)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -74,6 +87,9 @@ def test_material_patch_model_init(n_node_in, n_node_out, n_edge_in,
     if not all([model._n_node_in == n_node_in,
                 model._n_node_out == n_node_out,
                 model._n_edge_in == n_edge_in,
+                model._n_edge_out == n_edge_out,
+                model._n_global_in == n_global_in,
+                model._n_global_out == n_global_out,
                 model._n_message_steps == n_message_steps,
                 model._enc_n_hidden_layers == n_hidden_layers,
                 model._pro_n_hidden_layers == n_hidden_layers,
@@ -82,17 +98,26 @@ def test_material_patch_model_init(n_node_in, n_node_out, n_edge_in,
                 model.model_directory == str(tmp_path),
                 model.model_name == model_name,
                 model.is_data_normalization == is_data_normalization,
-                model._pro_aggregation_scheme == pro_aggregation_scheme,
+                model._pro_edge_to_node_aggr == pro_edge_to_node_aggr,
+                model._pro_node_to_global_aggr == pro_node_to_global_aggr,
                 model._enc_node_hidden_activ_type == hidden_activ_type,
                 model._enc_node_output_activ_type == output_activ_type,
                 model._enc_edge_hidden_activ_type == hidden_activ_type,
                 model._enc_edge_output_activ_type == output_activ_type,
+                model._enc_global_hidden_activ_type == hidden_activ_type,
+                model._enc_global_output_activ_type == output_activ_type,
                 model._pro_node_hidden_activ_type == hidden_activ_type,
                 model._pro_node_output_activ_type == output_activ_type,
                 model._pro_edge_hidden_activ_type == hidden_activ_type,
                 model._pro_edge_output_activ_type == output_activ_type,
+                model._pro_global_hidden_activ_type == hidden_activ_type,
+                model._pro_global_output_activ_type == output_activ_type,
                 model._dec_node_hidden_activ_type == hidden_activ_type,
                 model._dec_node_output_activ_type == output_activ_type,
+                model._dec_edge_hidden_activ_type == hidden_activ_type,
+                model._dec_edge_output_activ_type == output_activ_type,
+                model._dec_global_hidden_activ_type == hidden_activ_type,
+                model._dec_global_output_activ_type == output_activ_type,
                 model._device_type == device_type]):
         errors.append('One or more attributes of GNN-based material patch '
                       'model class were not properly set.')
@@ -124,27 +149,25 @@ def test_material_patch_model_init(n_node_in, n_node_out, n_edge_in,
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     assert not errors, "Errors:\n{}".format("\n".join(errors))
 # -----------------------------------------------------------------------------
-@pytest.mark.parametrize('n_node_in, n_node_out, n_edge_in, n_message_steps,'
-                         'n_hidden_layers, hidden_layer_size, model_name,'
-                         'is_data_normalization, device_type',
-                         [(2, 5, 4, 10, 2, 3, 'material_patch_model', True,
-                           'cpu'),
-                          (2, 0, 4, 10, 2, 3, 'material_patch_model', True,
-                           'cpu'),
-                          ])
-def test_material_patch_model_init_invalid(n_node_in, n_node_out, n_edge_in,
-                                           n_message_steps, n_hidden_layers,
-                                           hidden_layer_size, model_name,
-                                           is_data_normalization, device_type,
-                                           tmp_path):
-    """Test detection of invalid GNN-based material patch model constructor."""
+@pytest.mark.parametrize(
+    'n_node_in, n_node_out, n_edge_in, n_edge_out, n_global_in, n_global_out,'
+    'n_message_steps, n_hidden_layers, hidden_layer_size, model_name,'
+    'is_data_normalization, device_type',
+    [(2, 5, 4, 3, 1, 2, 10, 2, 3, 'material_patch_model', True, 'cpu'),
+     ])
+def test_gnn_base_model_init_invalid(
+    n_node_in, n_node_out, n_edge_in, n_edge_out, n_global_in, n_global_out,
+    n_message_steps, n_hidden_layers, hidden_layer_size, model_name,
+    is_data_normalization, device_type, tmp_path):
+    """Test detection of invalid GNN-based EPD model constructor."""
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set model directory
     model_directory = str(tmp_path)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set valid GNN-based material patch model initialization parameters
     model_init_args = dict(n_node_in=n_node_in, n_node_out=n_node_out,
-                           n_edge_in=n_edge_in,
+                           n_edge_in=n_edge_in, n_edge_out=n_edge_out,
+                           n_global_in=n_global_in, n_global_out=n_global_out,
                            n_message_steps=n_message_steps,
                            enc_n_hidden_layers=n_hidden_layers,
                            pro_n_hidden_layers=n_hidden_layers,
@@ -171,15 +194,15 @@ def test_material_patch_model_init_invalid(n_node_in, n_node_out, n_edge_in,
         test_init_args['device_type'] = 'unknown_device_type'
         _ = GNNEPDBaseModel(**test_init_args)
 # -----------------------------------------------------------------------------
-def test_init_from_file(gnn_material_simulator_norm):
-    """Test GNN-based material patch model from initialization file."""
+def test_init_from_file(gnn_epd_base_model_norm):
+    """Test GNN-based EPD model from initialization file."""
     # Initialize errors
     errors = []
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Get model directory
-    model_directory = gnn_material_simulator_norm.model_directory
+    model_directory = gnn_epd_base_model_norm.model_directory
     # Save material patch model initialization file
-    gnn_material_simulator_norm.save_model_init_file()
+    gnn_epd_base_model_norm.save_model_init_file()
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Initialize GNN-based material patch model from initialization file
     model = GNNEPDBaseModel.init_model_from_file(model_directory)
@@ -191,18 +214,18 @@ def test_init_from_file(gnn_material_simulator_norm):
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Check if original and initialized model from file share the same
     # attributes 
-    if vars(model).keys() != vars(gnn_material_simulator_norm).keys():
+    if vars(model).keys() != vars(gnn_epd_base_model_norm).keys():
         errors.append('Original and initialized model from file do not share '
                       'the same attributes.')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     assert not errors, "Errors:\n{}".format("\n".join(errors))
 # -----------------------------------------------------------------------------
-def test_init_from_file_invalid(gnn_material_simulator_norm):
+def test_init_from_file_invalid(gnn_epd_base_model_norm):
     """Test detection of invalid model constructor from initialization file."""
     # Get model directory
-    model_directory = gnn_material_simulator_norm.model_directory
+    model_directory = gnn_epd_base_model_norm.model_directory
     # Save material patch model initialization file
-    gnn_material_simulator_norm.save_model_init_file()
+    gnn_epd_base_model_norm.save_model_init_file()
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     with pytest.raises(RuntimeError):
         # Test detection of unexistent model directory
@@ -215,10 +238,10 @@ def test_init_from_file_invalid(gnn_material_simulator_norm):
         # Test detection of unexistent model initialization file
         _ = GNNEPDBaseModel.init_model_from_file(model_directory)
 # -----------------------------------------------------------------------------
-def test_save_model_init_file(gnn_material_simulator):
+def test_save_model_init_file(gnn_epd_base_model):
     """Test save of model initialization file."""
     # Set GNN-based material patch model
-    model = gnn_material_simulator
+    model = gnn_epd_base_model
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Save model initialization file
     model.save_model_init_file()
@@ -227,10 +250,10 @@ def test_save_model_init_file(gnn_material_simulator):
                                        'model_init_file' + '.pkl')), \
         'GNN-based material patch model initialization file was not saved.'
 # -----------------------------------------------------------------------------
-def test_save_model_init_file_invalid(gnn_material_simulator):
+def test_save_model_init_file_invalid(gnn_epd_base_model):
     """Test detection of failed save of model initialization file."""
     # Set GNN-based material patch model
-    model = gnn_material_simulator
+    model = gnn_epd_base_model
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     with pytest.raises(RuntimeError):
         # Test detection of unexistent material patch model directory
@@ -248,10 +271,13 @@ def test_get_input_features_from_graph(graph_patch_data_2d, tmp_path):
     # Get material patch graph input features matrices
     node_features_in = graph_patch_data_2d.get_node_features_matrix()
     edge_features_in = graph_patch_data_2d.get_edge_features_matrix()
+    global_features_in = graph_patch_data_2d.get_global_features_matrix()
     # Get material patch graph edges indexes
     edges_indexes = graph_patch_data_2d.get_graph_edges_indexes()
-    # Get material patch graph nodes targets matrix
+    # Get material patch graph targets matrices
     node_targets_matrix = graph_patch_data_2d.get_node_targets_matrix()
+    edge_targets_matrix = graph_patch_data_2d.get_edge_targets_matrix()
+    global_targets_matrix = graph_patch_data_2d.get_global_targets_matrix()
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Get PyG homogeneous graph data object
     pyg_graph = graph_patch_data_2d.get_torch_data_object()
@@ -260,6 +286,9 @@ def test_get_input_features_from_graph(graph_patch_data_2d, tmp_path):
     model_init_args = dict(n_node_in=node_features_in.shape[1],
                            n_node_out=node_targets_matrix.shape[1],
                            n_edge_in=edge_features_in.shape[1],
+                           n_edge_out=edge_targets_matrix.shape[1],
+                           n_global_in=global_features_in.shape[1],
+                           n_global_out=global_targets_matrix.shape[1],
                            n_message_steps=2, enc_n_hidden_layers=2,
                            pro_n_hidden_layers=3, dec_n_hidden_layers=4,
                            hidden_layer_size=2,
@@ -295,8 +324,11 @@ def test_get_input_features_from_graph_invalid(graph_patch_data_2d, tmp_path):
     # Get material patch graph input features matrices
     node_features_in = graph_patch_data_2d.get_node_features_matrix()
     edge_features_in = graph_patch_data_2d.get_edge_features_matrix()
-    # Get material patch graph nodes targets matrix
+    global_features_in = graph_patch_data_2d.get_global_features_matrix()
+    # Get material patch graph targets matrices
     node_targets_matrix = graph_patch_data_2d.get_node_targets_matrix()
+    edge_targets_matrix = graph_patch_data_2d.get_edge_targets_matrix()
+    global_targets_matrix = graph_patch_data_2d.get_global_targets_matrix()
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Get PyG homogeneous graph data object
     pyg_graph = graph_patch_data_2d.get_torch_data_object()
@@ -305,6 +337,9 @@ def test_get_input_features_from_graph_invalid(graph_patch_data_2d, tmp_path):
     model_init_args = dict(n_node_in=node_features_in.shape[1],
                            n_node_out=node_targets_matrix.shape[1],
                            n_edge_in=edge_features_in.shape[1],
+                           n_edge_out=edge_targets_matrix.shape[1],
+                           n_global_in=global_features_in.shape[1],
+                           n_global_out=global_targets_matrix.shape[1],
                            n_message_steps=2, enc_n_hidden_layers=2,
                            pro_n_hidden_layers=3, dec_n_hidden_layers=4,
                            hidden_layer_size=2,
@@ -342,8 +377,11 @@ def test_get_output_features_from_graph(graph_patch_data_2d, tmp_path):
     # Get material patch graph input features matrices
     node_features_in = graph_patch_data_2d.get_node_features_matrix()
     edge_features_in = graph_patch_data_2d.get_edge_features_matrix()
-    # Get material patch graph nodes targets matrix
+    global_features_in = graph_patch_data_2d.get_global_features_matrix()
+    # Get material patch graph targets matrices
     node_targets_matrix = graph_patch_data_2d.get_node_targets_matrix()
+    edge_targets_matrix = graph_patch_data_2d.get_edge_targets_matrix()
+    global_targets_matrix = graph_patch_data_2d.get_global_targets_matrix()
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Get PyG homogeneous graph data object
     pyg_graph = graph_patch_data_2d.get_torch_data_object()
@@ -352,6 +390,9 @@ def test_get_output_features_from_graph(graph_patch_data_2d, tmp_path):
     model_init_args = dict(n_node_in=node_features_in.shape[1],
                            n_node_out=node_targets_matrix.shape[1],
                            n_edge_in=edge_features_in.shape[1],
+                           n_edge_out=edge_targets_matrix.shape[1],
+                           n_global_in=global_features_in.shape[1],
+                           n_global_out=global_targets_matrix.shape[1],
                            n_message_steps=2, enc_n_hidden_layers=2,
                            pro_n_hidden_layers=3, dec_n_hidden_layers=4,
                            hidden_layer_size=2,
@@ -374,19 +415,25 @@ def test_get_output_features_from_graph(graph_patch_data_2d, tmp_path):
 # -----------------------------------------------------------------------------
 def test_get_output_features_from_graph_invalid(graph_patch_data_2d, tmp_path):
     """Test invalid extraction of output features from material patch graph."""
-    # Get material patch graph output features matrices
+    # Get material patch graph input features matrices
     node_features_in = graph_patch_data_2d.get_node_features_matrix()
     edge_features_in = graph_patch_data_2d.get_edge_features_matrix()
+    global_features_in = graph_patch_data_2d.get_global_features_matrix()
     # Get material patch graph nodes targets matrix
     node_targets_matrix = graph_patch_data_2d.get_node_targets_matrix()
+    edge_targets_matrix = graph_patch_data_2d.get_edge_targets_matrix()
+    global_targets_matrix = graph_patch_data_2d.get_global_targets_matrix()
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Get PyG homogeneous graph data object
-    pyg_graph = graph_patch_data_2d.get_torch_data_object()
+    _ = graph_patch_data_2d.get_torch_data_object()
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set valid GNN-based material patch model initialization parameters
     model_init_args = dict(n_node_in=node_features_in.shape[1],
                            n_node_out=node_targets_matrix.shape[1],
                            n_edge_in=edge_features_in.shape[1],
+                           n_edge_out=edge_targets_matrix.shape[1],
+                           n_global_in=global_features_in.shape[1],
+                           n_global_out=global_targets_matrix.shape[1],
                            n_message_steps=2, enc_n_hidden_layers=2,
                            pro_n_hidden_layers=3, dec_n_hidden_layers=4,
                            hidden_layer_size=2,
@@ -409,13 +456,22 @@ def test_fit_data_scalers(batch_graph_patch_data_2d, tmp_path):
         batch_graph_patch_data_2d[0].get_node_features_matrix().shape[1]
     n_node_out = \
         batch_graph_patch_data_2d[0].get_node_targets_matrix().shape[1]
-    # Get number of edge input features
+    # Get number of edge input and output features
     n_edge_in = \
         batch_graph_patch_data_2d[0].get_edge_features_matrix().shape[1]
+    n_edge_out = \
+        batch_graph_patch_data_2d[0].get_edge_targets_matrix().shape[1]
+    # Get number of global input and output features
+    n_global_in = \
+        batch_graph_patch_data_2d[0].get_global_features_matrix().shape[1]
+    n_global_out = \
+        batch_graph_patch_data_2d[0].get_global_targets_matrix().shape[1]
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Build GNN-based material patch model
     model_init_args = dict(n_node_in=n_node_in, n_node_out=n_node_out,
-                           n_edge_in=n_edge_in, n_message_steps=2,
+                           n_edge_in=n_edge_in, n_edge_out=n_edge_out,
+                           n_global_in=n_global_in, n_global_out=n_global_out,
+                           n_message_steps=2,
                            enc_n_hidden_layers=2, pro_n_hidden_layers=3,
                            dec_n_hidden_layers=4, hidden_layer_size=2,
                            model_directory=str(tmp_path),
@@ -445,10 +501,10 @@ def test_fit_data_scalers(batch_graph_patch_data_2d, tmp_path):
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     assert not errors, "Errors:\n{}".format("\n".join(errors))
 # -----------------------------------------------------------------------------
-def test_get_fitted_data_scaler_invalid(gnn_material_simulator_norm):
+def test_get_fitted_data_scaler_invalid(gnn_epd_base_model_norm):
     """Test GNN-based material patch model fitted data scaler getter."""
     # Set GNN-based material patch model
-    model = gnn_material_simulator_norm
+    model = gnn_epd_base_model_norm
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     with pytest.raises(RuntimeError):
         # Test unknown data scaler
@@ -458,21 +514,21 @@ def test_get_fitted_data_scaler_invalid(gnn_material_simulator_norm):
         model._data_scalers['node_features_in'] = None
         _ = model.get_fitted_data_scaler(features_type='node_features_in')
 # -----------------------------------------------------------------------------
-def test_data_scaler_transform(gnn_material_simulator_norm,
+def test_data_scaler_transform(gnn_epd_base_model_norm,
                                batch_graph_patch_data_2d):
     """Test data scaling operation on features PyTorch tensor."""
     # Initialize errors
     errors = []
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set GNN-based material patch model with data normalization
-    model = gnn_material_simulator_norm
+    model = gnn_epd_base_model_norm
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Pick material patch graph data
     graph_data = batch_graph_patch_data_2d[0]
     # Get PyG homogeneous graph data object
     pyg_graph = graph_data.get_torch_data_object()
     # Get material patch graph feature matrices
-    node_features_in, edge_features_in, _ = \
+    node_features_in, edge_features_in, global_features_in = \
         model.get_input_features_from_graph(pyg_graph)
     node_features_out = model.get_output_features_from_graph(pyg_graph)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -514,14 +570,14 @@ def test_data_scaler_transform(gnn_material_simulator_norm,
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     assert not errors, "Errors:\n{}".format("\n".join(errors))
 # -----------------------------------------------------------------------------
-def test_load_model_data_scalers_from_file(gnn_material_simulator,
-                                           gnn_material_simulator_norm):
+def test_load_model_data_scalers_from_file(gnn_epd_base_model,
+                                           gnn_epd_base_model_norm):
     """Test loading of data scalers from model initialization file."""
     # Initialize errors
     errors = []
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~    
     # Check model with and without data normalization
-    for model in (gnn_material_simulator, gnn_material_simulator_norm):
+    for model in (gnn_epd_base_model, gnn_epd_base_model_norm):
         # Save model data scalers
         saved_data_scalers = model._data_scalers
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -550,14 +606,13 @@ def test_load_model_data_scalers_from_file(gnn_material_simulator,
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     assert not errors, "Errors:\n{}".format("\n".join(errors))
 # -----------------------------------------------------------------------------
-def test_load_model_data_scalers_from_file_invalid(
-        gnn_material_simulator_norm):
+def test_load_model_data_scalers_from_file_invalid(gnn_epd_base_model_norm):
     """Test invalid loading of data scalers from model initialization file."""
 
     # Set GNN-based material patch model with data normalization
-    model = gnn_material_simulator_norm
+    model = gnn_epd_base_model_norm
     # Get model directory
-    model_directory = gnn_material_simulator_norm.model_directory
+    model_directory = gnn_epd_base_model_norm.model_directory
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     with pytest.raises(RuntimeError):
         # Remove model initialization file
@@ -573,10 +628,10 @@ def test_load_model_data_scalers_from_file_invalid(
         # Test detection of unexistent model initialization file
         _ = model.load_model_data_scalers_from_file()
 # -----------------------------------------------------------------------------
-def test_check_normalized_return(gnn_material_simulator):
+def test_check_normalized_return(gnn_epd_base_model):
     """Test detection of unfitted model data scalers."""
     # Set GNN-based material patch model
-    model = gnn_material_simulator
+    model = gnn_epd_base_model
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     with pytest.raises(RuntimeError):
         # Test unknown data scaler
@@ -596,17 +651,24 @@ def test_get_input_features_from_graph_norm(batch_graph_patch_data_2d,
     # Get material patch graph input features matrices
     node_features_in = graph_data.get_node_features_matrix()
     edge_features_in = graph_data.get_edge_features_matrix()
+    global_features_in = graph_data.get_edge_features_matrix()
     # Get material patch graph edges indexes
     edges_indexes = graph_data.get_graph_edges_indexes()
     # Get number of node input and output features
     n_node_in = node_features_in.shape[1]
     n_node_out = graph_data.get_node_targets_matrix().shape[1]
-    # Get number of edge input features
+    # Get number of edge input and output features
     n_edge_in = edge_features_in.shape[1]
+    n_edge_out = graph_data.get_edge_targets_matrix().shape[1]
+    # Get number of global input and output features
+    n_global_in = global_features_in.shape[1]
+    n_global_out = graph_data.get_global_targets_matrix().shape[1]
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Build GNN-based material patch model
     model_init_args = dict(n_node_in=n_node_in, n_node_out=n_node_out,
-                           n_edge_in=n_edge_in, n_message_steps=2,
+                           n_edge_in=n_edge_in, n_edge_out=n_edge_out,
+                           n_global_in=n_global_in, n_global_out=n_global_out,
+                           n_message_steps=2,
                            enc_n_hidden_layers=2, pro_n_hidden_layers=3,
                            dec_n_hidden_layers=4, hidden_layer_size=2,
                            model_directory=str(tmp_path),
@@ -661,19 +723,22 @@ def test_get_output_features_from_graph_norm(batch_graph_patch_data_2d,
     # Get material patch graph input features matrices
     node_features_in = graph_data.get_node_features_matrix()
     edge_features_in = graph_data.get_edge_features_matrix()
-    # Get material patch graph nodes targets matrix
+    global_features_in = graph_data.get_global_features_matrix()
+    # Get material patch graph targets matrices
     node_targets_matrix = graph_data.get_node_targets_matrix()
-    # Get number of node input and output features
-    n_node_in = node_features_in.shape[1]
-    n_node_out = graph_data.get_node_targets_matrix().shape[1]
-    # Get number of edge input features
-    n_edge_in = edge_features_in.shape[1]
+    edge_targets_matrix = graph_data.get_edge_targets_matrix()
+    global_targets_matrix = graph_data.get_global_targets_matrix()
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Build GNN-based material patch model
-    model_init_args = dict(n_node_in=n_node_in, n_node_out=n_node_out,
-                           n_edge_in=n_edge_in, n_message_steps=2,
-                           enc_n_hidden_layers=2, pro_n_hidden_layers=3,
-                           dec_n_hidden_layers=4, hidden_layer_size=2,
+    model_init_args = dict(n_node_in=node_features_in.shape[1],
+                           n_node_out=node_targets_matrix.shape[1],
+                           n_edge_in=edge_features_in.shape[1],
+                           n_edge_out=edge_targets_matrix.shape[1],
+                           n_global_in=global_features_in.shape[1],
+                           n_global_out=global_targets_matrix.shape[1],
+                           n_message_steps=2, enc_n_hidden_layers=2,
+                           pro_n_hidden_layers=3, dec_n_hidden_layers=4,
+                           hidden_layer_size=2,
                            model_directory=str(tmp_path),
                            is_data_normalization=True)
     model = GNNEPDBaseModel(**model_init_args)
@@ -708,13 +773,14 @@ def test_save_and_load_model_state(tmp_path):
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set GNN-based material patch model initialization parameters
     model_init_args = dict(n_node_in=2, n_node_out=5, n_edge_in=3,
+                           n_edge_out=4, n_global_in=3, n_global_out=2,
                            n_message_steps=2, enc_n_hidden_layers=2,
                            pro_n_hidden_layers=3, dec_n_hidden_layers=4,
                            hidden_layer_size=2, model_directory=str(tmp_path),
                            model_name='material_patch_model',
                            is_data_normalization=True)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Build GNN-based material patch model
+    # Build GNN-based EPD model
     model = GNNEPDBaseModel(**model_init_args)
     # Get model state
     saved_state_dict = model.state_dict()
@@ -726,14 +792,14 @@ def test_save_and_load_model_state(tmp_path):
     loaded_state_dict = model.state_dict()
     # Check loaded model state epoch
     if loaded_epoch is not None:
-        errors.append('GNN-based material patch model unknown epoch was not '
+        errors.append('GNN-based EPD model unknown epoch was not '
                       'properly recovered from file.')
     # Check loaded model state parameters
     if str(saved_state_dict) != str(loaded_state_dict):
-        errors.append('GNN-based material patch model state was not properly'
+        errors.append('GNN-based EPD model state was not properly'
                       'recovered from file.')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Build GNN-based material patch model
+    # Build GNN-based EPD model
     model = GNNEPDBaseModel(**model_init_args)
     # Get model state
     saved_state_dict_0 = model.state_dict()
@@ -746,15 +812,15 @@ def test_save_and_load_model_state(tmp_path):
     loaded_state_dict_0 = model.state_dict()
     # Check loaded model state epoch
     if loaded_epoch != 0:
-        errors.append('GNN-based material patch model initial epoch '
+        errors.append('GNN-based EPD model initial epoch '
                       'was not properly recovered from file.')
     # Check loaded model state parameters
     if str(saved_state_dict_0) != str(loaded_state_dict_0):
-        errors.append('GNN-based material patch model initial state was not '
+        errors.append('GNN-based EPD model initial state was not '
                       'properly recovered from file.')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Build GNN-based material patch model (reinitializing parameters to
-    # emulate parameters update)
+    # Build GNN-based EPD model (reinitializing parameters to emulate
+    # parameters update)
     model = GNNEPDBaseModel(**model_init_args)
     # Get model state
     saved_state_dict_1 = model.state_dict()
@@ -767,11 +833,11 @@ def test_save_and_load_model_state(tmp_path):
     loaded_state_dict_1 = model.state_dict()
     # Check loaded model state epoch
     if loaded_epoch != 1:
-        errors.append('GNN-based material patch model first epoch '
+        errors.append('GNN-based EPD model first epoch '
                       'was not properly recovered from file.')
     # Check loaded model state parameters
     if str(saved_state_dict_1) != str(loaded_state_dict_1):
-        errors.append('GNN-based material patch model first epoch '
+        errors.append('GNN-based EPD model first epoch '
                       'state was not properly recovered from file.')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Load material patch model state from file
@@ -781,11 +847,11 @@ def test_save_and_load_model_state(tmp_path):
     loaded_state_dict_0 = model.state_dict()
     # Check loaded model state epoch
     if loaded_epoch != 0:
-        errors.append('GNN-based material patch model old epoch '
+        errors.append('GNN-based EPD model old epoch '
                       'was not properly recovered from file.')
     # Check loaded model state parameters
     if str(saved_state_dict_0) != str(loaded_state_dict_0):
-        errors.append('GNN-based material patch model old epoch '
+        errors.append('GNN-based EPD model old epoch '
                       'state was not properly recovered from file.')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Load material patch model state from file
@@ -794,11 +860,11 @@ def test_save_and_load_model_state(tmp_path):
     loaded_state_dict_1 = model.state_dict()
     # Check loaded model state epoch
     if loaded_epoch != 1:
-        errors.append('GNN-based material patch model latest epoch '
+        errors.append('GNN-based EPD model latest epoch '
                       'was not properly recovered from file.')
     # Check loaded model state parameters
     if str(saved_state_dict_1) != str(loaded_state_dict_1):
-        errors.append('GNN-based material patch model latest epoch '
+        errors.append('GNN-based EPD model latest epoch '
                       'state was not properly recovered from file.')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Load material patch model state from file
@@ -807,11 +873,11 @@ def test_save_and_load_model_state(tmp_path):
     loaded_state_dict_best = model.state_dict()
     # Check loaded model state epoch
     if loaded_epoch != 1:
-        errors.append('GNN-based material patch model best epoch '
+        errors.append('GNN-based EPD model best epoch '
                       'was not properly recovered from file.')
     # Check loaded model state parameters
     if str(saved_state_dict_1) != str(loaded_state_dict_best):
-        errors.append('GNN-based material patch model best epoch '
+        errors.append('GNN-based EPD model best epoch '
                       'state was not properly recovered from file.')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Load material patch model state from file
@@ -821,26 +887,27 @@ def test_save_and_load_model_state(tmp_path):
     loaded_state_dict_0 = model.state_dict()
     # Check loaded model state epoch
     if loaded_epoch != 0:
-        errors.append('GNN-based material patch model old epoch '
+        errors.append('GNN-based EPD model old epoch '
                       'was not properly recovered from file.')
     # Check loaded model state parameters
     if str(saved_state_dict_0) != str(loaded_state_dict_0):
-        errors.append('GNN-based material patch model old epoch '
+        errors.append('GNN-based EPD model old epoch '
                       'state was not properly recovered from file.')   
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     assert not errors, "Errors:\n{}".format("\n".join(errors))
 # -----------------------------------------------------------------------------
 def test_save_and_load_model_state_invalid(tmp_path):
     """Test detection of failed save and load material patch model state."""
-    # Set GNN-based material patch model initialization parameters
+    # Set GNN-based EPD model initialization parameters
     model_init_args = dict(n_node_in=2, n_node_out=5, n_edge_in=3,
-                        n_message_steps=2, enc_n_hidden_layers=2,
-                        pro_n_hidden_layers=3, dec_n_hidden_layers=4,
-                        hidden_layer_size=2, model_directory=str(tmp_path),
-                        model_name='material_patch_model',
-                        is_data_normalization=True)
+                           n_edge_out=4, n_global_in=3, n_global_out=2,
+                           n_message_steps=2, enc_n_hidden_layers=2,
+                           pro_n_hidden_layers=3, dec_n_hidden_layers=4,
+                           hidden_layer_size=2, model_directory=str(tmp_path),
+                           model_name='material_patch_model',
+                           is_data_normalization=True)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Build GNN-based material patch model
+    # Build GNN-based EPD model
     model = GNNEPDBaseModel(**model_init_args)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     with pytest.raises(RuntimeError):
@@ -876,7 +943,7 @@ def test_save_and_load_model_state_invalid(tmp_path):
                           ])
 def test_model_forward_propagation(batch_graph_patch_data_2d, tmp_path,
                                    is_data_normalization, is_normalized):
-    """Test GNN-based material patch model forward propagation."""
+    """Test GNN-based EPD model forward propagation."""
     # Initialize errors
     errors = []
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -885,17 +952,24 @@ def test_model_forward_propagation(batch_graph_patch_data_2d, tmp_path,
     # Get material patch graph input features matrices
     node_features_in = graph_data.get_node_features_matrix()
     edge_features_in = graph_data.get_edge_features_matrix()
+    global_features_in = graph_data.get_global_features_matrix()
     # Get number of nodes
     n_nodes = node_features_in.shape[0]
     # Get number of node input and output features
     n_node_in = node_features_in.shape[1]
     n_node_out = graph_data.get_node_targets_matrix().shape[1]
-    # Get number of edge input features
+    # Get number of edge input and output features
     n_edge_in = edge_features_in.shape[1]
+    n_edge_out = graph_data.get_edge_targets_matrix().shape[1]
+    # Get number of global input and output features
+    n_global_in = global_features_in.shape[1]
+    n_global_out = graph_data.get_global_targets_matrix().shape[1]
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Set GNN-based material patch model initialization parameters
+    # Set GNN-based EPD model initialization parameters
     model_init_args = dict(n_node_in=n_node_in, n_node_out=n_node_out,
-                           n_edge_in=n_edge_in, n_message_steps=2,
+                           n_edge_in=n_edge_in, n_edge_out=n_edge_out,
+                           n_global_in=n_global_in, n_global_out=n_global_out,
+                           n_message_steps=2,
                            enc_n_hidden_layers=2, pro_n_hidden_layers=3,
                            dec_n_hidden_layers=4, hidden_layer_size=2,
                            model_directory=str(tmp_path),
@@ -904,7 +978,7 @@ def test_model_forward_propagation(batch_graph_patch_data_2d, tmp_path,
     # Get PyG homogeneous graph data object
     pyg_graph = graph_data.get_torch_data_object()
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Build GNN-based material patch model
+    # Build GNN-based EPD model
     model = GNNEPDBaseModel(**model_init_args)    
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Data features normalization
@@ -936,23 +1010,30 @@ def test_model_forward_propagation(batch_graph_patch_data_2d, tmp_path,
 def test_model_forward_propagation_invalid(batch_graph_patch_data_2d, tmp_path,
                                            is_data_normalization,
                                            is_normalized):
-    """Test GNN-based material patch model forward invalid requests."""
+    """Test GNN-based EPD model forward invalid requests."""
     # Pick material patch graph data
     graph_data = batch_graph_patch_data_2d[0]
     # Get material patch graph input features matrices
     node_features_in = graph_data.get_node_features_matrix()
     edge_features_in = graph_data.get_edge_features_matrix()
+    global_features_in = graph_data.get_global_features_matrix()
     # Get number of nodes
     n_nodes = node_features_in.shape[0]
     # Get number of node input and output features
     n_node_in = node_features_in.shape[1]
     n_node_out = graph_data.get_node_targets_matrix().shape[1]
-    # Get number of edge input features
+    # Get number of edge input and output features
     n_edge_in = edge_features_in.shape[1]
+    n_edge_out = graph_data.get_edge_targets_matrix().shape[1]
+    # Get number of global input and output features
+    n_global_in = global_features_in.shape[1]
+    n_global_out = graph_data.get_global_targets_matrix().shape[1]
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Set GNN-based material patch model initialization parameters
+    # Set GNN-based EPD model initialization parameters
     model_init_args = dict(n_node_in=n_node_in, n_node_out=n_node_out,
-                           n_edge_in=n_edge_in, n_message_steps=2,
+                           n_edge_in=n_edge_in, n_edge_out=n_edge_out,
+                           n_global_in=n_global_in, n_global_out=n_global_out,
+                           n_message_steps=2,
                            enc_n_hidden_layers=2, pro_n_hidden_layers=3,
                            dec_n_hidden_layers=4, hidden_layer_size=2,
                            model_directory=str(tmp_path),
@@ -961,7 +1042,7 @@ def test_model_forward_propagation_invalid(batch_graph_patch_data_2d, tmp_path,
     # Get PyG homogeneous graph data object
     pyg_graph = graph_data.get_torch_data_object()
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Build GNN-based material patch model
+    # Build GNN-based EPD model
     model = GNNEPDBaseModel(**model_init_args)    
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Data features normalization
