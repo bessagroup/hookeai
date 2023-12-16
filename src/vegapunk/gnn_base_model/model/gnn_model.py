@@ -689,23 +689,30 @@ class GNNEPDBaseModel(torch.nn.Module):
                                f'simulator ({self._n_edge_in}) number of edge '
                                f'features are not consistent.')
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        # Get features from graph
-        if isinstance(graph.x, torch.Tensor):
+        # Get nodes features from graph
+        if 'x' in graph.keys() and isinstance(graph.x, torch.Tensor):
             node_features_in = graph.x.clone()
         else:
             # Preserve total number of nodes
             node_features_in = torch.empty(graph.num_nodes, 0)
-        if isinstance(graph.edge_attr, torch.Tensor):
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Get edges features from graph
+        if 'edge_attr' in graph.keys() and isinstance(graph.edge_attr,
+                                                      torch.Tensor):
             edge_features_in = graph.edge_attr.clone()
         else:
             edge_features_in = None
-        if isinstance(graph.global_features_matrix, torch.Tensor):
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Get edges features from graph
+        if ('global_features_matrix' in graph.keys()
+            and isinstance(graph.global_features_matrix, torch.Tensor)):
             global_features_in = graph.global_features_matrix.clone()
         else:
             global_features_in = None
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Get graph edges indexes
-        if isinstance(graph.edge_index, torch.Tensor):
+        if 'edge_index' in graph.keys() and isinstance(graph.edge_index,
+                                                       torch.Tensor):
             edges_indexes = graph.edge_index.clone()
         else:
             edges_indexes = None
@@ -759,16 +766,18 @@ class GNNEPDBaseModel(torch.nn.Module):
             raise RuntimeError('Input graph is not torch_geometric.data.Data.')
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~       
         # Get features from graph
-        if isinstance(graph.y, torch.Tensor):
+        if 'y' in graph.keys() and isinstance(graph.y, torch.Tensor):
             node_features_out = graph.y.clone()
         else:
             node_features_out = None
-        if isinstance(graph.edge_targets_matrix, torch.Tensor):
-            edge_features_out = graph.edge_targets_matrix.clone()
+        if ('edge_targets_matrix' in graph.keys()
+            and isinstance(graph.edge_targets_matrix, torch.Tensor)):
+                edge_features_out = graph.edge_targets_matrix.clone()
         else:
             edge_features_out = None
-        if isinstance(graph.global_targets_matrix, torch.Tensor):
-            global_features_out = graph.global_targets_matrix.clone()
+        if ('global_targets_matrix' in graph.keys()
+            and isinstance(graph.global_targets_matrix, torch.Tensor)):
+                global_features_out = graph.global_targets_matrix.clone()
         else:
             global_features_out = None
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

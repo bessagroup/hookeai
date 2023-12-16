@@ -239,8 +239,12 @@ def set_case_study_model_parameters(case_study_name, model_directory,
         # Set number of node input and output features
         n_node_in = 4
         n_node_out = 2
-        # Set number of edge input features
+        # Set number of edge input and output features
         n_edge_in = 6
+        n_edge_out = 0
+        # Set number of global input and output features
+        n_global_in = 0
+        n_global_out = 0
         # Set number of message-passing steps (number of processor layers)
         n_message_steps = 1
         # Set number of FNN hidden layers
@@ -265,6 +269,9 @@ def set_case_study_model_parameters(case_study_name, model_directory,
     model_init_args = {'n_node_in': n_node_in,
                        'n_node_out': n_node_out,
                        'n_edge_in': n_edge_in,
+                       'n_edge_out': n_edge_out,
+                       'n_global_in': n_global_in,
+                       'n_global_out': n_global_out,
                        'n_message_steps': n_message_steps,
                        'enc_n_hidden_layers': enc_n_hidden_layers,
                        'pro_n_hidden_layers': pro_n_hidden_layers,

@@ -354,9 +354,9 @@ class EncodeProcessDecode(torch.nn.Module):
                                 global_features_in=global_features)  
         # Perform decoding
         node_features_out, edge_features_out, global_features_out = \
-            self._decoder(node_features_in=node_features_in,
-                          edge_features_in=edge_features_in,
-                          global_features_in=global_features_in)
+            self._decoder(node_features_in=node_features,
+                          edge_features_in=edge_features,
+                          global_features_in=global_features)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         return node_features_out
 # =============================================================================
