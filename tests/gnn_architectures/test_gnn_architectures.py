@@ -306,36 +306,49 @@ def test_graph_independent_network_forward(n_nodes, n_node_in, n_node_out,
     assert not errors, "Errors:\n{}".format("\n".join(errors))
 # -----------------------------------------------------------------------------
 @pytest.mark.parametrize('n_node_in, n_node_out, n_edge_in, n_edge_out,'
+                         'n_global_in, n_global_out,'
                          'n_hidden_layers, hidden_layer_size,'
-                         'aggregation_scheme',
-                         [(1, 5, 2, 3, 2, 4, 'add'),
-                          (3, 2, 1, 4, 1, 2, 'add'),
-                          (2, 4, 5, 4, 0, 2, 'add'),
-                          (0, 4, 5, 4, 0, 2, 'add'),
-                          (2, 4, 0, 4, 0, 2, 'add'),
+                         'edge_to_node_aggr, node_to_global_aggr',
+                         [(1, 5, 2, 3, 0, 0, 2, 4, 'add', 'add'),
+                          (3, 2, 1, 4, 0, 2, 1, 2, 'add', 'add'),
+                          (2, 4, 5, 4, 2, 3, 0, 2, 'add', 'add'),
+                          (0, 4, 5, 4, 1, 0, 0, 2, 'add', 'add'),
+                          (2, 4, 0, 4, 0, 0, 0, 2, 'add', 'add'),
                           ])
 def test_graph_interaction_network_init(n_node_in, n_node_out, n_edge_in,
-                                        n_edge_out, n_hidden_layers,
-                                        hidden_layer_size, aggregation_scheme):
+                                        n_edge_out, n_global_in, n_global_out,
+                                        n_hidden_layers, hidden_layer_size,
+                                        edge_to_node_aggr,
+                                        node_to_global_aggr):
     """Test Graph Interaction Network constructor."""
     # Initialize errors
     errors = []
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Build Graph Interaction Network
-    model = GraphInteractionNetwork(n_node_out=n_node_out,
-                                    n_edge_out=n_edge_out,
-                                    n_hidden_layers=n_hidden_layers,
-                                    hidden_layer_size=hidden_layer_size,
-                                    n_node_in=n_node_in, n_edge_in=n_edge_in, 
-                                    aggregation_scheme=aggregation_scheme,
-                                    node_hidden_activation=torch.nn.ReLU(),
-                                    node_output_activation=torch.nn.Identity(),
-                                    edge_hidden_activation=torch.nn.ReLU(),
-                                    edge_output_activation=torch.nn.Identity())
+    model = GraphInteractionNetwork(
+        n_node_out=n_node_out, n_edge_out=n_edge_out,
+        n_hidden_layers=n_hidden_layers, hidden_layer_size=hidden_layer_size,
+        n_node_in=n_node_in, n_edge_in=n_edge_in, n_global_in=n_global_in,
+        n_global_out=n_global_out, edge_to_node_aggr=edge_to_node_aggr,
+        node_to_global_aggr=node_to_global_aggr,
+        node_hidden_activation=torch.nn.ReLU(),
+        node_output_activation=torch.nn.Identity(),
+        edge_hidden_activation=torch.nn.ReLU(),
+        edge_output_activation=torch.nn.Identity(),
+        global_hidden_activation=torch.nn.ReLU(),
+        global_output_activation=torch.nn.Identity())
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set Graph Interaction Network update functions and number of features
-    update_functions = ((model._node_fn, n_node_in + n_edge_out, n_node_out),
-                        (model._edge_fn, n_edge_in + 2*n_node_in, n_edge_out))
+    update_functions = []
+    if model._node_fn is not None:
+        update_functions.append((model._node_fn, n_node_in+n_edge_out,
+                                 n_node_out))
+    if model._edge_fn is not None:
+        update_functions.append((model._edge_fn, n_edge_in+2*n_node_in,
+                                 n_edge_out))
+    if model._global_fn is not None:
+        update_functions.append((model._global_fn, n_global_in+n_node_out,
+                                 n_global_out))
     # Loop over update functions
     for update_fn, n_features_in, n_features_out in update_functions:        
         # Loop over update function modules
@@ -386,41 +399,51 @@ def test_graph_interaction_network_init(n_node_in, n_node_out, n_edge_in,
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Check normalization layer
             elif name == 'Norm-Layer':
-                if module.num_features != n_features_out:
-                    errors.append('Number of features of normalization layer '
-                                  'was not properly set.')
+                if isinstance(module, torch.nn.BatchNorm1d):
+                    if module.num_features != n_features_out:
+                        errors.append('Number of features of normalization '
+                                      'layer was not properly set.')
+                elif isinstance(module, torch.nn.LayerNorm):
+                    if module.normalized_shape != (n_features_out,):
+                        errors.append('Number of features of normalization '
+                                      'layer was not properly set.')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     assert not errors, "Errors:\n{}".format("\n".join(errors))
 # -----------------------------------------------------------------------------
 @pytest.mark.parametrize('n_nodes, n_node_in, n_node_out,'
                          'n_edges, n_edge_in, n_edge_out,'
+                         'n_global_in, n_global_out,'
                          'n_hidden_layers, hidden_layer_size,'
-                         'aggregation_scheme',
-                         [(10, 1, 5, 20, 2, 3, 2, 4, 'add'),
-                          (4, 3, 2, 2, 1, 4, 1, 2, 'add'),
-                          (3, 2, 4, 6, 5, 4, 0, 2, 'add'),
-                          (4, 0, 1, 2, 1, 1, 1, 2, 'add'),
-                          (3, 2, 4, 6, 0, 4, 0, 2, 'add'),
+                         'edge_to_node_aggr, node_to_global_aggr',
+                         [(10, 1, 5, 20, 2, 3, 0, 0, 2, 4, 'add', 'add'),
+                          (4, 3, 2, 2, 1, 4, 0, 2, 1, 2, 'add', 'add'),
+                          (3, 2, 4, 6, 5, 4, 1, 0, 0, 2, 'add', 'add'),
+                          (4, 0, 1, 2, 1, 1, 2, 3, 1, 2, 'add', 'add'),
+                          (3, 2, 4, 6, 0, 4, 0, 0, 0, 2, 'add', 'add'),
                           ])
 def test_graph_interaction_network_forward(n_nodes, n_node_in, n_node_out,
                                            n_edges, n_edge_in, n_edge_out,
+                                           n_global_in, n_global_out,
                                            n_hidden_layers, hidden_layer_size,
-                                           aggregation_scheme):
+                                           edge_to_node_aggr,
+                                           node_to_global_aggr):
     """Test Graph Interaction Network forward propagation."""
     # Initialize errors
     errors = []
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Build Graph Interaction Network
-    model = GraphInteractionNetwork(n_node_out=n_node_out,
-                                    n_edge_out=n_edge_out,
-                                    n_hidden_layers=n_hidden_layers,
-                                    hidden_layer_size=hidden_layer_size,
-                                    n_node_in=n_node_in, n_edge_in=n_edge_in,
-                                    aggregation_scheme=aggregation_scheme,
-                                    node_hidden_activation=torch.nn.ReLU(),
-                                    node_output_activation=torch.nn.Identity(),
-                                    edge_hidden_activation=torch.nn.ReLU(),
-                                    edge_output_activation=torch.nn.Identity())
+    model = GraphInteractionNetwork(
+        n_node_out=n_node_out, n_edge_out=n_edge_out,
+        n_hidden_layers=n_hidden_layers, hidden_layer_size=hidden_layer_size,
+        n_node_in=n_node_in, n_edge_in=n_edge_in, n_global_in=n_global_in,
+        n_global_out=n_global_out, edge_to_node_aggr=edge_to_node_aggr,
+        node_to_global_aggr=node_to_global_aggr,
+        node_hidden_activation=torch.nn.ReLU(),
+        node_output_activation=torch.nn.Identity(),
+        edge_hidden_activation=torch.nn.ReLU(),
+        edge_output_activation=torch.nn.Identity(),
+        global_hidden_activation=torch.nn.ReLU(),
+        global_output_activation=torch.nn.Identity())
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Generate random nodes features input matrix
     node_features_in = torch.empty(n_nodes, 0)
@@ -433,11 +456,17 @@ def test_graph_interaction_network_forward(n_nodes, n_node_in, n_node_out,
     # Generate random edges indexes
     edges_indexes = torch.randint(low=0, high=n_nodes, size=(2, n_edges),
                                   dtype=torch.long)
+    # Generate random global features input matrix
+    global_features_in = None
+    if n_global_in > 0:
+        global_features_in = torch.rand(1, n_global_in)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Forward propagation
-    node_features_out, edge_features_out = \
-        model(edges_indexes=edges_indexes, node_features_in=node_features_in,
-              edge_features_in=edge_features_in)
+    node_features_out, edge_features_out, global_features_out = \
+        model(edges_indexes=edges_indexes,
+              node_features_in=node_features_in,
+              edge_features_in=edge_features_in,
+              global_features_in=global_features_in)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Check node features output matrix
     if not isinstance(node_features_out, torch.Tensor):
@@ -453,38 +482,51 @@ def test_graph_interaction_network_forward(n_nodes, n_node_in, n_node_out,
                          torch.tensor([n_edges, n_edge_out])):
         errors.append('Edges features output matrix is not torch.Tensor(2d) '
                       'of shape (n_edges, n_features).')
+    # Check global features output matrix
+    if model._global_fn is not None:
+        if not isinstance(global_features_out, torch.Tensor):
+            errors.append('Global features output matrix is not torch.Tensor.')
+        elif not torch.equal(torch.tensor(global_features_out.size()),
+                             torch.tensor([1, n_global_out])):
+            errors.append('Global features output matrix is not '
+                          'torch.Tensor(2d) of shape (1, n_features).')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     assert not errors, "Errors:\n{}".format("\n".join(errors))
 # -----------------------------------------------------------------------------
 @pytest.mark.parametrize('n_nodes, n_node_in, n_node_out,'
                          'n_edges, n_edge_in, n_edge_out,'
+                         'n_global_in, n_global_out,'
                          'n_hidden_layers, hidden_layer_size,'
-                         'aggregation_scheme',
-                         [(10, 1, 5, 20, 2, 3, 2, 4, 'add'),
-                          (2, 3, 2, 2, 1, 4, 1, 2, 'add'),
-                          (3, 2, 4, 6, 5, 4, 0, 2, 'add'),
-                          (2, 0, 2, 2, 1, 4, 1, 2, 'add'),
-                          (3, 2, 4, 6, 0, 4, 0, 2, 'add'),
+                         'edge_to_node_aggr, node_to_global_aggr',
+                         [(10, 1, 5, 20, 2, 3, 0, 0, 2, 4, 'add', 'add'),
+                          (4, 3, 2, 2, 1, 4, 0, 2, 1, 2, 'add', 'add'),
+                          (3, 2, 4, 6, 5, 4, 1, 0, 0, 2, 'add', 'add'),
+                          (4, 0, 1, 2, 1, 1, 2, 3, 1, 2, 'add', 'add'),
+                          (3, 2, 4, 6, 0, 4, 0, 0, 0, 2, 'add', 'add'),
                           ])
 def test_graph_interaction_network_message(n_nodes, n_node_in, n_node_out,
                                            n_edges, n_edge_in, n_edge_out,
+                                           n_global_in, n_global_out,
                                            n_hidden_layers, hidden_layer_size,
-                                           aggregation_scheme):
+                                           edge_to_node_aggr,
+                                           node_to_global_aggr):
     """Test Graph Interaction Network message building (edge update)."""
     # Initialize errors
     errors = []
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Build Graph Interaction Network
-    model = GraphInteractionNetwork(n_node_out=n_node_out,
-                                    n_edge_out=n_edge_out,
-                                    n_hidden_layers=n_hidden_layers,
-                                    hidden_layer_size=hidden_layer_size,
-                                    n_node_in=n_node_in, n_edge_in=n_edge_in,
-                                    node_hidden_activation=torch.nn.ReLU(),
-                                    node_output_activation=torch.nn.Identity(),
-                                    edge_hidden_activation=torch.nn.ReLU(),
-                                    edge_output_activation=torch.nn.Identity(),
-                                    aggregation_scheme=aggregation_scheme)
+    model = GraphInteractionNetwork(
+        n_node_out=n_node_out, n_edge_out=n_edge_out,
+        n_hidden_layers=n_hidden_layers, hidden_layer_size=hidden_layer_size,
+        n_node_in=n_node_in, n_edge_in=n_edge_in, n_global_in=n_global_in,
+        n_global_out=n_global_out, edge_to_node_aggr=edge_to_node_aggr,
+        node_to_global_aggr=node_to_global_aggr,
+        node_hidden_activation=torch.nn.ReLU(),
+        node_output_activation=torch.nn.Identity(),
+        edge_hidden_activation=torch.nn.ReLU(),
+        edge_output_activation=torch.nn.Identity(),
+        global_hidden_activation=torch.nn.ReLU(),
+        global_output_activation=torch.nn.Identity())
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Generate random source nodes features input matrix
     node_features_in_i = None
@@ -516,33 +558,38 @@ def test_graph_interaction_network_message(n_nodes, n_node_in, n_node_out,
 # -----------------------------------------------------------------------------
 @pytest.mark.parametrize('n_nodes, n_node_in, n_node_out,'
                          'n_edges, n_edge_in, n_edge_out,'
+                         'n_global_in, n_global_out,'
                          'n_hidden_layers, hidden_layer_size,'
-                         'aggregation_scheme',
-                         [(10, 1, 5, 20, 2, 3, 2, 4, 'add'),
-                          (2, 3, 2, 2, 1, 4, 1, 2, 'add'),
-                          (3, 2, 4, 6, 5, 4, 0, 2, 'add'),
-                          (2, 0, 2, 2, 1, 4, 1, 2, 'add'),
-                          (3, 2, 4, 6, 0, 4, 0, 2, 'add'),
+                         'edge_to_node_aggr, node_to_global_aggr',
+                         [(10, 1, 5, 20, 2, 3, 0, 0, 2, 4, 'add', 'add'),
+                          (4, 3, 2, 2, 1, 4, 0, 2, 1, 2, 'add', 'add'),
+                          (3, 2, 4, 6, 5, 4, 1, 0, 0, 2, 'add', 'add'),
+                          (4, 0, 1, 2, 1, 1, 2, 3, 1, 2, 'add', 'add'),
+                          (3, 2, 4, 6, 0, 4, 0, 0, 0, 2, 'add', 'add'),
                           ])
 def test_graph_interaction_network_update(n_nodes, n_node_in, n_node_out,
                                           n_edges, n_edge_in, n_edge_out,
+                                          n_global_in, n_global_out,
                                           n_hidden_layers, hidden_layer_size,
-                                          aggregation_scheme):
+                                          edge_to_node_aggr,
+                                          node_to_global_aggr):
     """Test Graph Interaction Network node features update."""
     # Initialize errors
     errors = []
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Build Graph Interaction Network
-    model = GraphInteractionNetwork(n_node_out=n_node_out,
-                                    n_edge_out=n_edge_out,
-                                    n_hidden_layers=n_hidden_layers,
-                                    hidden_layer_size=hidden_layer_size,
-                                    n_node_in=n_node_in, n_edge_in=n_edge_in,
-                                    aggregation_scheme=aggregation_scheme,
-                                    node_hidden_activation=torch.nn.ReLU(),
-                                    node_output_activation=torch.nn.Identity(),
-                                    edge_hidden_activation=torch.nn.ReLU(),
-                                    edge_output_activation=torch.nn.Identity())
+    model = GraphInteractionNetwork(
+        n_node_out=n_node_out, n_edge_out=n_edge_out,
+        n_hidden_layers=n_hidden_layers, hidden_layer_size=hidden_layer_size,
+        n_node_in=n_node_in, n_edge_in=n_edge_in, n_global_in=n_global_in,
+        n_global_out=n_global_out, edge_to_node_aggr=edge_to_node_aggr,
+        node_to_global_aggr=node_to_global_aggr,
+        node_hidden_activation=torch.nn.ReLU(),
+        node_output_activation=torch.nn.Identity(),
+        edge_hidden_activation=torch.nn.ReLU(),
+        edge_output_activation=torch.nn.Identity(),
+        global_hidden_activation=torch.nn.ReLU(),
+        global_output_activation=torch.nn.Identity())
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Generate random nodes features input matrix (resulting from aggregation)
     node_features_in_aggr = torch.rand(n_nodes, n_edge_out)
@@ -563,5 +610,57 @@ def test_graph_interaction_network_update(n_nodes, n_node_in, n_node_out,
                          torch.tensor([n_nodes, n_node_out])):
         errors.append('Nodes features output matrix is not torch.Tensor(2d) '
                       'of shape (n_nodes, n_features).')
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    assert not errors, "Errors:\n{}".format("\n".join(errors))
+# -----------------------------------------------------------------------------
+@pytest.mark.parametrize('n_nodes, n_node_in, n_node_out,'
+                         'n_edges, n_edge_in, n_edge_out,'
+                         'n_global_in, n_global_out,'
+                         'n_hidden_layers, hidden_layer_size,'
+                         'edge_to_node_aggr, node_to_global_aggr',
+                         [(4, 3, 2, 2, 1, 4, 0, 2, 1, 2, 'add', 'add'),
+                          (4, 0, 1, 2, 1, 1, 2, 3, 1, 2, 'add', 'mean'),
+                          ])
+def test_graph_interaction_network_update_global(
+    n_nodes, n_node_in, n_node_out, n_edges, n_edge_in, n_edge_out,
+    n_global_in, n_global_out, n_hidden_layers, hidden_layer_size,
+    edge_to_node_aggr, node_to_global_aggr):
+    """Test Graph Interaction Network global features update."""
+    # Initialize errors
+    errors = []
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Build Graph Interaction Network
+    model = GraphInteractionNetwork(
+        n_node_out=n_node_out, n_edge_out=n_edge_out,
+        n_hidden_layers=n_hidden_layers, hidden_layer_size=hidden_layer_size,
+        n_node_in=n_node_in, n_edge_in=n_edge_in, n_global_in=n_global_in,
+        n_global_out=n_global_out, edge_to_node_aggr=edge_to_node_aggr,
+        node_to_global_aggr=node_to_global_aggr,
+        node_hidden_activation=torch.nn.ReLU(),
+        node_output_activation=torch.nn.Identity(),
+        edge_hidden_activation=torch.nn.ReLU(),
+        edge_output_activation=torch.nn.Identity(),
+        global_hidden_activation=torch.nn.ReLU(),
+        global_output_activation=torch.nn.Identity())
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Generate random nodes features output matrix
+    node_features_out = torch.rand(n_nodes, n_node_out)
+    # Generate random global features input matrix
+    global_features_in = None
+    if n_global_in > 0:
+        global_features_in = torch.rand(1, n_global_in)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Forward propagation (global update)
+    global_features_out = \
+        model.update_global(node_features_out=node_features_out,
+                            global_features_in=global_features_in)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Check global features output matrix
+    if not isinstance(global_features_out, torch.Tensor):
+        errors.append('Global features output matrix is not torch.Tensor.')
+    elif not torch.equal(torch.tensor(global_features_out.size()),
+                         torch.tensor([1, n_global_out])):
+        errors.append('Global features output matrix is not torch.Tensor(2d) '
+                      'of shape (1, n_features).')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     assert not errors, "Errors:\n{}".format("\n".join(errors))

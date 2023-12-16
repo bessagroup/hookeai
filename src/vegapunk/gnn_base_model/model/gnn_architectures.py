@@ -95,9 +95,9 @@ class GraphIndependentNetwork(torch.nn.Module):
     """Graph Independent Network.
     
     A Graph Network block with (1) distinct update functions for node, edge and
-    global features implemented as multilayer feed-forward neural networks and
-    (2) no aggregation functions, i.e., independent node, edges and global
-    blocks.
+    global features implemented as multilayer feed-forward neural networks with
+    layer normalization and (2) no aggregation functions, i.e., independent
+    node, edges and global blocks.
     
     Attributes
     ----------
@@ -125,7 +125,8 @@ class GraphIndependentNetwork(torch.nn.Module):
 
     Methods
     -------
-    forward(self, node_features_in=None, edge_features_in=None)
+    forward(self, node_features_in=None, edge_features_in=None, \
+            global_features_in)
         Forward propagation.
     """
     def __init__(self, n_hidden_layers, hidden_layer_size, n_node_in=0,
@@ -137,6 +138,7 @@ class GraphIndependentNetwork(torch.nn.Module):
                  edge_output_activation=torch.nn.Identity(),
                  global_hidden_activation=torch.nn.Identity(),
                  global_output_activation=torch.nn.Identity(),
+                 is_norm_layer=False,
                  is_skip_unset_update=False):
         """Constructor.
         
@@ -190,6 +192,9 @@ class GraphIndependentNetwork(torch.nn.Module):
             Output unit activation function of global update function
             (multilayer feed-forward neural network). Defaults to identity
             (linear) unit activation function.
+        is_norm_layer : bool, default=False
+            If True, then add normalization layer to node, edge and global
+            update functions.
         is_skip_unset_update : bool, default=False
             If True, then return features input matrix when the corresponding
             update function has not been setup, otherwise return None. Ignored
@@ -216,13 +221,15 @@ class GraphIndependentNetwork(torch.nn.Module):
                 output_activation=node_output_activation,
                 hidden_layer_sizes=n_hidden_layers*[hidden_layer_size,],
                 hidden_activation=node_hidden_activation)
-            # Build normalization layer (per-feature)
-            norm_layer = torch.nn.BatchNorm1d(num_features=self._n_node_out,
-                                              affine=True)
             # Set node update function
             self._node_fn = torch.nn.Sequential()
             self._node_fn.add_module('FNN', fnn)
-            self._node_fn.add_module('Norm-Layer', norm_layer)
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Add normalization layer (per-feature) to node update function
+            if is_norm_layer:
+                norm_layer = torch.nn.BatchNorm1d(
+                    num_features=self._n_node_out, affine=True)
+                self._node_fn.add_module('Norm-Layer', norm_layer)
         else:
             self._node_fn = None
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -236,13 +243,15 @@ class GraphIndependentNetwork(torch.nn.Module):
                 output_activation=edge_output_activation,
                 hidden_layer_sizes=n_hidden_layers*[hidden_layer_size,],
                 hidden_activation=edge_hidden_activation)
-            # Build normalization layer (per-feature)
-            norm_layer = torch.nn.BatchNorm1d(num_features=self._n_edge_out,
-                                              affine=True)
             # Set edge update function
             self._edge_fn = torch.nn.Sequential()
             self._edge_fn.add_module('FNN', fnn)
-            self._edge_fn.add_module('Norm-Layer', norm_layer)
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Add normalization layer (per-feature) to edge update function
+            if is_norm_layer:
+                norm_layer = torch.nn.BatchNorm1d(
+                    num_features=self._n_edge_out, affine=True)
+                self._edge_fn.add_module('Norm-Layer', norm_layer) 
         else:
             self._edge_fn = None        
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -256,15 +265,18 @@ class GraphIndependentNetwork(torch.nn.Module):
                 output_activation=global_output_activation,
                 hidden_layer_sizes=n_hidden_layers*[hidden_layer_size,],
                 hidden_activation=global_hidden_activation)
-            # Build normalization layer (per-element)
-            norm_layer = torch.nn.LayerNorm(
-                normalized_shape=self._n_global_out, elementwise_affine=True)
             # Set global update function
             self._global_fn = torch.nn.Sequential()
             self._global_fn.add_module('FNN', fnn)
-            self._global_fn.add_module('Norm-Layer', norm_layer)
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Add normalization layer (per-feature) to global update function
+            if is_norm_layer:
+                norm_layer = torch.nn.LayerNorm(
+                    normalized_shape=self._n_global_out,
+                    elementwise_affine=True)
+                self._global_fn.add_module('Norm-Layer', norm_layer)
         else:
-            self._global_fn = None        
+            self._global_fn = None
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Check update functions
         if (self._node_fn is None and self._edge_fn is None
@@ -382,9 +394,10 @@ class GraphIndependentNetwork(torch.nn.Module):
 class GraphInteractionNetwork(torch_geometric.nn.MessagePassing):
     """Graph Interaction Network.
     
-    A Graph Network block with (1) distinct update functions for node and edge
-    features implemented as multilayer feed-forward neural networks and (2)
-    a edge-to-node aggregation function.
+    A Graph Network block with (1) distinct update functions for node, edge and
+    global features implemented as multilayer feed-forward neural networks with
+    layer normalization and (2) edge-to-node and node-to-global aggregation
+    functions.
     
     Attributes
     ----------
@@ -400,6 +413,12 @@ class GraphInteractionNetwork(torch_geometric.nn.MessagePassing):
         Number of edge input features.
     _n_edge_out : int
         Number of edge input features.
+    _global_fn : torch.nn.Sequential
+        Global update function.
+    _n_global_in : int
+        Number of global input features.
+    _n_global_out : int
+        Number of global output features.
         
     Methods
     -------
@@ -412,12 +431,15 @@ class GraphInteractionNetwork(torch_geometric.nn.MessagePassing):
         Update node features.
     """
     def __init__(self, n_node_out, n_edge_out, n_hidden_layers,
-                 hidden_layer_size, n_node_in=0, n_edge_in=0, 
-                 aggregation_scheme='add',
+                 hidden_layer_size, n_node_in=0, n_edge_in=0, n_global_in=0,
+                 n_global_out=0,
+                 edge_to_node_aggr='add', node_to_global_aggr='add',
                  node_hidden_activation=torch.nn.Identity(),
                  node_output_activation=torch.nn.Identity(),
                  edge_hidden_activation=torch.nn.Identity(),
-                 edge_output_activation=torch.nn.Identity()):
+                 edge_output_activation=torch.nn.Identity(),
+                 global_hidden_activation=torch.nn.Identity(),
+                 global_output_activation=torch.nn.Identity()):
         """Constructor.
         
         Parameters
@@ -436,8 +458,14 @@ class GraphInteractionNetwork(torch_geometric.nn.MessagePassing):
             Number of node input features.
         n_edge_in : int, default=0
             Number of edge input features.
-        aggregation_scheme : {'add',}, default='add'
-            Message-passing aggregation scheme.
+        n_global_in : int, default=0
+            Number of global input features.
+        n_global_out : int, default=0
+            Number of global output features.
+        edge_to_node_aggr : {'add',}, default='add'
+            Edge-to-node aggregation scheme.
+        node_to_global_aggr : {'add', 'mean'}, default='add'
+            Node-to-global aggregation scheme.
         node_hidden_activation : torch.nn.Module, default=torch.nn.Identity
             Hidden unit activation function of node update function (multilayer
             feed-forward neural network). Defaults to identity (linear) unit
@@ -454,12 +482,26 @@ class GraphInteractionNetwork(torch_geometric.nn.MessagePassing):
             Output unit activation function of edge update function (multilayer
             feed-forward neural network). Defaults to identity (linear) unit
             activation function.
+        global_hidden_activation : torch.nn.Module, default=torch.nn.Identity
+            Hidden unit activation function of global update function
+            (multilayer feed-forward neural network). Defaults to identity
+            (linear) unit activation function.
+        global_output_activation : torch.nn.Module, default=torch.nn.Identity
+            Output unit activation function of global update function
+            (multilayer feed-forward neural network). Defaults to identity
+            (linear) unit activation function.
         """
         # Set aggregation scheme
-        if aggregation_scheme == 'add':
+        if edge_to_node_aggr == 'add':
             aggregation = torch_geometric.nn.aggr.SumAggregation()
         else:
             raise RuntimeError('Unknown aggregation scheme.')
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set node-to-global aggregation scheme
+        if node_to_global_aggr in ('add', 'mean'):
+            self.node_to_global_aggr = node_to_global_aggr
+        else:
+            raise RuntimeError('Unknown node-to-global aggregation scheme.')
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Set flow direction of message passing
         flow = 'source_to_target'
@@ -473,17 +515,21 @@ class GraphInteractionNetwork(torch_geometric.nn.MessagePassing):
         self._n_node_out = int(n_node_out)
         self._n_edge_in = int(n_edge_in)
         self._n_edge_out = int(n_edge_out)
+        self._n_global_in = int(n_global_in)
+        self._n_global_out = int(n_global_out)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Check number of input features
-        if self._n_node_in < 1 and self._n_edge_in < 1:
+        if (self._n_node_in < 1 and self._n_edge_in < 1
+            and self._n_global_in < 1):
             raise RuntimeError(f'Impossible to setup model without node '
-                               f'({self._n_node_in}) and edge '
-                               f'({self._n_edge_in}) input features.')
+                               f'({self._n_node_in}), edge '
+                               f'({self._n_edge_in}), or global '
+                               f'({self._n_global_in}) input features.')
         # Check number of output features
-        if self._n_node_out < 1 or self._n_edge_out < 1:
+        if (self._n_node_out < 1 or self._n_edge_out < 1):
             raise RuntimeError(f'Number of node ({self._n_node_out}) and '
                                f'edge ({self._n_edge_out}) output features '
-                               f'must be greater than 0.')        
+                               f'must be greater than 0.')
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Set node update function as multilayer feed-forward neural network
         # with layer normalization:
@@ -500,7 +546,7 @@ class GraphInteractionNetwork(torch_geometric.nn.MessagePassing):
         # Set node update function
         self._node_fn = torch.nn.Sequential()
         self._node_fn.add_module('FNN', fnn)
-        self._node_fn.add_module('Norm-Layer', norm_layer)
+        self._node_fn.add_module('Norm-Layer', norm_layer)        
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Set edge update function as multilayer feed-forward neural network
         # with layer normalization:
@@ -514,13 +560,33 @@ class GraphInteractionNetwork(torch_geometric.nn.MessagePassing):
         # Build normalization layer (per-feature)
         norm_layer = torch.nn.BatchNorm1d(num_features=self._n_edge_out,
                                           affine=True)
-        # Set node update function
+        # Set edge update function
         self._edge_fn = torch.nn.Sequential()
         self._edge_fn.add_module('FNN', fnn)
         self._edge_fn.add_module('Norm-Layer', norm_layer)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set global update function as multilayer feed-forward neural network
+        # with layer normalization:
+        if self._n_global_out > 0:
+            # Build multilayer feed-forward neural network
+            fnn = build_fnn(
+                input_size=self._n_global_in+self._n_node_out,
+                output_size=self._n_global_out,
+                output_activation=global_output_activation,
+                hidden_layer_sizes=n_hidden_layers*[hidden_layer_size,],
+                hidden_activation=global_hidden_activation)
+            # Build normalization layer (per-element)
+            norm_layer = torch.nn.LayerNorm(
+                normalized_shape=self._n_global_out, elementwise_affine=True)
+            # Set global update function
+            self._global_fn = torch.nn.Sequential()
+            self._global_fn.add_module('FNN', fnn)
+            self._global_fn.add_module('Norm-Layer', norm_layer)
+        else:
+            self._global_fn = None
     # -------------------------------------------------------------------------
     def forward(self, edges_indexes, node_features_in=None,
-                edge_features_in=None):
+                edge_features_in=None, global_features_in=None):
         """Forward propagation.
         
         Parameters
@@ -538,6 +604,9 @@ class GraphInteractionNetwork(torch_geometric.nn.MessagePassing):
         edge_features_in : torch.Tensor, default=None
             Edges features input matrix stored as a torch.Tensor(2d) of shape
             (n_edges, n_features).
+        global_features_in : torch.Tensor, default=None
+            Global features input matrix stored as a torch.Tensor(2d) of shape
+            (1, n_features). Ignored if global update function is not setup.
         
         Returns
         -------
@@ -547,6 +616,9 @@ class GraphInteractionNetwork(torch_geometric.nn.MessagePassing):
         edge_features_out : torch.Tensor
             Edges features output matrix stored as a torch.Tensor(2d) of shape
             (n_edges, n_features).
+        global_features_out : {torch.Tensor, None}
+            Global features output matrix stored as a torch.Tensor(2d) of shape
+            (1, n_features).
         """
         # Check input features matrices
         if node_features_in is None and edge_features_in is None:
@@ -598,6 +670,20 @@ class GraphInteractionNetwork(torch_geometric.nn.MessagePassing):
                                    f'model ({self._n_edge_in}) and edges '
                                    f'input features matrix '
                                    f'({edge_features_in.shape[1]}).')
+        # Check global features
+        if global_features_in is not None:
+            if not isinstance(global_features_in, torch.Tensor):
+                raise RuntimeError('Global features input matrix is not a '
+                                   'torch.Tensor.')
+            elif global_features_in.shape[0] != 1:
+                raise RuntimeError(f'The first dimension of the global '
+                                   f'features input matrix must be equal '
+                                   f'to 1.')
+            elif global_features_in.shape[1] != self._n_global_in:
+                raise RuntimeError(f'Mismatch of number of global features of '
+                                   f'model ({self._n_global_in}) and global '
+                                   f'input features matrix '
+                                   f'({global_features_in.shape[1]}).')  
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Perform graph neural network message-passing step (message,
         # aggregation, update) and get updated node features
@@ -609,7 +695,15 @@ class GraphInteractionNetwork(torch_geometric.nn.MessagePassing):
         edge_features_out = self._edge_features_out
         self._edge_features_out = None
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        return node_features_out, edge_features_out
+        # Initialize updated global features
+        global_features_out = None
+        # Get update global features
+        if self._global_fn is not None:
+            global_features_out = self.update_global(
+                global_features_in=global_features_in,
+                node_features_out=node_features_out)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        return node_features_out, edge_features_out, global_features_out
     # -------------------------------------------------------------------------
     def message(self, node_features_in_i, node_features_in_j,
                 edge_features_in=None):
@@ -723,3 +817,42 @@ class GraphInteractionNetwork(torch_geometric.nn.MessagePassing):
         node_features_out = self._node_fn(node_features_in_cat)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         return node_features_out
+    # -------------------------------------------------------------------------
+    def update_global(self, node_features_out, global_features_in=None):
+        """Update global features.
+        
+        Parameters
+        ----------
+        node_features_out : torch.Tensor
+            Nodes features output matrix stored as a torch.Tensor(2d) of shape
+            (n_nodes, n_features).
+        global_features_in : torch.Tensor, default=None
+            Global features input matrix stored as a torch.Tensor(2d) of shape
+            (1, n_features).
+
+        Returns
+        -------
+        global_features_out : torch.Tensor
+            Global features output matrix stored as a torch.Tensor(2d) of shape
+            (1, n_features).
+        """
+        # Perform node-to-global aggregation
+        if self.node_to_global_aggr == 'add':
+            node_features_in_aggr = torch.sum(node_features_out, dim=0)
+        elif self.node_to_global_aggr == 'mean':
+            node_features_in_aggr = torch.mean(node_features_out, dim=0)
+        else:
+            raise RuntimeError('Unknown node-to-global aggregation scheme.')
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Concatenate global features:
+        # Set global features stemming from node-to-global aggregation
+        global_features_in_cat = torch.reshape(node_features_in_aggr, (1, -1))
+        # Concatenate available global input features
+        if global_features_in is not None:
+            global_features_in_cat = \
+                torch.cat([global_features_in_cat, global_features_in], dim=-1)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Update global features
+        global_features_out = self._global_fn(global_features_in_cat)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        return global_features_out
