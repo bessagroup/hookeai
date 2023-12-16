@@ -3,7 +3,7 @@
 Classes
 -------
 GNNEPDBaseModel(torch.nn.Module)
-    GNN-based Encoder-Processor-Decoder model.
+    GNN Encoder-Processor-Decoder base model.
 TorchStandardScaler
     PyTorch tensor standardization data scaler.
     
@@ -38,7 +38,7 @@ __status__ = 'Planning'
 #
 # =============================================================================
 class GNNEPDBaseModel(torch.nn.Module):
-    """GNN-based Encoder-Processor-Decoder model.
+    """GNN Encoder-Processor-Decoder base model.
     
     Attributes
     ----------
@@ -52,6 +52,12 @@ class GNNEPDBaseModel(torch.nn.Module):
         Number of node output features.
     _n_edge_in : int
         Number of edge input features.
+    _n_edge_out : int
+        Number of edge output features.
+    _n_global_in : int
+        Number of global input features.
+    _n_global_out : int
+        Number of global output features.
     _n_message_steps : int
         Number of message-passing steps.
     _enc_n_hidden_layers : int
@@ -82,6 +88,14 @@ class GNNEPDBaseModel(torch.nn.Module):
         Encoder: Output unit activation function type of edge update function
         (multilayer feed-forward neural network). Defaults to identity
         (linear) unit activation function.
+    _enc_global_hidden_activ_type : str, default='identity'
+        Encoder: Hidden unit activation function type of global update function
+        (multilayer feed-forward neural network). Defaults to identity
+        (linear) unit activation function.
+    _enc_global_output_activ_type : str, default='identity'
+        Encoder: Output unit activation function type of global update function
+        (multilayer feed-forward neural network). Defaults to identity
+        (linear) unit activation function.
     _pro_node_hidden_activ_type : str, default='identity'
         Processor: Hidden unit activation function type of node update function
         (multilayer feed-forward neural network). Defaults to identity
@@ -98,12 +112,36 @@ class GNNEPDBaseModel(torch.nn.Module):
         Processor: Output unit activation function type of edge update function
         (multilayer feed-forward neural network). Defaults to identity
         (linear) unit activation function.
+    _pro_global_hidden_activ_type : str, default='identity'
+        Processor: Hidden unit activation function type of global update
+        function (multilayer feed-forward neural network). Defaults to identity
+        (linear) unit activation function.
+    _pro_global_output_activ_type : str, default='identity'
+        Processor: Output unit activation function type of global update
+        function (multilayer feed-forward neural network). Defaults to identity
+        (linear) unit activation function.
     _dec_node_hidden_activ_type : str, default='identity'
         Decoder: Hidden unit activation function type of node update function
         (multilayer feed-forward neural network). Defaults to identity
         (linear) unit activation function.
     _dec_node_output_activ_type : str, default='identity'
         Decoder: Output unit activation function type of node update function
+        (multilayer feed-forward neural network). Defaults to identity
+        (linear) unit activation function.
+    _dec_edge_hidden_activ_type : str, default='identity'
+        Decoder: Hidden unit activation function type of edge update function
+        (multilayer feed-forward neural network). Defaults to identity
+        (linear) unit activation function.
+    _dec_edge_output_activ_type : str, default='identity'
+        Decoder: Output unit activation function type of edge update function
+        (multilayer feed-forward neural network). Defaults to identity
+        (linear) unit activation function.
+    _dec_global_hidden_activ_type : str, default='identity'
+        Decoder: Hidden unit activation function type of global update function
+        (multilayer feed-forward neural network). Defaults to identity
+        (linear) unit activation function.
+    _dec_global_output_activ_type : str, default='identity'
+        Decoder: Output unit activation function type of global update function
         (multilayer feed-forward neural network). Defaults to identity
         (linear) unit activation function.
     _gnn_epd_model : EncodeProcessDecode
@@ -163,22 +201,31 @@ class GNNEPDBaseModel(torch.nn.Module):
     check_normalized_return(self)
         Check if model data normalization is available.
     """
-    def __init__(self, n_node_in, n_node_out, n_edge_in, n_message_steps,
+    def __init__(self, n_node_in, n_node_out, n_edge_in, n_edge_out,
+                 n_global_in, n_global_out, n_message_steps,
                  enc_n_hidden_layers, pro_n_hidden_layers, dec_n_hidden_layers,
                  hidden_layer_size, model_directory,
                  model_name='material_patch_model',
                  is_data_normalization=False,
-                 pro_aggregation_scheme='add',
+                 pro_edge_to_node_aggr='add', pro_node_to_global_aggr='add',
                  enc_node_hidden_activ_type='identity',
                  enc_node_output_activ_type='identity',
                  enc_edge_hidden_activ_type='identity',
                  enc_edge_output_activ_type='identity',
+                 enc_global_hidden_activ_type='identity',
+                 enc_global_output_activ_type='identity',
                  pro_node_hidden_activ_type='identity',
                  pro_node_output_activ_type='identity',
                  pro_edge_hidden_activ_type='identity',
                  pro_edge_output_activ_type='identity',
+                 pro_global_hidden_activ_type='identity',
+                 pro_global_output_activ_type='identity',
                  dec_node_hidden_activ_type='identity',
                  dec_node_output_activ_type='identity',
+                 dec_edge_hidden_activ_type='identity',
+                 dec_edge_output_activ_type='identity',
+                 dec_global_hidden_activ_type='identity',
+                 dec_global_output_activ_type='identity',
                  is_save_model_init_file=True,
                  device_type='cpu'):
         """Constructor.
@@ -191,6 +238,12 @@ class GNNEPDBaseModel(torch.nn.Module):
             Number of node output features.
         n_edge_in : int
             Number of edge input features.
+        n_edge_out : int
+            Number of edge output features.
+        n_global_in : int
+            Number of global input features.
+        n_global_out : int
+            Number of global output features.
         n_message_steps : int
             Number of message-passing steps.
         enc_n_hidden_layers : int
@@ -213,8 +266,10 @@ class GNNEPDBaseModel(torch.nn.Module):
             If True, then input and output features are normalized for
             training, False otherwise. Data scalers need to be fitted with
             fit_data_scalers() and are stored as model attributes.
-        pro_aggregation_scheme : {'add',}, default='add'
-            Processor: Message-passing aggregation scheme.
+        pro_edge_to_node_aggr : {'add',}, default='add'
+            Processor: Edge-to-node aggregation scheme.
+        pro_node_to_global_aggr : {'add',}, default='add'
+            Processor: Node-to-global aggregation scheme.
         enc_node_hidden_activ_type : str, default='identity'
             Encoder: Hidden unit activation function type of node update
             function (multilayer feed-forward neural network). Defaults to
@@ -229,6 +284,14 @@ class GNNEPDBaseModel(torch.nn.Module):
             identity (linear) unit activation function.
         enc_edge_output_activ_type : str, default='identity'
             Encoder: Output unit activation function type of edge update
+            function (multilayer feed-forward neural network). Defaults to
+            identity (linear) unit activation function.
+        enc_global_hidden_activ_type : str, default='identity'
+            Encoder: Hidden unit activation function type of global update
+            function (multilayer feed-forward neural network). Defaults to
+            identity (linear) unit activation function.
+        enc_global_output_activ_type : str, default='identity'
+            Encoder: Output unit activation function type of global update
             function (multilayer feed-forward neural network). Defaults to
             identity (linear) unit activation function.
         pro_node_hidden_activ_type : str, default='identity'
@@ -247,12 +310,36 @@ class GNNEPDBaseModel(torch.nn.Module):
             Processor: Output unit activation function type of edge update
             function (multilayer feed-forward neural network). Defaults to
             identity (linear) unit activation function.
+        pro_global_hidden_activ_type : str, default='identity'
+            Processor: Hidden unit activation function type of global update
+            function (multilayer feed-forward neural network). Defaults to
+            identity (linear) unit activation function.
+        pro_global_output_activ_type : str, default='identity'
+            Processor: Output unit activation function type of global update
+            function (multilayer feed-forward neural network). Defaults to
+            identity (linear) unit activation function.
         dec_node_hidden_activ_type : str, default='identity'
             Decoder: Hidden unit activation function type of node update
             function (multilayer feed-forward neural network). Defaults to
             identity (linear) unit activation function.
         dec_node_output_activ_type : str, default='identity'
             Decoder: Output unit activation function type of node update
+            function (multilayer feed-forward neural network). Defaults to
+            identity (linear) unit activation function.
+        dec_edge_hidden_activ_type : str, default='identity'
+            Decoder: Hidden unit activation function type of edge update
+            function (multilayer feed-forward neural network). Defaults to
+            identity (linear) unit activation function.
+        dec_edge_output_activ_type : str, default='identity'
+            Decoder: Output unit activation function type of edge update
+            function (multilayer feed-forward neural network). Defaults to
+            identity (linear) unit activation function.
+        dec_global_hidden_activ_type : str, default='identity'
+            Decoder: Hidden unit activation function type of global update
+            function (multilayer feed-forward neural network). Defaults to
+            identity (linear) unit activation function.
+        dec_global_output_activ_type : str, default='identity'
+            Decoder: Output unit activation function type of global update
             function (multilayer feed-forward neural network). Defaults to
             identity (linear) unit activation function.
         is_save_model_init_file: bool, default=True
@@ -271,23 +358,35 @@ class GNNEPDBaseModel(torch.nn.Module):
         self._n_node_in = n_node_in
         self._n_node_out = n_node_out
         self._n_edge_in = n_edge_in
+        self._n_edge_out= n_edge_out
+        self._n_global_in = n_global_in
+        self._n_global_out = n_global_out
         # Set architecture parameters
         self._n_message_steps = n_message_steps
         self._enc_n_hidden_layers = enc_n_hidden_layers
         self._pro_n_hidden_layers = pro_n_hidden_layers
         self._dec_n_hidden_layers = dec_n_hidden_layers
         self._hidden_layer_size = hidden_layer_size
-        self._pro_aggregation_scheme = pro_aggregation_scheme
+        self._pro_edge_to_node_aggr = pro_edge_to_node_aggr
+        self._pro_node_to_global_aggr = pro_node_to_global_aggr
         self._enc_node_hidden_activ_type = enc_node_hidden_activ_type
         self._enc_node_output_activ_type = enc_node_output_activ_type
         self._enc_edge_hidden_activ_type = enc_edge_hidden_activ_type
         self._enc_edge_output_activ_type = enc_edge_output_activ_type
+        self._enc_global_hidden_activ_type = enc_global_hidden_activ_type
+        self._enc_global_output_activ_type = enc_global_output_activ_type
         self._pro_node_hidden_activ_type = pro_node_hidden_activ_type
         self._pro_node_output_activ_type = pro_node_output_activ_type
         self._pro_edge_hidden_activ_type = pro_edge_hidden_activ_type
         self._pro_edge_output_activ_type = pro_edge_output_activ_type
+        self._pro_global_hidden_activ_type = pro_global_hidden_activ_type
+        self._pro_global_output_activ_type = pro_global_output_activ_type
         self._dec_node_hidden_activ_type = dec_node_hidden_activ_type
         self._dec_node_output_activ_type = dec_node_output_activ_type
+        self._dec_edge_hidden_activ_type = dec_edge_hidden_activ_type
+        self._dec_edge_output_activ_type = dec_edge_output_activ_type
+        self._dec_global_hidden_activ_type = dec_global_hidden_activ_type
+        self._dec_global_output_activ_type = dec_global_output_activ_type
         # Set model directory and name
         if os.path.isdir(model_directory):
             self.model_directory = str(model_directory)
@@ -302,16 +401,17 @@ class GNNEPDBaseModel(torch.nn.Module):
         # Set device
         self.set_device(device_type)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        # Initialize GNN-based Encoder-Process-Decoder model
+        # Initialize model
         self._gnn_epd_model = EncodeProcessDecode(
             n_message_steps=n_message_steps,
-            n_node_out=n_node_out, 
+            n_node_out=n_node_out, n_edge_out=0, n_global_out=0,
             enc_n_hidden_layers=enc_n_hidden_layers,
             pro_n_hidden_layers=pro_n_hidden_layers,
             dec_n_hidden_layers=dec_n_hidden_layers,
             hidden_layer_size=hidden_layer_size,
             n_node_in=n_node_in, n_edge_in=n_edge_in,
-            pro_aggregation_scheme=pro_aggregation_scheme,
+            pro_edge_to_node_aggr=pro_edge_to_node_aggr,
+            pro_node_to_global_aggr=pro_node_to_global_aggr,
             enc_node_hidden_activation=type(self).get_pytorch_activation(
                 self._enc_node_hidden_activ_type),
             enc_node_output_activation=type(self).get_pytorch_activation(
@@ -320,6 +420,10 @@ class GNNEPDBaseModel(torch.nn.Module):
                 self._enc_edge_hidden_activ_type),
             enc_edge_output_activation=type(self).get_pytorch_activation(
                 self._enc_edge_output_activ_type),
+            enc_global_hidden_activation=type(self).get_pytorch_activation(
+                self._enc_global_hidden_activ_type),
+            enc_global_output_activation=type(self).get_pytorch_activation(
+                self._enc_global_output_activ_type),
             pro_node_hidden_activation=type(self).get_pytorch_activation(
                 self._pro_node_hidden_activ_type),
             pro_node_output_activation=type(self).get_pytorch_activation(
@@ -328,10 +432,22 @@ class GNNEPDBaseModel(torch.nn.Module):
                 self._pro_edge_hidden_activ_type),
             pro_edge_output_activation=type(self).get_pytorch_activation(
                 self._pro_edge_output_activ_type),
+            pro_global_hidden_activation=type(self).get_pytorch_activation(
+                self._pro_global_hidden_activ_type),
+            pro_global_output_activation=type(self).get_pytorch_activation(
+                self._pro_global_output_activ_type),
             dec_node_hidden_activation=type(self).get_pytorch_activation(
                 self._dec_node_hidden_activ_type),
             dec_node_output_activation=type(self).get_pytorch_activation(
                 self._dec_node_output_activ_type),
+            dec_edge_hidden_activation=type(self).get_pytorch_activation(
+                self._dec_edge_hidden_activ_type),
+            dec_edge_output_activation=type(self).get_pytorch_activation(
+                self._dec_edge_output_activ_type),
+            dec_global_hidden_activation=type(self).get_pytorch_activation(
+                self._dec_global_hidden_activ_type),
+            dec_global_output_activation=type(self).get_pytorch_activation(
+                self._dec_global_output_activ_type),
             is_node_res_connect=False, is_edge_res_connect=False)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Initialize data scalers
@@ -345,7 +461,7 @@ class GNNEPDBaseModel(torch.nn.Module):
     # -------------------------------------------------------------------------
     @staticmethod
     def init_model_from_file(model_directory):
-        """Initialize GNN-based model from initialization file.
+        """Initialize model from initialization file.
         
         Initialization file is assumed to be stored in the model directory
         under the name model_init_file.pkl.
@@ -372,7 +488,7 @@ class GNNEPDBaseModel(torch.nn.Module):
             with open(model_init_file_path, 'rb') as model_init_file:
                 model_init_attributes = pickle.load(model_init_file)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        # Initialize GNN-based model
+        # Initialize model
         model_init_args = model_init_attributes['model_init_args']
         model = GNNEPDBaseModel(**model_init_args,
                                 is_save_model_init_file=False)
@@ -468,12 +584,17 @@ class GNNEPDBaseModel(torch.nn.Module):
         model_init_args['n_node_in'] = self._n_node_in
         model_init_args['n_node_out'] = self._n_node_out
         model_init_args['n_edge_in'] = self._n_edge_in
+        model_init_args['n_edge_out'] = self._n_edge_out
+        model_init_args['n_global_in'] = self._n_global_in
+        model_init_args['n_global_out'] = self._n_global_out
         model_init_args['n_message_steps'] = self._n_message_steps
         model_init_args['dec_n_hidden_layers'] = self._enc_n_hidden_layers
         model_init_args['pro_n_hidden_layers'] = self._pro_n_hidden_layers
         model_init_args['enc_n_hidden_layers'] = self._dec_n_hidden_layers
-        model_init_args['pro_aggregation_scheme'] = \
-            self._pro_aggregation_scheme
+        model_init_args['pro_edge_to_node_aggr'] = \
+            self._pro_edge_to_node_aggr
+        model_init_args['pro_node_to_global_aggr'] = \
+            self._pro_node_to_global_aggr
         model_init_args['hidden_layer_size'] = self._hidden_layer_size
         model_init_args['enc_node_hidden_activ_type'] = \
             self._enc_node_hidden_activ_type
@@ -483,6 +604,10 @@ class GNNEPDBaseModel(torch.nn.Module):
             self._enc_edge_hidden_activ_type
         model_init_args['enc_edge_output_activ_type'] = \
             self._enc_edge_output_activ_type
+        model_init_args['enc_global_hidden_activ_type'] = \
+            self._enc_global_hidden_activ_type
+        model_init_args['enc_global_output_activ_type'] = \
+            self._enc_global_output_activ_type
         model_init_args['pro_node_hidden_activ_type'] = \
             self._pro_node_hidden_activ_type
         model_init_args['pro_node_output_activ_type'] = \
@@ -491,10 +616,22 @@ class GNNEPDBaseModel(torch.nn.Module):
             self._pro_edge_hidden_activ_type
         model_init_args['pro_edge_output_activ_type'] = \
             self._enc_edge_output_activ_type
+        model_init_args['pro_global_hidden_activ_type'] = \
+            self._pro_global_hidden_activ_type
+        model_init_args['pro_global_output_activ_type'] = \
+            self._enc_global_output_activ_type
         model_init_args['dec_node_hidden_activ_type'] = \
             self._dec_node_hidden_activ_type
         model_init_args['dec_node_output_activ_type'] = \
             self._dec_node_output_activ_type
+        model_init_args['dec_edge_hidden_activ_type'] = \
+            self._dec_edge_hidden_activ_type
+        model_init_args['dec_edge_output_activ_type'] = \
+            self._dec_edge_output_activ_type
+        model_init_args['dec_global_hidden_activ_type'] = \
+            self._dec_global_hidden_activ_type
+        model_init_args['dec_global_output_activ_type'] = \
+            self._dec_global_output_activ_type
         model_init_args['model_directory'] = self.model_directory
         model_init_args['model_name'] = self.model_name
         model_init_args['is_data_normalization'] = self.is_data_normalization
@@ -506,8 +643,8 @@ class GNNEPDBaseModel(torch.nn.Module):
         model_init_attributes['model_data_scalers'] = self._data_scalers
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Set model initialization file path
-        model_init_file_path = os.path.join(
-            self.model_directory, 'model_init_file' + '.pkl')
+        model_init_file_path = os.path.join(self.model_directory,
+                                            'model_init_file' + '.pkl')
         # Save model initialization file
         with open(model_init_file_path, 'wb') as init_file:
             pickle.dump(model_init_attributes, init_file)
@@ -532,8 +669,8 @@ class GNNEPDBaseModel(torch.nn.Module):
             (n_edges, n_features).
         edges_indexes : {torch.Tensor, None}
             Edges indexes matrix stored as torch.Tensor(2d) with shape
-            (2, n_edges), where the i-th edge is stored in edges_indexes[:, i]
-            as (start_node_index, end_node_index).
+            (2, n_edges), where the i-th global is stored in
+            edges_indexes[:, i] as (start_node_index, end_node_index).
         """
         # Check input graph
         if not isinstance(graph, torch_geometric.data.Data):
