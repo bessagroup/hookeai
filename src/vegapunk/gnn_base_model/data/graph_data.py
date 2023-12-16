@@ -171,7 +171,7 @@ class GraphData:
         if self._edge_features_matrix is not None:
             edge_attr = torch.tensor(copy.deepcopy(self._edge_features_matrix),
                                      dtype=torch.float)
-        # Set PyG ground-truth labels
+        # Set PyG node ground-truth labels
         y = None
         if self._node_targets_matrix is not None:
             y = torch.tensor(copy.deepcopy(self._node_targets_matrix),
@@ -182,10 +182,33 @@ class GraphData:
             pos = torch.tensor(copy.deepcopy(self._nodes_coords),
                                dtype=torch.float)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set PyG custom attributes:
+        # Set edge ground-truth labels
+        edge_targets_matrix = None
+        if self._edge_targets_matrix is not None:
+            edge_targets_matrix = \
+                torch.tensor(copy.deepcopy(self._edge_targets_matrix),
+                             dtype=torch.float)
+        # Set global attributes
+        global_features_matrix = None
+        if self._global_features_matrix is not None:
+            global_features_matrix = \
+                torch.tensor(copy.deepcopy(self._global_features_matrix),
+                             dtype=torch.float)
+        # Set global ground-truth labels
+        global_targets_matrix = None
+        if self._global_targets_matrix is not None:
+            global_targets_matrix = \
+                torch.tensor(copy.deepcopy(self._global_targets_matrix),
+                             dtype=torch.float)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Instantiate PyG homogeneous graph data object
-        pyg_graph = torch_geometric.data.Data(x=x, edge_index=edge_index,
-                                              edge_attr=edge_attr, y=y,
-                                              pos=pos, num_nodes=num_nodes)
+        pyg_graph = torch_geometric.data.Data(
+            x=x, edge_index=edge_index, edge_attr=edge_attr, y=y,
+            pos=pos, num_nodes=num_nodes,
+            edge_targets_matrix=edge_targets_matrix,
+            global_features_matrix=global_features_matrix,
+            global_targets_matrix=global_targets_matrix)
         # Validate graph data object
         pyg_graph.validate(raise_on_error=True)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
