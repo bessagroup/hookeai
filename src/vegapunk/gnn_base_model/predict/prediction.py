@@ -180,7 +180,8 @@ def predict(dataset, model_directory, predict_directory=None,
             node_features_out = model.predict_node_output_features(pyg_graph)
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ 
             # Get sample node output features ground-truth
-            node_targets = model.get_output_features_from_graph(pyg_graph)
+            node_targets, _, _ = \
+                model.get_output_features_from_graph(pyg_graph)
             # Compute sample node output features prediction loss
             loss = compute_sample_prediction_loss(
                 pyg_graph, model, loss_function, node_features_out,
@@ -364,14 +365,15 @@ def compute_sample_prediction_loss(pyg_graph, model, loss_function,
             norm_node_features_out = \
                 scaler_node_out.transform(node_features_out)
             # Get normalized node output features ground-truth
-            norm_node_targets = model.get_output_features_from_graph(
+            norm_node_targets, _, _ = model.get_output_features_from_graph(
                 pyg_graph, is_normalized=is_normalized)
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Compute sample loss (normalized data)
             loss = loss_function(norm_node_features_out, norm_node_targets)
         else:
             # Get node output features ground-truth
-            node_targets = model.get_output_features_from_graph(pyg_graph)
+            node_targets, _, _ = \
+                model.get_output_features_from_graph(pyg_graph)
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Compute sample loss
             loss = loss_function(node_features_out, node_targets)

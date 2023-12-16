@@ -311,7 +311,7 @@ def train_model(n_max_epochs, dataset, model_init_args, lr_init,
             node_features_out = model.predict_node_output_features(
                 pyg_graph, is_normalized=is_data_normalization)
             # Get node output features ground-truth
-            node_targets = model.get_output_features_from_graph(
+            node_targets, _, _ = model.get_output_features_from_graph(
                 pyg_graph, is_normalized=is_data_normalization)
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Compute loss
