@@ -297,9 +297,9 @@ def test_get_input_features_from_graph(graph_patch_data_2d, tmp_path):
     model = GNNEPDBaseModel(**model_init_args)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Get input features from material patch graph
-    test_node_features_in, test_edge_features_in, test_edges_indexes = \
-        model.get_input_features_from_graph(pyg_graph,
-                                            is_normalized=False)
+    test_node_features_in, test_edge_features_in, test_global_features_in, \
+        test_edges_indexes = model.get_input_features_from_graph(
+            pyg_graph, is_normalized=False)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Check nodes features input matrix
     if not torch.allclose(test_node_features_in,
@@ -311,6 +311,11 @@ def test_get_input_features_from_graph(graph_patch_data_2d, tmp_path):
                           torch.tensor(edge_features_in, dtype=torch.float)):
         errors.append('Extracted edges features input matrix does not '
                       'match graph edges features input matrix.')
+    # Check global features input matrix
+    if not torch.allclose(test_global_features_in,
+                          torch.tensor(global_features_in, dtype=torch.float)):
+        errors.append('Extracted global features input matrix does not '
+                      'match graph global features input matrix.')
     # Check edges indexes
     if not torch.allclose(test_edges_indexes,
                           torch.tensor(edges_indexes.T, dtype=torch.long)):
@@ -331,7 +336,7 @@ def test_get_input_features_from_graph_invalid(graph_patch_data_2d, tmp_path):
     global_targets_matrix = graph_patch_data_2d.get_global_targets_matrix()
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Get PyG homogeneous graph data object
-    pyg_graph = graph_patch_data_2d.get_torch_data_object()
+    _ = graph_patch_data_2d.get_torch_data_object()
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set valid GNN-based material patch model initialization parameters
     model_init_args = dict(n_node_in=node_features_in.shape[1],
@@ -349,22 +354,22 @@ def test_get_input_features_from_graph_invalid(graph_patch_data_2d, tmp_path):
     with pytest.raises(RuntimeError):
         # Test invalid input graph
         model = GNNEPDBaseModel(**model_init_args)
-        _, _, _ = model.get_input_features_from_graph('invalid_type',
-                                                      is_normalized=False)
+        _, _, _, _ = model.get_input_features_from_graph('invalid_type',
+                                                         is_normalized=False)
     with pytest.raises(RuntimeError):
         # Test inconsistent number of node input features
         test_init_args = model_init_args.copy()
         test_init_args['n_node_in'] = node_features_in.shape[1] + 1
         model = GNNEPDBaseModel(**test_init_args)
-        _, _, _ = model.get_input_features_from_graph(pyg_graph,
-                                                      is_normalized=False)
+        _, _, _, _ = model.get_input_features_from_graph('invalid_type',
+                                                         is_normalized=False)
     with pytest.raises(RuntimeError):
         # Test inconsistent number of edge input features
         test_init_args = model_init_args.copy()
         test_init_args['n_edge_in'] = edge_features_in.shape[1] + 1
         model = GNNEPDBaseModel(**test_init_args)
-        _, _, _ = model.get_input_features_from_graph(pyg_graph,
-                                                      is_normalized=False)
+        _, _, _, _ = model.get_input_features_from_graph('invalid_type',
+                                                         is_normalized=False)
 # -----------------------------------------------------------------------------
 def test_get_output_features_from_graph(graph_patch_data_2d, tmp_path):
     """Test extraction of output features from material patch graph.
@@ -401,15 +406,26 @@ def test_get_output_features_from_graph(graph_patch_data_2d, tmp_path):
     model = GNNEPDBaseModel(**model_init_args)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Get input features from material patch graph
-    test_node_features_out = \
-        model.get_output_features_from_graph(pyg_graph, is_normalized=False)
+    test_node_features_out, test_edge_features_out, \
+        test_global_features_out = model.get_output_features_from_graph(
+            pyg_graph, is_normalized=False)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Check nodes features output matrix
+    # Check features output matrices
     if not torch.allclose(test_node_features_out,
                           torch.tensor(node_targets_matrix,
                                        dtype=torch.float)):
         errors.append('Extracted nodes features output matrix does not '
                       'match graph nodes features output matrix.')
+    if not torch.allclose(test_edge_features_out,
+                          torch.tensor(edge_targets_matrix,
+                                       dtype=torch.float)):
+        errors.append('Extracted edges features output matrix does not '
+                      'match graph edges features output matrix.')
+    if not torch.allclose(test_global_features_out,
+                          torch.tensor(global_targets_matrix,
+                                       dtype=torch.float)):
+        errors.append('Extracted global features output matrix does not '
+                      'match graph global features output matrix.')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     assert not errors, "Errors:\n{}".format("\n".join(errors))
 # -----------------------------------------------------------------------------
@@ -528,9 +544,9 @@ def test_data_scaler_transform(gnn_epd_base_model_norm,
     # Get PyG homogeneous graph data object
     pyg_graph = graph_data.get_torch_data_object()
     # Get material patch graph feature matrices
-    node_features_in, edge_features_in, global_features_in = \
+    node_features_in, edge_features_in, global_features_in, edges_indexes = \
         model.get_input_features_from_graph(pyg_graph)
-    node_features_out = model.get_output_features_from_graph(pyg_graph)
+    node_features_out, _, _ = model.get_output_features_from_graph(pyg_graph)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Aggregate features tensors for testing
     feature_tensors = {'node_features_in': node_features_in,
@@ -651,7 +667,7 @@ def test_get_input_features_from_graph_norm(batch_graph_patch_data_2d,
     # Get material patch graph input features matrices
     node_features_in = graph_data.get_node_features_matrix()
     edge_features_in = graph_data.get_edge_features_matrix()
-    global_features_in = graph_data.get_edge_features_matrix()
+    global_features_in = graph_data.get_global_features_matrix()
     # Get material patch graph edges indexes
     edges_indexes = graph_data.get_graph_edges_indexes()
     # Get number of node input and output features
@@ -683,24 +699,35 @@ def test_get_input_features_from_graph_norm(batch_graph_patch_data_2d,
     model.fit_data_scalers(dataset)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Get input features from material patch graph
-    test_node_features_in, test_edge_features_in, test_edges_indexes = \
-        model.get_input_features_from_graph(graph=dataset[0],
-                                            is_normalized=True)
+    test_node_features_in, test_edge_features_in, test_global_features_in, \
+        test_edges_indexes = model.get_input_features_from_graph(
+            graph=dataset[0], is_normalized=True)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Check nodes features input matrix
     if not isinstance(test_node_features_in, torch.Tensor):
         errors.append('Nodes features input matrix is not torch.Tensor.')
-    elif not torch.equal(torch.tensor(test_node_features_in.size()),
-                         torch.tensor(torch.tensor(node_features_in).size())):
+    elif not torch.equal(
+            torch.tensor(test_node_features_in.size()),
+            torch.tensor(torch.tensor(node_features_in).size())):
         errors.append('Nodes features input matrix is not torch.Tensor(2d) '
                       'of shape (n_nodes, n_features).')
     # Check edges features input matrix
     if not isinstance(test_edge_features_in, torch.Tensor):
-        errors.append('Nodes features input matrix is not torch.Tensor.')
-    elif not torch.equal(torch.tensor(test_edge_features_in.size()),
-                         torch.tensor(torch.tensor(edge_features_in).size())):
+        errors.append('Edges features input matrix is not torch.Tensor.')
+    elif not torch.equal(
+            torch.tensor(test_edge_features_in.size()),
+            torch.tensor(torch.tensor(edge_features_in).size())):
         errors.append('Edges features input matrix is not torch.Tensor(2d) '
                       'of shape (n_edges, n_features).')
+    # Check global features input matrix
+    if not isinstance(test_global_features_in, torch.Tensor):
+        errors.append('Global features input matrix is not torch.Tensor.')
+    elif not torch.equal(
+            torch.tensor(test_global_features_in.size()),
+            torch.tensor(torch.tensor(global_features_in).size())):
+        errors.append('Global features input matrix is not torch.Tensor(2d) '
+                      'of shape (1, n_features).')
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Check edges indexes
     if not torch.allclose(test_edges_indexes,
                           torch.tensor(edges_indexes.T, dtype=torch.long)):
@@ -751,9 +778,10 @@ def test_get_output_features_from_graph_norm(batch_graph_patch_data_2d,
     model.fit_data_scalers(dataset)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Get output features from material patch graph
-    test_node_features_out = \
-        model.get_output_features_from_graph(graph=dataset[0],
-                                             is_normalized=True)
+    test_node_features_out, test_edge_features_out, \
+        test_global_features_out = \
+            model.get_output_features_from_graph(graph=dataset[0],
+                                                 is_normalized=True)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Check nodes features output matrix
     if not isinstance(test_node_features_out, torch.Tensor):
@@ -763,6 +791,24 @@ def test_get_output_features_from_graph_norm(batch_graph_patch_data_2d,
             torch.tensor(torch.tensor(node_targets_matrix).size())):
         errors.append('Nodes features output matrix is not torch.Tensor(2d) '
                       'of shape (n_nodes, n_features).')
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Check edge features output matrix
+    if not isinstance(test_edge_features_out, torch.Tensor):
+        errors.append('Edges features output matrix is not torch.Tensor.')
+    elif not torch.equal(
+            torch.tensor(test_edge_features_out.size()),
+            torch.tensor(torch.tensor(edge_targets_matrix).size())):
+        errors.append('Edges features output matrix is not torch.Tensor(2d) '
+                      'of shape (n_edges, n_features).')
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Check global features output matrix
+    if not isinstance(test_global_features_out, torch.Tensor):
+        errors.append('Global features output matrix is not torch.Tensor.')
+    elif not torch.equal(
+            torch.tensor(test_global_features_out.size()),
+            torch.tensor(torch.tensor(global_targets_matrix).size())):
+        errors.append('Global features output matrix is not torch.Tensor(2d) '
+                      'of shape (1, n_features).')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     assert not errors, "Errors:\n{}".format("\n".join(errors))
 # -----------------------------------------------------------------------------
@@ -1214,7 +1260,10 @@ def test_torch_standard_scaler_inverse_transform_invalid(n_features, tensor):
 @pytest.mark.parametrize('features_type, n_features',
                          [('node_features_in', 2),
                           ('edge_features_in', 3),
-                          ('node_features_out', 5)
+                          ('global_features_in', 3),
+                          ('node_features_out', 5),
+                          ('edge_features_out', 4),
+                          ('global_features_out', 2),
                           ])
 def test_graph_standard_partial_fit(batch_graph_patch_data_2d, features_type,
                                     n_features):
@@ -1245,7 +1294,10 @@ def test_graph_standard_partial_fit(batch_graph_patch_data_2d, features_type,
 @pytest.mark.parametrize('features_type, n_features',
                          [('node_features_in', 2),
                           ('edge_features_in', 3),
-                          ('node_features_out', 5)
+                          ('global_features_in', 3),
+                          ('node_features_out', 5),
+                          ('edge_features_out', 4),
+                          ('global_features_out', 2),
                           ])
 def test_graph_standard_partial_fit_invalid(batch_graph_patch_data_2d,
                                             features_type, n_features):
@@ -1268,7 +1320,10 @@ def test_graph_standard_partial_fit_invalid(batch_graph_patch_data_2d,
         test_dataset = dataset[:]
         test_dataset[0].x = None
         test_dataset[0].edge_attr = None
+        test_dataset[0].global_features_matrix = None
         test_dataset[0].y = None
+        test_dataset[0].edge_targets_matrix = None
+        test_dataset[0].global_targets_matrix = None
         # Get scaling parameters and fit data scalers
         _, _ = graph_standard_partial_fit(
             test_dataset, features_type=features_type, n_features=n_features,
