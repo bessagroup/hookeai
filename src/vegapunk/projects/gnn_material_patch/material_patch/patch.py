@@ -15,7 +15,8 @@ import copy
 import numpy as np
 import matplotlib.pyplot as plt
 # Local
-from gnn_material_patch.discretization.finite_element import FiniteElement
+from projects.gnn_material_patch.discretization.finite_element import \
+    FiniteElement
 from ioput.iostandard import new_file_path_with_int
 #
 #                                                          Authorship & Credits

@@ -31,7 +31,7 @@ import numpy as np
 import f3dasm
 import f3dasm.datageneration
 # Local
-from gnn_material_patch.material_patch.patch_generator import \
+from projects.gnn_material_patch.material_patch.patch_generator import \
     FiniteElementPatchGenerator
 from simulators.links.links import LinksSimulator
 from ioput.iostandard import write_summary_file

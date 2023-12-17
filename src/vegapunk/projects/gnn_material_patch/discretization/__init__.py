@@ -1,4 +1,4 @@
 #
 #                                                                       Modules
 # =============================================================================
-from gnn_material_patch.optimization import hydra_optimization
+from projects.gnn_material_patch.discretization import finite_element

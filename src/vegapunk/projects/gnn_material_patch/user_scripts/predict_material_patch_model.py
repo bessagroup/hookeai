@@ -7,7 +7,7 @@ import sys
 import pathlib
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Add project root directory to sys.path
-root_dir = str(pathlib.Path(__file__).parents[2])
+root_dir = str(pathlib.Path(__file__).parents[3])
 if root_dir not in sys.path:
     sys.path.insert(0, root_dir)
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -17,10 +17,10 @@ import torch
 # Local
 from gnn_base_model.data.graph_dataset import GNNGraphDataset
 from gnn_base_model.predict.prediction import predict
-from gnn_material_patch.gnn_model_tools.process_predictions import \
+from projects.gnn_material_patch.gnn_model_tools.process_predictions import \
     build_prediction_data_arrays
 from gnn_base_model.predict.prediction_plots import plot_truth_vs_prediction
-from gnn_material_patch.gnn_model_tools.quality_tests import \
+from projects.gnn_material_patch.gnn_model_tools.quality_tests import \
     perform_quality_tests
 from ioput.iostandard import make_directory, find_unique_file_with_regex, \
     write_summary_file

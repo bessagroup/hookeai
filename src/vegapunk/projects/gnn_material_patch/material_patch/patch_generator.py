@@ -21,8 +21,10 @@ import numpy as np
 import matplotlib.pyplot as plt
 import shapely.geometry
 # Local
-from gnn_material_patch.material_patch.patch import FiniteElementPatch
-from gnn_material_patch.discretization.finite_element import FiniteElement
+from projects.gnn_material_patch.material_patch.patch import \
+    FiniteElementPatch
+from projects.gnn_material_patch.discretization.finite_element import \
+    FiniteElement
 #
 #                                                          Authorship & Credits
 # =============================================================================

@@ -7,7 +7,7 @@ import pytest
 import numpy as np
 # Local
 from src.vegapunk.gnn_base_model.data.graph_data import GraphData
-from gnn_material_patch.gnn_model_tools.features import \
+from projects.gnn_material_patch.gnn_model_tools.features import \
     GNNPatchFeaturesGenerator
 # =============================================================================
 #

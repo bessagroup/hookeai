@@ -5,8 +5,8 @@
 # Third-party
 import pytest
 # Local
-from src.vegapunk.gnn_material_patch.material_patch.patch_generator import \
-    FiniteElementPatchGenerator
+from src.vegapunk.projects.gnn_material_patch.material_patch.patch_generator \
+    import FiniteElementPatchGenerator
 # =============================================================================
 #
 #                                                          Authorship & Credits

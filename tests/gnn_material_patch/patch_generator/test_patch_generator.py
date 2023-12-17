@@ -7,8 +7,8 @@ import pytest
 import numpy as np
 import matplotlib.pyplot as plt
 # Local
-from gnn_material_patch.material_patch.patch_generator import \
-    FiniteElementPatchGenerator, rotation_tensor_from_euler_angles
+from src.vegapunk.projects.gnn_material_patch.material_patch.patch_generator \
+    import FiniteElementPatchGenerator, rotation_tensor_from_euler_angles
 from tests.finite_element.conftest import available_elem_type
 # =============================================================================
 #

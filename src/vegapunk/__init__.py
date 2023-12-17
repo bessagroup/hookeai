@@ -11,6 +11,6 @@ if root_dir not in sys.path:
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 from src.vegapunk import main
 from src.vegapunk import gnn_base_model
-from src.vegapunk import gnn_material_patch
+from src.vegapunk import projects
 from src.vegapunk import ioput
 from src.vegapunk import simulators

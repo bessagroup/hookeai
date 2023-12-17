@@ -5,8 +5,8 @@
 # Third-party
 import pytest
 # Local
-from gnn_material_patch.material_patch.patch_dataset import \
-    get_default_design_parameters
+from src.vegapunk.projects.gnn_material_patch.material_patch.patch_dataset \
+    import get_default_design_parameters
 # =============================================================================
 #
 #                                                          Authorship & Credits

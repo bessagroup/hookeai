@@ -5,8 +5,8 @@
 # Third-party
 import pytest
 # Local
-from src.vegapunk.gnn_material_patch.discretization.finite_element import \
-    FiniteElement
+from src.vegapunk.projects.gnn_material_patch.discretization.finite_element \
+    import FiniteElement
 # =============================================================================
 #
 #                                                          Authorship & Credits

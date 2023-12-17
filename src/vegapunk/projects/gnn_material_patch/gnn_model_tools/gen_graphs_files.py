@@ -20,7 +20,7 @@ import tqdm
 from gnn_base_model.data.graph_data import GraphData
 from gnn_base_model.data.graph_dataset import \
     write_graph_dataset_summary_file
-from gnn_material_patch.gnn_model_tools.features import \
+from projects.gnn_material_patch.gnn_model_tools.features import \
     GNNPatchFeaturesGenerator
 #
 #                                                          Authorship & Credits
