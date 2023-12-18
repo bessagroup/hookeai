@@ -182,7 +182,8 @@ def generate_dataset_samples_files(dataset_directory, dataset_file_path,
         graph_data.set_node_features_matrix(node_features_matrix)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Set global targets matrix
-        global_targets_matrix = np.array([shell_data['knock_down'],])
+        global_targets_matrix = \
+            np.array([shell_data['knock_down'],]).reshape(1, -1)
         # Set graph global targets
         graph_data.set_global_targets_matrix(global_targets_matrix)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
