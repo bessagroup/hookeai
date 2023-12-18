@@ -328,9 +328,15 @@ class EncodeProcessDecode(torch.nn.Module):
 
         Returns
         -------
-        node_features_out : torch.Tensor
+        node_features_out : {torch.Tensor, None}
             Nodes features output matrix stored as a torch.Tensor(2d) of shape
             (n_nodes, n_features).
+        edge_features_out : {torch.Tensor, None}
+            Edges features output matrix stored as a torch.Tensor(2d) of shape
+            (n_edges, n_features).
+        global_features_out : {torch.Tensor, None}
+            Global features output matrix stored as a torch.Tensor(2d) of shape
+            (1, n_features).
         """
         # Check input features matrices
         if (node_features_in is None and edge_features_in is None
@@ -358,7 +364,7 @@ class EncodeProcessDecode(torch.nn.Module):
                           edge_features_in=edge_features,
                           global_features_in=global_features)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        return node_features_out
+        return node_features_out, edge_features_out, global_features_out
 # =============================================================================
 class Encoder(GraphIndependentNetwork):
     """GNN-based encoder.
