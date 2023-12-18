@@ -325,6 +325,10 @@ class GraphData:
                 raise RuntimeError('Nodes input features matrix must be '
                                    'provided as a numpy 2d array of shape '
                                    '(n_nodes, n_features).')
+            elif len(node_features_matrix.shape) != 2:
+                raise RuntimeError('Nodes input features matrix must be '
+                                   'provided as a numpy 2d array of shape '
+                                   '(n_nodes, n_features).')
             elif node_features_matrix.shape[0] != self._n_node:
                 raise RuntimeError(f'Nodes input features matrix shape '
                                    f'({self._nodes_coords.shape}) is not '
@@ -360,6 +364,10 @@ class GraphData:
         else:
             # Check edges input features matrix
             if not isinstance(edge_features_matrix, np.ndarray):
+                raise RuntimeError('Edges input features matrix must be '
+                                   'provided as a numpy 2d array of shape '
+                                   '(n_edges, n_features).')
+            elif len(edge_features_matrix.shape) != 2:
                 raise RuntimeError('Edges input features matrix must be '
                                    'provided as a numpy 2d array of shape '
                                    '(n_edges, n_features).')
@@ -406,6 +414,10 @@ class GraphData:
                 raise RuntimeError('Global input features matrix must be '
                                    'provided as a numpy 2d array of shape '
                                    '(1, n_features).')
+            elif len(global_features_matrix.shape) != 2:
+                raise RuntimeError('Global input features matrix must be '
+                                   'provided as a numpy 2d array of shape '
+                                   '(1, n_features).')
             elif global_features_matrix.shape[0] != 1:
                 raise RuntimeError('Global input features matrix must be '
                                    'provided as a numpy 2d array of shape '
@@ -443,6 +455,10 @@ class GraphData:
                 raise RuntimeError('Nodes targets matrix must be provided '
                                    'as a numpy 2d array of shape '
                                    '(n_nodes, n_targets).')
+            elif len(node_targets_matrix.shape) != 2:
+                raise RuntimeError('Nodes targets matrix matrix must be '
+                                   'provided as a numpy 2d array of shape '
+                                   '(n_nodes, n_targets).')
             elif node_targets_matrix.shape[0] != self._n_node:
                 raise RuntimeError(f'Nodes targets matrix shape '
                                    f'({node_targets_matrix.shape}) is not '
@@ -479,6 +495,10 @@ class GraphData:
             if not isinstance(edge_targets_matrix, np.ndarray):
                 raise RuntimeError('Edges targets matrix must be provided '
                                    'as a numpy 2d array of shape '
+                                   '(n_edges, n_targets).')
+            elif len(edge_targets_matrix.shape) != 2:
+                raise RuntimeError('Edges targets matrix matrix must be '
+                                   'provided as a numpy 2d array of shape '
                                    '(n_edges, n_targets).')
             elif (self._n_edge is not None
                   and (edge_targets_matrix.shape[0] != self._n_edge)):
@@ -521,6 +541,10 @@ class GraphData:
             if not isinstance(global_targets_matrix, np.ndarray):
                 raise RuntimeError('Global targets matrix must be provided '
                                    'as a numpy 2d array of shape '
+                                   '(1, n_targets).')
+            elif len(global_targets_matrix.shape) != 2:
+                raise RuntimeError('Global targets matrix matrix must be '
+                                   'provided as a numpy 2d array of shape '
                                    '(1, n_targets).')
             elif global_targets_matrix.shape[0] != 1:
                 raise RuntimeError('Global targets matrix must be provided '
