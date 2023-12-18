@@ -121,6 +121,8 @@ class GNNGraphDataset(torch.utils.data.Dataset):
         Get directory where the Graph Neural Network graph data set is stored.
     get_dataset_sample_files(self)
         Get Graph Neural Network graph data set data set samples files paths.
+    set_dataset_basename(self, dataset_basename)
+        Set data set file base name.
     get_dataset_basename(self)
         Get data set file base name.
     save_dataset(self)
@@ -131,7 +133,7 @@ class GNNGraphDataset(torch.utils.data.Dataset):
         Update directory where Graph Neural Network graph data set is stored.
     """
     def __init__(self, dataset_directory, dataset_sample_files,
-                 is_store_dataset=False):
+                 dataset_basename='graph_dataset', is_store_dataset=False):
         """Constructor.
         
         Parameters 
@@ -143,6 +145,8 @@ class GNNGraphDataset(torch.utils.data.Dataset):
             Graph Neural Network graph data set samples file paths. Each sample
             file contains a torch_geometric.data.Data object describing a
             homogeneous graph.
+        dataset_basename : str, default='graph_dataset'
+            Data set file base name.
         is_store_dataset : bool, default=False
             If True, then the Graph Neural Network graph data set samples are
             loaded and stored in attribute dataset_samples_data. If False,
@@ -186,7 +190,7 @@ class GNNGraphDataset(torch.utils.data.Dataset):
                 self._dataset_samples.append(torch.load(file_path))
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Set data set file base name
-        self._dataset_basename = 'material_patch_graph_dataset'
+        self._dataset_basename = str(dataset_basename)
     # -------------------------------------------------------------------------
     def __len__(self):
         """Return size of data set (number of samples).
@@ -242,6 +246,16 @@ class GNNGraphDataset(torch.utils.data.Dataset):
             a homogeneous graph.
         """
         return self._dataset_sample_files
+    # -------------------------------------------------------------------------
+    def set_dataset_basename(self, dataset_basename):
+        """Set data set file base name.
+        
+        Parameters
+        ----------
+        dataset_basename : str
+            Data set file base name.
+        """
+        self._dataset_basename = str(dataset_basename)
     # -------------------------------------------------------------------------
     def get_dataset_basename(self):
         """Get data set file base name.

@@ -78,6 +78,7 @@ def generate_dataset(case_study_name, sim_dataset_file_path, dataset_directory,
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Initialize GNN-based material patch data set
     dataset = GNNGraphDataset(dataset_directory, dataset_samples_files,
+                              dataset_basename='material_patch_graph_dataset',
                               is_store_dataset=False)
     # Save GNN-based material patch data set to file
     dataset_file_path = dataset.save_dataset(is_append_n_sample=True)
