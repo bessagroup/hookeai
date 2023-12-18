@@ -32,9 +32,10 @@ __status__ = 'Planning'
 # =============================================================================
 #
 # =============================================================================
-def generate_dataset_samples_files(dataset_directory,
+def generate_dataset_samples_files(dataset_directory, dataset_file_path,
                                    sample_file_basename='material_patch_graph',
-                                   is_save_plot_patch=False, is_verbose=False):
+                                   is_save_sample_plot=False,
+                                   is_verbose=False):
     """Generate data set graph samples files.
 
     Parameters
@@ -42,10 +43,12 @@ def generate_dataset_samples_files(dataset_directory,
     dataset_directory : str
         Directory where the data set is stored (all ata set samples files).
         All existent files are overridden when saving sample data files.
-    sample_file_basename : str, default='shell_graph'
+    dataset_file_path : str
+        Data set file path.
+    sample_file_basename : str, default='sample_graph'
         Basename of data set sample file. The basename is appended with sample
         index.
-    is_save_plot_patch : bool, default=False
+    is_save_sample_plot : bool, default=False
         Save plot of each sample graph in the same directory where the data set
         is stored.
     is_verbose : bool, default=False
@@ -71,11 +74,15 @@ def generate_dataset_samples_files(dataset_directory,
     else:
         dataset_directory = os.path.normpath(dataset_directory)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Set data set file path
-    dataset_path = ('/home/bernardoferreira/Documents/brown/projects/'
-                    'shell_knock_down/shells_small.csv')
+    # Check data set file
+    if not os.path.isfile(dataset_file_path):
+        raise RuntimeError('The data set file has not been found:'
+                           '\n\n' + dataset_file_path)
+    else:
+        dataset_file_path = os.path.normpath(dataset_file_path)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Load data set
-    df = pandas.read_csv(dataset_path, index_col='shell_id')
+    df = pandas.read_csv(dataset_file_path)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Get shells ids
     shells_ids = set(df.loc[:, 'shell_id'])
@@ -106,7 +113,7 @@ def generate_dataset_samples_files(dataset_directory,
         shell_data['defects'] = shell_defects
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Set shell global attributes
-        global_attr = ('shell_id', 'knock_down', 'radius', 'nu', 'eta')
+        global_attr = ('shell_id', 'knock_down', 'radius', 'eta', 'nu')
         # Build shell global data
         for key in global_attr:
             shell_data[key] = df.iloc[0, df_shell_id.columns.get_loc(key)] 
@@ -129,42 +136,51 @@ def generate_dataset_samples_files(dataset_directory,
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Get shell radius
         shell_radius = shell_data['radius']
+        # Get shell thickness
+        shell_thickness = shell_data['radius']/shell_data['eta']
         # Get shell number of defects
         n_defects = len(shell_data['defects'])
+        # Get shell Poisson's ratio
+        poisson = shell_data['nu']
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        # Initialize defects (nodes) spherical coordinates
+        # Initialize defects (nodes) spherical and cartesian coordinates
+        defects_coords_spherical = np.zeros((n_defects, 3))
         defects_coords = np.zeros((n_defects, 3))
         # Loop over defects
         for j, defect in enumerate(shell_data['defects']):
             # Assemble defect spherical coordinates
-            defects_coords[j, :] = \
-                np.array([defect['theta'], defect['phi'], shell_radius])
+            defects_coords_spherical[j, :] = \
+                np.array([shell_radius, defect['theta'], defect['phi']])
+            # Assemble defect cartesian coordinates
+            defects_coords[j, :] = np.array(
+                [shell_radius*np.sin(defect['phi'])*np.cos(defect['theta']),
+                 shell_radius*np.sin(defect['phi'])*np.sin(defect['theta']),
+                 shell_radius*np.cos(defect['phi'])])
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Initialize defects (nodes) geometry
         defects_geometry = np.zeros((n_defects, 2))
         # Loop over defects
         for j, defect in enumerate(shell_data['defects']):
             # Assemble defect geometry
-            defects_coords[j, :] = \
+            defects_geometry[j, :] = \
                 np.array([defect['delta'], defect['lambda']])
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Instantiate graph data
         graph_data = GraphData(n_dim=3, nodes_coords=defects_coords)
         # Set connectivity radius (maximum distance between two nodes leading
         # to an edge)
-        connect_radius = None                                                  # Implement this computation
+        connect_radius = get_critical_buckling_wavelength(
+            poisson, shell_radius, shell_thickness)
         # Set graph edges
         graph_data.set_graph_edges_indexes(connect_radius=connect_radius)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Set node features
-        node_features = ('theta', 'phi', 'radius', 'delta', 'lambda')
+        node_features = ('radius', 'theta', 'phi', 'delta', 'lambda')
         # Set node features matrix
         node_features_matrix = np.hstack((defects_coords, defects_geometry))
         # Set graph node features
         graph_data.set_node_features_matrix(node_features_matrix)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        # Set global features
-        global_features = ('knock_down',)
         # Set global targets matrix
         global_targets_matrix = np.array([shell_data['knock_down'],])
         # Set graph global targets
@@ -185,11 +201,15 @@ def generate_dataset_samples_files(dataset_directory,
         dataset_sample_files.append(sample_file_path)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Save graph sample plot
-        if is_save_plot_patch:
+        if is_save_sample_plot:
             # Set sample plot name
             sample_file_name = sample_file_basename + '_' + str(i) + '_plot'
             # Save sample plot
-            pass
+            graph_data.plot_material_patch_graph(
+                is_save_plot=is_save_sample_plot,
+                save_directory=dataset_directory,
+                plot_name=sample_file_name,
+                is_overwrite_file=True)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     if is_verbose:
         print('\n> Finished graphs generation process!\n')
@@ -213,9 +233,32 @@ def generate_dataset_samples_files(dataset_directory,
               f'Avg. generation time per graph: '
               f'{str(datetime.timedelta(seconds=int(avg_time_sec)))}\n')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Write summary data file for graph data set generation                    # Fix
+    # Write summary data file for graph data set generation
     write_graph_dataset_summary_file(dataset_directory, n_sample,
-                                     node_features, None,
-                                     total_time_sec, avg_time_sec)
+                                     total_time_sec, avg_time_sec,
+                                     node_features=node_features)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ 
     return dataset_directory, dataset_sample_files
+# =============================================================================
+def get_critical_buckling_wavelength(poisson, shell_radius, shell_thickness):
+    """Compute shell critical buckling wavelength.
+    
+    Parameters
+    ----------
+    poisson : float
+        Material Poisson ratio.
+    shell_radius : float
+        Shell radius.
+    shell_thickness : float
+        Shell thickness.
+        
+    Returns
+    -------
+    critical_bw : float
+        Critical buckling wavelength.
+    """
+    # Compute critical buckling wavelength
+    critical_bw = 2*np.pi*((12*(1 - poisson**2))**(-1/4))*(
+        (shell_radius*shell_thickness)**(1/2))
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    return critical_bw
