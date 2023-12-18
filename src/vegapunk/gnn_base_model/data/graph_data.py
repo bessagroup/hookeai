@@ -567,19 +567,45 @@ class GraphData:
         # Get edges
         edges_indexes = self._edges_indexes
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        # Generate plot
-        fig, ax = plt.subplots()
-        # Plot nodes
-        if nodes_coords is not None:
-            ax.plot(nodes_coords[:, 0], nodes_coords[:, 1],
-                    'o', color='#d62728', label='Nodes', zorder=10)
-        # Plot edges
-        if nodes_coords is not None and edges_indexes is not None:
-            for (i, j) in edges_indexes:
-                ax.plot([nodes_coords[i, 0], nodes_coords[j, 0]],
-                        [nodes_coords[i, 1], nodes_coords[j, 1]],
-                        '-', color='#1d77b4', zorder=5)          
-        ax.plot([], [], '-', color='#1d77b4', label='Edges', zorder=5)   
+        # Get number of dimensions
+        n_dim = nodes_coords.shape[1]
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Generate plot according with number of dimensions
+        if n_dim == 2:
+            # Generate 2D plot
+            fig, ax = plt.subplots()
+            # Plot nodes
+            if nodes_coords is not None:
+                ax.plot(nodes_coords[:, 0], nodes_coords[:, 1],
+                        'o', color='#d62728', label='Nodes', zorder=10)
+            # Plot edges
+            if nodes_coords is not None and edges_indexes is not None:
+                for (i, j) in edges_indexes:
+                    ax.plot([nodes_coords[i, 0], nodes_coords[j, 0]],
+                            [nodes_coords[i, 1], nodes_coords[j, 1]],
+                            '-', color='#1d77b4', zorder=5)          
+            ax.plot([], [], '-', color='#1d77b4', label='Edges', zorder=5)
+        elif n_dim == 3:
+            # Generate 3D plot
+            fig, ax = plt.subplots(subplot_kw={'projection': '3d',
+                                               'computed_zorder': False})
+            # Hide grid lines
+            ax.grid(False)
+            # Plot nodes
+            if nodes_coords is not None:
+                ax.scatter(nodes_coords[:, 0], nodes_coords[:, 1],
+                           nodes_coords[:, 2], color='#d62728', label='Nodes',
+                           depthshade=False, zorder=10)
+            # Plot edges
+            if nodes_coords is not None and edges_indexes is not None:
+                for (i, j) in edges_indexes:
+                    ax.plot([nodes_coords[i, 0], nodes_coords[j, 0]],
+                            [nodes_coords[i, 1], nodes_coords[j, 1]],
+                            [nodes_coords[i, 2], nodes_coords[j, 2]],
+                            '-', color='#1d77b4', zorder=5)
+            ax.plot([], [], '-', color='#1d77b4', label='Edges', zorder=5)
+        else:
+            raise RuntimeError('Invalid number of dimensions.')
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Set plot legend
         ax.legend(loc='center', ncol=3, numpoints=1, frameon=True,
@@ -594,12 +620,12 @@ class GraphData:
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Save figure (pdf format)
         if is_save_plot and os.path.exists(str(save_directory)):
-            # Set figure path
+            # Set default figure name
             if plot_name is None:
-                plot_name = 'material_patch_graph'
-            fig_path = \
-                os.path.join(os.path.normpath(save_directory), plot_name) \
-                    + '.pdf'
+                plot_name = 'plot_graph'
+            # Set figure path
+            fig_path = os.path.join(os.path.normpath(save_directory),
+                                    plot_name) + '.pdf'
             if os.path.isfile(fig_path) and not is_overwrite_file:
                 fig_path = new_file_path_with_int(fig_path)
             # Set figure size (inches)
