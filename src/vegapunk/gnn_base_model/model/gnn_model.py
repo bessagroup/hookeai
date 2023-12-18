@@ -176,6 +176,8 @@ class GNNEPDBaseModel(torch.nn.Module):
         Get output features from graph.
     predict_node_output_features(self, input_graph)
         Predict node output features.
+    predict_output_features(self, input_graph, is_normalized=False)
+        Predict output features.
     save_model_state(self)
         Save model state to file.
     load_model_state(self)
@@ -404,7 +406,8 @@ class GNNEPDBaseModel(torch.nn.Module):
         # Initialize model
         self._gnn_epd_model = EncodeProcessDecode(
             n_message_steps=n_message_steps,
-            n_node_out=n_node_out, n_edge_out=0, n_global_out=0,
+            n_node_out=n_node_out, n_edge_out=n_edge_out,
+            n_global_out=n_global_out,
             enc_n_hidden_layers=enc_n_hidden_layers,
             pro_n_hidden_layers=pro_n_hidden_layers,
             dec_n_hidden_layers=dec_n_hidden_layers,
@@ -850,7 +853,7 @@ class GNNEPDBaseModel(torch.nn.Module):
                 input_graph, is_normalized=self.is_data_normalization)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Predict node output features
-        node_features_out = \
+        node_features_out, _, _ = \
             self._gnn_epd_model(edges_indexes=edges_indexes,
                                 node_features_in=node_features_in,
                                 edge_features_in=edge_features_in)
@@ -864,6 +867,69 @@ class GNNEPDBaseModel(torch.nn.Module):
                     mode='denormalize')
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         return node_features_out
+    # -------------------------------------------------------------------------
+    def predict_output_features(self, input_graph, is_normalized=False):
+        """Predict output features.
+        
+        Parameters
+        ----------
+        input_graph : torch_geometric.data.Data
+            Homogeneous graph.
+        is_normalized : bool, default=False
+            If True, get normalized output features from graph, False
+            otherwise.
+
+        Returns
+        -------
+        node_features_out : {torch.Tensor, None}
+            Nodes features output matrix stored as a torch.Tensor(2d) of shape
+            (n_nodes, n_features).
+        edge_features_out : {torch.Tensor, None}
+            Edges features output matrix stored as a torch.Tensor(2d) of shape
+            (n_edges, n_features).
+        global_features_out : {torch.Tensor, None}
+            Global features output matrix stored as a torch.Tensor(2d) of shape
+            (1, n_features).
+        """
+        # Check input graph type
+        if not isinstance(input_graph, torch_geometric.data.Data):
+            raise RuntimeError('Input graph must be instance of '
+                               'torch_geometric.data.Data.')
+        # Check model data normalization
+        if is_normalized:
+            self.check_normalized_return()
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Get features from input graph
+        node_features_in, edge_features_in, global_features_in, \
+            edges_indexes = self.get_input_features_from_graph(
+                input_graph, is_normalized=self.is_data_normalization)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Predict output features
+        node_features_out, edge_features_out, global_features_out = \
+            self._gnn_epd_model(edges_indexes=edges_indexes,
+                                node_features_in=node_features_in,
+                                edge_features_in=edge_features_in,
+                                global_features_in=global_features_in)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Denormalize output features data
+        if self.is_data_normalization and not is_normalized:
+            if node_features_out is not None:
+                node_features_out = self.data_scaler_transform(
+                    tensor=node_features_out,
+                    features_type='node_features_out',
+                    mode='denormalize')
+            if edge_features_out is not None:
+                edge_features_out = self.data_scaler_transform(
+                    tensor=edge_features_out,
+                    features_type='edge_features_out',
+                    mode='denormalize')
+            if global_features_out is not None:
+                global_features_out = self.data_scaler_transform(
+                    tensor=global_features_out,
+                    features_type='global_features_out',
+                    mode='denormalize')
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        return node_features_out, edge_features_out, global_features_out
     # -------------------------------------------------------------------------
     @staticmethod
     def get_pytorch_activation(activation_type, **kwargs):
