@@ -525,10 +525,10 @@ def get_pyg_data_loader(dataset, batch_size=1, is_shuffle=False,
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     return data_loader
 # =============================================================================
-def write_graph_dataset_summary_file(dataset_directory, n_sample,
-                                     node_features, edge_features,
-                                     total_time_sec, avg_time_sample):
-    """Write summary data file for GNN-based patch data set generation.
+def write_graph_dataset_summary_file(
+    dataset_directory, n_sample, total_time_sec, avg_time_sample,
+    node_features=None, edge_features=None, global_features=None):
+    """Write summary data file for GNN-based data set generation.
     
     Parameters
     ----------
@@ -538,20 +538,23 @@ def write_graph_dataset_summary_file(dataset_directory, n_sample,
         sample data files.
     n_sample : int
         Data set size (number of samples).
-    node_features : tuple[str]
-        Graph Neural Network graph data set nodes features.
-    edge_features : tuple[str]
-        Graph Neural Network graph data set edges features.
     total_time_sec : int
         Total generation time in seconds.
     avg_time_sample : float
-        Average generation time per patch.
+        Average generation time per sample.
+    node_features : tuple[str], default=None
+        Graph Neural Network graph data set nodes features.
+    edge_features : tuple[str], default=None
+        Graph Neural Network graph data set edges features.
+    global_features : tuple[str], default=None
+        Graph Neural Network graph data set global features.
     """
     # Set summary data
     summary_data = {}
     summary_data['n_sample'] = n_sample
     summary_data['node_features'] = node_features
     summary_data['edge_features'] = edge_features
+    summary_data['global_features'] = global_features
     summary_data['Total generation time'] = \
         str(datetime.timedelta(seconds=int(total_time_sec)))
     summary_data['Avg. generation time per graph'] = \

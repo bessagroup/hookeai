@@ -217,7 +217,8 @@ def generate_dataset_samples_files(dataset_directory, node_features,
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Write summary data file for graph data set generation
     write_graph_dataset_summary_file(dataset_directory, n_sample,
-                                     node_features, edge_features,
-                                     total_time_sec, avg_time_sec)
+                                     total_time_sec, avg_time_sec,
+                                     node_features=node_features,
+                                     edge_features=edge_features)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ 
     return dataset_directory, dataset_sample_files
