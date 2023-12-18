@@ -106,7 +106,10 @@ def generate_dataset_samples_files(dataset_directory, dataset_file_path,
             defect = {}
             # Build defect data
             for key in defect_attr:
-                defect[key] = row[key]
+                if key in ('defect_id',):
+                    defect[key] = int(row[key])
+                else:
+                    defect[key] = row[key]
             # Assemble defect data
             shell_defects.append(defect)
         # Assemble shell defects data
@@ -116,7 +119,11 @@ def generate_dataset_samples_files(dataset_directory, dataset_file_path,
         global_attr = ('shell_id', 'knock_down', 'radius', 'eta', 'nu')
         # Build shell global data
         for key in global_attr:
-            shell_data[key] = df.iloc[0, df_shell_id.columns.get_loc(key)] 
+            value = df_shell_id.iloc[0, df_shell_id.columns.get_loc(key)] 
+            if key in ('shell_id',):
+                shell_data[key] = int(value)
+            else:
+                shell_data[key] = value
         # Assemble shell global data
         shells_data.append(shell_data)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
