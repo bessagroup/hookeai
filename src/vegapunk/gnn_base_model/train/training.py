@@ -66,7 +66,8 @@ __status__ = 'Planning'
 # =============================================================================
 def train_model(n_max_epochs, dataset, model_init_args, lr_init,
                 opt_algorithm='adam', lr_scheduler_type=None,
-                lr_scheduler_kwargs={}, loss_type='mse', loss_kwargs={},
+                lr_scheduler_kwargs={}, loss_nature='node_features_out',
+                loss_type='mse', loss_kwargs={},
                 batch_size=1, is_sampler_shuffle=False,
                 is_early_stopping=False, early_stopping_kwargs={},
                 load_model_state=None, save_every=None, dataset_file_path=None,
@@ -102,6 +103,14 @@ def train_model(n_max_epochs, dataset, model_init_args, lr_init,
 
     lr_scheduler_kwargs : dict, default={}
         Arguments of torch.optim.lr_scheduler.LRScheduler initializer.
+    loss_nature : {'node_features_out','global_features_out'}, \
+                  default='node_features_out'
+        Loss nature:
+        
+        'node_features_out' : Based on node output features
+
+        'global_features_out' : Based on global output features
+
     loss_type : {'mse',}, default='mse'
         Loss function type:
         

@@ -30,6 +30,8 @@ n_max_epochs: 100
 batch_size: 5
 # Data set shuffler
 is_sampler_shuffle: true
+# Loss nature
+loss_nature: 'node_features_out'
 # Loss type
 loss_type: 'mse'
 # Loss parameters

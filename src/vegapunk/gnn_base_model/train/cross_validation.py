@@ -33,8 +33,9 @@ __status__ = 'Planning'
 def kfold_cross_validation(cross_validation_dir, n_fold, n_max_epochs,
                            dataset, model_init_args, lr_init,
                            opt_algorithm='adam', lr_scheduler_type='steplr',
-                           lr_scheduler_kwargs={}, loss_type='mse',
-                           loss_kwargs={}, batch_size=1,
+                           lr_scheduler_kwargs={},
+                           loss_nature='node_features_out',
+                           loss_type='mse', loss_kwargs={}, batch_size=1,
                            is_sampler_shuffle=False,
                            is_early_stopping=False, early_stopping_kwargs={},
                            dataset_file_path=None, device_type='cpu',
@@ -81,6 +82,14 @@ def kfold_cross_validation(cross_validation_dir, n_fold, n_max_epochs,
 
     lr_scheduler_kwargs : dict, default={}
         Arguments of torch.optim.lr_scheduler.LRScheduler initializer.
+    loss_nature : {'node_features_out','global_features_out'}, \
+                  default='node_features_out'
+        Loss nature:
+        
+        'node_features_out' : Based on node output features
+
+        'global_features_out' : Based on global output features
+
     loss_type : {'mse',}, default='mse'
         Loss function type:
         
@@ -178,9 +187,9 @@ def kfold_cross_validation(cross_validation_dir, n_fold, n_max_epochs,
         model, best_training_loss, _ = train_model(
             n_max_epochs, training_dataset, model_init_args, lr_init,
             opt_algorithm=opt_algorithm, lr_scheduler_type=lr_scheduler_type,
-            lr_scheduler_kwargs=lr_scheduler_kwargs, loss_type=loss_type,
-            loss_kwargs=loss_kwargs, batch_size=batch_size,
-            is_sampler_shuffle=is_sampler_shuffle,
+            lr_scheduler_kwargs=lr_scheduler_kwargs, loss_nature=loss_nature,
+            loss_type=loss_type, loss_kwargs=loss_kwargs,
+            batch_size=batch_size, is_sampler_shuffle=is_sampler_shuffle,
             is_early_stopping=is_early_stopping,
             early_stopping_kwargs=early_stopping_kwargs,
             device_type=device_type, seed=None, is_verbose=False)
