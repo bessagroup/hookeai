@@ -131,7 +131,7 @@ if __name__ == "__main__":
     base_dir = ('/home/bernardoferreira/Documents/brown/projects/'
                 'shell_knock_down/case_studies/')
     # Set case study directory
-    case_study_name = 'medium'
+    case_study_name = 'full'
     case_study_dir = os.path.join(os.path.normpath(base_dir),
                                   f'{case_study_name}')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

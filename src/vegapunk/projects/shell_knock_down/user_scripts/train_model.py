@@ -61,7 +61,7 @@ def perform_model_standard_training(case_study_name, dataset_file_path,
                 set_default_training_options()
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set GNN-based model training options
-    if case_study_name in ('small', 'medium'):
+    if case_study_name in ('small', 'medium', 'full'):
         # Set number of epochs
         n_max_epochs = 300
         # Set batch size
@@ -70,7 +70,7 @@ def perform_model_standard_training(case_study_name, dataset_file_path,
         lr_init = 1.0e-03
         # Set learning rate scheduler
         lr_scheduler_type = 'explr'
-        lr_scheduler_kwargs = {'gamma': 0.998}
+        lr_scheduler_kwargs = {'gamma': 0.999}
         # Set early stopping
         is_early_stopping = False
         early_stopping_kwargs = {'validation_size': 0.2,
@@ -167,7 +167,7 @@ def perform_model_kfold_cross_validation(case_study_name, dataset_file_path,
                 set_default_training_options()
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set GNN-based model training options
-    if case_study_name in ('small', 'full'):
+    if case_study_name in ('small', 'medium', 'full'):
         # Set number of epochs
         n_max_epochs = 50
         # Set batch size
@@ -235,7 +235,7 @@ def set_case_study_model_parameters(case_study_name, model_directory,
         GNN-based model class initialization parameters (check
         class GNNEPDBaseModel).
     """
-    if case_study_name in ('small', 'medium'):
+    if case_study_name in ('small', 'medium', 'full'):
         # Set GNN-based model name
         model_name = 'shell_knock_down_model'
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -374,7 +374,7 @@ if __name__ == "__main__":
     base_dir = ('/home/bernardoferreira/Documents/brown/projects/'
                 'shell_knock_down/case_studies/')
     # Set case study directory
-    case_study_name = 'medium'
+    case_study_name = 'full'
     case_study_dir = os.path.join(os.path.normpath(base_dir),
                                   f'{case_study_name}')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

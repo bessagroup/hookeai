@@ -80,7 +80,7 @@ def set_default_saving_options():
         is stored.
     """
     sample_file_basename = 'shell_graph'
-    is_save_sample_plot = True
+    is_save_sample_plot = False
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     return sample_file_basename, is_save_sample_plot
 # =============================================================================
@@ -94,13 +94,13 @@ if __name__ == "__main__":
     # Set data set file path (shells .csv file)
     dataset_csv_file_path = \
         ('/home/bernardoferreira/Documents/brown/projects/'
-         'shell_knock_down/datasets_files/shells_medium.csv')
+         'shell_knock_down/datasets_files/shells_full.csv')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set case studies base directory
     base_dir = ('/home/bernardoferreira/Documents/brown/projects/'
                 'shell_knock_down/case_studies/')
     # Set case study directory
-    case_study_name = 'medium'
+    case_study_name = 'full'
     case_study_dir = os.path.join(os.path.normpath(base_dir),
                                   f'{case_study_name}')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
