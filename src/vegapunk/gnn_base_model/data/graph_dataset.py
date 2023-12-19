@@ -433,6 +433,12 @@ def split_dataset(dataset, split_sizes, is_save_subsets=False,
     # Build data subsets
     dataset_split = {}
     for i, subset in enumerate(subsets_names):
+        # Check subset
+        if len(subsets_list[i]) < 1:
+            raise RuntimeError(f'Subset "{subset}" resulting from data set '
+                               f'split is empty.')
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Assemble data subet
         dataset_split[str(subset)] = subsets_list[i]
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Save data subsets files
