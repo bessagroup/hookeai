@@ -44,7 +44,7 @@ class GNNEPDBaseModel(torch.nn.Module):
     ----------
     model_directory : str
         Directory where model is stored.
-    model_name : str, default='material_patch_model'
+    model_name : str, default='gnn_epd_model'
         Name of model.
     _n_node_in : int
         Number of node input features.
@@ -72,6 +72,10 @@ class GNNEPDBaseModel(torch.nn.Module):
     _hidden_layer_size : int
         Number of neurons of hidden layers of multilayer feed-forward
         neural network update functions.
+    _pro_edge_to_node_aggr : {'add',}, default='add'
+        Processor: Edge-to-node aggregation scheme.
+    _pro_node_to_global_aggr : {'add',}, default='add'
+        Processor: Node-to-global aggregation scheme.
     _enc_node_hidden_activ_type : str, default='identity'
         Encoder: Hidden unit activation function type of node update function
         (multilayer feed-forward neural network). Defaults to identity
@@ -207,7 +211,7 @@ class GNNEPDBaseModel(torch.nn.Module):
                  n_global_in, n_global_out, n_message_steps,
                  enc_n_hidden_layers, pro_n_hidden_layers, dec_n_hidden_layers,
                  hidden_layer_size, model_directory,
-                 model_name='material_patch_model',
+                 model_name='gnn_epd_model',
                  is_data_normalization=False,
                  pro_edge_to_node_aggr='add', pro_node_to_global_aggr='add',
                  enc_node_hidden_activ_type='identity',
@@ -262,7 +266,7 @@ class GNNEPDBaseModel(torch.nn.Module):
             neural network update functions.
         model_directory : str
             Directory where model is stored.
-        model_name : str, default='material_patch_model'
+        model_name : str, default='gnn_epd_model'
             Name of model.
         is_data_normalization : bool, default=False
             If True, then input and output features are normalized for
@@ -534,7 +538,7 @@ class GNNEPDBaseModel(torch.nn.Module):
         """
         return self.device_type, self.device
     # -------------------------------------------------------------------------
-    def forward(self, graph, is_normalized=False):
+    def forward(self, graph, is_normalized=False, batch_vector=None):
         """Forward propagation.
         
         Parameters
@@ -557,7 +561,7 @@ class GNNEPDBaseModel(torch.nn.Module):
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Predict node output features
         node_features_out = self.predict_node_output_features(
-            graph, is_normalized=is_normalized)
+            graph, is_normalized=is_normalized, batch_vector=batch_vector)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         return node_features_out 
     # -------------------------------------------------------------------------
@@ -767,7 +771,7 @@ class GNNEPDBaseModel(torch.nn.Module):
         # Check input graph
         if not isinstance(graph, torch_geometric.data.Data):
             raise RuntimeError('Input graph is not torch_geometric.data.Data.')
-        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~       
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~               
         # Get features from graph
         if 'y' in graph.keys() and isinstance(graph.y, torch.Tensor):
             node_features_out = graph.y.clone()
@@ -822,7 +826,8 @@ class GNNEPDBaseModel(torch.nn.Module):
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         return node_features_out, edge_features_out, global_features_out
     # -------------------------------------------------------------------------
-    def predict_node_output_features(self, input_graph, is_normalized=False):
+    def predict_node_output_features(self, input_graph, is_normalized=False,
+                                     batch_vector=None):
         """Predict node output features.
         
         Parameters
@@ -832,6 +837,11 @@ class GNNEPDBaseModel(torch.nn.Module):
         is_normalized : bool, default=False
             If True, get normalized output features from graph, False
             otherwise.
+        batch_vector : torch.Tensor, default=None
+            Batch vector stored as torch.Tensor(1d) of shape (n_nodes,),
+            assigning each node to a specific batch subgraph. Required to
+            process a graph holding multiple isolated subgraphs when batch
+            size is greater than 1.
 
         Returns
         -------
@@ -856,7 +866,8 @@ class GNNEPDBaseModel(torch.nn.Module):
         node_features_out, _, _ = \
             self._gnn_epd_model(edges_indexes=edges_indexes,
                                 node_features_in=node_features_in,
-                                edge_features_in=edge_features_in)
+                                edge_features_in=edge_features_in,
+                                batch_vector=batch_vector)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Denormalize output features data
         if self.is_data_normalization and not is_normalized:
@@ -868,7 +879,8 @@ class GNNEPDBaseModel(torch.nn.Module):
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         return node_features_out
     # -------------------------------------------------------------------------
-    def predict_output_features(self, input_graph, is_normalized=False):
+    def predict_output_features(self, input_graph, is_normalized=False,
+                                batch_vector=None):
         """Predict output features.
         
         Parameters
@@ -890,6 +902,11 @@ class GNNEPDBaseModel(torch.nn.Module):
         global_features_out : {torch.Tensor, None}
             Global features output matrix stored as a torch.Tensor(2d) of shape
             (1, n_features).
+        batch_vector : torch.Tensor, default=None
+            Batch vector stored as torch.Tensor(1d) of shape (n_nodes,),
+            assigning each node to a specific batch subgraph. Required to
+            process a graph holding multiple isolated subgraphs when batch
+            size is greater than 1.
         """
         # Check input graph type
         if not isinstance(input_graph, torch_geometric.data.Data):
@@ -909,7 +926,8 @@ class GNNEPDBaseModel(torch.nn.Module):
             self._gnn_epd_model(edges_indexes=edges_indexes,
                                 node_features_in=node_features_in,
                                 edge_features_in=edge_features_in,
-                                global_features_in=global_features_in)
+                                global_features_in=global_features_in,
+                                batch_vector=batch_vector)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Denormalize output features data
         if self.is_data_normalization and not is_normalized:
@@ -937,7 +955,7 @@ class GNNEPDBaseModel(torch.nn.Module):
     
         Parameters
         ----------
-        activation_type : {'identity', 'relu}
+        activation_type : {'identity', 'relu'}
             Unit activation function type:
             
             'identity' : Linear (torch.nn.Identity)
