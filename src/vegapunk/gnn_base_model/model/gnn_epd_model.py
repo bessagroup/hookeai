@@ -42,6 +42,12 @@ class EncodeProcessDecode(torch.nn.Module):
         GNN-based processor.
     _decoder : Decoder
         GNN-based decoder.
+    _n_node_out : int
+        Number of node output features.
+    _n_edge_out : int
+        Number of edge output features.
+    _n_global_out : int
+        Number of node output features.
     
     Methods
     -------
@@ -219,6 +225,10 @@ class EncodeProcessDecode(torch.nn.Module):
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Store number of message-passing steps
         self._n_message_steps = int(n_message_steps)
+        # Store number of output features
+        self._n_node_out = n_node_out
+        self._n_edge_out = n_edge_out
+        self._n_global_out = n_global_out
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Set node update function hidden layer input size
         if int(n_node_in) < 1:
@@ -305,7 +315,8 @@ class EncodeProcessDecode(torch.nn.Module):
                     is_norm_layer=False, is_skip_unset_update=True)
     # -------------------------------------------------------------------------
     def forward(self, edges_indexes, node_features_in=None,
-                edge_features_in=None, global_features_in=None):
+                edge_features_in=None, global_features_in=None,
+                batch_vector=None):
         """Forward propagation.
         
         Processor is skipped if number of message-passing steps is set to zero.
@@ -325,6 +336,11 @@ class EncodeProcessDecode(torch.nn.Module):
         global_features_in : torch.Tensor, default=None
             Global features input matrix stored as a torch.Tensor(2d) of shape
             (1, n_features). Ignored if global update function is not setup.
+        batch_vector : torch.Tensor, default=None
+            Batch vector stored as torch.Tensor(1d) of shape (n_nodes,),
+            assigning each node to a specific batch subgraph. Required to
+            process a graph holding multiple isolated subgraphs when batch
+            size is greater than 1.
 
         Returns
         -------
@@ -349,7 +365,8 @@ class EncodeProcessDecode(torch.nn.Module):
         node_features, edge_features, global_features = \
             self._encoder(node_features_in=node_features_in,
                           edge_features_in=edge_features_in,
-                          global_features_in=global_features_in)
+                          global_features_in=global_features_in,
+                          batch_vector=batch_vector)
         # Perform processing (message-passing steps)
         if self._n_message_steps > 0:
             # Compute message-passing step
@@ -357,12 +374,22 @@ class EncodeProcessDecode(torch.nn.Module):
                 self._processor(edges_indexes=edges_indexes,
                                 node_features_in=node_features,
                                 edge_features_in=edge_features,
-                                global_features_in=global_features)  
+                                global_features_in=global_features,
+                                batch_vector=batch_vector)
         # Perform decoding
         node_features_out, edge_features_out, global_features_out = \
             self._decoder(node_features_in=node_features,
                           edge_features_in=edge_features,
-                          global_features_in=global_features)
+                          global_features_in=global_features,
+                          batch_vector=batch_vector)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Discard unsolicited output features
+        if self._n_node_out < 1:
+            node_features_out = None
+        if self._n_edge_out < 1:
+            edge_features_out = None
+        if self._n_global_out < 1:
+            global_features_out = None
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         return node_features_out, edge_features_out, global_features_out
 # =============================================================================
@@ -564,7 +591,8 @@ class Processor(torch_geometric.nn.MessagePassing):
              for _ in range(n_message_steps)])
     # -------------------------------------------------------------------------
     def forward(self, edges_indexes, node_features_in=None,
-                edge_features_in=None, global_features_in=None):
+                edge_features_in=None, global_features_in=None,
+                batch_vector=None):
         """Forward propagation.
         
         Parameters
@@ -585,6 +613,11 @@ class Processor(torch_geometric.nn.MessagePassing):
         global_features_in : torch.Tensor, default=None
             Global features input matrix stored as a torch.Tensor(2d) of shape
             (1, n_features).
+        batch_vector : torch.Tensor, default=None
+            Batch vector stored as torch.Tensor(1d) of shape (n_nodes,),
+            assigning each node to a specific batch subgraph. Required to
+            process a graph holding multiple isolated subgraphs when batch
+            size is greater than 1.
 
         Returns
         -------
@@ -650,7 +683,8 @@ class Processor(torch_geometric.nn.MessagePassing):
                 gnn_model(edges_indexes=edges_indexes,
                           node_features_in=node_features_out,
                           edge_features_in=edge_features_out,
-                          global_features_in=global_features_out)
+                          global_features_in=global_features_out,
+                          batch_vector=batch_vector)
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Check if last message-passing step
             is_last_step = i == len(self._processor) - 1
