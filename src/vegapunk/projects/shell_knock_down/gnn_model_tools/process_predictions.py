@@ -73,7 +73,7 @@ def build_prediction_data_arrays(predictions_dir, prediction_type,
     prediction_files_ids = []
     for filename in directory_list:
         # Check if file is sample results file
-        id = re.search(r'^prediction_sample_([0-9])+.pkl$', filename)
+        id = re.search(r'^prediction_sample_([0-9]+).pkl$', filename)
         # Assemble sample ID
         if id is not None:
             prediction_files_ids.append(int(id.groups()[0]))

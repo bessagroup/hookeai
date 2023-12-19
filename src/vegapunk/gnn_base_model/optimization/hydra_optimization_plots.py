@@ -104,7 +104,7 @@ def plot_optimization_history(optim_history, optim_metric, is_log_metric=False,
         # Loop over optimization process jobs
         for job_dir in directory_list:
             # Check if optimization process job directory
-            job_id = re.search(r'^([0-9])$', job_dir)
+            job_id = re.search(r'^([0-9]+)$', job_dir)
             # Extract history data from job summary file
             if job_id is not None:
                 # Get job ID

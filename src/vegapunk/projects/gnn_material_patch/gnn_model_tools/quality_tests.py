@@ -114,7 +114,7 @@ def qt_internal_forces_equilibrium(predictions_dir, is_save_fig=False,
     for filename in directory_list:
         # Check if file is sample results file
         is_sample_results_file = \
-            bool(re.search(r'^prediction_sample_([0-9])+.pkl$', filename))
+            bool(re.search(r'^prediction_sample_([0-9]+).pkl$', filename))
         # Ignore non-results file
         if not is_sample_results_file:
             continue
