@@ -34,8 +34,8 @@ def generate_dataset(case_study_name, dataset_file_path, dataset_directory,
     ----------
     case_study_name : str
         Case study.
-    dataset_file_path : str
-        Data set file path.
+    dataset_csv_file_path : str
+        Data set csv file path.
     dataset_directory : str
         Directory where the data set is stored (all ata set samples files).
         All existent files are overridden when saving sample data files.
@@ -54,15 +54,15 @@ def generate_dataset(case_study_name, dataset_file_path, dataset_directory,
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Generate data set samples files
     dataset_directory, dataset_samples_files = generate_dataset_samples_files(
-        dataset_directory, dataset_file_path,
+        dataset_directory, dataset_csv_file_path,
         sample_file_basename=sample_file_basename,
         is_save_sample_plot=is_save_sample_plot, is_verbose=is_verbose)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Initialize GNN-based material patch data set
+    # Initialize GNN-based data set
     dataset = GNNGraphDataset(dataset_directory, dataset_samples_files,
                               dataset_basename='graph_dataset',
                               is_store_dataset=False)
-    # Save GNN-based material patch data set to file
+    # Save GNN-based data set to file
     dataset_file_path = dataset.save_dataset(is_append_n_sample=True)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     return dataset, dataset_file_path
@@ -89,17 +89,18 @@ if __name__ == "__main__":
     is_testing_dataset = False
     # Set computation processes
     is_generate_dataset = True
-    is_split_dataset = False
+    is_split_dataset = True
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set data set file path (shells .csv file)
-    dataset_file_path = ('/home/bernardoferreira/Documents/brown/projects/'
-                         'shell_knock_down/datasets_files/shells_small.csv')
+    dataset_csv_file_path = \
+        ('/home/bernardoferreira/Documents/brown/projects/'
+         'shell_knock_down/datasets_files/shells_medium.csv')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set case studies base directory
     base_dir = ('/home/bernardoferreira/Documents/brown/projects/'
                 'shell_knock_down/case_studies/')
     # Set case study directory
-    case_study_name = 'small'
+    case_study_name = 'medium'
     case_study_dir = os.path.join(os.path.normpath(base_dir),
                                   f'{case_study_name}')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -134,15 +135,20 @@ if __name__ == "__main__":
             make_directory(dataset_directory, is_overwrite=True)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Generate data set
-        dataset, _ = generate_dataset(case_study_name, dataset_file_path,
+        dataset, _ = generate_dataset(case_study_name, dataset_csv_file_path,
                                       dataset_directory, is_verbose=True)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Split data set
     if is_split_dataset and not is_testing_dataset:
         # Get training data set file path
-        regex = r'^dataset_n[0-9]+.pkl$'
+        regex = r'^graph_dataset_n[0-9]+.pkl$'
         is_file_found, dataset_file_path = \
             find_unique_file_with_regex(dataset_directory, regex)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Check training data set file
+        if not is_file_found:
+            raise RuntimeError('Training data set file has not been found in '
+                               'directory:\n\n' + dataset_directory)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Load training data set
         dataset = GNNGraphDataset.load_dataset(dataset_file_path)

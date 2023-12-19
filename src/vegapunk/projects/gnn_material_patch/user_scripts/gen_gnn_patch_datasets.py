@@ -176,6 +176,11 @@ if __name__ == "__main__":
         is_file_found, dataset_file_path = \
             find_unique_file_with_regex(dataset_directory, regex)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Check training data set file
+        if not is_file_found:
+            raise RuntimeError('Training data set file has not been found in '
+                               'directory:\n\n' + dataset_directory)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Load GNN-based material patch training data set
         dataset = GNNGraphDataset.load_dataset(dataset_file_path)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

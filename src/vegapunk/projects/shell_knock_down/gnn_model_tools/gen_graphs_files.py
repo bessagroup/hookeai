@@ -32,7 +32,7 @@ __status__ = 'Planning'
 # =============================================================================
 #
 # =============================================================================
-def generate_dataset_samples_files(dataset_directory, dataset_file_path,
+def generate_dataset_samples_files(dataset_directory, dataset_csv_file_path,
                                    sample_file_basename='material_patch_graph',
                                    is_save_sample_plot=False,
                                    is_verbose=False):
@@ -43,8 +43,8 @@ def generate_dataset_samples_files(dataset_directory, dataset_file_path,
     dataset_directory : str
         Directory where the data set is stored (all ata set samples files).
         All existent files are overridden when saving sample data files.
-    dataset_file_path : str
-        Data set file path.
+    dataset_csv_file_path : str
+        Data set csv file path.
     sample_file_basename : str, default='sample_graph'
         Basename of data set sample file. The basename is appended with sample
         index.
@@ -75,14 +75,14 @@ def generate_dataset_samples_files(dataset_directory, dataset_file_path,
         dataset_directory = os.path.normpath(dataset_directory)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Check data set file
-    if not os.path.isfile(dataset_file_path):
+    if not os.path.isfile(dataset_csv_file_path):
         raise RuntimeError('The data set file has not been found:'
-                           '\n\n' + dataset_file_path)
+                           '\n\n' + dataset_csv_file_path)
     else:
-        dataset_file_path = os.path.normpath(dataset_file_path)
+        dataset_csv_file_path = os.path.normpath(dataset_csv_file_path)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Load data set
-    df = pandas.read_csv(dataset_file_path)
+    df = pandas.read_csv(dataset_csv_file_path)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Get shells ids
     shells_ids = set(df.loc[:, 'shell_id'])
