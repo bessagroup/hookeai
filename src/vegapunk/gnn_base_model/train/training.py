@@ -103,7 +103,7 @@ def train_model(n_max_epochs, dataset, model_init_args, lr_init,
 
     lr_scheduler_kwargs : dict, default={}
         Arguments of torch.optim.lr_scheduler.LRScheduler initializer.
-    loss_nature : {'node_features_out','global_features_out'}, \
+    loss_nature : {'node_features_out', 'global_features_out'}, \
                   default='node_features_out'
         Loss nature:
         
@@ -255,7 +255,7 @@ def train_model(n_max_epochs, dataset, model_init_args, lr_init,
                                            load_model_state)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Load loss history
-        loss_history_epochs = load_loss_history(model, loss_type,
+        loss_history_epochs = load_loss_history(model, loss_nature, loss_type,
                                                 epoch=loaded_epoch)
         # Load learning rate history
         lr_history_epochs = load_lr_history(model, epoch=loaded_epoch)
@@ -307,7 +307,18 @@ def train_model(n_max_epochs, dataset, model_init_args, lr_init,
             # Move graph sample to device
             pyg_graph.to(device)
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            # Compute node output features predictions (forward propagation).
+            # Get batch node assignment vector
+            if batch_size > 1:
+                batch_vector = pyg_graph.batch
+            else:
+                batch_vector = None
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Get node output features ground-truth
+            node_targets, edge_targets, global_targets = \
+                model.get_output_features_from_graph(
+                    pyg_graph, is_normalized=is_data_normalization)
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Compute output features predictions (forward propagation).
             # During the foward pass, PyTorch creates a computation graph for
             # the tensors that require gradients (gradient flag set to True) to
             # keep track of the operations on these tensors, i.e., the model
@@ -317,14 +328,27 @@ def train_model(n_max_epochs, dataset, model_init_args, lr_init,
             # attribute of the corresponding tensors. Tensor.grad_fn is set to
             # None for tensors corresponding to leaf-nodes of the computation
             # graph or for tensors with the gradient flag set to False.
-            node_features_out = model.predict_node_output_features(
-                pyg_graph, is_normalized=is_data_normalization)
-            # Get node output features ground-truth
-            node_targets, _, _ = model.get_output_features_from_graph(
-                pyg_graph, is_normalized=is_data_normalization)
+            if loss_nature == 'node_features_out':
+                # Get node output features
+                node_features_out = model.predict_node_output_features(
+                    pyg_graph, is_normalized=is_data_normalization,
+                    batch_vector=batch_vector)
+                # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                # Compute loss
+                loss = loss_function(node_features_out, node_targets)
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            # Compute loss
-            loss = loss_function(node_features_out, node_targets)
+            elif loss_nature == 'global_features_out':
+                # Get global output features
+                _, _, global_features_out = \
+                    model.predict_output_features(
+                        pyg_graph, is_normalized=is_data_normalization,
+                        batch_vector=batch_vector)
+                # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                # Compute loss
+                loss = loss_function(global_features_out, global_targets)
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            else:
+                raise RuntimeError('Unknown loss nature.')
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Initialize gradients (set to zero)
             optimizer.zero_grad()
@@ -390,8 +414,9 @@ def train_model(n_max_epochs, dataset, model_init_args, lr_init,
             # Evaluate early stopping criterion
             if early_stopper.is_evaluate_criterion(epoch):
                 is_stop_training = early_stopper.evaluate_criterion(
-                    model, optimizer, epoch, loss_type=loss_type,
-                    loss_kwargs=loss_kwargs, device_type=device_type)
+                    model, optimizer, epoch, loss_nature=loss_nature,
+                    loss_type=loss_type, loss_kwargs=loss_kwargs,
+                    device_type=device_type)
             # If early stopping is triggered, save model and optimizer best
             # performance corresponding to early stopping criterion
             if is_stop_training:
@@ -430,8 +455,8 @@ def train_model(n_max_epochs, dataset, model_init_args, lr_init,
     # Save model and optimizer final states
     save_training_state(model=model, optimizer=optimizer, epoch=epoch)
     # Save loss and learning rate histories
-    save_loss_history(model, n_max_epochs, loss_type, loss_history_epochs,
-                      lr_scheduler_type=lr_scheduler_type,
+    save_loss_history(model, n_max_epochs, loss_nature, loss_type,
+                      loss_history_epochs, lr_scheduler_type=lr_scheduler_type,
                       lr_history_epochs=lr_history_epochs,
                       validation_loss_history=validation_loss_history)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -459,7 +484,7 @@ def train_model(n_max_epochs, dataset, model_init_args, lr_init,
     write_training_summary_file(
         device_type, seed, model.model_directory, load_model_state,
         n_max_epochs, is_data_normalization, batch_size, is_sampler_shuffle,
-        loss_type, loss_kwargs, opt_algorithm, lr_init,
+        loss_nature, loss_type, loss_kwargs, opt_algorithm, lr_init,
         lr_scheduler_type, lr_scheduler_kwargs, epoch, dataset_file_path,
         dataset, best_loss, best_training_epoch, total_time_sec,
         avg_time_epoch)
@@ -735,9 +760,9 @@ def remove_posterior_optim_state_files(model, epoch):
             if file_epoch > epoch:
                 os.remove(os.path.join(model.model_directory, filename))
 # =============================================================================
-def save_loss_history(model, n_max_epochs, loss_type, training_loss_history,
-                      lr_scheduler_type=None, lr_history_epochs=None,
-                      validation_loss_history=None):
+def save_loss_history(model, n_max_epochs, loss_nature, loss_type,
+                      training_loss_history, lr_scheduler_type=None,
+                      lr_history_epochs=None, validation_loss_history=None):
     """Save training process loss history record.
     
     Loss history record file is stored in model_directory under the name
@@ -751,6 +776,14 @@ def save_loss_history(model, n_max_epochs, loss_type, training_loss_history,
         Model.
     n_max_epochs : int
         Maximum number of epochs of training process.
+    loss_nature : {'node_features_out', 'global_features_out'}, \
+                  default='node_features_out'
+        Loss nature:
+        
+        'node_features_out' : Based on node output features
+
+        'global_features_out' : Based on global output features
+
     loss_type : {'mse',}, default='mse'
         Loss function type:
         
@@ -773,6 +806,7 @@ def save_loss_history(model, n_max_epochs, loss_type, training_loss_history,
     # Build training loss history record
     loss_history_record = {}
     loss_history_record['n_max_epochs'] = int(n_max_epochs)
+    loss_history_record['loss_nature'] = str(loss_nature)
     loss_history_record['loss_type'] = str(loss_type)
     loss_history_record['training_loss_history'] = list(training_loss_history)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -797,7 +831,7 @@ def save_loss_history(model, n_max_epochs, loss_type, training_loss_history,
     with open(loss_record_path, 'wb') as loss_record_file:
         pickle.dump(loss_history_record, loss_record_file)
 # =============================================================================
-def load_loss_history(model, loss_type, epoch=None):
+def load_loss_history(model, loss_nature, loss_type, epoch=None):
     """Load training process training loss history record.
     
     Loss history record file is stored in model_directory under the name
@@ -807,6 +841,14 @@ def load_loss_history(model, loss_type, epoch=None):
     ----------
     model : torch.nn.Module
         Model.
+    loss_nature : {'node_features_out', 'global_features_out'}, \
+                  default='node_features_out'
+        Loss nature:
+        
+        'node_features_out' : Based on node output features
+
+        'global_features_out' : Based on global output features
+
     loss_type : {'mse',}, default='mse'
         Loss function type:
         
@@ -830,6 +872,15 @@ def load_loss_history(model, loss_type, epoch=None):
         # Load loss history record
         with open(loss_record_path, 'rb') as loss_record_file:
             loss_history_record = pickle.load(loss_record_file)
+        # Check consistency between loss history nature and current training
+        # process loss nature
+        history_loss_nature = loss_history_record['loss_nature']
+        if history_loss_nature != loss_nature:
+            raise RuntimeError('Loss history nature ('
+                               + str(history_loss_nature)
+                               + ') is not consistent with current training '
+                               'process loss nature ('
+                               + str(loss_nature) + ').')
         # Check consistency between loss history type and current training
         # process loss type
         history_loss_type = loss_history_record['loss_type']
@@ -958,6 +1009,14 @@ def read_loss_history_from_file(loss_record_path):
     
     Returns
     -------
+    loss_nature : {'node_features_out', 'global_features_out'}, \
+                  default='node_features_out'
+        Loss nature:
+        
+        'node_features_out' : Based on node output features
+
+        'global_features_out' : Based on global output features
+
     loss_type : {'mse',}
         Loss function type:
         
@@ -978,7 +1037,10 @@ def read_loss_history_from_file(loss_record_path):
         loss_history_record = pickle.load(loss_record_file)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Check loss history
-    if 'loss_type' not in loss_history_record.keys():
+    if 'loss_nature' not in loss_history_record.keys():
+        raise RuntimeError('Loss nature is not available in loss history '
+                           'record.')
+    elif 'loss_type' not in loss_history_record.keys():
         raise RuntimeError('Loss type is not available in loss history '
                            'record.')
     elif 'training_loss_history' not in loss_history_record.keys():
@@ -988,6 +1050,8 @@ def read_loss_history_from_file(loss_record_path):
                         list):
         raise RuntimeError('Loss history is not a list[float].')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Set loss nature
+    loss_nature = str(loss_history_record['loss_nature'])
     # Set loss type
     loss_type = str(loss_history_record['loss_type'])
     # Set training loss history
@@ -1009,7 +1073,8 @@ def read_loss_history_from_file(loss_record_path):
     else:
         validation_loss_history = None
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    return loss_type, training_loss_history, validation_loss_history
+    return (loss_nature, loss_type, training_loss_history,
+            validation_loss_history)
 # =============================================================================
 def read_lr_history_from_file(loss_record_path):
     """Read training learning rate history from loss history record file.
@@ -1064,8 +1129,8 @@ def read_lr_history_from_file(loss_record_path):
 # =============================================================================
 def write_training_summary_file(
     device_type, seed, model_directory, load_model_state, n_max_epochs,
-    is_data_normalization, batch_size, is_sampler_shuffle, loss_type,
-    loss_kwargs, opt_algorithm, lr_init, lr_scheduler_type,
+    is_data_normalization, batch_size, is_sampler_shuffle, loss_nature,
+    loss_type, loss_kwargs, opt_algorithm, lr_init, lr_scheduler_type,
     lr_scheduler_kwargs, n_epochs, dataset_file_path, dataset, best_loss,
     best_training_epoch, total_time_sec, avg_time_epoch):
     """Write summary data file for model training process.
@@ -1093,6 +1158,8 @@ def write_training_summary_file(
         Number of samples loaded per batch.
     is_sampler_shuffle : bool
         If True, shuffles data set samples at every epoch.
+    loss_nature : {'node_features_out', 'global_features_out'}
+        Loss nature.
     loss_type : {'mse',}
         Loss function type.
     loss_kwargs : dict
@@ -1134,6 +1201,7 @@ def write_training_summary_file(
     summary_data['is_data_normalization'] = is_data_normalization
     summary_data['batch_size'] = batch_size
     summary_data['is_sampler_shuffle'] = is_sampler_shuffle
+    summary_data['loss_nature'] = loss_nature
     summary_data['loss_type'] = loss_type
     summary_data['loss_kwargs'] = loss_kwargs if loss_kwargs else None
     summary_data['opt_algorithm'] = opt_algorithm
@@ -1200,9 +1268,13 @@ class EarlyStopper:
         Get validation loss history.
     is_evaluate_criterion(self, epoch)
         Check whether to evaluate early stopping criterion.
-    evaluate_criterion(self, epoch)
+    evaluate_criterion(self, model, optimizer, epoch, \
+                       loss_nature='node_features_out', loss_type='mse', \
+                       loss_kwargs={}, device_type='cpu')
         Evaluate early stopping criterion.
-    _validate_model(self, model)
+    _validate_model(self, model, optimizer, epoch,
+                    loss_nature='node_features_out', loss_type='mse',
+                    loss_kwargs={}, device_type='cpu')
         Perform model validation.
     load_best_performance_state(self, model, optimizer)
         Load minimum validation loss model and optimizer states.
@@ -1248,6 +1320,8 @@ class EarlyStopper:
         # Set training and validation datasets
         self._training_dataset = dataset_split['training']
         self._validation_dataset = dataset_split['validation']
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Initialize validation training steps history
         self._validation_steps_history = []
@@ -1305,7 +1379,8 @@ class EarlyStopper:
         return epoch % self._validation_frequency == 0
     # -------------------------------------------------------------------------
     def evaluate_criterion(self, model, optimizer, epoch,
-                           loss_type='mse', loss_kwargs={}, device_type='cpu'):
+                           loss_nature='node_features_out', loss_type='mse',
+                           loss_kwargs={}, device_type='cpu'):
         """Evaluate early stopping criterion.
         
         Parameters
@@ -1316,6 +1391,14 @@ class EarlyStopper:
             PyTorch optimizer.
         epoch : int
             Training epoch.
+        loss_nature : {'node_features_out', 'global_features_out'}, \
+                    default='node_features_out'
+            Loss nature:
+            
+            'node_features_out' : Based on node output features
+
+            'global_features_out' : Based on global output features
+
         loss_type : {'mse',}, default='mse'
             Loss function type:
             
@@ -1337,8 +1420,9 @@ class EarlyStopper:
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Perform model validation
         avg_valid_loss_sample = self._validate_model(
-            model, optimizer, epoch, loss_type=loss_type,
-            loss_kwargs=loss_kwargs, device_type=device_type)
+            model, optimizer, epoch, loss_nature=loss_nature,
+            loss_type=loss_type, loss_kwargs=loss_kwargs,
+            device_type=device_type)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Update minimum validation loss and performance counter
         if avg_valid_loss_sample < self._min_validation_loss:
@@ -1376,7 +1460,8 @@ class EarlyStopper:
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         return is_stop_training
     # -------------------------------------------------------------------------
-    def _validate_model(self, model, optimizer, epoch, loss_type='mse',
+    def _validate_model(self, model, optimizer, epoch,
+                        loss_nature='node_features_out', loss_type='mse',
                         loss_kwargs={}, device_type='cpu'):
         """Perform model validation.
         
@@ -1388,6 +1473,14 @@ class EarlyStopper:
             PyTorch optimizer.
         epoch : int
             Training epoch.
+        loss_nature : {'node_features_out', 'global_features_out'}, \
+                    default='node_features_out'
+            Loss nature:
+            
+            'node_features_out' : Based on node output features
+
+            'global_features_out' : Based on global output features
+
         loss_type : {'mse',}, default='mse'
             Loss function type:
             
@@ -1427,7 +1520,8 @@ class EarlyStopper:
         _, avg_valid_loss_sample = predict(
             self._validation_dataset, model.model_directory,
             predict_directory=None, load_model_state=epoch,
-            loss_type=loss_type, loss_kwargs=loss_kwargs,
+            loss_nature=loss_nature, loss_type=loss_type,
+            loss_kwargs=loss_kwargs,
             is_normalized_loss=model.is_data_normalization,
             device_type=device_type, seed=None, is_verbose=False)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

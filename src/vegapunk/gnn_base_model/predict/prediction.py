@@ -46,9 +46,10 @@ __status__ = 'Planning'
 #
 # =============================================================================
 def predict(dataset, model_directory, predict_directory=None,
-            load_model_state=None, loss_type='mse', loss_kwargs={},
-            is_normalized_loss=False, dataset_file_path=None,
-            device_type='cpu', seed=None, is_verbose=False):
+            load_model_state=None, loss_nature='node_features_out',
+            loss_type='mse', loss_kwargs={}, is_normalized_loss=False,
+            dataset_file_path=None, device_type='cpu', seed=None,
+            is_verbose=False):
     """Make predictions with Graph Neural Network model for given dataset.
     
     Parameters
@@ -72,7 +73,15 @@ def predict(dataset, model_directory, predict_directory=None,
         int    : Model state corresponding to given training epoch
         
         None   : Model default state file
+
+    loss_nature : {'node_features_out', 'global_features_out'}, \
+                  default='node_features_out'
+        Loss nature:
         
+        'node_features_out' : Based on node output features
+
+        'global_features_out' : Based on global output features
+
     loss_type : {'mse',}, default='mse'
         Loss function type:
         
@@ -176,27 +185,46 @@ def predict(dataset, model_directory, predict_directory=None,
             # Move sample to device
             pyg_graph.to(device)
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            # Compute node output features predictions (forward propagation)
-            node_features_out = model.predict_node_output_features(pyg_graph)
-            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ 
-            # Get sample node output features ground-truth
-            node_targets, _, _ = \
-                model.get_output_features_from_graph(pyg_graph)
-            # Compute sample node output features prediction loss
+            # Initialize sample results
+            results = {}
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Compute output features predictions (forward propagation)
+            if loss_nature == 'node_features_out':
+                # Compute node output features
+                features_out = model.predict_node_output_features(pyg_graph)
+                # Get sample node output features ground-truth
+                # (None if not available)
+                targets, _, _ = model.get_output_features_from_graph(pyg_graph)
+                # Store sample results
+                results['node_features_out'] = features_out.detach().cpu()
+                results['node_targets'] = targets.detach().cpu()
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            elif loss_nature == 'global_features_out':
+                # Compute global output features
+                _, _, features_out = \
+                    model.predict_output_features(pyg_graph)
+                # Get sample global output features ground-truth
+                # (None if not available)
+                _, _, targets = \
+                    model.get_output_features_from_graph(pyg_graph)
+                # Store sample results
+                results['global_features_out'] = features_out.detach().cpu()
+                results['global_targets'] = targets.detach().cpu()
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            else:
+                raise RuntimeError('Unknown loss nature.')
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Compute sample output features prediction loss
             loss = compute_sample_prediction_loss(
-                pyg_graph, model, loss_function, node_features_out,
+                model, loss_nature, loss_function, features_out, targets,
                 is_normalized=is_normalized_loss)
+            # Store prediction loss data
+            results['prediction_loss_data'] = \
+                (loss_nature, loss_type, loss, is_normalized_loss)
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Assemble sample prediction loss if ground-truth is available
             if loss is not None:
                 loss_samples.append(loss.detach().cpu())
-            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            # Build sample results
-            results = {}
-            results['node_features_out'] = \
-                node_features_out.detach().cpu()
-            results['node_targets'] = node_targets.detach().cpu()
-            results['node_features_out_loss'] = \
-                (loss_type, loss, is_normalized_loss)
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Save sample predictions results
             if predict_directory is not None:
@@ -225,7 +253,10 @@ def predict(dataset, model_directory, predict_directory=None,
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Compute total prediction time and average prediction time per sample
     total_time_sec = time.time() - start_time_sec
-    avg_time_sample = total_time_sec/len(dataset)
+    if len(dataset) > 0:
+        avg_time_sample = total_time_sec/len(dataset)
+    else:
+        avg_time_sample = float('nan')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     if is_verbose:
         print(f'\n> Prediction results directory: {predict_subdir}')
@@ -322,9 +353,8 @@ def load_sample_predictions(sample_prediction_path):
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     return sample_results
 # =============================================================================
-def compute_sample_prediction_loss(pyg_graph, model, loss_function,
-                                   node_features_out,
-                                   is_normalized=False):
+def compute_sample_prediction_loss(model, loss_nature, loss_function,
+                                   features_out, targets, is_normalized=False):
     """Compute loss of sample node output features prediction.
     
     Parameters
@@ -333,11 +363,14 @@ def compute_sample_prediction_loss(pyg_graph, model, loss_function,
         Homogeneous graph.
     model : GNNEPDBaseModel
         Graph Neural Network model.
+    loss_nature : {'node_features_out', 'global_features_out'}
+        Loss nature.
     loss_function : torch.nn._Loss
         PyTorch loss function.
-    node_features_out : torch.Tensor
-        Predicted nodes output features stored as a torch.Tensor(2d) of shape
-        (n_nodes, n_dim).
+    features_out : torch.Tensor
+        Predicted output features stored as a torch.Tensor(2d).
+    targets : {torch.Tensor, None}
+        Output features ground-truth stored as a torch.Tensor(2d).
     is_normalized : bool, default=False
         If True, get normalized loss according with model fitted features data
         scalers, False otherwise.
@@ -345,12 +378,11 @@ def compute_sample_prediction_loss(pyg_graph, model, loss_function,
     Returns
     -------
     loss : {float, None}
-        Loss of sample node output features prediction. Set to None if node
-        output features ground-truth is not available.
+        Loss of sample output features prediction. Set to None if output
+        features ground-truth is not available.
     """
-    # Check if node output features ground-truth is available
-    is_ground_truth_available = \
-        model.get_output_features_from_graph(pyg_graph) is not None
+    # Check if output features ground-truth is available
+    is_ground_truth_available = targets is not None
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Compute sample loss
     if is_ground_truth_available:
@@ -360,23 +392,23 @@ def compute_sample_prediction_loss(pyg_graph, model, loss_function,
                 model.check_normalized_return()
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Get model data scaler
-            scaler_node_out = model.get_fitted_data_scaler('node_features_out')
-            # Get normalized node output features predictions
-            norm_node_features_out = \
-                scaler_node_out.transform(node_features_out)
-            # Get normalized node output features ground-truth
-            norm_node_targets, _, _ = model.get_output_features_from_graph(
-                pyg_graph, is_normalized=is_normalized)
+            if loss_nature == 'node_features_out':
+                scaler = model.get_fitted_data_scaler('node_features_out')
+            elif loss_nature == 'global_features_out':
+                scaler = model.get_fitted_data_scaler('global_features_out')
+            else:
+                raise RuntimeError('Unknown loss nature.')
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Get normalized output features predictions
+            norm_features_out = scaler.transform(features_out)
+            # Get normalized output features ground-truth
+            norm_targets = scaler.transform(targets)
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Compute sample loss (normalized data)
-            loss = loss_function(norm_node_features_out, norm_node_targets)
+            loss = loss_function(norm_features_out, norm_targets)
         else:
-            # Get node output features ground-truth
-            node_targets, _, _ = \
-                model.get_output_features_from_graph(pyg_graph)
-            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Compute sample loss
-            loss = loss_function(node_features_out, node_targets)
+            loss = loss_function(features_out, targets)
     else:
         # Set loss to None if ground-truth is not available
         loss = None

@@ -53,7 +53,7 @@ def perform_model_prediction(predict_directory, dataset_file_path,
     """
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set default GNN-based material patch model prediction options
-    loss_type, loss_kwargs = set_default_prediction_options()
+    loss_nature, loss_type, loss_kwargs = set_default_prediction_options()
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Load GNN-based material patch data set
     dataset = GNNGraphDataset.load_dataset(dataset_file_path)
@@ -61,10 +61,10 @@ def perform_model_prediction(predict_directory, dataset_file_path,
     # Prediction with GNN-based material patch model
     predict_subdir, _ = \
         predict(dataset, model_directory, predict_directory=predict_directory,
-                load_model_state='best', loss_type=loss_type,
-                loss_kwargs=loss_kwargs, is_normalized_loss=True,
-                dataset_file_path=dataset_file_path, device_type=device_type,
-                seed=None, is_verbose=is_verbose)
+                load_model_state='best', loss_nature=loss_nature,
+                loss_type=loss_type, loss_kwargs=loss_kwargs,
+                is_normalized_loss=True, dataset_file_path=dataset_file_path,
+                device_type=device_type, seed=None, is_verbose=is_verbose)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Create plot directory
     plot_dir = os.path.join(os.path.normpath(predict_subdir), 'plots')
@@ -124,6 +124,14 @@ def set_default_prediction_options():
     
     Returns
     -------
+    loss_nature : {'node_features_out', 'global_features_out'}, \
+                  default='node_features_out'
+        Loss nature:
+        
+        'node_features_out' : Based on node output features
+
+        'global_features_out' : Based on global output features
+
     loss_type : {'mse',}, default='mse'
         Loss function type:
         
@@ -132,10 +140,11 @@ def set_default_prediction_options():
     loss_kwargs : dict
         Arguments of torch.nn._Loss initializer.   
     """
+    loss_nature = 'node_features_out'
     loss_type = 'mse'
     loss_kwargs = {}
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    return loss_type, loss_kwargs
+    return loss_nature, loss_type, loss_kwargs
 # =============================================================================
 if __name__ == "__main__":
     # Set in-distribution/out-of-distribution testing flag

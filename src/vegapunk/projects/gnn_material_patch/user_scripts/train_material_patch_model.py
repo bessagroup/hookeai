@@ -56,8 +56,9 @@ def perform_model_standard_training(case_study_name, dataset_file_path,
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set default GNN-based material patch model training options
     opt_algorithm, lr_init, lr_scheduler_type, lr_scheduler_kwargs, \
-        loss_type, loss_kwargs, is_sampler_shuffle, is_early_stopping, \
-            early_stopping_kwargs = set_default_training_options()
+        loss_nature, loss_type, loss_kwargs, is_sampler_shuffle, \
+            is_early_stopping, early_stopping_kwargs = \
+                set_default_training_options()
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set GNN-based material patch model training options
     if case_study_name in ('cs_2d_elastic', 'temp'):
@@ -88,8 +89,8 @@ def perform_model_standard_training(case_study_name, dataset_file_path,
                               opt_algorithm=opt_algorithm,
                               lr_scheduler_type=lr_scheduler_type,
                               lr_scheduler_kwargs=lr_scheduler_kwargs,
-                              loss_type=loss_type, loss_kwargs=loss_kwargs,
-                              batch_size=batch_size,
+                              loss_nature=loss_nature, loss_type=loss_type,
+                              loss_kwargs=loss_kwargs, batch_size=batch_size,
                               is_sampler_shuffle=is_sampler_shuffle,
                               is_early_stopping=is_early_stopping,
                               early_stopping_kwargs=early_stopping_kwargs,
@@ -102,7 +103,7 @@ def perform_model_standard_training(case_study_name, dataset_file_path,
     loss_record_path = os.path.join(model.model_directory,
                                     'loss_history_record.pkl')
     # Read training process training and validation loss history
-    loss_type, training_loss_history, validation_loss_history = \
+    loss_nature, loss_type, training_loss_history, validation_loss_history = \
         read_loss_history_from_file(loss_record_path)
     # Build training process loss history
     loss_histories = {}
@@ -161,8 +162,9 @@ def perform_model_kfold_cross_validation(case_study_name, dataset_file_path,
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set default GNN-based material patch model training options
     opt_algorithm, lr_init, lr_scheduler_type, lr_scheduler_kwargs, \
-        loss_type, loss_kwargs, is_sampler_shuffle, is_early_stopping, \
-        early_stopping_kwargs = set_default_training_options()
+        loss_nature, loss_type, loss_kwargs, is_sampler_shuffle, \
+            is_early_stopping, early_stopping_kwargs = \
+                set_default_training_options()
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set GNN-based material patch model training options
     if case_study_name in ('cs_2d_elastic', 'temp'):
@@ -194,7 +196,8 @@ def perform_model_kfold_cross_validation(case_study_name, dataset_file_path,
         cross_validation_dir, n_fold, n_max_epochs, dataset, model_init_args,
         lr_init, opt_algorithm=opt_algorithm,
         lr_scheduler_type=lr_scheduler_type,
-        lr_scheduler_kwargs=lr_scheduler_kwargs, loss_type=loss_type,
+        lr_scheduler_kwargs=lr_scheduler_kwargs, 
+        loss_nature=loss_nature, loss_type=loss_type,
         loss_kwargs=loss_kwargs, batch_size=batch_size,
         is_sampler_shuffle=is_sampler_shuffle,
         is_early_stopping=is_early_stopping,
@@ -259,6 +262,9 @@ def set_case_study_model_parameters(case_study_name, model_directory,
         output_activation = 'identity'
         # Set data normalization
         is_data_normalization = True
+        # Set aggregation schemes
+        pro_edge_to_node_aggr = 'add'
+        pro_node_to_global_aggr = 'mean'
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     elif case_study_name == '2d_elastic':
         raise RuntimeError('Set case-study parameters.')
@@ -280,6 +286,8 @@ def set_case_study_model_parameters(case_study_name, model_directory,
                        'model_directory': model_directory,
                        'model_name': model_name,
                        'is_data_normalization': is_data_normalization,
+                       'pro_edge_to_node_aggr': pro_edge_to_node_aggr,
+                       'pro_node_to_global_aggr': pro_node_to_global_aggr,
                        'enc_node_hidden_activ_type': hidden_activation,
                        'enc_node_output_activ_type': output_activation,
                        'enc_edge_hidden_activ_type': hidden_activation,
@@ -318,6 +326,14 @@ def set_default_training_options():
 
     lr_scheduler_kwargs : dict
         Arguments of torch.optim.lr_scheduler.LRScheduler initializer.
+    loss_nature : {'node_features_out', 'global_features_out'}, \
+                  default='node_features_out'
+        Loss nature:
+        
+        'node_features_out' : Based on node output features
+
+        'global_features_out' : Based on global output features
+
     loss_type : {'mse',}
         Loss function type:
         
@@ -337,6 +353,7 @@ def set_default_training_options():
     lr_init = 1.0e-05
     lr_scheduler_type = None
     lr_scheduler_kwargs = None
+    loss_nature = 'node_features_out'
     loss_type = 'mse'
     loss_kwargs = {}
     is_sampler_shuffle = False
@@ -347,8 +364,8 @@ def set_default_training_options():
                              'improvement_tolerance':1e-3}
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     return opt_algorithm, lr_init, lr_scheduler_type, lr_scheduler_kwargs, \
-        loss_type, loss_kwargs, is_sampler_shuffle, is_early_stopping, \
-        early_stopping_kwargs 
+        loss_nature, loss_type, loss_kwargs, is_sampler_shuffle, \
+        is_early_stopping, early_stopping_kwargs 
 # =============================================================================
 if __name__ == "__main__":
     # Set computation processes

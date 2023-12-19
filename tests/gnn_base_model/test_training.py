@@ -61,23 +61,22 @@ def test_seed_worker(torch_seed):
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     assert not errors, "Errors:\n{}".format("\n".join(errors))
 # -----------------------------------------------------------------------------
-@pytest.mark.parametrize('n_max_epochs, loss_type, loss_history_epochs,'
-                         'epoch, target_load_history, '
-                         'lr_scheduler_type, lr_history_epochs, '
-                         'target_lr_history',
-                         [(4, 'mse', [0.0, 2.0, 4.0, 6.0],
-                           None, [0.0, 2.0, 4.0, 6.0], None, None, 4*[None,]),
-                          (4, 'mse', [0.0, 2.0, 4.0, 6.0],
-                           3, [0.0, 2.0, 4.0, 6.0], 'steplr',
-                           [0.0, 0.1, 0.2, 0.3], [0.0, 0.1, 0.2, 0.3]),
-                          (10, 'mse', [0.0, 2.0, 4.0, 6.0],
-                           2, [0.0, 2.0, 4.0], 'steplr', [0.0, 0.1, 0.2, 0.3],
-                           [0.0, 0.1, 0.2]),
-                          (10, 'mse', [0.0, 2.0, 4.0, 6.0],
-                           2, [0.0, 2.0, 4.0], 'steplr', None, 3*[None,]),
-                          ])
+@pytest.mark.parametrize(
+    'n_max_epochs, loss_nature, loss_type, loss_history_epochs, epoch, '
+    'target_load_history, lr_scheduler_type, lr_history_epochs, '
+    'target_lr_history',
+    [(4, 'node_features_out', 'mse', [0.0, 2.0, 4.0, 6.0], None,
+      [0.0, 2.0, 4.0, 6.0], None, None, 4*[None,]),
+     (4, 'node_features_out', 'mse', [0.0, 2.0, 4.0, 6.0], 3,
+      [0.0, 2.0, 4.0, 6.0], 'steplr', [0.0, 0.1, 0.2, 0.3],
+      [0.0, 0.1, 0.2, 0.3]),
+     (10, 'node_features_out', 'mse', [0.0, 2.0, 4.0, 6.0], 2,
+      [0.0, 2.0, 4.0], 'steplr', [0.0, 0.1, 0.2, 0.3], [0.0, 0.1, 0.2]),
+     (10, 'node_features_out', 'mse', [0.0, 2.0, 4.0, 6.0], 2,
+      [0.0, 2.0, 4.0], 'steplr', None, 3*[None,]),
+     ])
 def test_save_and_load_loss_history(gnn_epd_base_model,
-                                    n_max_epochs, loss_type,
+                                    n_max_epochs, loss_nature, loss_type,
                                     loss_history_epochs, epoch,
                                     target_load_history, lr_scheduler_type,
                                     lr_history_epochs, target_lr_history):
@@ -86,7 +85,7 @@ def test_save_and_load_loss_history(gnn_epd_base_model,
     errors = []
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Save training process loss history
-    save_loss_history(gnn_epd_base_model, n_max_epochs, loss_type,
+    save_loss_history(gnn_epd_base_model, n_max_epochs, loss_nature, loss_type,
                       loss_history_epochs, lr_scheduler_type=lr_scheduler_type,
                       lr_history_epochs=lr_history_epochs)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -98,8 +97,8 @@ def test_save_and_load_loss_history(gnn_epd_base_model,
         errors.append('Loss history record file has not been found.')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Load training process loss history
-    loaded_loss_history = load_loss_history(gnn_epd_base_model, loss_type,
-                                            epoch=epoch)
+    loaded_loss_history = load_loss_history(gnn_epd_base_model, loss_nature,
+                                            loss_type, epoch=epoch)
     # Load training process learning rate history
     loaded_lr_history = load_lr_history(gnn_epd_base_model, epoch=epoch)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -125,7 +124,8 @@ def test_save_and_load_loss_history(gnn_epd_base_model,
     # histories
     if epoch is not None:
         loaded_loss_history = load_loss_history(gnn_epd_base_model,
-                                                loss_type, epoch=epoch)
+                                                loss_nature, loss_type,
+                                                epoch=epoch)
         if not loaded_loss_history == (epoch + 1)*[None,]:
             errors.append('Loss history was not properly set in the absence '
                           'of loss history record file.')
@@ -141,23 +141,29 @@ def test_invalid_load_loss_history(gnn_epd_base_model):
     """Test invalid loading of training process loss history."""
     # Set valid parameters to save and load training process loss history
     n_max_epochs = 4
+    loss_nature = 'node_features_out'
     loss_type = 'mse'
     loss_history = [0.0, 2.0, 4.0, 6.0]
     epoch = 2
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Save training process loss history
-    save_loss_history(gnn_epd_base_model, n_max_epochs, loss_type,
+    save_loss_history(gnn_epd_base_model, n_max_epochs, loss_nature, loss_type,
                       loss_history)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Test inconsistent loss history nature
+    test_loss_nature = 'not_node_features_out'
+    with pytest.raises(RuntimeError):
+        _ = load_loss_history(gnn_epd_base_model, test_loss_nature, loss_type,
+                              epoch=epoch)
     # Test inconsistent loss history type
     test_loss_type = 'not_mse'
     with pytest.raises(RuntimeError):
-        _ = load_loss_history(gnn_epd_base_model, test_loss_type,
+        _ = load_loss_history(gnn_epd_base_model, loss_nature, test_loss_type,
                               epoch=epoch)
     # Test epoch beyong available loss history
     test_epoch = 4
     with pytest.raises(RuntimeError):
-        _ = load_loss_history(gnn_epd_base_model, loss_type,
+        _ = load_loss_history(gnn_epd_base_model, loss_nature, loss_type,
                               epoch=test_epoch)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Remove loss history record file
@@ -168,20 +174,22 @@ def test_invalid_load_loss_history(gnn_epd_base_model):
     # Test loading unexistent training process loss history with unknown
     # training step
     with pytest.raises(RuntimeError):
-        _ = load_loss_history(gnn_epd_base_model, loss_type, epoch=None)
+        _ = load_loss_history(gnn_epd_base_model, loss_nature, loss_type,
+                              epoch=None)
 # -----------------------------------------------------------------------------
 def test_invalid_load_lr_history(gnn_epd_base_model):
     """Test invalid loading of training process learning rate history."""
     # Set valid parameters to save and load training process loss and learning
     # rate histories
     n_max_epochs = 4
+    loss_nature = 'node_features_out'
     loss_type = 'mse'
     loss_history = [0.0, 2.0, 4.0, 6.0]
     lr_scheduler_type = 'steplr'
     lr_history = [0.0, 0.1, 0.2, 0.3]
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Save training process loss history
-    save_loss_history(gnn_epd_base_model, n_max_epochs, loss_type,
+    save_loss_history(gnn_epd_base_model, n_max_epochs, loss_nature, loss_type,
                       loss_history, lr_scheduler_type=lr_scheduler_type,
                       lr_history_epochs=lr_history)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

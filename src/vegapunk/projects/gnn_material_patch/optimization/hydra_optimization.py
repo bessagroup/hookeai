@@ -158,9 +158,10 @@ def hydra_wrapper(process, dataset_paths, device_type='cpu'):
                 _, avg_valid_loss_sample = predict(
                     validation_dataset, model.model_directory,
                     predict_directory=validation_subdir,
-                    load_model_state='best', loss_type=cfg.loss_type,
-                    loss_kwargs=cfg.loss_kwargs, is_normalized_loss=True,
-                    device_type=device_type, is_verbose=False)
+                    load_model_state='best', loss_nature=cfg.loss_nature,
+                    loss_type=cfg.loss_type, loss_kwargs=cfg.loss_kwargs,
+                    is_normalized_loss=True, device_type=device_type,
+                    is_verbose=False)
                 # Set hyperparameter optimization objective
                 objective = avg_valid_loss_sample
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

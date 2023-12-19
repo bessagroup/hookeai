@@ -82,7 +82,7 @@ def kfold_cross_validation(cross_validation_dir, n_fold, n_max_epochs,
 
     lr_scheduler_kwargs : dict, default={}
         Arguments of torch.optim.lr_scheduler.LRScheduler initializer.
-    loss_nature : {'node_features_out','global_features_out'}, \
+    loss_nature : {'node_features_out', 'global_features_out'}, \
                   default='node_features_out'
         Loss nature:
         
@@ -198,9 +198,9 @@ def kfold_cross_validation(cross_validation_dir, n_fold, n_max_epochs,
         _, avg_valid_loss_sample = predict(
             validation_dataset, model.model_directory,
             predict_directory=fold_validation_dir, load_model_state='best',
-            loss_type=loss_type, loss_kwargs=loss_kwargs,
-            is_normalized_loss=is_data_normalization, device_type=device_type,
-            seed=None, is_verbose=False)
+            loss_nature=loss_nature, loss_type=loss_type,
+            loss_kwargs=loss_kwargs, is_normalized_loss=is_data_normalization,
+            device_type=device_type, seed=None, is_verbose=False)
         # Check average validation loss
         if avg_valid_loss_sample is None:
             raise RuntimeError(f'The average validation loss for fold '
@@ -262,15 +262,17 @@ def kfold_cross_validation(cross_validation_dir, n_fold, n_max_epochs,
     # Write summary data file for model cross-validation
     write_cross_validation_summary_file(
         cross_validation_dir, device_type, n_fold, n_max_epochs,
-        is_data_normalization, batch_size, loss_type, loss_kwargs, dataset,
-        dataset_file_path, k_fold_loss_array, total_time_sec, avg_time_fold)
+        is_data_normalization, batch_size, loss_nature, loss_type, loss_kwargs,
+        dataset, dataset_file_path, k_fold_loss_array, total_time_sec,
+        avg_time_fold)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     return k_fold_loss_array
 # =============================================================================
 def write_cross_validation_summary_file(
     cross_validation_dir, device_type, n_fold, n_max_epochs,
-    is_data_normalization, batch_size, loss_type, loss_kwargs, dataset,
-    dataset_file_path, k_fold_loss_array, total_time_sec, avg_time_fold):
+    is_data_normalization, batch_size, loss_nature, loss_type, loss_kwargs,
+    dataset, dataset_file_path, k_fold_loss_array, total_time_sec,
+    avg_time_fold):
     """Write summary data file for model cross-validation process.
     
     Parameters
@@ -290,6 +292,8 @@ def write_cross_validation_summary_file(
         and are stored as model attributes.
     batch_size : int
         Number of samples loaded per batch.
+    loss_nature : {'node_features_out', 'global_features_out'}
+        Loss nature.
     loss_type : {'mse',}
         Loss function type.
     loss_kwargs : dict
@@ -316,6 +320,7 @@ def write_cross_validation_summary_file(
     summary_data['n_max_epochs'] = n_max_epochs
     summary_data['is_data_normalization'] = is_data_normalization
     summary_data['batch_size'] = batch_size
+    summary_data['loss_nature'] = loss_nature
     summary_data['loss_type'] = loss_type
     summary_data['loss_kwargs'] = loss_kwargs if loss_kwargs else None
     summary_data['Data set file'] = \
