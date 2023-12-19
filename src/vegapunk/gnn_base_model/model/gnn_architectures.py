@@ -291,7 +291,7 @@ class GraphIndependentNetwork(torch.nn.Module):
         self._is_skip_unset_update = is_skip_unset_update
     # -------------------------------------------------------------------------
     def forward(self, node_features_in=None, edge_features_in=None,
-                global_features_in=None):
+                global_features_in=None, batch_vector=None):
         """Forward propagation.
         
         Parameters
@@ -307,6 +307,11 @@ class GraphIndependentNetwork(torch.nn.Module):
         global_features_in : torch.Tensor, default=None
             Global features input matrix stored as a torch.Tensor(2d) of shape
             (1, n_features). Ignored if global update function is not setup.
+        batch_vector : torch.Tensor, default=None
+            Batch vector stored as torch.Tensor(1d) of shape (n_nodes,),
+            assigning each node to a specific batch subgraph. Required to
+            process a graph holding multiple isolated subgraphs when batch
+            size is greater than 1.
             
         Returns
         -------
@@ -357,10 +362,6 @@ class GraphIndependentNetwork(torch.nn.Module):
             if not isinstance(global_features_in, torch.Tensor):
                 raise RuntimeError('Global features input matrix is not a '
                                    'torch.Tensor.')
-            elif global_features_in.shape[0] != 1:
-                raise RuntimeError(f'The first dimension of the global '
-                                   f'features input matrix must be equal '
-                                   f'to 1.')
             elif global_features_in.shape[1] != self._n_global_in:
                 raise RuntimeError(f'Mismatch of number of global features of '
                                    f'model ({self._n_global_in}) and global '
@@ -586,7 +587,8 @@ class GraphInteractionNetwork(torch_geometric.nn.MessagePassing):
             self._global_fn = None
     # -------------------------------------------------------------------------
     def forward(self, edges_indexes, node_features_in=None,
-                edge_features_in=None, global_features_in=None):
+                edge_features_in=None, global_features_in=None,
+                batch_vector=None):
         """Forward propagation.
         
         Parameters
@@ -607,6 +609,11 @@ class GraphInteractionNetwork(torch_geometric.nn.MessagePassing):
         global_features_in : torch.Tensor, default=None
             Global features input matrix stored as a torch.Tensor(2d) of shape
             (1, n_features). Ignored if global update function is not setup.
+        batch_vector : torch.Tensor, default=None
+            Batch vector stored as torch.Tensor(1d) of shape (n_nodes,),
+            assigning each node to a specific batch subgraph. Required to
+            process a graph holding multiple isolated subgraphs when batch
+            size is greater than 1.
         
         Returns
         -------
@@ -675,10 +682,6 @@ class GraphInteractionNetwork(torch_geometric.nn.MessagePassing):
             if not isinstance(global_features_in, torch.Tensor):
                 raise RuntimeError('Global features input matrix is not a '
                                    'torch.Tensor.')
-            elif global_features_in.shape[0] != 1:
-                raise RuntimeError(f'The first dimension of the global '
-                                   f'features input matrix must be equal '
-                                   f'to 1.')
             elif global_features_in.shape[1] != self._n_global_in:
                 raise RuntimeError(f'Mismatch of number of global features of '
                                    f'model ({self._n_global_in}) and global '
@@ -701,7 +704,8 @@ class GraphInteractionNetwork(torch_geometric.nn.MessagePassing):
         if self._global_fn is not None:
             global_features_out = self.update_global(
                 global_features_in=global_features_in,
-                node_features_out=node_features_out)
+                node_features_out=node_features_out,
+                batch_vector=batch_vector)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         return node_features_out, edge_features_out, global_features_out
     # -------------------------------------------------------------------------
@@ -818,7 +822,8 @@ class GraphInteractionNetwork(torch_geometric.nn.MessagePassing):
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         return node_features_out
     # -------------------------------------------------------------------------
-    def update_global(self, node_features_out, global_features_in=None):
+    def update_global(self, node_features_out, global_features_in=None,
+                      batch_vector=None):
         """Update global features.
         
         Parameters
@@ -829,6 +834,11 @@ class GraphInteractionNetwork(torch_geometric.nn.MessagePassing):
         global_features_in : torch.Tensor, default=None
             Global features input matrix stored as a torch.Tensor(2d) of shape
             (1, n_features).
+        batch_vector : torch.Tensor, default=None
+            Batch vector stored as torch.Tensor(1d) of shape (n_nodes,),
+            assigning each node to a specific batch subgraph. Required to
+            process a graph holding multiple isolated subgraphs when batch
+            size is greater than 1.
 
         Returns
         -------
@@ -838,15 +848,17 @@ class GraphInteractionNetwork(torch_geometric.nn.MessagePassing):
         """
         # Perform node-to-global aggregation
         if self.node_to_global_aggr == 'add':
-            node_features_in_aggr = torch.sum(node_features_out, dim=0)
+            node_features_in_aggr = torch_geometric.nn.global_add_pool(
+                node_features_out, batch_vector)
         elif self.node_to_global_aggr == 'mean':
-            node_features_in_aggr = torch.mean(node_features_out, dim=0)
+            node_features_in_aggr = torch_geometric.nn.global_mean_pool(
+                node_features_out, batch_vector)
         else:
             raise RuntimeError('Unknown node-to-global aggregation scheme.')
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Concatenate global features:
         # Set global features stemming from node-to-global aggregation
-        global_features_in_cat = torch.reshape(node_features_in_aggr, (1, -1))
+        global_features_in_cat = node_features_in_aggr
         # Concatenate available global input features
         if global_features_in is not None:
             global_features_in_cat = \
