@@ -269,7 +269,7 @@ class GraphIndependentNetwork(torch.nn.Module):
             self._global_fn = torch.nn.Sequential()
             self._global_fn.add_module('FNN', fnn)
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            # Add normalization layer (per-feature) to global update function
+            # Add normalization layer (per-element) to global update function
             if is_norm_layer:
                 norm_layer = torch.nn.LayerNorm(
                     normalized_shape=self._n_global_out,
