@@ -22,7 +22,7 @@ import matplotlib.pyplot as plt
 import shapely.geometry
 # Local
 from projects.gnn_material_patch.material_patch.patch import \
-    FiniteElementPatch
+    FiniteElementPatch, mean_rotation_angle_2d
 from projects.gnn_material_patch.discretization.finite_element import \
     FiniteElement
 #
@@ -107,7 +107,7 @@ class FiniteElementPatchGenerator:
     _polynomial_sampler(order, left_point, right_point, lower_bound=None, \
                         upper_bound=None, is_plot=False)
         Generate random polynomial by sampling points within given bounds.
-    _build_boundary_coords_array(self, edges_coords)
+    _build_boundary_coords_array(self, edges_coords, is_close_polygon)
         Build patch boundary nodes coordinates array.
     _is_admissible_simulation(self, edges_coords)
         Check whether simulation of patch is physically admissible.
@@ -169,6 +169,7 @@ class FiniteElementPatchGenerator:
                                 edges_lab_disp_range=None,
                                 translation_range=None,
                                 rotation_angles_range=None,
+                                is_remove_rbm=False,
                                 max_iter=10, is_verbose=False):
         """Generate finite element deformed patch.
         
@@ -214,7 +215,15 @@ class FiniteElementPatchGenerator:
             (key, str). Euler angles follow Bunge convention (Z1-X2-Z3) and are
             labelled ('alpha', 'beta', 'gamma'), respectively. Null range is
             assumed for unspecified angles. If None, then there is no
-            rotational motion.        
+            rotational motion.
+        is_remove_rbm : bool, default=False
+            Remove rigid body motions. Translation rigid body motion is removed
+            by recentering the centroid in the deformed configuration with its
+            reference configuration counterpart. Rotation rigid body motion is
+            removed by rotating all boundary nodes by the negative mean
+            rotation angle of all boundary nodes in the deformed configuration
+            around the centroid (after removing the translation rigid body
+            motion).
         max_iter : int, default=10
             Maximum number of iterations to get a geometrically admissible
             deformed patch configuration.
@@ -228,7 +237,7 @@ class FiniteElementPatchGenerator:
         patch : FiniteElementPatch
             Finite element patch. If `is_admissible` is False, then returns
             None.
-        """
+        """        
         if is_verbose:
             print('\nGenerating finite element deformed material patch'
                   '\n-------------------------------------------------')
@@ -361,46 +370,114 @@ class FiniteElementPatchGenerator:
                         edges_coords_def[str(i)].append(nodes_coords_def)
                     else:
                         raise RuntimeError('Missing 3D implementation.')        
-            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~            
             # Compute random rigid body motions
             translation, rotation = self._get_random_rigid_motions(
                 translation_range, rotation_angles_range)
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Get patch (geometrical) centroid
-            if rotation is not None:
-                if self._n_dim == 2:
-                    # Build boundary nodes coordinates array
-                    coords_array = \
-                        self._build_boundary_coords_array(edges_coords_def)
-                    # Generate boundary polygon
-                    polygon = shapely.geometry.Polygon(coords_array)
-                    # Get boundary polygon centroid (center of rotation)
-                    centroid = np.array(polygon.centroid.coords).reshape(-1)
-                else:
-                    raise RuntimeError('Missing 3D implementation.')
+            if self._n_dim == 2:
+                # Build boundary nodes coordinates array (close polygon,
+                # reference configuration)
+                boundary_coords_array_ref = self._build_boundary_coords_array(
+                    edges_coords_ref, is_close_polygon=True)
+                # Generate boundary polygon
+                polygon = shapely.geometry.Polygon(boundary_coords_array_ref)
+                # Get boundary polygon centroid (reference configuration)
+                centroid_ref = np.array(polygon.centroid.coords).reshape(-1)
+                # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                # Build boundary nodes coordinates array (close polygon,
+                # deformed configuration)
+                boundary_coords_array_def = self._build_boundary_coords_array(
+                    edges_coords_def, is_close_polygon=True)
+                # Generate boundary polygon
+                polygon = shapely.geometry.Polygon(boundary_coords_array_def)
+                # Get boundary polygon centroid (deformed configuration)
+                centroid_def = np.array(polygon.centroid.coords).reshape(-1)
+            else:
+                raise RuntimeError('Missing 3D implementation.')
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            # Apply rigid body motions (translation and rotation)
+            # Superimpose rigid body motions (translation and rotation)
             for i in range(self._n_dim):
                 # Loop over edges
                 for coords_array in edges_coords_def[str(i)]:
                     # Get number of boundary edge nodes
                     n_nodes = coords_array.shape[0]
                     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-                    # Rigid body rotation
+                    # Rigid body rotation (around deformed configuration
+                    # centroid)
                     if rotation is not None:
-                        # Build centroid tile array
-                        centroid_tile = np.tile(centroid, (n_nodes, 1))
-                        # Apply rigid body rotation around centroid
+                        # Build centroid tile array (local)
+                        centroid_def_tile = np.tile(centroid_def, (n_nodes, 1))
+                        # Superimpose rigid body rotation around centroid
+                        # (in-place update)
                         coords_array[:, :] = \
-                            centroid_tile + self._rotate_coords_array(
-                                coords_array - centroid_tile, rotation)
+                            centroid_def_tile + self._rotate_coords_array(
+                                coords_array - centroid_def_tile, rotation)
                     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                     # Rigid body translation
                     if translation is not None:
-                        # Build translation tile array
+                        # Build translation tile array (local)
                         translation_tile = np.tile(translation, (n_nodes, 1))
-                        # Apply rigid body translation
+                        # Superimpose rigid body translation (in-place update)
                         coords_array += translation_tile
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Build boundary nodes coordinates array (close polygon,
+            # deformed configuration)
+            boundary_coords_array_def = self._build_boundary_coords_array(
+                edges_coords_def, is_close_polygon=True)
+            # Generate boundary polygon
+            polygon = shapely.geometry.Polygon(boundary_coords_array_def)
+            # Get boundary polygon centroid (deformed configuration, after
+            # superimposing rigid body motions)
+            centroid_def = np.array(polygon.centroid.coords).reshape(-1)
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Remove rigid body motions (translation and rotation)
+            if is_remove_rbm:
+                # Compute centroid displacement
+                centroid_disp = centroid_def - centroid_ref
+                # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                # Get number of boundary nodes
+                n_boundary_nodes = boundary_coords_array_ref.shape[0]
+                # Build centroid tile arrays
+                centroid_ref_tile = \
+                    np.tile(centroid_ref, (n_boundary_nodes, 1))
+                centroid_def_tile = \
+                    np.tile(centroid_def, (n_boundary_nodes, 1))
+                # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                # Compute negative mean rotation angle of boundary nodes
+                # around centroid (after removing rigid body translation by
+                # recentering the centroid in the deformed configuration with
+                # its reference configuration counterpart)
+                if self._n_dim == 2:
+                    # Compute negative mean rotation angle
+                    mean_angle_deg = -mean_rotation_angle_2d(
+                        boundary_coords_array_ref - centroid_ref_tile,
+                        boundary_coords_array_def - centroid_def_tile)
+                    # Set Euler angles
+                    rotation_angles = (mean_angle_deg, 0, 0)
+                else:
+                    raise RuntimeError('Missing 3D implementation.')
+                # Compute rotation tensor
+                rotation = rotation_tensor_from_euler_angles(
+                    tuple(rotation_angles))
+                # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                # Loop over dimensions
+                for i in range(self._n_dim):
+                    # Loop over edges
+                    for coords_array in edges_coords_def[str(i)]:
+                        # Get number of boundary edge nodes
+                        n_nodes = coords_array.shape[0]
+                        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                        # Remove rigid body translation (in-place update)
+                        coords_array += -np.tile(centroid_disp, (n_nodes, 1))
+                        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                        # Build centroid tile array (local)
+                        centroid_ref_tile = np.tile(centroid_ref, (n_nodes, 1))
+                        # Remove rigid body rotation (in-place update)
+                        coords_array[:, :] = \
+                            centroid_ref_tile + self._rotate_coords_array(
+                                coords_array - centroid_ref_tile, rotation)
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~   
             # Check whether simulation of patch is physically admissible
             is_admissible = self._is_admissible_simulation(edges_coords_def)
@@ -1252,15 +1329,17 @@ class FiniteElementPatchGenerator:
                         np.random.uniform(low=bounds[0], high=bounds[1])
             # Compute rotation tensor
             rotation = rotation_tensor_from_euler_angles(
-                tuple(rotation_angles))[:2, :2]
+                tuple(rotation_angles))[:self._n_dim, :self._n_dim]
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         return translation, rotation
     # -------------------------------------------------------------------------
-    def _build_boundary_coords_array(self, edges_coords):
+    def _build_boundary_coords_array(self, edges_coords,
+                                     is_close_polygon=False):
         """Build patch boundary nodes coordinates array.
         
         In the two-dimensional case, boundary nodes are sorted in clockwise
-        order and define a closed polygon.
+        order. A closed polygon is obtained by setting is_close_polygon to
+        True.
         
         Parameters
         ----------
@@ -1269,6 +1348,9 @@ class FiniteElementPatchGenerator:
             coordinates (item, list[numpy.ndarray(2d)]). Each edge coordinates
             are stored as a numpy.ndarray(n_edge_nodes, n_dim). Corner nodes
             are assumed part of the edge.
+        is_close_polygon : bool, default=False
+            If True, then close the polygon by adding a copy of the first node
+            to the end of the boundary nodes coordinates array.
         
         Returns
         -------
@@ -1309,8 +1391,9 @@ class FiniteElementPatchGenerator:
                                                  edge_coords[:-1, :], axis=0)
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Close polygon coordinates
-            coords_array = np.append(coords_array, coords_array[0:1, :],
-                                     axis=0)
+            if is_close_polygon:
+                coords_array = \
+                    np.append(coords_array, coords_array[0:1, :], axis=0)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         else:
             raise RuntimeError('Missing 3D implementation.')
@@ -1335,8 +1418,9 @@ class FiniteElementPatchGenerator:
             If True, the patch simulation is physically admissible.
         """
         if self._n_dim == 2:
-            # Build boundary nodes coordinates array
-            coords_array = self._build_boundary_coords_array(edges_coords_def)
+            # Build boundary nodes coordinates array (close polygon)
+            coords_array = self._build_boundary_coords_array(
+                edges_coords_def, is_close_polygon=True)
             # Generate polygon
             polygon = shapely.geometry.Polygon(coords_array)
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -1742,7 +1826,7 @@ class FiniteElementPatchGenerator:
         if node_label is None:
             raise RuntimeError('Node label has not been found.')
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~        
-        return node_label
+        return node_label    
 # =============================================================================
 def rotation_tensor_from_euler_angles(euler_deg):
     """Set rotation tensor from Euler angles (Bunge convention).
@@ -1780,7 +1864,7 @@ def rotation_tensor_from_euler_angles(euler_deg):
 
     Returns
     -------
-    r : numpy.ndarray (2d)
+    r : numpy.ndarray(2d)
         Rotation tensor (for given rotation angle theta, active transformation
         (+ theta) and passive transformation (- theta)).
     """
