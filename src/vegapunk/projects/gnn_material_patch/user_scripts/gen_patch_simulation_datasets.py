@@ -91,6 +91,9 @@ def generate_dataset(case_study_name, simulation_directory, n_sample,
         rotation_angles_range = {'alpha': (0.0, 0.0), 'beta': (0.0, 0.0),
                                  'gamma': (0.0, 0.0)}
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set rigid body motions removal flag
+        is_remove_rbm = True
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Save patch plot
         is_save_plot_patch = True
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~    
@@ -109,6 +112,7 @@ def generate_dataset(case_study_name, simulation_directory, n_sample,
         edge_deformation_magnitude_ranges,
         translation_range=translation_range,
         rotation_angles_range=rotation_angles_range,
+        is_remove_rbm = is_remove_rbm,
         is_remove_failed_samples = is_remove_failed_samples,
         links_input_params=links_input_params,
         is_save_simulation_dataset=is_save_simulation_dataset,

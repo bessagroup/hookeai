@@ -49,7 +49,7 @@ def generate_material_patch_dataset(
     n_elems_per_dim, patch_material_data, simulation_directory, n_sample=1,
     patch_dims_ranges=None, avg_deformation_ranges=None,
     edge_deformation_order_ranges=None, edge_deformation_magnitude_ranges=None,
-    translation_range=None, rotation_angles_range=None,
+    translation_range=None, rotation_angles_range=None, is_remove_rbm=False,
     max_iter_per_patch=10, is_remove_failed_samples=False,
     links_input_params=None, is_save_simulation_dataset=False,
     is_append_n_sample=True, is_save_simulation_files=False,
@@ -156,6 +156,14 @@ def generate_material_patch_dataset(
         labelled ('alpha', 'beta', 'gamma'), respectively. Null range is
         assumed for unspecified angles. If None, then there is no
         rotational motion.
+    is_remove_rbm : bool, default=False
+        Remove rigid body motions. Translation rigid body motion is removed
+        by recentering the centroid in the deformed configuration with its
+        reference configuration counterpart. Rotation rigid body motion is
+        removed by rotating all boundary nodes by the negative mean
+        rotation angle of all boundary nodes in the deformed configuration
+        around the centroid (after removing the translation rigid body
+        motion).
     max_iter_per_patch : int, default=10
         Maximum number of iterations to get a geometrically admissible
         deformed patch configuration.
@@ -241,6 +249,7 @@ def generate_material_patch_dataset(
         'elem_type': elem_type,
         'n_elems_per_dim': n_elems_per_dim,
         'edge_deformation_order_ranges': edge_deformation_order_ranges,
+        'is_remove_rbm': is_remove_rbm,
         'max_iter': max_iter_per_patch,
         'links_bin_path': links_bin_path,
         'strain_formulation': strain_formulation,
@@ -643,6 +652,9 @@ class MaterialPatchSimulator(f3dasm.datageneration.DataGenerator):
             angle = experiment_sample.get(name)
             # Set translation along dimension
             rotation_angles_range[euler_angle] = 2*(angle,)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ 
+        # Get rigid body motions removal flag
+        is_remove_rbm = kwargs['is_remove_rbm']
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~        
         # Initialize material patch generator
         patch_generator = FiniteElementPatchGenerator(n_dim, patch_dims)
@@ -653,7 +665,8 @@ class MaterialPatchSimulator(f3dasm.datageneration.DataGenerator):
             edges_lab_def_order=edges_lab_def_order,
             edges_lab_disp_range=edges_lab_disp_range,
             translation_range=translation_range,
-            rotation_angles_range=rotation_angles_range)
+            rotation_angles_range=rotation_angles_range,
+            is_remove_rbm=is_remove_rbm)
         # Save plot of deformed material patch
         is_save_plot_patch = kwargs['is_save_plot_patch']
         if is_save_plot_patch and is_admissible:
