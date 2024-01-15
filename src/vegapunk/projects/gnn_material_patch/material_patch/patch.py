@@ -4,6 +4,13 @@ Classes
 -------
 FiniteElementPatch
     Finite element material patch.
+
+Functions
+---------
+rotation_angle_2d
+    Compute the rotation angle between two vectors in 2D.
+mean_rotation_angle_2d
+    Compute mean rotation angle between pairs of vectors in 2D.
 """
 #
 #                                                                       Modules
@@ -454,3 +461,70 @@ class FiniteElementPatch:
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Close plot
         plt.close(fig)
+# =============================================================================
+def rotation_angle_2d(x1, x2):
+    """Compute the rotation angle between two vectors in 2D.
+    
+    The rotation angle is computed from x1 to x2 array.
+    
+    Parameters
+    ----------
+    x1 : np.ndarray(1d)
+        1D array.
+    x2 : np.ndarray(1d)
+        1D array.
+        
+    Returns
+    -------
+    angle_deg : float
+        Angle (degrees) from x1 to x2, contained between -180 and +180 degrees.
+    """
+    # Check 1D arrays
+    for x in (x1, x2):
+        if (not isinstance(x, np.ndarray)) or (len(x.shape) != 1):
+            raise RuntimeError(f'Input arrays must be 1D numpy.ndarray.')
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Compute angle (radians)
+    angle = np.arctan2(np.linalg.det([x1, x2]),np.dot(x1, x2))
+    # Compute angle (degrees)
+    angle_deg = np.degrees(angle)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    return angle_deg
+# =============================================================================
+def mean_rotation_angle_2d(x1_arrays, x2_arrays):
+    """Compute mean rotation angle between pairs of vectors in 2D.
+    
+    The i-th rotation angle is computed from x1 to x2 arrays, stored in
+    x1_arrays[i, :] and x2_arrays[i, :], respectively.
+    
+    Parameters
+    ----------
+    x1_arrays : numpy.ndarray(2d)
+        1D arrays stored as numpy.ndarray(n_arrays, 2).
+    x2_arrays : numpy.ndarray(2d)
+        1D arrays stored as numpy.ndarray(n_arrays, 2).
+        
+    Returns
+    -------
+    mean_angle_deg : float
+        Mean rotation angle (degrees) from x1 to x2, contained between -180 and
+        +180 degrees.
+    """
+    # Check 2D arrays
+    for x in (x1_arrays, x2_arrays):
+        if (not isinstance(x, np.ndarray)) or (len(x.shape) != 2):
+            raise RuntimeError(f'Input arrays must be 2D numpy.ndarray.')
+    if x1_arrays.shape[0] != x2_arrays.shape[0]:
+        raise RuntimeError(f'The number of arrays in x1_arrays '
+                           f'({x1_arrays.shape[0]}) does not match the '
+                           f'number of arrays in x2_arrays '
+                           f'({x2_arrays.shape[0]}).')
+    else:
+        n_arrays = x1_arrays.shape[0]
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Compute mean rotation angle (degrees)
+    mean_angle_deg = \
+        np.mean([rotation_angle_2d(x1_arrays[i, :], x2_arrays[i, :])
+                 for i in range(n_arrays)])
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    return mean_angle_deg
