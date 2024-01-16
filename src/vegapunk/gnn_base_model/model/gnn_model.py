@@ -416,7 +416,7 @@ class GNNEPDBaseModel(torch.nn.Module):
             pro_n_hidden_layers=pro_n_hidden_layers,
             dec_n_hidden_layers=dec_n_hidden_layers,
             hidden_layer_size=hidden_layer_size,
-            n_node_in=n_node_in, n_edge_in=n_edge_in,
+            n_node_in=n_node_in, n_edge_in=n_edge_in, n_global_in=n_global_in,
             pro_edge_to_node_aggr=pro_edge_to_node_aggr,
             pro_node_to_global_aggr=pro_node_to_global_aggr,
             enc_node_hidden_activation=type(self).get_pytorch_activation(
