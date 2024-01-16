@@ -548,22 +548,34 @@ class GNNEPDBaseModel(torch.nn.Module):
         is_normalized : bool, default=False
             If True, get normalized output features from graph, False
             otherwise.
+        batch_vector : torch.Tensor, default=None
+            Batch vector stored as torch.Tensor(1d) of shape (n_nodes,),
+            assigning each node to a specific batch subgraph. Required to
+            process a graph holding multiple isolated subgraphs when batch
+            size is greater than 1.
             
         Returns
         -------
-        node_features_out : torch.Tensor
+        node_features_out : {torch.Tensor, None}
             Nodes features output matrix stored as a torch.Tensor(2d) of shape
             (n_nodes, n_features).
+        edge_features_out : {torch.Tensor, None}
+            Edges features output matrix stored as a torch.Tensor(2d) of shape
+            (n_edges, n_features).
+        global_features_out : {torch.Tensor, None}
+            Global features output matrix stored as a torch.Tensor(2d) of shape
+            (1, n_features).
         """
         # Check input graph
         if not isinstance(graph, torch_geometric.data.Data):
             raise RuntimeError('Input graph is not torch_geometric.data.Data.')
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        # Predict node output features
-        node_features_out = self.predict_node_output_features(
-            graph, is_normalized=is_normalized, batch_vector=batch_vector)
+        # Predict output features
+        node_features_out, edge_features_out, global_features_out = \
+            self.predict_output_features(
+                graph, is_normalized=is_normalized, batch_vector=batch_vector)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        return node_features_out 
+        return node_features_out, edge_features_out, global_features_out
     # -------------------------------------------------------------------------
     def save_model_init_file(self):
         """Save model initialization file.
@@ -890,6 +902,11 @@ class GNNEPDBaseModel(torch.nn.Module):
         is_normalized : bool, default=False
             If True, get normalized output features from graph, False
             otherwise.
+        batch_vector : torch.Tensor, default=None
+            Batch vector stored as torch.Tensor(1d) of shape (n_nodes,),
+            assigning each node to a specific batch subgraph. Required to
+            process a graph holding multiple isolated subgraphs when batch
+            size is greater than 1.
 
         Returns
         -------
@@ -902,11 +919,6 @@ class GNNEPDBaseModel(torch.nn.Module):
         global_features_out : {torch.Tensor, None}
             Global features output matrix stored as a torch.Tensor(2d) of shape
             (1, n_features).
-        batch_vector : torch.Tensor, default=None
-            Batch vector stored as torch.Tensor(1d) of shape (n_nodes,),
-            assigning each node to a specific batch subgraph. Required to
-            process a graph holding multiple isolated subgraphs when batch
-            size is greater than 1.
         """
         # Check input graph type
         if not isinstance(input_graph, torch_geometric.data.Data):
