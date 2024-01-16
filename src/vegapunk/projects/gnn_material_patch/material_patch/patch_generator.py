@@ -170,6 +170,7 @@ class FiniteElementPatchGenerator:
                                 translation_range=None,
                                 rotation_angles_range=None,
                                 is_remove_rbm=False,
+                                deformation_noise=0.0,
                                 max_iter=10, is_verbose=False):
         """Generate finite element deformed patch.
         
@@ -224,6 +225,11 @@ class FiniteElementPatchGenerator:
             rotation angle of all boundary nodes in the deformed configuration
             around the centroid (after removing the translation rigid body
             motion).
+        deformation_noise : float, default=0.0
+            Parameter that controls the normally distributed noise superimposed
+            to the boundary edges interior nodes coordinates in the deformed
+            configuration. Defines the noise standard deviation along given
+            dimension after being multiplied by the corresponding patch size.
         max_iter : int, default=10
             Maximum number of iterations to get a geometrically admissible
             deformed patch configuration.
@@ -342,7 +348,7 @@ class FiniteElementPatchGenerator:
                         # Get edge deformation polynomial order
                         poly_order = edges_poly_orders[str(i)][j]
                         # Get edge displacement range
-                        disp_amp = edges_disp_range[str(i)][j]        
+                        disp_amp = edges_disp_range[str(i)][j]
                         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                         # Generate randomly deformed boundary edge node
                         # coordinates in the edge local coordinates
@@ -351,7 +357,8 @@ class FiniteElementPatchGenerator:
                             self._get_deformed_boundary_edge(
                                 local_nodes_coords_ref, local_init_node_def,
                                 local_end_node_def, poly_order,
-                                poly_bounds_range=disp_amp)                        
+                                poly_bounds_range=disp_amp,
+                                noise=deformation_noise)                        
                         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                         # Get translation from deformed boundary edge local
                         # coordinates to patch coordinates
@@ -969,7 +976,8 @@ class FiniteElementPatchGenerator:
     # -------------------------------------------------------------------------
     def _get_deformed_boundary_edge(self, nodes_coords_ref, left_node_def,
                                     right_node_def, poly_order,
-                                    poly_bounds_range=None, is_plot=False):
+                                    poly_bounds_range=None, noise=0.0,
+                                    is_plot=False):
         """Get randomly deformed boundary edge node coordinates in 2D plane.
         
         The boundary edge nodes (reference configuration) must be sorted
@@ -1001,6 +1009,11 @@ class FiniteElementPatchGenerator:
             Polynomial range along second dimension. Range is relative to
             midplane defined by both boundary edge nodes along the second
             dimension.
+        noise : float, default=0.0
+            Parameter that controls the normally distributed noise superimposed
+            to the boundary edges interior nodes coordinates in the deformed
+            configuration. Defines the noise standard deviation along given
+            dimension after being multiplied by the corresponding patch size.
         is_plot : bool, default=False
             If True, plot boundary edge reference and deformed configurations.
         
@@ -1136,6 +1149,18 @@ class FiniteElementPatchGenerator:
             # Store node deformed coordinates
             nodes_coords_def[i, :] = \
                 np.array([x1, polynomial(x1, coefficients)])
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Initialize node deformed coordinates noise
+        nodes_coords_noise = np.zeros_like(nodes_coords_def)
+        # Loop over dimensions
+        for i in range(2):
+            # Set noise standard deviation
+            noise_std = np.abs(noise)*self._patch_dims[i]
+            # Sample coordinates noise along dimension: normal distribution
+            nodes_coords_noise[:, i] = np.random.normal(
+                loc=0.0, scale=noise_std, size=nodes_coords_def.shape[0])
+        # Add noise to interior nodes deformed coordinates
+        nodes_coords_def[1:-1, :] += nodes_coords_noise[1:-1, :]
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Revert boundary edge nodes to original order (reference
         # configuration)

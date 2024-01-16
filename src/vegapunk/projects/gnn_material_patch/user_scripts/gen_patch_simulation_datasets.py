@@ -94,6 +94,9 @@ def generate_dataset(case_study_name, simulation_directory, n_sample,
         # Set rigid body motions removal flag
         is_remove_rbm = True
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set boundary deformation noise
+        deformation_noise = 0.0
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Save patch plot
         is_save_plot_patch = True
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~    
@@ -112,7 +115,7 @@ def generate_dataset(case_study_name, simulation_directory, n_sample,
         edge_deformation_magnitude_ranges,
         translation_range=translation_range,
         rotation_angles_range=rotation_angles_range,
-        is_remove_rbm = is_remove_rbm,
+        is_remove_rbm = is_remove_rbm, deformation_noise=deformation_noise,
         is_remove_failed_samples = is_remove_failed_samples,
         links_input_params=links_input_params,
         is_save_simulation_dataset=is_save_simulation_dataset,

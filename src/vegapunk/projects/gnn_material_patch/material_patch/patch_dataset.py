@@ -50,10 +50,11 @@ def generate_material_patch_dataset(
     patch_dims_ranges=None, avg_deformation_ranges=None,
     edge_deformation_order_ranges=None, edge_deformation_magnitude_ranges=None,
     translation_range=None, rotation_angles_range=None, is_remove_rbm=False,
-    max_iter_per_patch=10, is_remove_failed_samples=False,
-    links_input_params=None, is_save_simulation_dataset=False,
-    is_append_n_sample=True, is_save_simulation_files=False,
-    is_save_plot_patch=False, is_verbose=False):
+    deformation_noise=0.0, max_iter_per_patch=10,
+    is_remove_failed_samples=False, links_input_params=None,
+    is_save_simulation_dataset=False, is_append_n_sample=True,
+    is_save_simulation_files=False, is_save_plot_patch=False,
+    is_verbose=False):
     """Generate and simulate a set of deformed finite element material patches.
     
     Material patch is assumed quadrilateral (2d) or parallelepipedic (3D)
@@ -164,6 +165,11 @@ def generate_material_patch_dataset(
         rotation angle of all boundary nodes in the deformed configuration
         around the centroid (after removing the translation rigid body
         motion).
+    deformation_noise : float, default=0.0
+        Parameter that controls the normally distributed noise superimposed
+        to the boundary edges interior nodes coordinates in the deformed
+        configuration. Defines the noise standard deviation along given
+        dimension after being multiplied by the corresponding patch size.
     max_iter_per_patch : int, default=10
         Maximum number of iterations to get a geometrically admissible
         deformed patch configuration.
@@ -248,8 +254,9 @@ def generate_material_patch_dataset(
         'n_dim': n_dim,
         'elem_type': elem_type,
         'n_elems_per_dim': n_elems_per_dim,
-        'edge_deformation_order_ranges': edge_deformation_order_ranges,
+        'edge_deformation_magnitude_ranges': edge_deformation_magnitude_ranges,
         'is_remove_rbm': is_remove_rbm,
+        'deformation_noise': deformation_noise,
         'max_iter': max_iter_per_patch,
         'links_bin_path': links_bin_path,
         'strain_formulation': strain_formulation,
@@ -611,16 +618,17 @@ class MaterialPatchSimulator(f3dasm.datageneration.DataGenerator):
             # Get polynomial deformation order
             order = experiment_sample.get(name)
             # Set edge polynomial deformation order
-            edges_lab_def_order[label] = int(order)                            # Unexpected behavior: int was converted to float
+            edges_lab_def_order[label] = int(order)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Get edges polynomial deformation magnitude range
-        edge_deformation_order_ranges = kwargs['edge_deformation_order_ranges']
+        edge_deformation_magnitude_ranges = \
+            kwargs['edge_deformation_magnitude_ranges']
         # Initialize edges polynomial deformation displacement range
         edges_lab_disp_range = {}
         # Loop over edges
         for label in edges_labels:
             # Get edge polynomial deformation magnitude range
-            avg_deformation_range = edge_deformation_order_ranges[label]
+            avg_deformation_range = edge_deformation_magnitude_ranges[label]
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Get orthogonal (deformation) dimension index
             orth_dim = int(edges_def_dimension[label]) - 1
@@ -655,6 +663,9 @@ class MaterialPatchSimulator(f3dasm.datageneration.DataGenerator):
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ 
         # Get rigid body motions removal flag
         is_remove_rbm = kwargs['is_remove_rbm']
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Get boundary deformation noise
+        deformation_noise = kwargs['deformation_noise']
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~        
         # Initialize material patch generator
         patch_generator = FiniteElementPatchGenerator(n_dim, patch_dims)
@@ -666,7 +677,8 @@ class MaterialPatchSimulator(f3dasm.datageneration.DataGenerator):
             edges_lab_disp_range=edges_lab_disp_range,
             translation_range=translation_range,
             rotation_angles_range=rotation_angles_range,
-            is_remove_rbm=is_remove_rbm)
+            is_remove_rbm=is_remove_rbm,
+            deformation_noise=deformation_noise)
         # Save plot of deformed material patch
         is_save_plot_patch = kwargs['is_save_plot_patch']
         if is_save_plot_patch and is_admissible:
