@@ -1037,7 +1037,7 @@ def test_model_forward_propagation(batch_graph_patch_data_2d, tmp_path,
         model.fit_data_scalers(dataset)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Predict node output features
-    node_features_out = model(pyg_graph, is_normalized=is_normalized)
+    node_features_out, _, _ = model(pyg_graph, is_normalized=is_normalized)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Check nodes features output matrix
     if not isinstance(node_features_out, torch.Tensor):

@@ -330,7 +330,7 @@ def train_model(n_max_epochs, dataset, model_init_args, lr_init,
             # graph or for tensors with the gradient flag set to False.
             if loss_nature == 'node_features_out':
                 # Get node output features
-                node_features_out = model.predict_node_output_features(
+                node_features_out, _, _ = model.predict_output_features(
                     pyg_graph, is_normalized=is_data_normalization,
                     batch_vector=batch_vector)
                 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -339,10 +339,9 @@ def train_model(n_max_epochs, dataset, model_init_args, lr_init,
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             elif loss_nature == 'global_features_out':
                 # Get global output features
-                _, _, global_features_out = \
-                    model.predict_output_features(
-                        pyg_graph, is_normalized=is_data_normalization,
-                        batch_vector=batch_vector)
+                _, _, global_features_out = model.predict_output_features(
+                    pyg_graph, is_normalized=is_data_normalization,
+                    batch_vector=batch_vector)
                 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                 # Compute loss
                 loss = loss_function(global_features_out, global_targets)

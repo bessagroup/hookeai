@@ -191,25 +191,28 @@ def predict(dataset, model_directory, predict_directory=None,
             # Compute output features predictions (forward propagation)
             if loss_nature == 'node_features_out':
                 # Compute node output features
-                features_out = model.predict_node_output_features(pyg_graph)
+                features_out, _, _ = model.predict_output_features(pyg_graph)
                 # Get sample node output features ground-truth
                 # (None if not available)
                 targets, _, _ = model.get_output_features_from_graph(pyg_graph)
                 # Store sample results
                 results['node_features_out'] = features_out.detach().cpu()
-                results['node_targets'] = targets.detach().cpu()
+                results['node_targets'] = None
+                if targets is not None:
+                    results['node_targets'] = targets.detach().cpu()
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             elif loss_nature == 'global_features_out':
                 # Compute global output features
-                _, _, features_out = \
-                    model.predict_output_features(pyg_graph)
+                _, _, features_out = model.predict_output_features(pyg_graph)
                 # Get sample global output features ground-truth
                 # (None if not available)
                 _, _, targets = \
                     model.get_output_features_from_graph(pyg_graph)
                 # Store sample results
                 results['global_features_out'] = features_out.detach().cpu()
-                results['global_targets'] = targets.detach().cpu()
+                results['global_targets'] = None
+                if targets is not None:
+                    results['global_targets'] = targets.detach().cpu()
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             else:
                 raise RuntimeError('Unknown loss nature.')
