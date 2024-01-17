@@ -967,12 +967,14 @@ class GNNEPDBaseModel(torch.nn.Module):
     
         Parameters
         ----------
-        activation_type : {'identity', 'relu'}
+        activation_type : {'identity', 'relu', 'tanh'}
             Unit activation function type:
             
             'identity' : Linear (torch.nn.Identity)
             
             'relu'     : Rectified linear unit (torch.nn.Identity)
+            
+            'tanh'     : Hyperbolic Tangent (torch.nn.Tanh)
             
         **kwargs
             Arguments of torch.nn._Module initializer.
@@ -990,6 +992,8 @@ class GNNEPDBaseModel(torch.nn.Module):
             activation_function = torch.nn.Identity(**kwargs)
         elif activation_type == 'relu':
             activation_function = torch.nn.ReLU(**kwargs)
+        elif activation_type == 'tanh':
+            activation_function = torch.nn.Tanh(**kwargs)
         else:
             raise RuntimeError(f'Unknown or unavailable PyTorch unit '
                                f'activation function: \'{activation_type}\'.'
