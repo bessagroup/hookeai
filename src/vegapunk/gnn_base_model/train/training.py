@@ -464,7 +464,7 @@ def train_model(n_max_epochs, dataset, model_init_args, lr_init,
     best_training_epoch = loss_history_epochs.index(best_loss)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     if is_verbose:
-        print('\n\n> Minimum loss: {:.8e} | Epoch: {:d}'.format(
+        print('\n\n> Minimum training loss: {:.8e} | Epoch: {:d}'.format(
               best_loss, best_training_epoch))
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Compute total training time and average training time per epoch
