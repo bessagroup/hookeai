@@ -367,10 +367,6 @@ def train_model(n_max_epochs, dataset, model_init_args, lr_init,
             # attribute of model parameters
             optimizer.step()
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            # Update optimizer learning rate
-            if is_lr_scheduler:
-                lr_scheduler.step()
-            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             if is_verbose:
                 total_time_sec = time.time() - start_time_sec
                 print('> Epoch: {:{width}d}/{:d} | Training step: {:d} | '
@@ -388,6 +384,10 @@ def train_model(n_max_epochs, dataset, model_init_args, lr_init,
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Increment training step counter
             step += 1
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Update optimizer learning rate
+        if is_lr_scheduler:
+            lr_scheduler.step()
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Save training epoch loss (epoch average loss value)
         epoch_avg_loss = np.mean(loss_history_steps[epoch_init_step:])
