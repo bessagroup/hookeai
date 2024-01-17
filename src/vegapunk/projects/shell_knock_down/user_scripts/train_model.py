@@ -156,6 +156,9 @@ def perform_model_kfold_cross_validation(case_study_name, dataset_file_path,
     is_verbose : bool, default=False
         If True, enable verbose output.
     """
+    # Load training data set
+    dataset = GNNGraphDataset.load_dataset(dataset_file_path)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Get model initialization parameters
     model_init_args = set_case_study_model_parameters(
         case_study_name, model_directory, device_type=device_type)
@@ -185,9 +188,6 @@ def perform_model_kfold_cross_validation(case_study_name, dataset_file_path,
                                  'improvement_tolerance':1e-3}
     else:
         raise RuntimeError('Unknown case study.')
-    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Load training data set
-    dataset = GNNGraphDataset.load_dataset(dataset_file_path)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set number of folds
     n_fold = 4
