@@ -1,0 +1,197 @@
+# Summary: Hydra configuration file for hyperparameter optimization
+#
+# Author: Bernardo Ferreira (bernardo_ferreira@brown.edu)
+# =============================================================================
+# Set default parameters:
+
+# Model parameters
+# Number of node input features
+n_node_in: 5
+# Number of node output features
+n_node_out: 0
+# Number of edge input features 
+n_edge_in: 0
+# Number of edge output features 
+n_edge_out: 0
+# Number of global input features 
+n_global_in: 0
+# Number of global output features 
+n_global_out: 1
+# Number of message-passing steps
+n_message_steps: 1
+# Number of hidden layers (EPD shared)
+n_hidden_layers: 1
+# Hidden layer size (EPD shared)
+hidden_layer_size: 1
+# Hidden activation function (EPD shared)
+hidden_activation: 'relu'
+# Output activation function (EPD shared)
+output_activation: 'identity'
+# Edge-to-node aggregation scheme
+pro_edge_to_node_aggr: 'add'
+# Node-to-global aggregation scheme
+pro_node_to_global_aggr: 'mean'
+
+# Training parameters
+# Number of training epochs
+n_max_epochs: 100
+# Batch size
+batch_size: 16
+# Data set shuffler
+is_sampler_shuffle: false
+# Loss nature
+loss_nature: 'global_features_out'
+# Loss type
+loss_type: 'mse'
+# Loss parameters
+loss_kwargs: {}
+# Learning rate (initial value)
+lr_init: 1.0e-05
+# Learning rate scheduler
+lr_scheduler_type: null
+# Learning rate scheduler parameters
+lr_scheduler_kwargs: null
+
+# Optimization algorithm
+opt_algorithm: 'adam'
+
+# =============================================================================
+
+# Set default parameters groups (subconfig files)
+# 1. The _self_ works was follows: (i) if set as the first default parameter,
+#    all the parameters in sweeper are set and then overriden by any default
+#    parameters; (ii) if set as the last default parameter, the default
+#    parameters are set and then overriden by any parameters in sweeper.
+#
+defaults:
+
+  # CHOOSE ONE SWEEPER (COMMENT OUT WITH #):
+  # 1. Hydra BasicSweeper (default)
+  #- override hydra/sweeper: basic
+  # 2. Nevergrad
+  #- override hydra/sweeper: nevergrad
+  # 3. Optuna
+  - override hydra/sweeper: optuna
+  - override hydra/sweeper/sampler: grid
+  # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  # Disable Hydra logging
+  - override hydra/hydra_logging: none
+  - override hydra/job_logging: none
+  - _self_
+
+# =============================================================================
+
+hydra:
+
+  # Hydra job
+  job:
+    # Job basename
+    name: hydra_basename
+    # Change working directory to last output directory
+    chdir: false
+
+  # Hydra single-run mode
+  run:
+    # Output directory (grouped by date)
+    dir: /home/bernardoferreira/Desktop/${hydra.job.name}${now:%Y-%m-%d}/${now:%H-%M-%S}
+  
+  # Hydra multi-run sweep (multi-run mode, -m flag)
+  sweep:
+    # Directory specifications:
+    # 1. Formatting: ${now:%Y-%m-%d}, ${now:%H-%M-%S},
+    #                ${hydra.job.name}, ${hydra.job.num}
+    # Output directory common to all jobs in the multi-run sweep
+    dir: /home/bernardoferreira/Desktop/${hydra.job.name}/${now:%Y-%m-%d}/${now:%H-%M-%S}
+    # Pattern of job-specific output subdirectory
+    subdir: ${hydra.job.num}
+  
+  # Sweeper settings
+  # SET CHOSEN SWEEPER SETTINGS (BLOCK COMMENT OUT WITH CTRL+/ ON VSCODE)
+  # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  # 1. Hydra BasicSweeper (default)
+  # sweeper:
+  #   # BasicSweeper settings
+  #   # ...
+
+  #   # BasicSweeper search space parameterization
+  #   params:
+  #     ...   
+  # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  # 2. Hydra Nevergrad Sweeper plugin
+  # sweeper:
+  #   # Nevegrad optimizer settings
+  #   optim:
+  #     # Nevergrad optimizer
+  #     optimizer: NGOpt
+  #     # Maximum number of function evaluations to perform
+  #     budget: 10
+  #     # Number of parallel workers for performing function evaluations
+  #     num_workers: 1
+
+  #   # Nevergrad search space parameterization
+  #   # 1. init: initial value (optional)
+  #   # 2. lower: lower bound (optional)
+  #   # 3. upper: upper bound (optional)
+  #   # 4. step: step size (additive/multiplicative if linear/log) (optional)
+  #   # 5. log: set true if log distributed value, set false otherwise
+  #   # 6. integer: set true for integer
+  #   parametrization:
+  #     # Batch size
+  #     batch_size:
+  #       integer: true
+  #       init: 1
+  #       lower: 1
+  #       upper: 10
+  #     # Learning-rate
+  #     lr:
+  #       init: 0.2
+  #       step: 0.1
+  #       lower: 0.0
+  #       upper: 1.0
+  #       #log: false
+  #     # Learning-rate scheduler
+  #     lr_scheduler_type: 
+  #       - 'steplr'
+  #       - 'explr'
+  # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  # 3. Hydra Optuna Sweeper plugin
+  sweeper:
+    # Optuna sweeper settings
+    _target_: hydra_plugins.hydra_optuna_sweeper.optuna_sweeper.OptunaSweeper
+      # Store Optuna dashboard file (python package sqlalchemy==1.4.44)
+    storage: 'sqlite:////home/bernardoferreira/Desktop/optuna_dashboard.db'
+
+    # Maximum number of function evaluations to perform
+    n_trials: 10
+    # Number of parallel workers for performing function evaluations
+    n_jobs: 1
+    # Optuna optimizer settings:
+    sampler:
+      # Optuna optimizer
+      _target_: optuna.samplers.GridSampler
+      # Optuna optimizer class parameters
+      # ...
+
+    # Optuna search space parameterization
+    params:
+      # Model parameters:
+      # Number of message-passing steps
+      n_message_steps: range(1, 3)
+      # Number of hidden layers (EPD shared)
+      n_hidden_layers: range(1, 10)
+      # # Hidden layer size (EPD shared)
+      # hidden_layer_size: range(1, 128)
+      # # Hidden activation function (EPD shared)
+      # hidden_activation: choice('identity', 'relu')
+      # # Output activation function (EPD shared)
+      # output_activation: choice('identity', 'relu')
+      
+      # # Training parameters:
+      # # Batch size
+      # batch_size: choice(5, 10, 20)
+      # # Learning rate (initial value)
+      # lr_init: interval(0.0, 1.0)
+      # # Learning rate scheduler
+      # lr_scheduler_type: choice('steplr', 'explr')
+      # # Optimizer algorithm
+      # opt_algorithm: 'adam'
