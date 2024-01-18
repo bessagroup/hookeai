@@ -129,8 +129,11 @@ class GNNGraphDataset(torch.utils.data.Dataset):
         Save Graph Neural Network graph data set to file.
     load_dataset(dataset_file_path)
         Load PyTorch data set.
-    update_dataset_directory(self, dataset_directory, is_reload_data=False)
+    _update_dataset_directory(self, dataset_directory, is_reload_data=False)
         Update directory where Graph Neural Network graph data set is stored.
+    update_dataset_file_internal_directory(dataset_file_path, new_directory, \
+                                           is_reload_data=False)
+        Update internal directory of stored data set in provided file.
     """
     def __init__(self, dataset_directory, dataset_sample_files,
                  dataset_basename='graph_dataset', is_store_dataset=False):
@@ -337,12 +340,12 @@ class GNNGraphDataset(torch.utils.data.Dataset):
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         return dataset
     # -------------------------------------------------------------------------
-    def update_dataset_directory(self, dataset_directory,
-                                 is_reload_data=False):
+    def _update_dataset_directory(self, dataset_directory,
+                                  is_reload_data=False):
         """Update directory where GNN graph data set is stored.
         
         Stored data set samples files paths directory is updated according
-        with new directory.
+        with the new directory.
         
         Parameters
         ----------
@@ -364,7 +367,7 @@ class GNNGraphDataset(torch.utils.data.Dataset):
         # Loop over samples files
         for i, file_path in enumerate(self._dataset_sample_files):
             # Set new sample file path (update directory)
-            new_file_path = os.path.join(os.path.dirname(dataset_directory),
+            new_file_path = os.path.join(os.path.normpath(dataset_directory),
                                          os.path.basename(file_path))
             # Update sample file path
             if not os.path.isfile(new_file_path):
@@ -376,6 +379,58 @@ class GNNGraphDataset(torch.utils.data.Dataset):
                 # Reload sample data
                 if self._is_store_dataset and is_reload_data:
                     self._dataset_samples[i] = torch.load(file_path)
+    # -------------------------------------------------------------------------
+    @staticmethod
+    def update_dataset_file_internal_directory(
+        dataset_file_path, new_directory, is_reload_data=False):
+        """Update internal directory of stored data set in provided file.
+        
+        Update is only performed if the new directory does not match the
+        internal directory of the stored data set.
+        
+        Parameters
+        ----------
+        dataset_file_path : str
+            PyTorch data set file path.
+        new_directory : str
+            PyTorch data set new directory.
+        is_reload_data : bool, default=False
+            Reload and store data set samples in attribute
+            dataset_samples_data. Only effective if is_store_dataset=True.
+        """
+        # Check new data set directory
+        if not os.path.isdir(new_directory):
+            raise RuntimeError('The new data set directory has not been '
+                               'found:\n\n' + new_directory)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Load PyTorch data set
+        loaded_dataset = GNNGraphDataset.load_dataset(dataset_file_path)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Check data set type
+        if isinstance(loaded_dataset, torch.utils.data.Subset):
+            # Get parent data set
+            dataset = loaded_dataset.dataset
+        elif isinstance(loaded_dataset, GNNGraphDataset):
+            # Get data set
+            dataset = loaded_dataset
+        else:
+            raise RuntimeError('The data set must be either '
+                               'torch.utils.data.Subset (extracted from '
+                               'GNNGraphDataset data set) or '
+                               'GNNGraphDataset data set.')
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Get loaded PyTorch data set internal directory
+        stored_directory = dataset.get_dataset_directory()
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Update PyTorch data set file if the new directory does not match the
+        # internal directory of the loaded data set
+        if stored_directory != new_directory:
+            # Update directory of PyTorch data set
+            dataset._update_dataset_directory(
+                new_directory, is_reload_data=is_reload_data)
+            # Save updated PyTorch data set (overwrite existing data set file)
+            with open(dataset_file_path, 'wb') as dataset_file:
+                pickle.dump(loaded_dataset, dataset_file)
 # =============================================================================
 def split_dataset(dataset, split_sizes, is_save_subsets=False,
                   subsets_directory=None, subsets_basename=None, seed=None):

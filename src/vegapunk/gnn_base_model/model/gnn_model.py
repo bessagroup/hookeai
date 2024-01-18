@@ -495,8 +495,11 @@ class GNNEPDBaseModel(torch.nn.Module):
             with open(model_init_file_path, 'rb') as model_init_file:
                 model_init_attributes = pickle.load(model_init_file)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        # Initialize model
+        # Get model initialization attributes
         model_init_args = model_init_attributes['model_init_args']
+        # Update model directory
+        model_init_args['model_directory'] = model_directory
+        # Initialize model
         model = GNNEPDBaseModel(**model_init_args,
                                 is_save_model_init_file=False)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
