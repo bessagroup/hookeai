@@ -119,6 +119,9 @@ class GraphIndependentNetwork(torch.nn.Module):
         Number of global input features.
     _n_global_out : int
         Number of global output features.
+    _is_norm_layer : bool, default=False
+        If True, then add normalization layer to node, edge and global
+        update functions.
     _is_skip_unset_update : bool
         If True, then return features input matrix when the corresponding
         update function has not been setup, otherwise return None.
@@ -211,6 +214,9 @@ class GraphIndependentNetwork(torch.nn.Module):
         self._n_global_in = int(n_global_in)
         self._n_global_out = int(n_global_out)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set normalization layer
+        self._is_norm_layer = is_norm_layer
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Set node update function as multilayer feed-forward neural network
         # with layer normalization
         if self._n_node_in > 0 and self._n_node_out > 0:
@@ -271,10 +277,17 @@ class GraphIndependentNetwork(torch.nn.Module):
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Add normalization layer (per-element) to global update function
             if is_norm_layer:
-                norm_layer = torch.nn.LayerNorm(
-                    normalized_shape=self._n_global_out,
-                    elementwise_affine=True)
-                self._global_fn.add_module('Norm-Layer', norm_layer)
+                if self._n_global_in < 2:
+                    raise RuntimeError(f'Number of global features '
+                                       f'({self._n_global_in}) must be '
+                                       f'greater than 1 to compute standard '
+                                       f'deviation in the corresponding '
+                                       f'update function normalization layer.')
+                else:
+                    norm_layer = torch.nn.LayerNorm(
+                        normalized_shape=self._n_global_out,
+                        elementwise_affine=True)
+                    self._global_fn.add_module('Norm-Layer', norm_layer)
         else:
             self._global_fn = None
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -330,12 +343,12 @@ class GraphIndependentNetwork(torch.nn.Module):
             if not isinstance(node_features_in, torch.Tensor):
                 raise RuntimeError('Nodes features input matrix is not a '
                                    'torch.Tensor.')
-            elif node_features_in.shape[0] < 2:
+            elif self._is_norm_layer and node_features_in.shape[0] < 2:
                 raise RuntimeError(f'Number of nodes '
                                    f'({node_features_in.shape[0]}) must be '
                                    f'greater than 1 to compute standard '
                                    f'deviation in the corresponding update '
-                                   f'functions normalization layer.')
+                                   f'function normalization layer.')
             elif node_features_in.shape[1] != self._n_node_in:
                 raise RuntimeError(f'Mismatch of number of node features of '
                                    f'model ({self._n_node_in}) and nodes '
@@ -346,7 +359,7 @@ class GraphIndependentNetwork(torch.nn.Module):
             if not isinstance(edge_features_in, torch.Tensor):
                 raise RuntimeError('Edges features input matrix is not a '
                                    'torch.Tensor.')
-            elif edge_features_in.shape[0] < 2:
+            elif self._is_norm_layer and edge_features_in.shape[0] < 2:
                 raise RuntimeError(f'Number of edges '
                                    f'({edge_features_in.shape[0]}) must be '
                                    f'greater than 1 to compute standard '
@@ -420,6 +433,9 @@ class GraphInteractionNetwork(torch_geometric.nn.MessagePassing):
         Number of global input features.
     _n_global_out : int
         Number of global output features.
+    _is_norm_layer : bool, default=False
+        If True, then add normalization layer to node, edge and global
+        update functions.
         
     Methods
     -------
@@ -440,7 +456,8 @@ class GraphInteractionNetwork(torch_geometric.nn.MessagePassing):
                  edge_hidden_activation=torch.nn.Identity(),
                  edge_output_activation=torch.nn.Identity(),
                  global_hidden_activation=torch.nn.Identity(),
-                 global_output_activation=torch.nn.Identity()):
+                 global_output_activation=torch.nn.Identity(),
+                 is_norm_layer=False):
         """Constructor.
         
         Parameters
@@ -491,6 +508,9 @@ class GraphInteractionNetwork(torch_geometric.nn.MessagePassing):
             Output unit activation function of global update function
             (multilayer feed-forward neural network). Defaults to identity
             (linear) unit activation function.
+        is_norm_layer : bool, default=False
+            If True, then add normalization layer to node, edge and global
+            update functions.
         """
         # Set aggregation scheme
         if edge_to_node_aggr == 'add':
@@ -519,6 +539,9 @@ class GraphInteractionNetwork(torch_geometric.nn.MessagePassing):
         self._n_global_in = int(n_global_in)
         self._n_global_out = int(n_global_out)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set normalization layer
+        self._is_norm_layer = is_norm_layer
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Check number of input features
         if (self._n_node_in < 1 and self._n_edge_in < 1
             and self._n_global_in < 1):
@@ -541,13 +564,15 @@ class GraphInteractionNetwork(torch_geometric.nn.MessagePassing):
             output_activation=node_output_activation,
             hidden_layer_sizes=n_hidden_layers*[hidden_layer_size,],
             hidden_activation=node_hidden_activation)
-        # Build normalization layer (per-feature)
-        norm_layer = torch.nn.BatchNorm1d(num_features=self._n_node_out,
-                                          affine=True)
         # Set node update function
         self._node_fn = torch.nn.Sequential()
         self._node_fn.add_module('FNN', fnn)
-        self._node_fn.add_module('Norm-Layer', norm_layer)        
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Add normalization layer (per-feature) to node update function
+        if is_norm_layer:
+            norm_layer = torch.nn.BatchNorm1d(
+                num_features=self._n_node_out, affine=True)
+            self._node_fn.add_module('Norm-Layer', norm_layer)        
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Set edge update function as multilayer feed-forward neural network
         # with layer normalization:
@@ -558,13 +583,15 @@ class GraphInteractionNetwork(torch_geometric.nn.MessagePassing):
             output_activation=edge_output_activation,
             hidden_layer_sizes=n_hidden_layers*[hidden_layer_size,],
             hidden_activation=edge_hidden_activation)
-        # Build normalization layer (per-feature)
-        norm_layer = torch.nn.BatchNorm1d(num_features=self._n_edge_out,
-                                          affine=True)
         # Set edge update function
         self._edge_fn = torch.nn.Sequential()
         self._edge_fn.add_module('FNN', fnn)
-        self._edge_fn.add_module('Norm-Layer', norm_layer)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Add normalization layer (per-feature) to edge update function
+        if is_norm_layer:
+            norm_layer = torch.nn.BatchNorm1d(
+                num_features=self._n_edge_out, affine=True)
+            self._edge_fn.add_module('Norm-Layer', norm_layer)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Set global update function as multilayer feed-forward neural network
         # with layer normalization:
@@ -576,13 +603,23 @@ class GraphInteractionNetwork(torch_geometric.nn.MessagePassing):
                 output_activation=global_output_activation,
                 hidden_layer_sizes=n_hidden_layers*[hidden_layer_size,],
                 hidden_activation=global_hidden_activation)
-            # Build normalization layer (per-element)
-            norm_layer = torch.nn.LayerNorm(
-                normalized_shape=self._n_global_out, elementwise_affine=True)
             # Set global update function
             self._global_fn = torch.nn.Sequential()
             self._global_fn.add_module('FNN', fnn)
-            self._global_fn.add_module('Norm-Layer', norm_layer)
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Add normalization layer (per-element) to global update function
+            if is_norm_layer:
+                if self._n_global_in < 2:
+                    raise RuntimeError(f'Number of global features '
+                                       f'({self._n_global_in}) must be '
+                                       f'greater than 1 to compute standard '
+                                       f'deviation in the corresponding '
+                                       f'update function normalization layer.')
+                else:
+                    norm_layer = torch.nn.LayerNorm(
+                        normalized_shape=self._n_global_out,
+                        elementwise_affine=True)
+                    self._global_fn.add_module('Norm-Layer', norm_layer)
         else:
             self._global_fn = None
     # -------------------------------------------------------------------------
@@ -645,7 +682,7 @@ class GraphInteractionNetwork(torch_geometric.nn.MessagePassing):
             if not isinstance(node_features_in, torch.Tensor):
                 raise RuntimeError('Nodes features input matrix is not a '
                                    'torch.Tensor.')
-            elif node_features_in.shape[0] < 2:
+            elif self._is_norm_layer and node_features_in.shape[0] < 2:
                 raise RuntimeError(f'Number of nodes '
                                     f'({node_features_in.shape[0]}) must be '
                                     f'greater than 1 to compute standard '
@@ -661,7 +698,7 @@ class GraphInteractionNetwork(torch_geometric.nn.MessagePassing):
             if not isinstance(edge_features_in, torch.Tensor):
                 raise RuntimeError('Edges features input matrix is not a '
                                    'torch.Tensor.')
-            elif edge_features_in.shape[0] < 2:
+            elif self._is_norm_layer and edge_features_in.shape[0] < 2:
                 raise RuntimeError(f'Number of edges '
                                    f'({edge_features_in.shape[0]}) must be '
                                    f'greater than 1 to compute standard '

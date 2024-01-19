@@ -294,6 +294,7 @@ class EncodeProcessDecode(torch.nn.Module):
                               pro_global_hidden_activation,
                           global_output_activation=\
                               pro_global_output_activation,
+                          is_norm_layer=True,
                           is_node_res_connect=is_node_res_connect,
                           is_edge_res_connect=is_edge_res_connect,
                           is_global_res_connect=is_global_res_connect)
@@ -448,8 +449,8 @@ class Processor(torch_geometric.nn.MessagePassing):
                  edge_output_activation=torch.nn.Identity(),
                  global_hidden_activation=torch.nn.Identity(),
                  global_output_activation=torch.nn.Identity(),
-                 is_node_res_connect=False, is_edge_res_connect=False,
-                 is_global_res_connect=False):
+                 is_norm_layer = False, is_node_res_connect=False,
+                 is_edge_res_connect=False, is_global_res_connect=False):
         """Constructor.
         
         Parameters
@@ -502,6 +503,9 @@ class Processor(torch_geometric.nn.MessagePassing):
             Output unit activation function of global update function
             (multilayer feed-forward neural network). Defaults to identity
             (linear) unit activation function.
+        is_norm_layer : bool, default=False
+            If True, then add normalization layer to node, edge and global
+            update functions.
         is_node_res_connect : bool, default=False
             Add residual connections between nodes input and output features
             if True, False otherwise. Number of input and output features must
@@ -586,6 +590,7 @@ class Processor(torch_geometric.nn.MessagePassing):
                 node_output_activation=node_output_activation,
                 edge_hidden_activation=edge_hidden_activation,
                 edge_output_activation=edge_output_activation,
+                is_norm_layer=is_norm_layer,
                 global_hidden_activation=global_hidden_activation,
                 global_output_activation=global_output_activation)
              for _ in range(n_message_steps)])

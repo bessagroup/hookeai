@@ -27,11 +27,11 @@ __status__ = 'Planning'
     'n_hidden_layers, hidden_layer_size, model_name,'
     'is_data_normalization, pro_edge_to_node_aggr, pro_node_to_global_aggr,'
     'hidden_activ_type, output_activ_type, device_type',
-    [(2, 5, 4, 3, 1, 2, 10, 2, 3,
+    [(2, 5, 4, 3, 2, 2, 10, 2, 3,
       'material_patch_model', True, 'add', 'add', 'relu', 'identity', 'cpu'),
      (0, 5, 4, 0, 3, 0, 10, 2, 3,
       'material_patch_model', True, 'add', 'add', 'relu', 'identity', 'cpu'),
-     (2, 5, 0, 0, 1, 4, 10, 2, 3,
+     (2, 5, 0, 0, 2, 4, 10, 2, 3,
       'material_patch_model', True, 'add', 'add', 'relu', 'identity', 'cpu'),
      ])
 def test_gnn_base_model_init(n_node_in, n_node_out, n_edge_in, n_edge_out,
