@@ -148,13 +148,14 @@ def set_default_prediction_options():
 # =============================================================================
 if __name__ == "__main__":
     # Set in-distribution/out-of-distribution testing flag
-    is_in_dist_testing = True
+    is_in_dist_testing = False
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Set case studies base directory
+    # Set base directory
     base_dir = ('/home/bernardoferreira/Documents/brown/projects/'
-                'gnn_material_patch/case_studies/')
+                'gnn_material_patch/case_studies/2d_elastic_infinitesimal/'
+                'single_element_quad4/')
     # Set case study directory
-    case_study_name = 'temp'
+    case_study_name = 'out_of_dist_patch_size'
     case_study_dir = os.path.join(os.path.normpath(base_dir),
                                   f'{case_study_name}')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

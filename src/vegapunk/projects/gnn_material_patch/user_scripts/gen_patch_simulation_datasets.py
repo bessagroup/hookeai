@@ -55,7 +55,7 @@ def generate_dataset(case_study_name, simulation_directory, n_sample,
             set_default_saving_options()
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Generate material patch simulation data set
-    if case_study_name in ('cs_2d_elastic', 'temp'):
+    if case_study_name in ('reference', 'out_of_dist_patch_size'):
         # Set number of spatial dimensions
         n_dim = 2
         # Set finite element discretization
@@ -67,7 +67,10 @@ def generate_dataset(case_study_name, simulation_directory, n_sample,
             mode='homogeneous_elastic', n_elems_per_dim=n_elems_per_dim)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Set range of material patch size along each dimension
-        patch_dims_ranges = {'1': (1.0, 1.0), '2': (1.0, 1.0)}
+        if case_study_name == 'out_of_dist_patch_size':
+            patch_dims_ranges = {'1': (0.1, 10), '2': (0.1, 10)}
+        else:
+            patch_dims_ranges = {'1': (1.0, 1.0), '2': (1.0, 1.0)}
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Set range of average deformation along each dimension for each corner
         avg_deformation_ranges = {'1': ((-0.1, 0.1), (-0.1, 0.1)),
@@ -84,6 +87,7 @@ def generate_dataset(case_study_name, simulation_directory, n_sample,
                                              '2': (-0.2, 0.2),
                                              '3': (-0.2, 0.2),
                                              '4': (-0.2, 0.2)}
+        edge_deformation_magnitude_ranges = None
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Set rigid body translation
         translation_range = {'1': (0.0, 0.0), '2': (0.0, 0.0)}
@@ -393,15 +397,16 @@ def set_default_saving_options():
 # =============================================================================
 if __name__ == "__main__":
     # Set training/testing data set flag
-    is_testing_dataset = False
+    is_testing_dataset = True
     # Set material patch simulation data set size
-    n_sample = 10
+    n_sample = 4000
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Set case studies base directory
+    # Set base directory
     base_dir = ('/home/bernardoferreira/Documents/brown/projects/'
-                'gnn_material_patch/case_studies/')
+                'gnn_material_patch/case_studies/2d_elastic_infinitesimal/'
+                'single_element_quad4/')
     # Set case study directory
-    case_study_name = 'temp'
+    case_study_name = 'out_of_dist_patch_size'
     case_study_dir = os.path.join(os.path.normpath(base_dir),
                                   f'{case_study_name}')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -419,11 +424,11 @@ if __name__ == "__main__":
         if not os.path.isdir(dataset_directory):
             make_directory(dataset_directory)         
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        # Set simulation directory (training data set)
+        # Set simulation directory (testing data set)
         simulation_directory = os.path.join(
             os.path.normpath(dataset_directory), 'simulation')
     else:
-        # Set simulation directory (testing data set)
+        # Set simulation directory (training data set)
         simulation_directory = os.path.join(os.path.normpath(case_study_dir),
                                             '0_simulation')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

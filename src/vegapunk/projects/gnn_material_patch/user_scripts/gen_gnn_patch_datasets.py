@@ -60,12 +60,18 @@ def generate_dataset(case_study_name, sim_dataset_file_path, dataset_directory,
         read_simulation_dataset_from_file(sim_dataset_file_path)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set GNN-based material patch data set node and edge features
-    if case_study_name in ('cs_2d_elastic', 'temp'):
+    if case_study_name in ('reference', 'out_of_dist_patch_size'):
         # Set node features
         node_features = ('coord_init', 'disp_hist')
         # Set edge features
         edge_features = ('edge_vector', 'edge_vector_norm', 'relative_disp',
                          'relative_disp_norm')
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    elif case_study_name in ('edge_features_disp_gradient',):
+        # Set node features
+        node_features = ('coord_init', 'disp_hist')
+        # Set edge features
+        edge_features = ('disp_gradient_init',)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     else:
         raise RuntimeError('Unknown case study.')
@@ -104,16 +110,17 @@ def set_default_saving_options():
 # =============================================================================
 if __name__ == "__main__":
     # Set training/testing data set flag
-    is_testing_dataset = False
+    is_testing_dataset = True
     # Set computation processes
     is_generate_dataset = True
     is_split_dataset = True
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Set case studies base directory
+    # Set base directory
     base_dir = ('/home/bernardoferreira/Documents/brown/projects/'
-                'gnn_material_patch/case_studies/')
+                'gnn_material_patch/case_studies/2d_elastic_infinitesimal/'
+                'single_element_quad4/')
     # Set case study directory
-    case_study_name = 'temp'
+    case_study_name = 'out_of_dist_patch_size'
     case_study_dir = os.path.join(os.path.normpath(base_dir),
                                   f'{case_study_name}')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

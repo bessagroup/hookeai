@@ -49,7 +49,10 @@ def perform_model_standard_training(case_study_name, dataset_file_path,
         Type of device on which torch.Tensor is allocated.
     is_verbose : bool, default=False
         If True, enable verbose output.
-    """    
+    """
+    # Load GNN-based material patch training data set
+    dataset = GNNGraphDataset.load_dataset(dataset_file_path)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Get model initialization parameters
     model_init_args = set_case_study_model_parameters(case_study_name,
                                                       model_directory)
@@ -61,28 +64,31 @@ def perform_model_standard_training(case_study_name, dataset_file_path,
                 set_default_training_options()
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set GNN-based material patch model training options
-    if case_study_name in ('cs_2d_elastic', 'temp'):
+    if case_study_name in ('reference', 'equilibrium_loss_term',
+                           'edge_features_disp_gradient'):
         # Set number of epochs
-        n_max_epochs = 50
+        n_max_epochs = 200
         # Set batch size
         batch_size = 16
         # Set learning rate
         lr_init = 1.0e-03
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Compute exponential decay (learning rate scheduler)
+        lr_end = 1.0e-5
+        gamma = (lr_end/lr_init)**(1/n_max_epochs)
         # Set learning rate scheduler
         lr_scheduler_type = 'explr'
-        lr_scheduler_kwargs = {'gamma': 0.995}
+        lr_scheduler_kwargs = {'gamma': gamma}
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Set early stopping
         is_early_stopping = True
         early_stopping_kwargs = {'validation_size': 0.2,
                                  'validation_frequency': 1,
-                                 'trigger_tolerance': 10,
+                                 'trigger_tolerance': 20,
                                  'improvement_tolerance':1e-3}
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     else:
         raise RuntimeError('Unknown case study.')
-    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Load GNN-based material patch training data set
-    dataset = GNNGraphDataset.load_dataset(dataset_file_path)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Training of GNN-based material patch model
     model, _, _ = train_model(n_max_epochs, dataset, model_init_args, lr_init,
@@ -99,9 +105,23 @@ def perform_model_standard_training(case_study_name, dataset_file_path,
                               device_type=device_type, seed=None,
                               is_verbose=is_verbose)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Generate plots of GNN-based material patch model training process
+    generate_standard_training_plots(model_directory)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Display summary of PyTorch model
+    _ = get_model_summary(model, device_type=device_type,
+                          is_verbose=is_verbose)
+# =============================================================================
+def generate_standard_training_plots(model_directory):
+    """Generate plots of standard training of GNN-based material patch model.
+    
+    Parameters
+    ----------
+    model_directory : str
+        Directory where material patch model is stored.
+    """
     # Set loss history record file path
-    loss_record_path = os.path.join(model.model_directory,
-                                    'loss_history_record.pkl')
+    loss_record_path = os.path.join(model_directory, 'loss_history_record.pkl')
     # Read training process training and validation loss history
     loss_nature, loss_type, training_loss_history, validation_loss_history = \
         read_loss_history_from_file(loss_record_path)
@@ -121,20 +141,16 @@ def perform_model_standard_training(case_study_name, dataset_file_path,
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Plot model training process loss history
     plot_training_loss_history(loss_histories, loss_type.upper(),
-                               loss_scale='linear', save_dir=plot_dir,
+                               loss_scale='log', save_dir=plot_dir,
                                is_save_fig=True, is_stdout_display=False,
                                is_latex=True)
     # Plot model training process loss and learning rate histories
     plot_training_loss_and_lr_history(training_loss_history,
                                       lr_history_epochs, loss_type=None,
-                                      is_log_loss=False, loss_scale='linear',
+                                      is_log_loss=False, loss_scale='log',
                                       lr_type=lr_scheduler_type,
                                       save_dir=plot_dir, is_save_fig=True,
                                       is_stdout_display=False, is_latex=True)
-    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Display summary of PyTorch model
-    _ = get_model_summary(model, device_type=device_type,
-                          is_verbose=is_verbose)
 # =============================================================================
 def perform_model_kfold_cross_validation(case_study_name, dataset_file_path,
                                          model_directory, cross_validation_dir,
@@ -167,21 +183,26 @@ def perform_model_kfold_cross_validation(case_study_name, dataset_file_path,
                 set_default_training_options()
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set GNN-based material patch model training options
-    if case_study_name in ('cs_2d_elastic', 'temp'):
+    if case_study_name in ('temp'):
         # Set number of epochs
-        n_max_epochs = 50
+        n_max_epochs = 200
         # Set batch size
         batch_size = 16
         # Set learning rate
         lr_init = 1.0e-03
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Compute exponential decay (learning rate scheduler)
+        lr_end = 1.0e-5
+        gamma = (lr_end/lr_init)**(1/n_max_epochs)
         # Set learning rate scheduler        
         lr_scheduler_type = 'explr'
-        lr_scheduler_kwargs = {'gamma': 0.995}
+        lr_scheduler_kwargs = {'gamma': gamma}
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Set early stopping
         is_early_stopping = True
         early_stopping_kwargs = {'validation_size': 0.2,
                                  'validation_frequency': 1,
-                                 'trigger_tolerance': 10,
+                                 'trigger_tolerance': 20,
                                  'improvement_tolerance':1e-3}
     else:
         raise RuntimeError('Unknown case study.')
@@ -235,7 +256,8 @@ def set_case_study_model_parameters(case_study_name, model_directory,
         GNN-based material patch model class initialization parameters (check
         class GNNEPDBaseModel).
     """
-    if case_study_name in ('cs_2d_elastic', 'temp'):
+    if case_study_name in ('reference', 'equilibrium_loss_term',
+                           'edge_features_disp_gradient'):
         # Set GNN-based material patch model name
         model_name = 'material_patch_model'
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -243,7 +265,10 @@ def set_case_study_model_parameters(case_study_name, model_directory,
         n_node_in = 4
         n_node_out = 2
         # Set number of edge input and output features
-        n_edge_in = 6
+        if case_study_name == 'edge_features_disp_gradient':
+            n_edge_in = 4
+        else:
+            n_edge_in = 6
         n_edge_out = 0
         # Set number of global input and output features
         n_global_in = 0
@@ -257,16 +282,16 @@ def set_case_study_model_parameters(case_study_name, model_directory,
         # Set hidden layer size
         hidden_layer_size = 128
         # Set (shared) hidden unit activation function
-        hidden_activation = 'relu'
+        hidden_activation = 'tanh'
         # Set (shared) output unit activation function
         output_activation = 'identity'
         # Set data normalization
         is_data_normalization = True
         # Set aggregation schemes
         pro_edge_to_node_aggr = 'add'
-        pro_node_to_global_aggr = 'mean'
+        pro_node_to_global_aggr = 'add'
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    elif case_study_name == '2d_elastic':
+    elif case_study_name == 'edge_features_disp_gradient':
         raise RuntimeError('Set case-study parameters.')
     else:
         raise RuntimeError('Unknown case study.')
@@ -370,13 +395,14 @@ def set_default_training_options():
 if __name__ == "__main__":
     # Set computation processes
     is_standard_training = True
-    is_cross_validation = True
+    is_cross_validation = False
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Set case studies base directory
+    # Set base directory
     base_dir = ('/home/bernardoferreira/Documents/brown/projects/'
-                'gnn_material_patch/case_studies/')
+                'gnn_material_patch/case_studies/2d_elastic_infinitesimal/'
+                'single_element_quad4/')
     # Set case study directory
-    case_study_name = 'temp'
+    case_study_name = 'edge_features_disp_gradient'
     case_study_dir = os.path.join(os.path.normpath(base_dir),
                                   f'{case_study_name}')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
