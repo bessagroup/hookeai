@@ -397,6 +397,10 @@ if __name__ == "__main__":
                            f'in data set directory:\n\n'
                            f'{dataset_directory}')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Update internal directory of stored data set (if required)
+    GNNGraphDataset.update_dataset_file_internal_directory(
+        dataset_file_path, os.path.dirname(dataset_file_path))
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set GNN-based model directory
     model_directory = os.path.join(os.path.normpath(case_study_dir), '2_model')
     # Create GNN-based model directory
