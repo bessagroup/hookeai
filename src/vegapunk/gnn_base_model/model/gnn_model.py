@@ -1361,7 +1361,7 @@ class GNNEPDBaseModel(torch.nn.Module):
         if self._n_global_in > 0:
             mean, std = graph_standard_partial_fit(
                 dataset, features_type='global_features_in',
-                n_features=self._n_edge_in)
+                n_features=self._n_global_in)
             scaler_global_in.set_mean_and_std(mean, std)
         # Get scaling parameters and fit data scalers: node output features
         if self._n_node_out > 0:
