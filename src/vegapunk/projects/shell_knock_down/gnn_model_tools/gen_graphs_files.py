@@ -30,10 +30,8 @@ __status__ = 'Planning'
 # =============================================================================
 #
 # =============================================================================
-#
-# =============================================================================
 def generate_dataset_samples_files(dataset_directory, dataset_csv_file_path,
-                                   sample_file_basename='material_patch_graph',
+                                   sample_file_basename='sample_graph',
                                    is_save_sample_plot=False,
                                    is_verbose=False):
     """Generate data set graph samples files.
@@ -41,7 +39,7 @@ def generate_dataset_samples_files(dataset_directory, dataset_csv_file_path,
     Parameters
     ----------
     dataset_directory : str
-        Directory where the data set is stored (all ata set samples files).
+        Directory where the data set is stored (all data set samples files).
         All existent files are overridden when saving sample data files.
     dataset_csv_file_path : str
         Data set csv file path.

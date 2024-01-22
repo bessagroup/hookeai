@@ -65,6 +65,17 @@ def perform_model_prediction(predict_directory, dataset_file_path,
                 is_normalized_loss=True, dataset_file_path=dataset_file_path,
                 device_type=device_type, seed=None, is_verbose=is_verbose)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Generate plots of model predictions
+    generate_prediction_plots(predict_subdir)
+# =============================================================================
+def generate_prediction_plots(predict_subdir):
+    """Generate plots of model predictions.
+    
+    Parameters
+    ----------
+    predict_subdir : str
+        Subdirectory where samples predictions results files are stored.
+    """
     # Create plot directory
     plot_dir = os.path.join(os.path.normpath(predict_subdir), 'plots')
     if not os.path.isdir(plot_dir):

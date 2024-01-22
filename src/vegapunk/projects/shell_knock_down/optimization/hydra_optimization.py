@@ -17,7 +17,7 @@ import sys
 import pathlib
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Add project root directory to sys.path
-root_dir = str(pathlib.Path(__file__).parents[2])
+root_dir = str(pathlib.Path(__file__).parents[3])
 if root_dir not in sys.path:
     sys.path.insert(0, root_dir)
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -34,6 +34,10 @@ from gnn_base_model.train.cross_validation import kfold_cross_validation
 from gnn_base_model.optimization.hydra_optimization_template import \
     display_hydra_job_header
 from ioput.iostandard import make_directory, write_summary_file
+from projects.shell_knock_down.user_scripts.train_model import \
+    generate_standard_training_plots
+from projects.shell_knock_down.user_scripts.predict import \
+    generate_prediction_plots
 #
 #                                                          Authorship & Credits
 # =============================================================================
@@ -154,7 +158,13 @@ def hydra_wrapper(process, dataset_paths, device_type='cpu'):
                 loss_type=cfg.loss_type, loss_kwargs=cfg.loss_kwargs,
                 batch_size=cfg.batch_size,
                 is_sampler_shuffle=cfg.is_sampler_shuffle,
+                is_early_stopping=cfg.is_early_stopping,
+                early_stopping_kwargs=cfg.early_stopping_kwargs,
                 device_type=device_type, is_verbose=False)
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Generate plots of model training process
+            generate_standard_training_plots(training_subdir)
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Set hyperparameter optimization objective
             if process == 'training':
                 objective = best_training_loss
@@ -169,13 +179,17 @@ def hydra_wrapper(process, dataset_paths, device_type='cpu'):
                                                    is_overwrite=True)
                 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                 # Validation of GNN-based material patch model
-                _, avg_valid_loss_sample = predict(
+                predict_subdir, avg_valid_loss_sample = predict(
                     validation_dataset, model.model_directory,
                     predict_directory=validation_subdir,
                     load_model_state='best', loss_nature=cfg.loss_nature,
                     loss_type=cfg.loss_type, loss_kwargs=cfg.loss_kwargs,
                     is_normalized_loss=True, device_type=device_type,
                     is_verbose=False)
+                # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                # Generate plots of model predictions
+                generate_prediction_plots(predict_subdir)
+                # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                 # Set hyperparameter optimization objective
                 objective = avg_valid_loss_sample
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -246,8 +260,14 @@ if __name__ == "__main__":
                                       'case_studies/temp/1_training_dataset/'
                                       'material_patch_graph_dataset_n10.pkl')
     elif process == 'training-validation':
-        datasets_paths['training'] = None
-        datasets_paths['validation'] = None
+        datasets_paths['training'] = \
+            ('/home/bernardoferreira/Documents/brown/projects/'
+             'shell_knock_down/case_studies/full/1_training_dataset/'
+             'graph_dataset_training_n5992.pkl')
+        datasets_paths['validation'] = \
+            ('/home/bernardoferreira/Documents/brown/projects/'
+             'shell_knock_down/case_studies/full/1_training_dataset/'
+             'graph_dataset_testing_n1498.pkl')
     else:
         datasets_paths['training'] = None
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
