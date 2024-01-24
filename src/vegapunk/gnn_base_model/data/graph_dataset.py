@@ -602,7 +602,9 @@ def get_pyg_data_loader(dataset, batch_size=1, is_shuffle=False,
 # =============================================================================
 def write_graph_dataset_summary_file(
     dataset_directory, n_sample, total_time_sec, avg_time_sample,
-    node_features=None, edge_features=None, global_features=None):
+    node_features=None, edge_features=None, global_features=None,
+    node_targets=None, edge_targets=None, global_targets=None,
+    filename='summary'):
     """Write summary data file for GNN-based data set generation.
     
     Parameters
@@ -623,6 +625,14 @@ def write_graph_dataset_summary_file(
         Graph Neural Network graph data set edges features.
     global_features : tuple[str], default=None
         Graph Neural Network graph data set global features.
+    node_targets : tuple[str], default=None
+        Graph Neural Network graph data set nodes targets.
+    edge_targets : tuple[str], default=None
+        Graph Neural Network graph data set edges targets.
+    global_targets : tuple[str], default=None
+        Graph Neural Network graph data set global targets.
+    filename : str, default='summary'
+        Summary file name.
     """
     # Set summary data
     summary_data = {}
@@ -630,6 +640,9 @@ def write_graph_dataset_summary_file(
     summary_data['node_features'] = node_features
     summary_data['edge_features'] = edge_features
     summary_data['global_features'] = global_features
+    summary_data['node_targets'] = node_targets
+    summary_data['edge_targets'] = edge_targets
+    summary_data['global_targets'] = global_targets
     summary_data['Total generation time'] = \
         str(datetime.timedelta(seconds=int(total_time_sec)))
     summary_data['Avg. generation time per graph'] = \
@@ -639,5 +652,5 @@ def write_graph_dataset_summary_file(
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Write summary file
     write_summary_file(
-        summary_directory=dataset_directory, summary_title=summary_title,
-        **summary_data)
+        summary_directory=dataset_directory, filename=filename,
+        summary_title=summary_title, **summary_data)
