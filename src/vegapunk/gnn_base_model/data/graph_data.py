@@ -787,3 +787,31 @@ class GraphData:
         elif edges_indexes.shape[1] != 2:
             raise RuntimeError('Edges indexes matrix is not a numpy.array '
                                'of shape (n_edges, 2).')
+    # -------------------------------------------------------------------------
+    @staticmethod
+    def move_time_dimension_axis(array, source_dim, dest_dim):
+        """Move time dimension axis in temporal data array.
+        
+        Parameters
+        ----------
+        array : np.ndarray
+            Temporal data array.
+        source_dim : int
+            Original index of time dimension.
+        dest_dim : int
+            Destination index of time dimension.
+            
+        Returns
+        -------
+        array : np.ndarray
+            Reshaped temporal data array.
+        """
+        # Check temporal data array
+        if not isinstance(array, np.ndarray):
+            raise RuntimeError(f'Temporal data array must be numpy.ndarray, '
+                               f'not {type(array)}.')
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Move temporal dimension axis
+        array = np.moveaxis(array, source_dim, dest_dim)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        return array
