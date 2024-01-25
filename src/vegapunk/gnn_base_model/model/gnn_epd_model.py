@@ -239,6 +239,7 @@ class EncodeProcessDecode(torch.nn.Module):
             is_node_res_connect = False
         else:
             n_node_hidden_in = hidden_layer_size
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Set edge update function hidden layer input size
         if int(n_edge_in) < 1:
             # Overwrite hidden layer input size when number of edge input
@@ -248,15 +249,23 @@ class EncodeProcessDecode(torch.nn.Module):
             is_edge_res_connect = False
         else:
             n_edge_hidden_in = hidden_layer_size
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Set global update function hidden layer input size
         if int(n_global_in) < 1:
             # Overwrite hidden layer input size when number of global input
             # features is zero
-            n_global_hidden_in = 0
+            n_global_hidden_in = 0            
             # Turn off global residual connections
             is_global_res_connect = False
         else:
             n_global_hidden_in = hidden_layer_size
+        # Set global update function hidden layer output size
+        if int(n_global_out) < 1:
+            # Overwrite hidden layer output size when number of global output
+            # features is zero
+            n_global_hidden_out = 0
+        else:
+            n_global_hidden_out = hidden_layer_size
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Set model encoder
         self._encoder = \
@@ -264,7 +273,7 @@ class EncodeProcessDecode(torch.nn.Module):
                     hidden_layer_size=hidden_layer_size,
                     n_node_in=n_node_in, n_node_out=hidden_layer_size,
                     n_edge_in=n_edge_in, n_edge_out=hidden_layer_size,
-                    n_global_in=n_global_in, n_global_out=hidden_layer_size,
+                    n_global_in=n_global_in, n_global_out=n_global_hidden_out,
                     node_hidden_activation=enc_node_hidden_activation,
                     node_output_activation=enc_node_output_activation,
                     edge_hidden_activation=enc_edge_hidden_activation,
@@ -278,7 +287,7 @@ class EncodeProcessDecode(torch.nn.Module):
                 Processor(n_message_steps=n_message_steps,
                           n_node_out=hidden_layer_size,
                           n_edge_out=hidden_layer_size,
-                          n_global_out=hidden_layer_size,
+                          n_global_out=n_global_hidden_out,
                           n_hidden_layers=pro_n_hidden_layers,
                           hidden_layer_size=hidden_layer_size,
                           n_node_in=n_node_hidden_in,
