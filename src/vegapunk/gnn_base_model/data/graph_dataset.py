@@ -4,6 +4,8 @@ Classes
 -------
 GNNGraphDataset(torch.utils.data.Dataset)
     Graph Neural Network graph data set.
+GNNGraphDatasetInMemory(torch.utils.data.Dataset)
+    Graph Neural Network graph data set (in-memory storage only).
 
 Functions
 ---------
@@ -654,3 +656,64 @@ def write_graph_dataset_summary_file(
     write_summary_file(
         summary_directory=dataset_directory, filename=filename,
         summary_title=summary_title, **summary_data)
+# =============================================================================
+class GNNGraphDatasetInMemory(torch.utils.data.Dataset):
+    """Graph Neural Network graph data set (in-memory storage only).
+    
+    Attributes
+    ----------
+    _dataset_samples : list
+        Graph Neural Network graph data set samples data. Each sample is stored
+        as a torch_geometric.data.Data object describing a homogeneous graph.
+    
+    Methods
+    -------
+    __len__(self):
+        Return size of data set (number of samples).
+    __getitem__(self, index)
+        Return data set sample from corresponding index.
+    """
+    def __init__(self, dataset_samples):
+        """Constructor.
+        
+        Parameters 
+        ----------
+        dataset_samples : list
+            Graph Neural Network graph data set samples data. Each sample is
+            stored as a torch_geometric.data.Data object describing a
+            homogeneous graph.
+        """
+        # Initialize data set from base class
+        super(GNNGraphDatasetInMemory, self).__init__()
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set data set samples
+        self._dataset_samples = list(dataset_samples)
+    # -------------------------------------------------------------------------
+    def __len__(self):
+        """Return size of data set (number of samples).
+        
+        Returns
+        -------
+        n_sample : int
+            Data set size (number of samples).
+        """
+        return len(self._dataset_samples)
+    # -------------------------------------------------------------------------
+    def __getitem__(self, index):
+        """Return data set sample from corresponding index.
+        
+        Parameters
+        ----------
+        index : int
+            Index of returned data set sample (index must be in [0, n_sample]).
+            
+        Returns
+        -------
+        pyg_graph : torch_geometric.data.Data
+            Data set sample defined as a PyG data object describing a
+            homogeneous graph.
+        """
+        # Get data set sample
+        pyg_graph = self._dataset_samples[index].clone()
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        return pyg_graph
