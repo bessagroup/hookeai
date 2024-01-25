@@ -214,6 +214,73 @@ class GraphData:
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         return pyg_graph
     # -------------------------------------------------------------------------
+    @staticmethod
+    def extract_data_torch_data_object(pyg_graph, attributes):
+        """Extract data from PyG homogeneous graph data object.
+        
+        Parameters
+        ----------
+        pyg_graph : torch_geometric.data.Data
+            PyG data object describing a homogeneous graph.
+        attributes : tuple
+            Attributes to be extracted from PyG data object. Available
+            attributes coincide with the attributes of GraphData.
+
+        Returns
+        -------
+        attributes_data : tuple
+            Extracted attributes data sorted according with provided attributes
+            sequence.
+        """
+        # Check input graph
+        if not isinstance(pyg_graph, torch_geometric.data.Data):
+            raise RuntimeError('Input graph is not torch_geometric.data.Data.')
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set available attributes
+        available_attributes = \
+            ('n_dim', 'n_node', 'n_edge', 'nodes_coords', 'edge_indexes',
+             'node_features_matrix', 'edge_features_matrix',
+             'global_features_matrix', 'node_targets_matrix',
+             'edge_targets_matrix', 'global_targets_matrix')
+        
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Initialize extracted attributes data
+        attributes_data = []
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Loop over attributes
+        for attribute in attributes:
+            # Extract attribute
+            if attribute == 'n_dim':
+                data = int(pyg_graph.pos.shape[1])
+            elif attribute == 'n_node':
+                data = int(pyg_graph.num_nodes)
+            elif attribute == 'n_edge':
+                data = int(pyg_graph.edge_index.shape[0])
+            elif attribute == 'nodes_coords':
+                data = pyg_graph.pos.numpy()
+            elif attribute == 'edge_indexes':
+                data = pyg_graph.edge_index.numpy().transpose()
+            elif attribute == 'node_features_matrix':
+                data = pyg_graph.x.numpy()
+            elif attribute == 'edge_features_matrix':
+                data = pyg_graph.edge_attr.numpy()
+            elif attribute == 'global_features_matrix':
+                data = pyg_graph.global_features_matrix.numpy()
+            elif attribute == 'node_targets_matrix':
+                data = pyg_graph.y.numpy()
+            elif attribute == 'edge_targets_matrix':
+                data = pyg_graph.edge_targets_matrix.numpy()
+            elif attribute == 'global_targets_matrix':
+                data = pyg_graph.global_targets_matrix.numpy()
+            else:
+                raise RuntimeError(f'The attribute {attribute} is not '
+                                   f'available. Available attributes:\n\n'
+                                   f'{available_attributes}')
+            # Store extracted attribute
+            attributes_data.append(data)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        return tuple(attributes_data)
+    # -------------------------------------------------------------------------
     def set_graph_edges_indexes(self, connect_radius=None,
                                 edges_indexes_mesh=None):
         """Set graph edges indexes and number of edges.
@@ -253,7 +320,7 @@ class GraphData:
                                            axis=0)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Remove any existent duplicated edges
-        edges_indexes = np.unique(edges_indexes, axis=0) 
+        edges_indexes = np.unique(edges_indexes, axis=0)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Set number of edges
         self._n_edge = edges_indexes.shape[0]
