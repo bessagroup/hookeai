@@ -4,6 +4,8 @@ Functions
 ---------
 plot_truth_vs_prediction
     Plot ground-truth against predictions.
+plot_prediction_loss_history
+    Plot model prediction process loss history.
 """
 #
 #                                                                       Modules
@@ -12,7 +14,7 @@ plot_truth_vs_prediction
 import numpy as np
 import matplotlib.pyplot as plt
 # Local
-from ioput.plots import scatter_xy_data, grouped_bar_chart, save_figure
+from ioput.plots import plot_xy_data, scatter_xy_data, save_figure
 #
 #                                                          Authorship & Credits
 # =============================================================================
@@ -125,6 +127,107 @@ def plot_truth_vs_prediction(prediction_sets, error_bound=None,
                                 x_lims=x_lims, y_lims=y_lims, title=title,
                                 x_label=x_label, y_label=y_label,
                                 is_latex=is_latex)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Display figure
+    if is_stdout_display:
+        plt.show()
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Save figure
+    if is_save_fig:
+        save_figure(figure, filename, format='pdf', save_dir=save_dir)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Close plot
+    plt.close(figure)
+# =============================================================================
+def plot_prediction_loss_history(loss_history, loss_type=None,
+                                 is_log_loss=False, loss_scale='linear',
+                                 filename='prediction_loss_history',
+                                 save_dir=None, is_save_fig=False,
+                                 is_stdout_display=False, is_latex=False):
+    """Plot model prediction process loss history.
+    
+    Parameters
+    ----------
+    loss_history : dict
+        One or more prediction processes loss histories, where each loss
+        history (key, str) is stored as a list of prediction steps loss values
+        (item, list). Dictionary keys are taken as labels for the corresponding
+        prediction processes loss histories.
+    loss_type : str, default=None
+        Loss type. If provided, then loss type is added to the y-axis label.
+    is_log_loss : bool, default=False
+        Applies logarithm to loss values if True, keeps original loss values
+        otherwise.
+    loss_scale : {'linear', 'log'}, default='linear'
+        Loss axis scale type.
+    filename : str, default='prediction_loss_history'
+        Figure name.
+    save_dir : str, default=None
+        Directory where figure is saved. If None, then figure is saved in
+        current working directory.
+    is_save_fig : bool, default=False
+        Save figure.
+    is_stdout_display : bool, default=False
+        True if displaying figure to standard output device, False otherwise.
+    is_latex : bool, default=False
+        If True, then render all strings in LaTeX. If LaTex is not available,
+        then this option is silently set to False and all input strings are
+        processed to remove $(...)$ enclosure.
+    """
+    # Check loss history
+    if not isinstance(loss_history, dict):
+        raise RuntimeError('Loss history is not a dict.')
+    elif not all([isinstance(x, list) for x in loss_history.values()]):
+        raise RuntimeError('Data must be provided as a dict where each loss '
+                           'history (key, str) is stored as a list[float] '
+                           '(item, list).')
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Get number of prediction processes
+    n_loss_history = len(loss_history.keys())
+    # Get maximum number of prediction steps
+    max_n_predict_steps = max([len(x) for x in loss_history.values()])
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Initialize data array and data labels
+    data_xy = np.full((max_n_predict_steps, 2*n_loss_history), fill_value=None)
+    data_labels = []
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Loop over prediction processes
+    for i, (key, val) in enumerate(loss_history.items()):
+        # Assemble loss history
+        data_xy[:len(val), 2*i] = tuple([*range(0, len(val))])
+        if is_log_loss:
+            data_xy[:len(val), 2*i + 1] = tuple(np.log(val))
+        else:
+            data_xy[:len(val), 2*i + 1] = tuple(val)
+        # Assemble data label
+        data_labels.append(key)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Set axes limits and scale
+    x_lims = (0, max_n_predict_steps)
+    y_lims = (None, None)
+    y_scale = loss_scale
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Set axes labels
+    x_label = 'Epochs'
+    if loss_type is None:
+        if is_log_loss:
+            y_label = 'log(Loss)'
+        else:
+            y_label = 'Loss'
+    else:
+        if is_log_loss:
+            y_label = f'log(Loss) ({loss_type})'
+        else:
+            y_label = f'Loss ({loss_type})'
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Set title
+    title = 'Prediction loss history'
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Plot loss history
+    figure, _ = plot_xy_data(data_xy, data_labels=data_labels, x_lims=x_lims,
+                             y_lims=y_lims, title=title, x_label=x_label,
+                             y_label=y_label, y_scale=y_scale,
+                             x_tick_format='int', is_latex=is_latex)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Display figure
     if is_stdout_display:
