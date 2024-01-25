@@ -4,6 +4,14 @@ Functions
 ---------
 generate_dataset_samples_files
     Generate data set graph samples files.
+extract_nodes_coords_from_input
+    Extract finite element mesh nodes coordinates.
+extract_connectivities_from_input
+    Extract finite element mesh nodes connectivities.
+extract_nodes_displacement_history
+    Extract nodes displacement history.
+convert_parquet_to_csv
+    Convert '.parquet' file to '.csv' format and store in same directory.
 """
 #
 #                                                                       Modules
@@ -30,6 +38,8 @@ import pandas
 from gnn_base_model.data.graph_data import GraphData
 from gnn_base_model.data.graph_dataset import \
     write_graph_dataset_summary_file
+from projects.abaqus_datasets.gnn_model_tools.features import \
+    FEMMeshFeaturesGenerator
 #
 #                                                          Authorship & Credits
 # =============================================================================
@@ -40,6 +50,7 @@ __status__ = 'Planning'
 #
 # =============================================================================
 def generate_dataset_samples_files(dataset_directory, input_files_paths,
+                                   data_files_paths,
                                    sample_file_basename='sample_graph',
                                    is_save_sample_plot=False,
                                    is_verbose=False):
@@ -51,7 +62,9 @@ def generate_dataset_samples_files(dataset_directory, input_files_paths,
         Directory where the data set is stored (all data set samples files).
         All existent files are overridden when saving sample data files.
     input_files_paths : list[str]
-        Data set ABAQUS input data files paths.
+        Data set ABAQUS input data files paths ('.inp' files).
+    data_files_paths : list[str]
+        Data set ABAQUS data files paths ('.parquet' > '.csv' files).
     sample_file_basename : str, default='sample_graph'
         Basename of data set sample file. The basename is appended with sample
         index.
@@ -83,16 +96,33 @@ def generate_dataset_samples_files(dataset_directory, input_files_paths,
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Get number of samples
     n_sample = len(input_files_paths)
+    # Check number of data files
+    if len(data_files_paths) != n_sample:
+        raise RuntimeError(f'Number of ABAQUS data files '
+                           f'({len(data_files_paths)}) does not match number '
+                           f'of ABAQUS input data files ({n_sample}).')
+    # Set number of dimensions
+    n_dim = 3
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Initialize data set samples files
     dataset_sample_files = []
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     if is_verbose:
         print('\n> Starting graphs generation process...\n')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Initialize sample graph index
+    sample_graph_id = 0
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Loop over ABAQUS input data files
-    for i, input_file_path in enumerate(tqdm.tqdm(input_files_paths,
-                                        desc='> Generating graphs: ',
-                                        disable=not is_verbose)):
+    for i in tqdm.tqdm(range(n_sample), desc='> Generating graphs: ',
+                       disable=not is_verbose):
+        # Get input data file path
+        input_file_path = input_files_paths[i]
+        # Get ABAQUS input data file ID
+        bottle_id = int(os.path.basename(input_file_path).split('.')[0])
+        # Get data file path
+        data_file_path = data_files_paths[i]
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Check input data file
         if not os.path.isfile(input_file_path):
             raise RuntimeError('ABAQUS input data file has not been found:'
@@ -106,36 +136,84 @@ def generate_dataset_samples_files(dataset_directory, input_files_paths,
         # Get finite element mesh edges indexes matrix
         edges_indexes_mesh = GraphData.get_edges_indexes_mesh(connected_nodes)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        # Instantiate graph data
-        graph_data = GraphData(n_dim=3, nodes_coords=nodes_coords)
-        # Set graph edges
-        graph_data.set_graph_edges_indexes(
-            edges_indexes_mesh=edges_indexes_mesh)
+        # Extract nodes displacement history
+        nodes_coords_hist, nodes_disps_hist, n_time_steps = \
+            extract_nodes_displacement_history(data_file_path)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        # Get PyG homogeneous graph data object
-        pyg_graph = graph_data.get_torch_data_object()
+        # Set node features
+        node_features = ('coord_old',)
+        # Set edge features
+        edge_features = ('edge_vector_old', 'edge_vector_old_norm')
+        # Set node targets
+        node_targets = ('coord',)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        # Set sample file name
-        sample_file_name = sample_file_basename + '_' + str(i) + '.pt'
-        # Set sample file path
-        sample_file_path = os.path.join(os.path.normpath(dataset_directory),
-                                        sample_file_name)
-        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        # Save graph sample file
-        torch.save(pyg_graph, sample_file_path)
-        # Save graph sample file path
-        dataset_sample_files.append(sample_file_path)
-        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        # Save graph sample plot
-        if is_save_sample_plot:
-            # Set sample plot name
-            sample_file_name = sample_file_basename + '_' + str(i) + '_plot'
-            # Save sample plot
-            graph_data.plot_material_patch_graph(
-                is_save_plot=is_save_sample_plot,
-                save_directory=dataset_directory,
-                plot_name=sample_file_name,
-                is_overwrite_file=True)
+        # Loop over time steps
+        for j in tqdm.tqdm(range(n_time_steps - 1),
+                           desc='  > Processing time steps: ',leave=False):
+            # Instantiate graph data
+            graph_data = GraphData(n_dim=n_dim,
+                                   nodes_coords=nodes_coords_hist[:, :, j])
+            # Set graph edges
+            graph_data.set_graph_edges_indexes(
+                edges_indexes_mesh=edges_indexes_mesh)
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Instantiate finite element mesh features generator
+            features_generator = FEMMeshFeaturesGenerator(
+                n_dim=n_dim, nodes_coords_hist=nodes_coords_hist[:, :, j:j+2],
+                edges_indexes=graph_data.get_graph_edges_indexes())
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Build node features matrix
+            node_features_matrix = \
+                features_generator.build_nodes_features_matrix(
+                    features=node_features)
+            # Set graph node features
+            graph_data.set_node_features_matrix(node_features_matrix)
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Build edge features matrix
+            edge_features_matrix = \
+                features_generator.build_edges_features_matrix(
+                    features=edge_features)
+            # Set graph edge features
+            graph_data.set_edge_features_matrix(edge_features_matrix)
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Set node targets matrix
+            node_targets_matrix = \
+                features_generator.build_nodes_features_matrix(
+                    features=node_targets)
+            # Set graph node targets
+            graph_data.set_node_targets_matrix(node_targets_matrix)
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Get PyG homogeneous graph data object
+            pyg_graph = graph_data.get_torch_data_object()
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Set sample file name
+            sample_file_name = \
+                (f'{sample_file_basename}_{str(sample_graph_id)}'
+                 f'_bottle_{str(bottle_id)}_tstep_{str(j)}.pt')
+            # Set sample file path
+            sample_file_path = os.path.join(
+                os.path.normpath(dataset_directory), sample_file_name)
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Save graph sample file
+            torch.save(pyg_graph, sample_file_path)
+            # Save graph sample file path
+            dataset_sample_files.append(sample_file_path)
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Save graph sample plot
+            if is_save_sample_plot and j == 0:
+                # Set sample plot name
+                sample_file_name = \
+                    (f'{sample_file_basename}_{str(sample_graph_id)}'
+                     f'_bottle_{str(bottle_id)}_tstep_{str(j)}_plot')
+                # Save sample plot
+                graph_data.plot_material_patch_graph(
+                    is_save_plot=is_save_sample_plot,
+                    save_directory=dataset_directory,
+                    plot_name=sample_file_name,
+                    is_overwrite_file=True)
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Increment sample graph index
+            sample_graph_id += 1
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     if is_verbose:
         print('\n> Finished graphs generation process!\n')
@@ -153,8 +231,15 @@ def generate_dataset_samples_files(dataset_directory, input_files_paths,
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Write summary data file for graph data set generation
     write_graph_dataset_summary_file(dataset_directory, n_sample,
-                                     total_time_sec, avg_time_sec)
+                                     total_time_sec, avg_time_sec,
+                                     node_features=node_features,
+                                     edge_features=edge_features,
+                                     node_targets=node_targets,
+                                     filename=
+                                     f'summary_bottle_{str(bottle_id)}_tstep_X'
+                                     )
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    return dataset_directory, dataset_sample_files
 # =============================================================================
 def extract_nodes_coords_from_input(input_file_path):
     """Extract finite element mesh nodes coordinates.
@@ -162,7 +247,7 @@ def extract_nodes_coords_from_input(input_file_path):
     Parameters
     ----------
     input_file_path : str
-        ABAQUS input data file path.
+        ABAQUS input data file path ('.inp' file).
         
     Returns
     -------
@@ -215,7 +300,7 @@ def extract_connectivities_from_input(input_file_path):
     Parameters
     ----------
     input_file_path : str
-        ABAQUS input data file path.
+        ABAQUS input data file path ('.inp' file).
         
     Returns
     -------
@@ -269,12 +354,106 @@ def extract_connectivities_from_input(input_file_path):
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     return connected_nodes
 # =============================================================================
-if __name__ == "__main__":
+def extract_nodes_displacement_history(data_file_path):
+    """Extract nodes displacement history.
     
-    dataset_directory = '/home/bernardoferreira/Documents/brown/projects/abaqus_datasets/datasets/ABAQUS_M5_buckling/graph_dataset'
+    Parameters
+    ----------
+    data_file_path : str
+        ABAQUS data file path ('.parquet' > '.csv' file).
+
+    Returns
+    -------
+    nodes_coords_hist : numpy.ndarray(3d)
+        Nodes coordinates history stored as a numpy.ndarray(3d) with shape
+        (n_nodes, n_dim, n_time_steps). Coordinates of i-th node at k-th
+        time step are stored in nodes_coords[i, :, k].
+    nodes_disps_hist : numpy.ndarray(3d), default=None
+        Nodes displacements history stored as a numpy.ndarray(3d) with
+        shape (n_nodes, n_dim, n_time_steps). Displacements of i-th node at
+        k-th time step are stored in nodes_disps_hist[i, :, k].
+    time_hist : tuple
+        Discrete time history.
+    """
+    # Check data file
+    if not os.path.isfile(data_file_path):
+        raise RuntimeError('ABAQUS data file has not been found:'
+                           '\n\n', data_file_path)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Load data
+    df = pandas.read_csv(data_file_path)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Get node ids
+    nodes_ids = tuple(set(df.loc[:, 'Node']))
+    # Get number of nodes
+    n_nodes = len(nodes_ids)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Probe data parameters and time history from first node
+    df_node_id = df.loc[df['Node'] == nodes_ids[0]]
+    # Check number of columns
+    if df_node_id.shape[1] != 8:
+        raise RuntimeError(f'Expecting data frame to have 8 columns, but '
+                           f'{df_node_id.shape[1]} were found. \n\n'
+                           f'Expected columns: Node | X1 X2 X3 | Time | '
+                           f'U1 U2 U3')
+    # Get discrete time history
+    time_hist = tuple(df_node_id['Time'].tolist())
+    # Get number of discrete time steps
+    n_time_steps = len(time_hist)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Initialize nodes coordinates history
+    nodes_coords_hist = np.zeros((n_nodes, 3, n_time_steps))
+    # Initialize nodes displacements history
+    nodes_disps_hist = np.zeros_like(nodes_coords_hist)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Loop over nodes
+    for node_id in nodes_ids:
+        # Get node data
+        df_node_id = df.loc[df['Node'] == node_id]
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set node index
+        i = node_id - 1
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Get node displacement history
+        nodes_disps_hist[i, :, :] = \
+            np.array(df_node_id[['U1', 'U2', 'U3']]).transpose()
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Get node coordinates history
+        nodes_coords_hist[i, :, :] = \
+            (np.array(df_node_id[['X1', 'X2', 'X3']])
+             + np.array(df_node_id[['U1', 'U2', 'U3']])).transpose()
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Check discrete time history consistency        
+        if not np.allclose(time_hist, tuple(df_node_id['Time'].tolist())):
+            raise RuntimeError(f'Node {node_id} and Node 1 discrete time '
+                               f'histories are not consistent.')
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    return nodes_coords_hist, nodes_disps_hist, n_time_steps
+# =============================================================================
+def convert_parquet_to_csv(parquet_file_path):
+    """Convert '.parquet' file to '.csv' format and store in same directory.
     
-    input_files_paths = ['/home/bernardoferreira/Documents/brown/projects/abaqus_datasets/datasets/ABAQUS_M5_buckling/M5_buckling/bottle_inp/1.inp',]
-    
-    generate_dataset_samples_files(dataset_directory, input_files_paths,
-                                   is_save_sample_plot=True,
-                                   is_verbose=True)
+    Parameters
+    ----------
+    parquet_file_path : str
+        Source '.parquet' file path.
+
+    Returns
+    -------
+    csv_file_path : str
+        Converted '.csv' file path.
+    """
+    # Check parquet data file
+    if not os.path.isfile(parquet_file_path):
+        raise RuntimeError('The \'.parquet\' data file has not been found:'
+                           '\n\n', parquet_file_path)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Load '.parquet' file into data frame
+    df = pandas.read_parquet(parquet_file_path)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Set '.csv' file path
+    csv_file_path = parquet_file_path.replace('.parquet', '.csv')
+    # Store data into '.csv' file format
+    df.to_csv(csv_file_path, encoding='utf-8', index=False)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    return csv_file_path
