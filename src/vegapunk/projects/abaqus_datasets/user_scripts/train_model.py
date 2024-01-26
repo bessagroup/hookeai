@@ -433,7 +433,6 @@ if __name__ == "__main__":
         device_type = 'cuda'
     else:
         device_type = 'cpu'
-    device_type = 'cpu'
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Perform standard training of GNN-based model
     if is_standard_training:
