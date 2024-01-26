@@ -208,7 +208,7 @@ def plot_prediction_loss_history(loss_history, loss_type=None,
     y_scale = loss_scale
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set axes labels
-    x_label = 'Epochs'
+    x_label = 'Prediction steps'
     if loss_type is None:
         if is_log_loss:
             y_label = 'log(Loss)'
