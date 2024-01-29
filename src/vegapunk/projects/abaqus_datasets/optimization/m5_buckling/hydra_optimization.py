@@ -17,7 +17,7 @@ import sys
 import pathlib
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Add project root directory to sys.path
-root_dir = str(pathlib.Path(__file__).parents[3])
+root_dir = str(pathlib.Path(__file__).parents[4])
 if root_dir not in sys.path:
     sys.path.insert(0, root_dir)
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -34,9 +34,9 @@ from gnn_base_model.train.cross_validation import kfold_cross_validation
 from gnn_base_model.optimization.hydra_optimization_template import \
     display_hydra_job_header
 from ioput.iostandard import make_directory, write_summary_file
-from vegapunk.projects.abaqus_datasets.user_scripts.m5_buckling.train_model \
+from projects.abaqus_datasets.user_scripts.m5_buckling.train_model \
     import generate_standard_training_plots
-from vegapunk.projects.abaqus_datasets.user_scripts.m5_buckling.predict \
+from projects.abaqus_datasets.user_scripts.m5_buckling.predict \
     import generate_prediction_plots
 #
 #                                                          Authorship & Credits
@@ -263,10 +263,16 @@ if __name__ == "__main__":
              'graph_dataset_n5382.pkl')
         datasets_paths['validation'] = \
             ('/home/bernardoferreira/Documents/projects/abaqus_datasets/'
-             'case_studies/M5_buckling/hyperparameter_optimization/'
+             'case_studies/M5_buckling/hyperparameter_opt/'
              'validation_dataset/graph_dataset_n1490.pkl')
     else:
         datasets_paths['training'] = None
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Loop over data sets
+    for key, dataset_file_path in datasets_paths.items():
+        # Update internal directory of stored data set (if required)
+        GNNGraphDataset.update_dataset_file_internal_directory(
+            dataset_file_path, os.path.dirname(dataset_file_path))
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set device type
     if torch.cuda.is_available():
