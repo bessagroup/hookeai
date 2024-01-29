@@ -124,6 +124,7 @@ def plot_truth_vs_prediction(prediction_sets, error_bound=None,
     figure, _ = scatter_xy_data(data_xy, data_labels=data_labels,
                                 is_identity_line=is_identity_line,
                                 identity_error=identity_error,
+                                is_r2_coefficient=True,
                                 x_lims=x_lims, y_lims=y_lims, title=title,
                                 x_label=x_label, y_label=y_label,
                                 is_latex=is_latex)

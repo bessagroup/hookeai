@@ -567,10 +567,11 @@ def plot_xny_data(data_xy_list, range_type='min-max', data_labels=None,
     return figure, axes
 # =============================================================================
 def scatter_xy_data(data_xy, data_labels=None, is_identity_line=False,
-                    identity_error=None, x_lims=(None, None),
-                    y_lims=(None, None), title=None, x_label=None,
-                    y_label=None, x_scale='linear', y_scale='linear',
-                    x_tick_format=None, y_tick_format=None, is_latex=False):
+                    identity_error=None, is_r2_coefficient=False,
+                    x_lims=(None, None), y_lims=(None, None), title=None,
+                    x_label=None, y_label=None, x_scale='linear',
+                    y_scale='linear', x_tick_format=None, y_tick_format=None,
+                    is_latex=False):
     """Scatter data in xy axes.
 
     Parameters
@@ -586,6 +587,10 @@ def scatter_xy_data(data_xy, data_labels=None, is_identity_line=False,
     identity_error : float, default=None
         Relative error between x-data and y-data defining a symmetric
         error-based shaded area with respect to the identity line.
+    is_r2_coefficient : bool, default=False
+        Plot coefficient of determination. Only effective if plotting a single
+        data set: reference data stored in data_xy[:, 0] and prediction data
+        stored in data_xy[:, 1].
     x_lims : tuple, default=(None, None)
         x-axis limits in data coordinates.
     y_lims : tuple, default=(None, None)
@@ -734,11 +739,35 @@ def scatter_xy_data(data_xy, data_labels=None, is_identity_line=False,
                               label=f'{identity_error*100:.0f}\\% error',
                               zorder=-15)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Compute and plot coefficient of determination
+    if is_r2_coefficient and n_datasets == 1:
+        # Get reference and predicted data
+        ref_data = data_xy[:, 0]
+        pred_data = data_xy[:, 1]
+        # Compute mean of reference data
+        data_mean = np.mean(ref_data)
+        # Compute coefficient of determination
+        r2 = (np.sum((ref_data - pred_data)**2)
+                /np.sum((ref_data - data_mean)**2))
+        # Get coefficient of determination string
+        r2_str = tex_str(r'$R^2=' + f'{r2:.2f}' + '$', is_latex)
+        # Set text box properties
+        text_box_props = dict(boxstyle='round', facecolor='#ffffff',
+                              edgecolor='#000000', alpha=1.0)
+        # Set text box position (right alignment)
+        if np.abs(r2) >= 10:
+            r2_pos = 0.72
+        else:
+            r2_pos = 0.745
+        # Plot coefficient of determination
+        axes.text(r2_pos, 0.05, r2_str, fontsize=10, transform=axes.transAxes,
+                  bbox=text_box_props, zorder=20)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set legend
     if not all([x is None for x in data_labels]) or identity_error is not None:
         axes.legend(loc='upper left', frameon=True, fancybox=True,
                     facecolor='inherit', edgecolor='inherit', fontsize=10,
-                    framealpha=1.0)
+                    framealpha=1.0).set_zorder(30)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Return figure and axes handlers
     return figure, axes
