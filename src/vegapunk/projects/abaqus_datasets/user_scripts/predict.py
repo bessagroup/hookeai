@@ -84,8 +84,15 @@ def perform_model_prediction(predict_directory, dataset_file_path,
                 is_normalized_loss=True, dataset_file_path=dataset_file_path,
                 device_type=device_type, seed=None, is_verbose=is_verbose)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Generate plots of model predictions
-    generate_prediction_plots(predict_subdir)
+    # Get number of time steps
+    n_time_steps = len(dataset)
+    # Loop over time steps
+    for i in range(n_time_steps):
+        # Set time step plots suffix
+        plot_filename_suffix = f'_bottle_{str(bottle_id)}_tstep_{str(i)}'
+        # Generate plots of model predictions
+        generate_prediction_plots(predict_subdir, samples_ids=[i,], 
+                                  plot_filename_suffix=plot_filename_suffix)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set new name for prediction results subdirectory
     predict_subdir_new = os.path.join(os.path.dirname(predict_subdir),
@@ -96,13 +103,19 @@ def perform_model_prediction(predict_directory, dataset_file_path,
     # Rename prediction results subdirectory
     shutil.move(predict_subdir, predict_subdir_new)
 # =============================================================================
-def generate_prediction_plots(predict_subdir):
+def generate_prediction_plots(predict_subdir, samples_ids='all',
+                              plot_filename_suffix=None):
     """Generate plots of model predictions.
     
     Parameters
     ----------
     predict_subdir : str
         Subdirectory where samples predictions results files are stored.
+    samples_ids : {'all', list[int]}, default='all'
+        Samples IDs whose prediction results are collated in each prediction
+        data array.
+    plot_filename_suffix : str, default=None
+         Suffix to each plot filename.
     """
     # Create plot directory
     plot_dir = os.path.join(os.path.normpath(predict_subdir), 'plots')
@@ -119,12 +132,14 @@ def generate_prediction_plots(predict_subdir):
         # Build samples predictions data arrays with predictions and
         # ground-truth
         prediction_data_arrays = build_prediction_data_arrays(
-            predict_subdir, prediction_type=key, samples_ids='all')
+            predict_subdir, prediction_type=key, samples_ids=samples_ids)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Loop over samples predictions data arrays
         for i, data_array in enumerate(prediction_data_arrays):
             # Get prediction plot file name
             filename = val[i]
+            if plot_filename_suffix:
+                filename += str(plot_filename_suffix)
             # Set prediction process
             if key == 'coord_comps':
                 prediction_sets = {'$x_{n+1} (\\mathrm{dim}: '

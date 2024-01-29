@@ -746,9 +746,12 @@ def scatter_xy_data(data_xy, data_labels=None, is_identity_line=False,
         pred_data = data_xy[:, 1]
         # Compute mean of reference data
         data_mean = np.mean(ref_data)
+        # Compute sum of squares of residuals
+        ssres = np.sum((ref_data - pred_data)**2)
+        # Compute total sum of squares
+        sstot = np.sum((ref_data - data_mean)**2)
         # Compute coefficient of determination
-        r2 = (np.sum((ref_data - pred_data)**2)
-                /np.sum((ref_data - data_mean)**2))
+        r2 = 1 - ssres/sstot
         # Get coefficient of determination string
         r2_str = tex_str(r'$R^2=' + f'{r2:.2f}' + '$', is_latex)
         # Set text box properties
