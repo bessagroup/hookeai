@@ -36,7 +36,7 @@ pro_node_to_global_aggr: 'mean'
 # Number of training epochs
 n_max_epochs: 200
 # Batch size
-batch_size: 16
+batch_size: 8
 # Data set shuffler
 is_sampler_shuffle: false
 # Loss nature
