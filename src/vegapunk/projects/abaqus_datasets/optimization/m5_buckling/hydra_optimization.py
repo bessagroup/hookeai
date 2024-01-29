@@ -34,10 +34,10 @@ from gnn_base_model.train.cross_validation import kfold_cross_validation
 from gnn_base_model.optimization.hydra_optimization_template import \
     display_hydra_job_header
 from ioput.iostandard import make_directory, write_summary_file
-from projects.abaqus_datasets.user_scripts.train_model import \
-    generate_standard_training_plots
-from projects.abaqus_datasets.user_scripts.predict import \
-    generate_prediction_plots
+from vegapunk.projects.abaqus_datasets.user_scripts.m5_buckling.train_model \
+    import generate_standard_training_plots
+from vegapunk.projects.abaqus_datasets.user_scripts.m5_buckling.predict \
+    import generate_prediction_plots
 #
 #                                                          Authorship & Credits
 # =============================================================================
@@ -259,11 +259,12 @@ if __name__ == "__main__":
     elif process == 'training-validation':
         datasets_paths['training'] = \
             ('/home/bernardoferreira/Documents/projects/abaqus_datasets/'
-             'case_studies/incremental_model/1_training_dataset/'
+             'case_studies/M5_buckling/incremental_model/1_training_dataset/'
              'graph_dataset_n5382.pkl')
         datasets_paths['validation'] = \
             ('/home/bernardoferreira/Documents/projects/abaqus_datasets/'
-             'hyperparameter_opt/validation_dataset/graph_dataset_n1490.pkl')
+             'case_studies/M5_buckling/hyperparameter_optimization/'
+             'validation_dataset/graph_dataset_n1490.pkl')
     else:
         datasets_paths['training'] = None
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

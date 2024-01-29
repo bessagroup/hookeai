@@ -7,7 +7,7 @@ import sys
 import pathlib
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Add project root directory to sys.path
-root_dir = str(pathlib.Path(__file__).parents[3])
+root_dir = str(pathlib.Path(__file__).parents[4])
 if root_dir not in sys.path:
     sys.path.insert(0, root_dir)
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -99,11 +99,11 @@ if __name__ == "__main__":
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set directory of ABAQUS input data files
     input_dir = ('/home/bernardoferreira/Documents/brown/projects/'
-                 'abaqus_datasets/datasets/ABAQUS_M5_buckling/M5_buckling/'
+                 'abaqus_datasets/datasets/ABAQUS_M5_buckling/'
                  'bottle_inp/')
     # Set directory of ABAQUS data files (coordinates, displacements)
     data_dir = ('/home/bernardoferreira/Documents/brown/projects/'
-                'abaqus_datasets/datasets/ABAQUS_M5_buckling/M5_buckling/'
+                'abaqus_datasets/datasets/ABAQUS_M5_buckling/'
                 'bottle_disp_data/')
     # Set data files IDs
     bottle_id = None
@@ -126,7 +126,7 @@ if __name__ == "__main__":
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set base directory
     base_dir = ('/home/bernardoferreira/Documents/brown/projects/'
-                'abaqus_datasets/case_studies')
+                'abaqus_datasets/case_studies/M5_buckling')
     # Set case study directory
     case_study_name = 'incremental_model'
     case_study_dir = os.path.join(os.path.normpath(base_dir),
