@@ -90,6 +90,9 @@ def perform_model_prediction(predict_directory, dataset_file_path,
     # Set new name for prediction results subdirectory
     predict_subdir_new = os.path.join(os.path.dirname(predict_subdir),
                                       f'prediction_bottle_{str(bottle_id)}')
+    # Remove existing prediction directory
+    if os.path.isdir(predict_subdir_new):
+        shutil.rmtree(predict_subdir_new)
     # Rename prediction results subdirectory
     shutil.move(predict_subdir, predict_subdir_new)
 # =============================================================================
