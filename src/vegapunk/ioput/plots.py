@@ -1091,6 +1091,165 @@ def plot_boxplots(data_boxplots, data_labels=None, is_mean_line=False,
     # Return figure and axes handlers
     return figure, axes
 # =============================================================================
+def plot_histogram(data, data_labels=None, bins=None, bins_range=None,
+                   density=False, x_lims=(None, None), y_lims=(None, None),
+                   title=None, x_label=None, y_label=None,
+                   x_scale='linear', y_scale='linear', x_tick_format=None,
+                   y_tick_format=None, is_latex=False):
+    """Plot 1D histogram.
+
+    Parameters
+    ----------
+    data : tuple[numpy.ndarray(1d)]
+        Histogram data sets.
+    data_labels : tuple[str], default=None
+        Histogram data sets labels. If None, then no labels are displayed.
+    bins : {int, tuple, str}, default=None
+        Histogram bins, provided either as an integer (number of equal-width
+        bins in the range) or as a sequence (bins edges). Some binning
+        strategies are also available (e.g., 'auto', 'fd').
+    bins_range : tuple, default=None
+        The lower (bins_range[0]) and upper (bins_range[1]) range of the bins,
+        ignoring outliers outside the provided range. Not effective if bins
+        sequence is provided.
+    density : bool, default=False
+        If True, draw and return a probability density (area under the
+        histogram integrates to 1).
+    title : str, default=None
+        Plot title.
+    x_label : str, default=None
+        x-axis label.
+    y_label : str, default=None
+        y-axis label.
+    x_scale : str {'linear', 'log'}, default='linear'
+        x-axis scale. If None or invalid format, then default scale is set.
+        Scale 'log' overrides any x-axis ticks formatting.
+    y_scale : str {'linear', 'log'}, default='linear'
+        y-axis scale. If None or invalid format, then default scale is set.
+        Scale 'log' overrides any y-axis ticks formatting.
+    x_tick_format : {'int', 'float', 'exp'}, default=None
+        x-axis ticks formatting. If None or invalid format, then default
+        formatting is set.
+    y_tick_format : {'int', 'float', 'exp'}, default=None
+        y-axis ticks formatting. If None or invalid format, then default
+        formatting is set.
+    is_latex : bool, default=False
+        If True, then render all strings in LaTeX. If LaTex is not available,
+        then this option is silently set to False and all input strings are
+        processed to remove $(...)$ enclosure.
+
+    Returns
+    -------
+    figure : Matplotlib Figure
+        Figure.
+    axes : Matplotlib Axes
+        Axes.
+    """
+    # Reset matplotlib internal default style
+    plt.rcParams.update(plt.rcParamsDefault)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Get number of data sets
+    n_datasets = len(data)
+    # Check data sets
+    for i in range(n_datasets):
+        if not isinstance(data[i], np.ndarray) or len(data[i].shape) != 1:
+            raise RuntimeError('Each histogram data set must be stored as '
+                               'a numpy 1d array.')
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Check datasets labels
+    if data_labels is not None:
+        if len(data_labels) != n_datasets:
+            raise RuntimeError('Number of data set labels is not consistent '
+                               'with number of data sets.')
+    else:
+        data_labels = n_datasets*[None,]
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Set default color cycle
+    cycler_color = cycler.cycler('color',['#4477AA', '#EE6677', '#228833',
+                                          '#CCBB44', '#66CCEE', '#AA3377',
+                                          '#BBBBBB', '#000000'])
+    # Set default cycler
+    default_cycler = cycler_color
+    plt.rc('axes', prop_cycle = cycler_color)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~    
+    # Check LaTeX availability
+    if not bool(shutil.which('latex')):
+        is_latex = False
+    # Set LaTeX font
+    if is_latex:
+        # Default LaTeX Computer Modern Roman
+        plt.rc('text', usetex=True)
+        plt.rc('font', **{'family': 'serif',
+                          'serif': ['Computer Modern Roman']})        
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Create figure
+    figure = plt.figure()
+    # Set figure size (inches) - stdout print purpose
+    figure.set_figheight(6, forward=True)
+    figure.set_figwidth(6, forward=True)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Create axes
+    axes = figure.add_subplot(1, 1, 1)
+    # Set title
+    axes.set_title(tex_str(title, is_latex), fontsize=12, pad=10)
+    # Set axes labels
+    axes.set_xlabel(tex_str(x_label, is_latex), fontsize=12, labelpad=10)
+    axes.set_ylabel(tex_str(y_label, is_latex), fontsize=12, labelpad=10)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Set axes scales
+    if x_scale in ('linear', 'log'):
+        axes.set_xscale(x_scale)
+    if y_scale in ('linear', 'log'):
+        axes.set_yscale(y_scale)
+    # Set tick formatting functions
+    def intTickFormat(x, pos):
+        frmt = tex_str('{:2d}', is_latex)
+        return frmt.format(int(x))
+    def floatTickFormat(x, pos):
+        frmt = tex_str('{:3.1f}', is_latex)
+        return frmt.format(x)
+    def expTickFormat(x, pos):
+        frmt = tex_str('{:7.2e}', is_latex)
+        return frmt.format(x)
+    tick_formats = {'int': intTickFormat, 'float': floatTickFormat,
+                    'exp': expTickFormat}
+    # Set axes tick formats
+    if x_scale != 'log' and x_tick_format in ('int', 'float', 'exp'):
+        axes.xaxis.set_major_formatter(
+            ticker.FuncFormatter(tick_formats[x_tick_format]))
+    if y_scale != 'log' and y_tick_format in ('int', 'float', 'exp'):
+        axes.yaxis.set_major_formatter(
+            ticker.FuncFormatter(tick_formats[y_tick_format]))
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Configure grid major lines
+    axes.grid(which='major', axis='both', linestyle='-', linewidth=0.5,
+              color='0.5', zorder=-20)
+    # Configure grid minor lines
+    axis_option = {'log-log': 'both', 'log-linear': 'x', 'linear-log': 'y'}
+    xy_scale = f'{x_scale}-{y_scale}'
+    if xy_scale in axis_option.keys():
+        axes.grid(which='minor', axis=axis_option[xy_scale], linestyle='-',
+                  linewidth=0.5, color='0.5', zorder=-20)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Plot histogram
+    bins_vals, bins_edges, _ = axes.hist(data, bins=bins, range=bins_range,
+                                         density=density, zorder=10)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Set legend
+    if not all([x is None for x in data_labels]):
+        axes.legend(loc='upper left', frameon=True, fancybox=True,
+                    facecolor='inherit', edgecolor='inherit', fontsize=10,
+                    framealpha=1.0)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Set axes limits
+    if x_lims != (None, None):
+        axes.set_xlim(x_lims)
+    if y_lims != (None, None):
+        axes.set_ylim(y_lims)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Return figure and axes handlers
+    return figure, axes
+# =============================================================================
 def save_figure(figure, filename, format='pdf', save_dir=None):
     """Save Matplotlib figure.
     
