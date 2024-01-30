@@ -187,8 +187,16 @@ def hydra_wrapper(process, dataset_paths, device_type='cpu'):
                     is_normalized_loss=True, device_type=device_type,
                     is_verbose=False)
                 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-                # Generate plots of model predictions
-                generate_prediction_plots(predict_subdir)
+                # Get number of validation data set samples
+                n_sample = len(validation_dataset)
+                # Loop over validation data set samples
+                for i in range(n_sample):
+                    # Set time step plots suffix
+                    plot_filename_suffix = f'_sample_{str(i)}'
+                    # Generate plots of model predictions
+                    generate_prediction_plots(
+                        predict_subdir, samples_ids=[i,],
+                        plot_filename_suffix=plot_filename_suffix)
                 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                 # Set hyperparameter optimization objective
                 objective = avg_valid_loss_sample
