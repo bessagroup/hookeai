@@ -34,10 +34,12 @@ import numpy as np
 import torch
 import tqdm
 import pandas
+import matplotlib.pyplot as plt
 # Local
 from gnn_base_model.data.graph_data import GraphData
 from gnn_base_model.data.graph_dataset import \
     write_graph_dataset_summary_file
+from ioput.plots import plot_histogram, save_figure
 from projects.abaqus_datasets.gnn_model_tools.features import \
     FEMMeshFeaturesGenerator
 #
@@ -137,8 +139,10 @@ def generate_dataset_samples_files(dataset_directory, input_files_paths,
         edges_indexes_mesh = GraphData.get_edges_indexes_mesh(connected_nodes)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Extract nodes displacement history
-        nodes_coords_hist, nodes_disps_hist, n_time_steps = \
+        nodes_coords_hist, nodes_disps_hist, time_hist = \
             extract_nodes_displacement_history(data_file_path)
+        # Get number of discrete times
+        n_times = len(time_hist)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Set node features
         node_features = ('coord_old',)
@@ -148,8 +152,8 @@ def generate_dataset_samples_files(dataset_directory, input_files_paths,
         node_targets = ('coord',)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Loop over time steps
-        for j in tqdm.tqdm(range(n_time_steps - 1),
-                           desc='  > Processing time steps: ',leave=False):
+        for j in tqdm.tqdm(range(n_times - 1),
+                           desc='  > Processing time steps: ', leave=False):
             # Instantiate graph data
             graph_data = GraphData(n_dim=n_dim,
                                    nodes_coords=nodes_coords_hist[:, :, j])
@@ -428,7 +432,127 @@ def extract_nodes_displacement_history(data_file_path):
             raise RuntimeError(f'Node {node_id} and Node 1 discrete time '
                                f'histories are not consistent.')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    return nodes_coords_hist, nodes_disps_hist, n_time_steps
+    return nodes_coords_hist, nodes_disps_hist, time_hist
+# =============================================================================
+def extract_time_step_history(data_file_path):
+    """Extract discrete time history.
+    
+    Parameters
+    ----------
+    data_file_path : str
+        ABAQUS data file path ('.parquet' > '.csv' file).
+
+    Returns
+    -------
+    time_hist : tuple
+        Discrete time history.
+    time_step_hist : tuple
+        Discrete time step history.
+    """
+    # Check data file
+    if not os.path.isfile(data_file_path):
+        raise RuntimeError('ABAQUS data file has not been found:'
+                           '\n\n', data_file_path)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Load data
+    df = pandas.read_csv(data_file_path)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Get node ids
+    nodes_ids = tuple(set(df.loc[:, 'Node']))
+    # Get number of nodes
+    n_nodes = len(nodes_ids)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Probe data parameters and time history from first node
+    # Get data from first node (shared time history)
+    df_node_id = df.loc[df['Node'] == nodes_ids[0]]
+    # Check number of columns
+    if df_node_id.shape[1] != 8:
+        raise RuntimeError(f'Expecting data frame to have 8 columns, but '
+                           f'{df_node_id.shape[1]} were found. \n\n'
+                           f'Expected columns: Node | X1 X2 X3 | Time | '
+                           f'U1 U2 U3')
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Get discrete time history
+    time_hist = tuple(df_node_id['Time'].tolist())
+    # Get number of discrete times
+    n_times = len(time_hist)
+    # Compute discrete time step history
+    time_step_hist = [time_hist[i + 1] - time_hist[i]
+                      for i in range(n_times - 2)]
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    return time_hist, time_step_hist
+# =============================================================================
+def plot_time_step_distribution(data_files_paths,
+                                filename='discrete_time_step_distribution',
+                                save_dir=None, is_save_fig=False,
+                                is_stdout_display=False, is_latex=False):
+    """Generate histogram of discrete time step size.
+    
+    Parameters
+    ----------
+    data_files_paths : list[str]
+        Data set ABAQUS data files paths ('.parquet' > '.csv' files).
+    filename : str, default='discrete_time_step_distribution'
+        Figure name.
+    save_dir : str, default=None
+        Directory where figure is saved. If None, then figure is saved in
+        current working directory.
+    is_save_fig : bool, default=False
+        Save figure.
+    is_stdout_display : bool, default=False
+        True if displaying figure to standard output device, False otherwise.
+    """
+    # Initialize discrete time step population
+    time_step_population = []
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Get number of samples
+    n_sample = len(data_files_paths)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Loop over ABAQUS data files
+    for i in range(n_sample):
+        # Get data file path
+        data_file_path = data_files_paths[i]
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Check input data file
+        if not os.path.isfile(data_file_path):
+            raise RuntimeError('ABAQUS input data file has not been found:'
+                               '\n\n', data_file_path)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Extract discrete time step history
+        _, time_step_hist = extract_time_step_history(data_file_path)
+        # Append to population
+        time_step_population += list(time_step_hist)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Set histogram data sets
+    hist_data = (np.array(time_step_population),)
+    # Set histogram data sets labels
+    hist_data_labels = None
+    # Set probability density flag
+    density = False
+    # Set title
+    title = 'Discrete time step distribution'
+    # Set histogram axes labels
+    x_label = 'Discrete time step'
+    if density:
+        y_label = 'Probability density'
+    else:
+        y_label = 'Frequency'
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Plot histogram of discrete time step size
+    figure, _ = plot_histogram(hist_data, data_labels=hist_data_labels,
+                               density=False, title=title, x_label=x_label,
+                               y_label=y_label, is_latex=is_latex)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Display figure
+    if is_stdout_display:
+        plt.show()
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Save figure
+    if is_save_fig:
+        save_figure(figure, filename, format='pdf', save_dir=save_dir)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Close plot
+    plt.close(figure)
 # =============================================================================
 def convert_parquet_to_csv(parquet_file_path):
     """Convert '.parquet' file to '.csv' format and store in same directory.
