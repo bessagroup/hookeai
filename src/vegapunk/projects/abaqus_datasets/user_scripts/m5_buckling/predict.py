@@ -267,8 +267,9 @@ def perform_model_rollout(predict_directory, dataset_file_path,
                                'been found.')
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Set prediction rollout results file path
-        time_step_prediction_file_path = \
-            f'prediction_sample_bottle_{str(bottle_id)}_tstep_{str(i)}.pkl'
+        time_step_prediction_file_path = os.path.join(
+            os.path.normpath(rollout_directory),
+            f'prediction_sample_bottle_{str(bottle_id)}_tstep_{str(i)}.pkl')
         # Copy prediction results file to prediction rollout directory
         shutil.copy(prediction_file_path, time_step_prediction_file_path)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
