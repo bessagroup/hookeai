@@ -121,7 +121,7 @@ def generate_dataset_samples_files(dataset_directory, input_files_paths,
         # Get input data file path
         input_file_path = input_files_paths[i]
         # Get ABAQUS input data file ID
-        bottle_id = int(os.path.basename(input_file_path).split('.')[0])
+        abaqus_file_id = int(os.path.basename(input_file_path).split('.')[0])
         # Get data file path
         data_file_path = data_files_paths[i]
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -193,7 +193,7 @@ def generate_dataset_samples_files(dataset_directory, input_files_paths,
             # Set sample file name
             sample_file_name = \
                 (f'{sample_file_basename}_{str(sample_graph_id)}'
-                 f'_bottle_{str(bottle_id)}_tstep_{str(j)}.pt')
+                 f'_bottle_{str(abaqus_file_id)}_tstep_{str(j)}.pt')
             # Set sample file path
             sample_file_path = os.path.join(
                 os.path.normpath(dataset_directory), sample_file_name)
@@ -208,7 +208,7 @@ def generate_dataset_samples_files(dataset_directory, input_files_paths,
                 # Set sample plot name
                 sample_file_name = \
                     (f'{sample_file_basename}_{str(sample_graph_id)}'
-                     f'_bottle_{str(bottle_id)}_tstep_{str(j)}_plot')
+                     f'_bottle_{str(abaqus_file_id)}_tstep_{str(j)}_plot')
                 # Save sample plot
                 graph_data.plot_material_patch_graph(
                     is_save_plot=is_save_sample_plot,
@@ -234,14 +234,11 @@ def generate_dataset_samples_files(dataset_directory, input_files_paths,
               f'{str(datetime.timedelta(seconds=int(avg_time_sec)))}\n')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Write summary data file for graph data set generation
-    write_graph_dataset_summary_file(dataset_directory, n_sample,
-                                     total_time_sec, avg_time_sec,
-                                     node_features=node_features,
-                                     edge_features=edge_features,
-                                     node_targets=node_targets,
-                                     filename=
-                                     f'summary_bottle_{str(bottle_id)}_tstep_X'
-                                     )
+    write_graph_dataset_summary_file(
+        dataset_directory, n_sample, total_time_sec, avg_time_sec,
+        node_features=node_features, edge_features=edge_features,
+        node_targets=node_targets,
+        filename=f'summary_bottle_{str(abaqus_file_id)}_tstep_X')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     return dataset_directory, dataset_sample_files
 # =============================================================================
@@ -278,7 +275,7 @@ def extract_nodes_coords_from_input(input_file_path):
     # Search for NODE keyword and collect nodes coordinates
     line_number = 0
     for line in input_file:
-        if '*NODE' in line:
+        if '*NODE' in line or '*Node' in line:
             # Start processing NODE section
             is_keyword_found = True
         elif is_keyword_found and bool(re.search(r'^' + r'[*][A-Z]+', line)):
@@ -332,7 +329,7 @@ def extract_connectivities_from_input(input_file_path):
     # Search for ELEMENT keyword and collect nodes connectivities
     line_number = 0
     for line in input_file:
-        if '*ELEMENT, TYPE' in line:
+        if '*ELEMENT, TYPE' in line or '*Element, type' in line:
             # Start processing ELEMENT section
             is_keyword_found = True
         elif is_keyword_found and bool(re.search(r'^' + r'[*][A-Z]+', line)):
