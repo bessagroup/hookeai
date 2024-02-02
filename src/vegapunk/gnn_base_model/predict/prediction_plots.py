@@ -6,6 +6,8 @@ plot_truth_vs_prediction
     Plot ground-truth against predictions.
 plot_prediction_loss_history
     Plot model prediction process loss history.
+plot_dle_error_histogram
+    Plot Direct Loss Estimator (DLE) absolute error histogram.
 """
 #
 #                                                                       Modules
@@ -13,8 +15,10 @@ plot_prediction_loss_history
 # Third-party
 import numpy as np
 import matplotlib.pyplot as plt
+import sklearn.linear_model
 # Local
-from ioput.plots import plot_xy_data, scatter_xy_data, save_figure
+from ioput.plots import plot_xy_data, scatter_xy_data, plot_histogram, \
+    save_figure
 #
 #                                                          Authorship & Credits
 # =============================================================================
@@ -29,7 +33,7 @@ def plot_truth_vs_prediction(prediction_sets, error_bound=None,
                              filename='prediction_vs_groundtruth',
                              save_dir=None, is_save_fig=False,
                              is_stdout_display=False, is_latex=False):
-    """Plot ground-truth against predictions.
+    """Plot ground-truth versus predictions.
     
     Parameters
     ----------
@@ -85,7 +89,7 @@ def plot_truth_vs_prediction(prediction_sets, error_bound=None,
     for i, (key, val) in enumerate(prediction_sets.items()):
         # Normalize prediction process data
         if is_normalize_data:
-            val = val/val.max()
+            val = (val - val.min())/(val.max() - val.min())
         # Assemble prediction process
         data_xy[:val.shape[0], 2*i] = val[:val.shape[0], 0]
         data_xy[:len(val), 2*i + 1] = val[:val.shape[0], 1]
@@ -120,7 +124,7 @@ def plot_truth_vs_prediction(prediction_sets, error_bound=None,
     if is_normalize_data:
         title += ' (Normalized)'
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Plot loss history
+    # Plot ground-truth versus predictions
     figure, _ = scatter_xy_data(data_xy, data_labels=data_labels,
                                 is_identity_line=is_identity_line,
                                 identity_error=identity_error,
@@ -229,6 +233,101 @@ def plot_prediction_loss_history(loss_history, loss_type=None,
                              y_lims=y_lims, title=title, x_label=x_label,
                              y_label=y_label, y_scale=y_scale,
                              x_tick_format='int', is_latex=is_latex)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Display figure
+    if is_stdout_display:
+        plt.show()
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Save figure
+    if is_save_fig:
+        save_figure(figure, filename, format='pdf', save_dir=save_dir)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Close plot
+    plt.close(figure)
+# =============================================================================
+def plot_dle_error_histogram(prediction_data_array, is_normalize_data=False,
+                             filename='dle_lr_error_histogram',
+                             save_dir=None, is_save_fig=False,
+                             is_stdout_display=False, is_latex=False):
+    """Plot Direct Loss Estimator (DLE) absolute error histogram.
+    
+    Direct Loss Estimator (DLE) is based on Linear Regression model.
+    
+    Parameters
+    ----------
+    is_normalize_data : bool, default=False
+        Normalize predictions and ground-truth data to the range [0, 1]
+        before estimating the error.
+    filename : str, default='dle_lr_error_histogram'
+        Figure name.
+    save_dir : str, default=None
+        Directory where figure is saved. If None, then figure is saved in
+        current working directory.
+    is_save_fig : bool, default=False
+        Save figure.
+    is_stdout_display : bool, default=False
+        True if displaying figure to standard output device, False otherwise.
+    is_latex : bool, default=False
+        If True, then render all strings in LaTeX. If LaTex is not available,
+        then this option is silently set to False and all input strings are
+        processed to remove $(...)$ enclosure.
+    """
+    # Initialize data array
+    data_xy = prediction_data_array
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Normalize prediction data
+    if is_normalize_data:
+        data_xy = (data_xy - data_xy.min())/(data_xy.max() - data_xy.min())
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Get reference and predicted data
+    ref_data = data_xy[:, 0].reshape(-1, 1)
+    pred_data = data_xy[:, 1].reshape(-1, 1)
+    # Fit linear regression model (monitored model)
+    monitored_model = sklearn.linear_model.LinearRegression()
+    monitored_model.fit(ref_data, pred_data)
+    # Get monitored model predicted data
+    pred_data_monitored = monitored_model.predict(ref_data)
+    # Compute absolute error between predicted data and monitored model
+    # predictions
+    abs_error = abs(pred_data - pred_data_monitored).reshape(-1)
+    # Compute absolute mean error
+    mean_abs_error = np.mean(abs_error)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Set histogram data sets
+    hist_data = (abs_error,)
+    # Set probability density flag
+    density = True
+    # Set title
+    title = 'DLE-LR error distribution'
+    if is_normalize_data:
+        title += ' (normalized data)'
+    # Set histogram axes labels
+    x_label = 'DLE-LR absolute error'
+    if density:
+        y_label = 'Probability density'
+    else:
+        y_label = 'Frequency'
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Plot Direct Loss Estimator (DLE) absolute error histogram
+    figure, axes = plot_histogram(hist_data, bins=100, density=density,
+                                  title=title, x_label=x_label,
+                                  y_label=y_label, x_lims=(0.0, None),
+                                  is_latex=is_latex)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Set mean absolute error color
+    error_color = 'black'
+    # Set mean absolute error string
+    if is_latex:
+        mean_str = r'$\mu_{\epsilon}=' + f'{mean_abs_error:.2e}' + '$'
+    else:
+        mean_str = r'Avg. error =' + f'{mean_abs_error:.2e}'
+    # Set mean absolute text box properties
+    text_box_props = dict(boxstyle='round', facecolor='#ffffff',
+                          edgecolor=error_color, alpha=1.0)
+    # Plot mean absolut error
+    axes.axvline(mean_abs_error, color=error_color, ls='--', zorder=20)
+    axes.text(0.97, 0.97, mean_str, fontsize=10, ha='right', va='top',
+              transform=axes.transAxes, bbox=text_box_props, zorder=20)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Display figure
     if is_stdout_display:
