@@ -147,6 +147,8 @@ def generate_prediction_plots(predict_subdir, samples_ids='all',
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Plot model predictions against ground-truth
             plot_truth_vs_prediction(prediction_sets, error_bound=0.1,
+                                     is_r2_coefficient=True,
+                                     is_direct_loss_estimator=False,
                                      is_normalize_data=False,
                                      filename=filename,
                                      save_dir=plot_dir,
@@ -300,7 +302,7 @@ def perform_model_rollout(predict_directory, dataset_file_path,
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Finish rollout after getting prediction for the last time step
         if i == n_time_steps - 1:
-            break
+            continue
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Load sample predictions
         sample_results = \

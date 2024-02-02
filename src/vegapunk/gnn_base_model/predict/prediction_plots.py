@@ -29,6 +29,8 @@ __status__ = 'Planning'
 #
 # =============================================================================
 def plot_truth_vs_prediction(prediction_sets, error_bound=None,
+                             is_r2_coefficient=False,
+                             is_direct_loss_estimator=False,
                              is_normalize_data=False,
                              filename='prediction_vs_groundtruth',
                              save_dir=None, is_save_fig=False,
@@ -46,6 +48,12 @@ def plot_truth_vs_prediction(prediction_sets, error_bound=None,
     error_bound : float, default=None
         Relative error between ground-truth and prediction that defines an
         symmetric error-based shaded area with respect to the identity line.
+    is_r2_coefficient : bool, default=False
+        Plot coefficient of determination. Only effective if plotting a single
+        prediction process.
+    is_direct_loss_estimator : bool, default=False
+        Plot Direct Loss Estimator (DLE) based on Linear Regression model.
+        Only effective if plotting a single prediction process.
     is_normalize_data : bool, default=False
         Normalize predictions and ground-truth data to the range [0, 1] for
         each prediction process.
@@ -125,13 +133,12 @@ def plot_truth_vs_prediction(prediction_sets, error_bound=None,
         title += ' (Normalized)'
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Plot ground-truth versus predictions
-    figure, _ = scatter_xy_data(data_xy, data_labels=data_labels,
-                                is_identity_line=is_identity_line,
-                                identity_error=identity_error,
-                                is_r2_coefficient=True,
-                                x_lims=x_lims, y_lims=y_lims, title=title,
-                                x_label=x_label, y_label=y_label,
-                                is_latex=is_latex)
+    figure, _ = scatter_xy_data(
+        data_xy, data_labels=data_labels, is_identity_line=is_identity_line,
+        identity_error=identity_error, is_r2_coefficient=is_r2_coefficient,
+        is_direct_loss_estimator=is_direct_loss_estimator,
+        x_lims=x_lims, y_lims=y_lims, title=title,
+        x_label=x_label, y_label=y_label, is_latex=is_latex)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Display figure
     if is_stdout_display:
