@@ -30,6 +30,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
 import cycler
+import sklearn.linear_model
+import sklearn.metrics
 #
 #                                                          Authorship & Credits
 # =============================================================================
@@ -568,6 +570,7 @@ def plot_xny_data(data_xy_list, range_type='min-max', data_labels=None,
 # =============================================================================
 def scatter_xy_data(data_xy, data_labels=None, is_identity_line=False,
                     identity_error=None, is_r2_coefficient=False,
+                    is_direct_loss_estimator=False,
                     x_lims=(None, None), y_lims=(None, None), title=None,
                     x_label=None, y_label=None, x_scale='linear',
                     y_scale='linear', x_tick_format=None, y_tick_format=None,
@@ -591,6 +594,10 @@ def scatter_xy_data(data_xy, data_labels=None, is_identity_line=False,
         Plot coefficient of determination. Only effective if plotting a single
         data set: reference data stored in data_xy[:, 0] and prediction data
         stored in data_xy[:, 1].
+    is_direct_loss_estimator : bool, default=False
+        Plot Direct Loss Estimator (DLE) based on Linear Regression model.
+        Only effective if plotting a single data set: reference data stored in
+        data_xy[:, 0] and prediction data stored in data_xy[:, 1].
     x_lims : tuple, default=(None, None)
         x-axis limits in data coordinates.
     y_lims : tuple, default=(None, None)
@@ -728,15 +735,18 @@ def scatter_xy_data(data_xy, data_labels=None, is_identity_line=False,
     # Plot identity line and identity error bounds
     if is_identity_line:
         # Plot identity line
-        axes.axline((0, 0), slope=1, color='k', linestyle='--',
-                    label='Identity line', zorder=5)
+        axes.axline((0, 0), slope=1, color='k', linestyle='--', zorder=5)
+        # Set identity error bounds label
+        if is_latex:
+            label = f'{identity_error*100:.0f}\\% error'
+        else:
+            label = f'{identity_error*100:.0f}% error'
         # Plot identity error bounds
         if identity_error is not None:            
             x = np.linspace(0.0, axes.axis()[1])
             axes.fill_between(x=x, y1=(1 + identity_error)*x,
                               y2=(1 - identity_error)*x,
-                              color='#BBBBBB',
-                              label=f'{identity_error*100:.0f}\\% error',
+                              color='#BBBBBB', label=label,
                               zorder=-15)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Compute and plot coefficient of determination
@@ -765,6 +775,41 @@ def scatter_xy_data(data_xy, data_labels=None, is_identity_line=False,
         # Plot coefficient of determination
         axes.text(r2_pos, 0.05, r2_str, fontsize=10, transform=axes.transAxes,
                   bbox=text_box_props, zorder=20)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    if is_direct_loss_estimator and n_datasets == 1:
+        # Get reference and predicted data
+        ref_data = data_xy[:, 0].reshape(-1, 1)
+        pred_data = data_xy[:, 1].reshape(-1, 1)
+        # Fit linear regression model (monitored model)
+        monitored_model = sklearn.linear_model.LinearRegression()
+        monitored_model.fit(ref_data, pred_data)
+        # Get monitored model predicted data
+        pred_data_monitored = monitored_model.predict(ref_data)
+        # Compute absolute error between predicted data and monitored model
+        # predictions
+        abs_error = abs(pred_data - pred_data_monitored)
+        # Build input features and targets to predict absolute error
+        features_matrix = np.hstack((ref_data, pred_data_monitored))
+        targets_matrix = abs_error.reshape(-1, 1)
+        # Fit linear regression model (predict absolute error)
+        abs_error_model = sklearn.linear_model.LinearRegression()
+        abs_error_model.fit(features_matrix, targets_matrix)
+        abs_error_estimate = abs_error_model.predict(features_matrix)
+        # Build monitored model prediction bounds
+        pred_data_monitored_lbound = pred_data_monitored - abs_error_estimate
+        pred_data_monitored_ubound = pred_data_monitored + abs_error_estimate
+        # Set label for monitored model predicted data and error bounds
+        if is_latex:
+            label = '$\mathrm{LR} \pm \epsilon_{\mathrm{LR}}$'
+        else:
+            label = 'LR ' + u'\u00B1' + ' error_{LR}'
+        # Plot monitored model predicted data and corresponding bounds
+        axes.plot(ref_data, pred_data_monitored, color='#EE7733',
+                  label=label, zorder=40)
+        axes.plot(ref_data, pred_data_monitored_lbound, color='#EE7733',
+                  ls='--', zorder=40)
+        axes.plot(ref_data, pred_data_monitored_ubound, color='#EE7733',
+                  ls='--', zorder=40)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set legend
     if not all([x is None for x in data_labels]) or identity_error is not None:
