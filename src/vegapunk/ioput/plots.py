@@ -31,7 +31,6 @@ import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
 import cycler
 import sklearn.linear_model
-import sklearn.metrics
 #
 #                                                          Authorship & Credits
 # =============================================================================
@@ -767,14 +766,9 @@ def scatter_xy_data(data_xy, data_labels=None, is_identity_line=False,
         # Set text box properties
         text_box_props = dict(boxstyle='round', facecolor='#ffffff',
                               edgecolor='#000000', alpha=1.0)
-        # Set text box position (right alignment)
-        if np.abs(r2) >= 10:
-            r2_pos = 0.72
-        else:
-            r2_pos = 0.745
         # Plot coefficient of determination
-        axes.text(r2_pos, 0.05, r2_str, fontsize=10, transform=axes.transAxes,
-                  bbox=text_box_props, zorder=20)
+        axes.text(0.97, 0.03, r2_str, fontsize=10, ha='right', va='bottom',
+                  transform=axes.transAxes, bbox=text_box_props, zorder=20)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     if is_direct_loss_estimator and n_datasets == 1:
         # Get reference and predicted data
@@ -800,9 +794,9 @@ def scatter_xy_data(data_xy, data_labels=None, is_identity_line=False,
         pred_data_monitored_ubound = pred_data_monitored + abs_error_estimate
         # Set label for monitored model predicted data and error bounds
         if is_latex:
-            label = '$\mathrm{LR} \pm \epsilon_{\mathrm{LR}}$'
+            label = '$\mathrm{DLE: LR} \pm \epsilon_{\mathrm{LR}}$'
         else:
-            label = 'LR ' + u'\u00B1' + ' error_{LR}'
+            label = 'DLE-LR ' + u'\u00B1' + ' error_{LR}'
         # Plot monitored model predicted data and corresponding bounds
         axes.plot(ref_data, pred_data_monitored, color='#EE7733',
                   label=label, zorder=40)
@@ -1192,6 +1186,11 @@ def plot_histogram(data, data_labels=None, bins=None, bins_range=None,
     """
     # Reset matplotlib internal default style
     plt.rcParams.update(plt.rcParamsDefault)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Check data
+    if not isinstance(data, tuple):
+        raise RuntimeError('Histogram data sets must be provided as a tuple '
+                           'of numpy 1d array.')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Get number of data sets
     n_datasets = len(data)
