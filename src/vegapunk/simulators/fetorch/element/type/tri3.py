@@ -11,8 +11,8 @@ FETri3(Element)
 # Third-party
 import torch
 # Local
-from simulators.fetorch.element.interface import Element
-from simulators.fetorch.element.quadratures import gauss_quadrature
+from simulators.fetorch.element.type.interface import Element
+from simulators.fetorch.element.type.quadratures import gauss_quadrature
 #
 #                                                          Authorship & Credits
 # =============================================================================

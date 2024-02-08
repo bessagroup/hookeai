@@ -1,9 +1,9 @@
-"""FETorch: 8-Node Hexahedral Finite Element.
+"""FETorch: 20-Node Hexahedral Finite Element.
 
 Classes
 -------
-FEHexa8(Element)
-    FETorch finite element: 8-Node Hexahedral.
+FEHexa20(Element)
+    FETorch finite element: 20-Node Hexahedral.
 """
 #
 #                                                                       Modules
@@ -11,8 +11,8 @@ FEHexa8(Element)
 # Third-party
 import torch
 # Local
-from simulators.fetorch.element.interface import Element
-from simulators.fetorch.element.quadratures import gauss_quadrature
+from simulators.fetorch.element.type.interface import Element
+from simulators.fetorch.element.type.quadratures import gauss_quadrature
 #
 #                                                          Authorship & Credits
 # =============================================================================
@@ -22,8 +22,8 @@ __status__ = 'Planning'
 # =============================================================================
 #
 # =============================================================================
-class FEHexa8(Element):
-    """FETorch finite element: 8-Node Hexahedral.
+class FEHexa20(Element):
+    """FETorch finite element: 20-Node Hexahedral.
     
     Attributes
     ----------
@@ -57,18 +57,18 @@ class FEHexa8(Element):
     _admissible_gauss_quadratures()
         Get admissible Gauss integration quadratures.
     """
-    def __init__(self, n_gauss=8):
+    def __init__(self, n_gauss=27):
         """Constructor.
         
         Parameters
         ----------
-        n_gauss : int, default=8
+        n_gauss : int, default=27
             Number of Gauss integration points.
         """
         # Set name
-        self._name = 'hexa8'
+        self._name = 'hexa20'
         # Set number of nodes
-        self._n_node = 8
+        self._n_node = 20
         # Set number of degrees of freedom per node
         self._n_dof_node = 3
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -98,6 +98,18 @@ class FEHexa8(Element):
         node_local_coord[5, :] = torch.tensor((1.0, -1.0, 1.0))
         node_local_coord[6, :] = torch.tensor((1.0, 1.0, 1.0))
         node_local_coord[7, :] = torch.tensor((-1.0, 1.0, 1.0))
+        node_local_coord[8, :] = torch.tensor((0.0, -1.0, -1.0))
+        node_local_coord[9, :] = torch.tensor((1.0, 0.0, -1.0))
+        node_local_coord[10, :] = torch.tensor((0.0, 1.0, -1.0))
+        node_local_coord[11, :] = torch.tensor((-1.0, 0.0, -1.0))
+        node_local_coord[12, :] = torch.tensor((-1.0, -1.0, 0.0))
+        node_local_coord[13, :] = torch.tensor((1.0, -1.0, 0.0))
+        node_local_coord[14, :] = torch.tensor((1.0, 1.0, 0.0))
+        node_local_coord[15, :] = torch.tensor((-1.0, 1.0, 0.0))
+        node_local_coord[16, :] = torch.tensor((0.0, -1.0, 1.0))
+        node_local_coord[17, :] = torch.tensor((1.0, 0.0, 1.0))
+        node_local_coord[18, :] = torch.tensor((0.0, 1.0, 1.0))
+        node_local_coord[19, :] = torch.tensor((-1.0, 0.0, 1.0))
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Store nodes local coordinates
         self._node_local_coord = node_local_coord
@@ -122,14 +134,34 @@ class FEHexa8(Element):
         # Initialize shape functions
         shape_functions = torch.zeros((self._n_node), dtype=torch.float)
         # Compute shape functions at given local coordinates
-        shape_functions[0] = (1.0/8.0)*(1.0 - c1)*(1.0 - c2)*(1.0 - c3)
-        shape_functions[1] = (1.0/8.0)*(1.0 + c1)*(1.0 - c2)*(1.0 - c3)
-        shape_functions[2] = (1.0/8.0)*(1.0 + c1)*(1.0 + c2)*(1.0 - c3)
-        shape_functions[3] = (1.0/8.0)*(1.0 - c1)*(1.0 + c2)*(1.0 - c3)
-        shape_functions[4] = (1.0/8.0)*(1.0 - c1)*(1.0 - c2)*(1.0 + c3)
-        shape_functions[5] = (1.0/8.0)*(1.0 + c1)*(1.0 - c2)*(1.0 + c3)
-        shape_functions[6] = (1.0/8.0)*(1.0 + c1)*(1.0 + c2)*(1.0 + c3)
-        shape_functions[7] = (1.0/8.0)*(1.0 - c1)*(1.0 + c2)*(1.0 + c3)
+        shape_functions[0] = \
+            (1.0/8.0)*(1.0 - c1)*(1.0 - c2)*(1.0 - c3)*(-2.0 - c1 - c2 - c3)
+        shape_functions[1] = \
+            (1.0/8.0)*(1.0 + c1)*(1.0 - c2)*(1.0 - c3)*(-2.0 + c1 - c2 - c3)
+        shape_functions[2] = \
+            (1.0/8.0)*(1.0 + c1)*(1.0 + c2)*(1.0 - c3)*(-2.0 + c1 + c2 - c3)
+        shape_functions[3] = \
+            (1.0/8.0)*(1.0 - c1)*(1.0 + c2)*(1.0 - c3)*(-2.0 - c1 + c2 - c3)
+        shape_functions[4] = \
+            (1.0/8.0)*(1.0 - c1)*(1.0 - c2)*(1.0 + c3)*(-2.0 - c1 - c2 + c3)
+        shape_functions[5] = \
+            (1.0/8.0)*(1.0 + c1)*(1.0 - c2)*(1.0 + c3)*(-2.0 + c1 - c2 + c3)
+        shape_functions[6] = \
+            (1.0/8.0)*(1.0 + c1)*(1.0 + c2)*(1.0 + c3)*(-2.0 + c1 + c2 + c3)
+        shape_functions[7] = \
+            (1.0/8.0)*(1.0 - c1)*(1.0 + c2)*(1.0 + c3)*(-2.0 - c1 + c2 + c3)
+        shape_functions[8] = 0.25*(1.0 - c1**2)*(1.0 - c2)*(1.0 - c3)
+        shape_functions[9] = 0.25*(1.0 + c1)*(1.0 - c2**2)*(1.0 - c3)
+        shape_functions[10] = 0.25*(1.0 - c1**2)*(1.0 + c2)*(1.0 - c3)
+        shape_functions[11] = 0.25*(1.0 - c1)*(1.0 - c2**2)*(1.0 - c3)
+        shape_functions[12] = 0.25*(1.0 - c1)*(1.0 - c2)*(1.0 - c3**2)
+        shape_functions[13] = 0.25*(1.0 + c1)*(1.0 - c2)*(1.0 - c3**2)
+        shape_functions[14] = 0.25*(1.0 + c1)*(1.0 + c2)*(1.0 - c3**2)
+        shape_functions[15] = 0.25*(1.0 - c1)*(1.0 + c2)*(1.0 - c3**2)
+        shape_functions[16] = 0.25*(1.0 - c1**2)*(1.0 - c2)*(1.0 + c3)
+        shape_functions[17] = 0.25*(1.0 + c1)*(1.0 - c2**2)*(1.0 + c3)
+        shape_functions[18] = 0.25*(1.0 - c1**2)*(1.0 + c2)*(1.0 + c3)
+        shape_functions[19] = 0.25*(1.0 - c1)*(1.0 - c2**2)*(1.0 + c3)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         return shape_functions
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -157,37 +189,85 @@ class FEHexa8(Element):
             torch.zeros((self._n_node, 3), dtype=torch.float)
         # Compute shape functions at given local coordinates
         shape_function_deriv[0, :] = torch.tensor(
-            (-(1.0/8.0)*(1.0 - c2)*(1.0 - c3),
-             -(1.0/8.0)*(1.0 - c1)*(1.0 - c3),
-             -(1.0/8.0)*(1.0 - c1)*(1.0 - c2)))
+            (0.25*(c1 + 0.5*(c2 + c3 + 1.0))*(c2 - 1.0)*(c3 - 1.0),
+             0.25*(c2 + 0.5*(c1 + c3 + 1.0))*(c1 - 1.0)*(c3 - 1.0),
+             0.25*(c3 + 0.5*(c1 + c2 + 1.0))*(c1 - 1.0)*(c2 - 1.0)))
         shape_function_deriv[1, :] = torch.tensor(
-            ((1.0/8.0)*(1.0 - c2)*(1.0 - c3),
-             -(1.0/8.0)*(1.0 + c1)*(1.0 - c3),
-             -(1.0/8.0)*(1.0 + c1)*(1.0 - c2)))
+            (0.25*(c1 - 0.5*(c2 + c3 + 1.0))*(c2 - 1.0)*(c3 - 1.0),
+             -0.25*(c2 - 0.5*(c1 - c3 - 1.0))*(c1 + 1.0)*(c3 - 1.0),
+             -0.25*(c3 - 0.5*(c1 - c2 - 1.0))*(c1 + 1.0)*(c2 - 1.0)))
         shape_function_deriv[2, :] = torch.tensor(
-            ((1.0/8.0)*(1.0 + c2)*(1.0 - c3),
-             (1.0/8.0)*(1.0 + c1)*(1.0 - c3),
-             -(1.0/8.0)*(1.0 + c1)*(1.0 + c2)))
+            (-0.25*(c1 + 0.5*(c2 - c3 - 1.0))*(c2 + 1.0)*(c3 - 1.0),
+             -0.25*(c2 + 0.5*(c1 - c3 - 1.0))*(c1 + 1.0)*(c3 - 1.0),
+             0.25*(c3 - 0.5*(c1 + c2 - 1.0))*(c1 + 1.0)*(c2 + 1.0)))
         shape_function_deriv[3, :] = torch.tensor(
-            (-(1.0/8.0)*(1.0 + c2)*(1.0 - c3),
-             (1.0/8.0)*(1.0 - c1)*(1.0 - c3),
-             -(1.0/8.0)*(1.0 - c1)*(1.0 + c2)))
+            (-0.25*(c1 - 0.5*(c2 - c3 - 1.0))*(c2 + 1.0)*(c3 - 1.0),
+             0.25*(c2 - 0.5*(c1 + c3 + 1.0))*(c1 - 1.0)*(c3 - 1.0),
+             -0.25*(c3 + 0.5*(c1 - c2 + 1.0))*(c1 - 1.0)*(c2 + 1.0)))
         shape_function_deriv[4, :] = torch.tensor(
-            (-(1.0/8.0)*(1.0 - c2)*(1.0 + c3),
-             -(1.0/8.0)*(1.0 - c1)*(1.0 + c3),
-             (1.0/8.0)*(1.0 - c1)*(1.0 - c2)))
+            (-0.25*(c1 + 0.5*(c2 - c3 + 1.0))*(c2 - 1.0)*(c3 + 1.0),
+             -0.25*(c2 + 0.5*(c1 - c3 + 1.0))*(c1 - 1.0)*(c3 + 1.0),
+             0.25*(c3 - 0.5*(c1 + c2 + 1.0))*(c1 - 1.0)*(c2 - 1.0)))
         shape_function_deriv[5, :] = torch.tensor(
-            ((1.0/8.0)*(1.0 - c2)*(1.0 + c3),
-             -(1.0/8.0)*(1.0 + c1)*(1.0 + c3),
-             (1.0/8.0)*(1.0 + c1)*(1.0 - c2)))
+            (-0.25*(c1 - 0.5*(c2 - c3 + 1.0))*(c2 - 1.0)*(c3 + 1.0),
+             0.25*(c2 - 0.5*(c1 + c3 - 1.0))*(c1 + 1.0)*(c3 + 1.0),
+             -0.25*(c3 + 0.5*(c1 - c2 - 1.0))*(c1 + 1.0)*(c2 - 1.0)))
         shape_function_deriv[6, :] = torch.tensor(
-            ((1.0/8.0)*(1.0 + c2)*(1.0 + c3),
-             (1.0/8.0)*(1.0 + c1)*(1.0 + c3),
-             (1.0/8.0)*(1.0 + c1)*(1.0 + c2)))
+            (0.25*(c1 + 0.5*(c2 + c3 - 1.0))*(c2 + 1.0)*(c3 + 1.0),
+             0.25*(c2 + 0.5*(c1 + c3 - 1.0))*(c1 + 1.0)*(c3 + 1.0),
+             0.25*(c3 + 0.5*(c1 + c2 - 1.0))*(c1 + 1.0)*(c2 + 1.0)))
         shape_function_deriv[7, :] = torch.tensor(
-            (-(1.0/8.0)*(1.0 + c2)*(1.0 + c3),
-             (1.0/8.0)*(1.0 - c1)*(1.0 + c3),
-             (1.0/8.0)*(1.0 - c1)*(1.0 + c2)))
+            (0.25*(c1 - 0.5*(c2 + c3 - 1.0))*(c2 + 1.0)*(c3 + 1.0),
+             -0.25*(c2 - 0.5*(c1 - c3 + 1.0))*(c1 - 1.0)*(c3 + 1.0),
+             -0.25*(c3 - 0.5*(c1 - c2 + 1.0))*(c1 - 1.0)*(c2 + 1.0)))
+        shape_function_deriv[8, :] = torch.tensor(
+            (-0.5*c1*(c2 - 1.0)*(c3 - 1.0),
+             -0.25*(c1**2 - 1.0)*(c3 - 1.0),
+             -0.25*(c1**2 - 1.0)*(c2 - 1.0)))
+        shape_function_deriv[9, :] = torch.tensor(
+            (0.25*(c2**2 - 1.0)*(c3 - 1.0),
+             0.5*c2*(c1 + 1.0)*(c3 - 1.0),
+             0.25*(c1 + 1.0)*(c2**2 - 1.0)))
+        shape_function_deriv[10, :] = torch.tensor(
+            (0.5*c1*(c2 + 1.0)*(c3 - 1.0),
+              0.25*(c1**2 - 1.0)*(c3 - 1.0),
+              0.25*(c1**2 - 1.0)*(c2 + 1.0)))
+        shape_function_deriv[11, :] = torch.tensor(
+            (-0.25*(c2**2 - 1.0)*(c3 - 1.0),
+              -0.5*c2*(c1 - 1.0)*(c3 - 1.0),
+              -0.25*(c1 - 1.0)*(c2**2 - 1.0)))
+        shape_function_deriv[12, :] = torch.tensor(
+            (-0.25*(c2 - 1.0)*(c3**2 - 1.0),
+              -0.25*(c1 - 1.0)*(c3**2 - 1.0),
+              -0.5*c3*(c1 - 1.0)*(c2 - 1.0)))
+        shape_function_deriv[13, :] = torch.tensor(
+            (0.25*(c2 - 1.0)*(c3**2 - 1.0),
+              0.25*(c1 + 1.0)*(c3**2 - 1.0),
+              0.5*c3*(c1 + 1.0)*(c2 - 1.0)))
+        shape_function_deriv[14, :] = torch.tensor(
+            (-0.25*(c2 + 1.0)*(c3**2 - 1.0),
+              -0.25*(c1 + 1.0)*(c3**2 - 1.0),
+              -0.5*c3*(c1 + 1.0)*(c2 + 1.0)))
+        shape_function_deriv[15, :] = torch.tensor(
+            (0.25*(c2 + 1.0)*(c3**2 - 1.0),
+              0.25*(c1 - 1.0)*(c3**2 - 1.0),
+              0.5*c3*(c1 - 1.0)*(c2 + 1.0)))
+        shape_function_deriv[16, :] = torch.tensor(
+            (0.5*c1*(c2 - 1.0)*(c3 + 1.0),
+              0.25*(c1**2 - 1.0)*(c3 + 1.0),
+              0.25*(c1**2 - 1.0)*(c2 - 1.0)))
+        shape_function_deriv[17, :] = torch.tensor(
+            (-0.25*(c2**2 - 1.0)*(c3 + 1.0),
+              -0.5*c2*(c1 + 1.0)*(c3 + 1.0),
+              -0.25*(c1 + 1.0)*(c2**2 - 1.0)))
+        shape_function_deriv[18, :] = torch.tensor(
+            (-0.5*c1*(c2 + 1.0)*(c3 + 1.0),
+              -0.25*(c1**2 - 1.0)*(c3 + 1.0),
+              -0.25*(c1**2 - 1.0)*(c2 + 1.0)))
+        shape_function_deriv[19, :] = torch.tensor(
+            (0.25*(c2**2 - 1.0)*(c3 + 1.0),
+              0.5*c2*(c1 - 1.0)*(c3 + 1.0),
+              0.25*(c1 - 1.0)*(c2**2 - 1.0)))
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         return shape_function_deriv
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -202,6 +282,6 @@ class FEHexa8(Element):
             integration points).
         """
         # Set admissible Gauss integration quadratures
-        admissible_n_gauss = (1, 8)
+        admissible_n_gauss = (8, 27)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         return admissible_n_gauss

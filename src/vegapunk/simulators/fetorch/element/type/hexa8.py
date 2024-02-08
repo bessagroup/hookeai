@@ -1,9 +1,9 @@
-"""FETorch: 10-Node Tetrahedral Finite Element.
+"""FETorch: 8-Node Hexahedral Finite Element.
 
 Classes
 -------
-FETetra10(Element)
-    FETorch finite element: 10-Node Tetrahedral.
+FEHexa8(Element)
+    FETorch finite element: 8-Node Hexahedral.
 """
 #
 #                                                                       Modules
@@ -11,8 +11,8 @@ FETetra10(Element)
 # Third-party
 import torch
 # Local
-from simulators.fetorch.element.interface import Element
-from simulators.fetorch.element.quadratures import gauss_quadrature
+from simulators.fetorch.element.type.interface import Element
+from simulators.fetorch.element.type.quadratures import gauss_quadrature
 #
 #                                                          Authorship & Credits
 # =============================================================================
@@ -22,8 +22,8 @@ __status__ = 'Planning'
 # =============================================================================
 #
 # =============================================================================
-class FETetra10(Element):
-    """FETorch finite element: 10-Node Tetrahedral.
+class FEHexa8(Element):
+    """FETorch finite element: 8-Node Hexahedral.
     
     Attributes
     ----------
@@ -57,18 +57,18 @@ class FETetra10(Element):
     _admissible_gauss_quadratures()
         Get admissible Gauss integration quadratures.
     """
-    def __init__(self, n_gauss=4):
+    def __init__(self, n_gauss=8):
         """Constructor.
         
         Parameters
         ----------
-        n_gauss : int, default=4
+        n_gauss : int, default=8
             Number of Gauss integration points.
         """
         # Set name
-        self._name = 'tetra10'
+        self._name = 'hexa8'
         # Set number of nodes
-        self._n_node = 10
+        self._n_node = 8
         # Set number of degrees of freedom per node
         self._n_dof_node = 3
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -83,23 +83,21 @@ class FETetra10(Element):
             self._n_gauss = int(n_gauss)
         # Get Gaussian quadrature points local coordinates and weights
         self._gp_coords, self._gp_weights = \
-            gauss_quadrature(n_gauss, domain='tetrahedral')
+            gauss_quadrature(n_gauss, domain='hexahedral')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     def _set_nodes_local_coords(self):
         """Set nodes local coordinates."""
         # Initialize local coordinates
         node_local_coord = torch.zeros((self._n_node, 3), dtype=torch.float)
         # Set local coordinates
-        node_local_coord[0, :] = torch.tensor((0.0, 0.0, 0.0))
-        node_local_coord[1, :] = torch.tensor((1.0, 0.0, 0.0))
-        node_local_coord[2, :] = torch.tensor((0.0, 1.0, 0.0))
-        node_local_coord[3, :] = torch.tensor((0.0, 0.0, 1.0))
-        node_local_coord[4, :] = torch.tensor((0.5, 0.0, 0.0))
-        node_local_coord[5, :] = torch.tensor((0.5, 0.5, 0.0))
-        node_local_coord[6, :] = torch.tensor((0.0, 0.5, 0.0))
-        node_local_coord[7, :] = torch.tensor((0.0, 0.0, 0.5))
-        node_local_coord[8, :] = torch.tensor((0.5, 0.0, 0.5))
-        node_local_coord[9, :] = torch.tensor((0.0, 0.5, 0.5))
+        node_local_coord[0, :] = torch.tensor((-1.0, -1.0, -1.0))
+        node_local_coord[1, :] = torch.tensor((1.0, -1.0, -1.0))
+        node_local_coord[2, :] = torch.tensor((1.0, 1.0, -1.0))
+        node_local_coord[3, :] = torch.tensor((-1.0, 1.0, -1.0))
+        node_local_coord[4, :] = torch.tensor((-1.0, -1.0, 1.0))
+        node_local_coord[5, :] = torch.tensor((1.0, -1.0, 1.0))
+        node_local_coord[6, :] = torch.tensor((1.0, 1.0, 1.0))
+        node_local_coord[7, :] = torch.tensor((-1.0, 1.0, 1.0))
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Store nodes local coordinates
         self._node_local_coord = node_local_coord
@@ -124,16 +122,14 @@ class FETetra10(Element):
         # Initialize shape functions
         shape_functions = torch.zeros((self._n_node), dtype=torch.float)
         # Compute shape functions at given local coordinates
-        shape_functions[0] = (1.0 - c1 - c2 - c3)*(1.0 - 2.0*(c1 + c2 + c3))
-        shape_functions[1] = c1*(2.0*c1 - 1.0)
-        shape_functions[2] = c2*(2.0*c2 - 1.0)
-        shape_functions[3] = c3*(2.0*c3 - 1.0)
-        shape_functions[4] = 4.0*c1*(1.0 - c1 - c2 - c3)
-        shape_functions[5] = 4.0*c1*c2
-        shape_functions[6] = 4.0*c2*(1.0 - c1 - c2 - c3)
-        shape_functions[7] = 4.0*c3*(1.0 - c1 - c2 - c3)
-        shape_functions[8] = 4.0*c1*c3
-        shape_functions[9] = 4.0*c2*c3
+        shape_functions[0] = (1.0/8.0)*(1.0 - c1)*(1.0 - c2)*(1.0 - c3)
+        shape_functions[1] = (1.0/8.0)*(1.0 + c1)*(1.0 - c2)*(1.0 - c3)
+        shape_functions[2] = (1.0/8.0)*(1.0 + c1)*(1.0 + c2)*(1.0 - c3)
+        shape_functions[3] = (1.0/8.0)*(1.0 - c1)*(1.0 + c2)*(1.0 - c3)
+        shape_functions[4] = (1.0/8.0)*(1.0 - c1)*(1.0 - c2)*(1.0 + c3)
+        shape_functions[5] = (1.0/8.0)*(1.0 + c1)*(1.0 - c2)*(1.0 + c3)
+        shape_functions[6] = (1.0/8.0)*(1.0 + c1)*(1.0 + c2)*(1.0 + c3)
+        shape_functions[7] = (1.0/8.0)*(1.0 - c1)*(1.0 + c2)*(1.0 + c3)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         return shape_functions
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -161,27 +157,37 @@ class FETetra10(Element):
             torch.zeros((self._n_node, 3), dtype=torch.float)
         # Compute shape functions at given local coordinates
         shape_function_deriv[0, :] = torch.tensor(
-            (4.0*(c1 + c2 + c3) - 3.0,
-             4.0*(c1 + c2 + c3) - 3.0,
-             4.0*(c1 + c2 + c3) - 3.0))
+            (-(1.0/8.0)*(1.0 - c2)*(1.0 - c3),
+             -(1.0/8.0)*(1.0 - c1)*(1.0 - c3),
+             -(1.0/8.0)*(1.0 - c1)*(1.0 - c2)))
         shape_function_deriv[1, :] = torch.tensor(
-            (4.0*c1 - 1.0, 0.0, 0.0))
+            ((1.0/8.0)*(1.0 - c2)*(1.0 - c3),
+             -(1.0/8.0)*(1.0 + c1)*(1.0 - c3),
+             -(1.0/8.0)*(1.0 + c1)*(1.0 - c2)))
         shape_function_deriv[2, :] = torch.tensor(
-            (0.0, 4.0*c2 - 1.0, 0.0))
+            ((1.0/8.0)*(1.0 + c2)*(1.0 - c3),
+             (1.0/8.0)*(1.0 + c1)*(1.0 - c3),
+             -(1.0/8.0)*(1.0 + c1)*(1.0 + c2)))
         shape_function_deriv[3, :] = torch.tensor(
-            (0.0, 0.0, 4.0*c3 - 1.0))
+            (-(1.0/8.0)*(1.0 + c2)*(1.0 - c3),
+             (1.0/8.0)*(1.0 - c1)*(1.0 - c3),
+             -(1.0/8.0)*(1.0 - c1)*(1.0 + c2)))
         shape_function_deriv[4, :] = torch.tensor(
-            (4.0 - 8.0*c1 - 4.0*c2 - 4.0*c3, -4.0*c1, -4.0*c1))
+            (-(1.0/8.0)*(1.0 - c2)*(1.0 + c3),
+             -(1.0/8.0)*(1.0 - c1)*(1.0 + c3),
+             (1.0/8.0)*(1.0 - c1)*(1.0 - c2)))
         shape_function_deriv[5, :] = torch.tensor(
-            (4.0*c2, 4.0*c1, 0.0))
+            ((1.0/8.0)*(1.0 - c2)*(1.0 + c3),
+             -(1.0/8.0)*(1.0 + c1)*(1.0 + c3),
+             (1.0/8.0)*(1.0 + c1)*(1.0 - c2)))
         shape_function_deriv[6, :] = torch.tensor(
-            (-4.0*c2, 4.0 - 4.0*c1 - 8.0*c2 - 4.0*c3, -4.0*c2))
+            ((1.0/8.0)*(1.0 + c2)*(1.0 + c3),
+             (1.0/8.0)*(1.0 + c1)*(1.0 + c3),
+             (1.0/8.0)*(1.0 + c1)*(1.0 + c2)))
         shape_function_deriv[7, :] = torch.tensor(
-            (-4.0*c3, -4.0*c3, 4.0 - 4.0*c1 - 4.0*c2 - 8.0*c3))
-        shape_function_deriv[8, :] = torch.tensor(
-            (4.0*c3, 0.0, 4.0*c1))
-        shape_function_deriv[9, :] = torch.tensor(
-            (0.0, 4.0*c3, 4.0*c2))
+            (-(1.0/8.0)*(1.0 + c2)*(1.0 + c3),
+             (1.0/8.0)*(1.0 - c1)*(1.0 + c3),
+             (1.0/8.0)*(1.0 - c1)*(1.0 + c2)))
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         return shape_function_deriv
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -196,6 +202,6 @@ class FETetra10(Element):
             integration points).
         """
         # Set admissible Gauss integration quadratures
-        admissible_n_gauss = (4,)
+        admissible_n_gauss = (1, 8)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         return admissible_n_gauss

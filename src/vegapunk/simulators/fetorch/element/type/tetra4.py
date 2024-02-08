@@ -1,9 +1,9 @@
-"""FETorch: 6-Node Triangular Finite Element.
+"""FETorch: 4-Node Tetrahedral Finite Element.
 
 Classes
 -------
-FETri6(Element)
-    FETorch finite element: 6-Node Triangular.
+FETetra4(Element)
+    FETorch finite element: 4-Node Tetrahedral.
 """
 #
 #                                                                       Modules
@@ -11,8 +11,8 @@ FETri6(Element)
 # Third-party
 import torch
 # Local
-from simulators.fetorch.element.interface import Element
-from simulators.fetorch.element.quadratures import gauss_quadrature
+from simulators.fetorch.element.type.interface import Element
+from simulators.fetorch.element.type.quadratures import gauss_quadrature
 #
 #                                                          Authorship & Credits
 # =============================================================================
@@ -22,8 +22,8 @@ __status__ = 'Planning'
 # =============================================================================
 #
 # =============================================================================
-class FETri6(Element):
-    """FETorch finite element: 6-Node Triangular.
+class FETetra4(Element):
+    """FETorch finite element: 4-Node Tetrahedral.
     
     Attributes
     ----------
@@ -57,45 +57,43 @@ class FETri6(Element):
     _admissible_gauss_quadratures()
         Get admissible Gauss integration quadratures.
     """
-    def __init__(self, n_gauss=3):
+    def __init__(self, n_gauss=4):
         """Constructor.
         
         Parameters
         ----------
-        n_gauss : int, default=3
+        n_gauss : int, default=4
             Number of Gauss integration points.
         """
         # Set name
-        self._name = 'tri6'
+        self._name = 'tetra4'
         # Set number of nodes
-        self._n_node = 6
+        self._n_node = 4
         # Set number of degrees of freedom per node
-        self._n_dof_node = 2
+        self._n_dof_node = 3
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Set nodes local coordinates
         self._set_nodes_local_coords()
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Set number of Gauss integration points
         if int(n_gauss) not in self._admissible_gauss_quadratures():
-            raise RuntimeError(f'The 2D {n_gauss}-point Gauss quadrature is '
+            raise RuntimeError(f'The 3D {n_gauss}-point Gauss quadrature is '
                                f'not available for element \'{self._name}\'.')
         else:
             self._n_gauss = int(n_gauss)
         # Get Gaussian quadrature points local coordinates and weights
         self._gp_coords, self._gp_weights = \
-            gauss_quadrature(n_gauss, domain='triangular')
+            gauss_quadrature(n_gauss, domain='tetrahedral')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     def _set_nodes_local_coords(self):
         """Set nodes local coordinates."""
         # Initialize local coordinates
-        node_local_coord = torch.zeros((self._n_node, 2), dtype=torch.float)
+        node_local_coord = torch.zeros((self._n_node, 3), dtype=torch.float)
         # Set local coordinates
-        node_local_coord[0, :] = torch.tensor((0.0, 0.0))
-        node_local_coord[1, :] = torch.tensor((1.0, 0.0))
-        node_local_coord[2, :] = torch.tensor((0.0, 1.0))
-        node_local_coord[3, :] = torch.tensor((0.5, 0.0))
-        node_local_coord[4, :] = torch.tensor((0.5, 0.5))
-        node_local_coord[5, :] = torch.tensor((0.0, 0.5))
+        node_local_coord[0, :] = torch.tensor((0.0, 0.0, 0.0))
+        node_local_coord[1, :] = torch.tensor((1.0, 0.0, 0.0))
+        node_local_coord[2, :] = torch.tensor((0.0, 1.0, 0.0))
+        node_local_coord[3, :] = torch.tensor((0.0, 0.0, 1.0))
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Store nodes local coordinates
         self._node_local_coord = node_local_coord
@@ -115,17 +113,15 @@ class FETri6(Element):
             according with element nodes.
         """
         # Unpack local coordinates
-        c1, c2 = local_coord
+        c1, c2, c3 = local_coord
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Initialize shape functions
         shape_functions = torch.zeros((self._n_node), dtype=torch.float)
         # Compute shape functions at given local coordinates
-        shape_functions[0] = -(1.0 - c1 - c2)*(1.0 - 2.0*(1.0 - c1 - c2))
-        shape_functions[1] = -c1*(1.0 - 2.0*c1)
-        shape_functions[2] = -c2*(1.0 - 2.0*c2)
-        shape_functions[3] = 4.0*c1*(1.0 - c1 - c2)
-        shape_functions[4] = 4.0*c1*c2
-        shape_functions[5] = 4.0*c2*(1.0 - c1 - c2)
+        shape_functions[0] = 1.0 - c1 - c2 - c3
+        shape_functions[1] = c1
+        shape_functions[2] = c2
+        shape_functions[3] = c3
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         return shape_functions
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -146,24 +142,16 @@ class FETri6(Element):
             shape_function_deriv[i, j].
         """
         # Unpack local coordinates
-        c1, c2 = local_coord
+        c1, c2, c3 = local_coord
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Initialize shape functions
         shape_function_deriv = \
-            torch.zeros((self._n_node, 2), dtype=torch.float)
+            torch.zeros((self._n_node, 3), dtype=torch.float)
         # Compute shape functions at given local coordinates
-        shape_function_deriv[0, :] = torch.tensor(
-            (1.0 - 4.0*(1.0 - c1 - c2), 1.0 - 4.0*(1.0 - c1 - c2)))
-        shape_function_deriv[1, :] = torch.tensor(
-            (4.0*c1 - 1.0, 0.0))
-        shape_function_deriv[2, :] = torch.tensor(
-            (0.0, 4.0*c2 - 1.0))
-        shape_function_deriv[3, :] = torch.tensor(
-            (4.0*(1.0 - 2.0*c1 - c2), -4.0*c1))
-        shape_function_deriv[4, :] = torch.tensor(
-            (4.0*c2, 4.0*c1))
-        shape_function_deriv[5, :] = torch.tensor(
-            (-4.0*c2, 4.0*(1.0 - c1 - 2.0*c2)))
+        shape_function_deriv[0, :] = torch.tensor((-1.0, -1.0, -1.0))
+        shape_function_deriv[1, :] = torch.tensor((1.0, 0.0, 0.0))
+        shape_function_deriv[2, :] = torch.tensor((0.0, 1.0, 0.0))
+        shape_function_deriv[3, :] = torch.tensor((0.0, 0.0, 1.0))
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         return shape_function_deriv
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -178,6 +166,6 @@ class FETri6(Element):
             integration points).
         """
         # Set admissible Gauss integration quadratures
-        admissible_n_gauss = (1, 3)
+        admissible_n_gauss = (1, 4)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         return admissible_n_gauss
