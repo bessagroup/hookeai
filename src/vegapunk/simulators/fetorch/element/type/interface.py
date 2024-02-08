@@ -32,9 +32,9 @@ class Element(ABC):
         Number of nodes.
     _n_dof_node : int
         Number of degrees of freedom per node.
-    _node_local_coord : dict
-        Nodes (key, str[int]) local coordinates (item, torch.Tensor(1d)). Nodes
-        are labeled from 1 to n_node.
+    _node_local_coord : torch.Tensor(2d)
+        Nodes local coordinates stored as torch.Tensor(2d) of shape
+        (n_node, n_dof_node).
     _n_gauss : int
         Number of Gauss integration points.
     _gp_coords : dict
@@ -52,11 +52,13 @@ class Element(ABC):
         *abstract*: Set nodes local coordinates.
     eval_shapefun(self, local_coord)
         *abstract*: Evaluate shape functions at given local coordinates.
-    eval_shapefun_deriv(self, local_coord)
-        *abstract*: Evaluate shape functions derivates at given local
+    eval_shapefun_local_deriv(self, local_coord)
+        *abstract*: Evaluate shape functions local derivates at given local
         coordinates.
     _admissible_gauss_quadratures()
         *abstract*: Get admissible Gauss integration quadratures.
+    get_n_dof_node(self)
+        Get number of degrees of freedom per node.
     check_shape_functions_properties(self)
         Check if element shape functions satisfy known properties.
     """
@@ -94,21 +96,22 @@ class Element(ABC):
         pass
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     @abstractmethod
-    def eval_shapefun_deriv(self, local_coord):
-        """Evaluate shape functions derivates at given local coordinates.
+    def eval_shapefun_local_deriv(self, local_coord):
+        """Evaluate shape functions local derivates at given local coordinates.
         
         Parameters
         ----------
         local_coord : torch.Tensor(1d)
-            Local coordinates of point where shape functions are evaluated.
+            Local coordinates of point where shape functions local derivatives
+            are evaluated.
             
         Returns
         -------
         shape_function_deriv : torch.Tensor(2d)
-            Shape functions derivatives evaluated at given local coordinates,
-            sorted according with element nodes. Derivative of the i-th shape
-            function with respect to the j-th local coordinate is stored in
-            shape_function_deriv[i, j].
+            Shape functions local derivatives evaluated at given local
+            coordinates, sorted according with element nodes. Derivative of the
+            i-th shape function with respect to the j-th local coordinate is
+            stored in shape_function_deriv[i, j].
         """
         pass
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -124,6 +127,16 @@ class Element(ABC):
             integration points).
         """
         pass
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    def get_n_dof_node(self):
+        """Get number of degrees of freedom per node.
+        
+        Returns
+        -------
+        n_dof_node : int
+            Number of degrees of freedom per node.
+        """
+        return self._n_dof_node
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     def check_shape_functions_properties(self):
         """Check if element shape functions satisfy known properties."""
@@ -176,7 +189,7 @@ class Element(ABC):
         local_coord = torch.rand(size=(self._n_dof_node,))
         # Compute shape functions derivatives sum
         sum_shape_functions_deriv = \
-            torch.sum(self.eval_shapefun_deriv(local_coord))
+            torch.sum(self.eval_shapefun_local_deriv(local_coord))
         # Check property
         if not torch.isclose(sum_shape_functions_deriv, torch.tensor(0.0),
                              atol=1e-05):

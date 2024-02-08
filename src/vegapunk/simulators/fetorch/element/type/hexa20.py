@@ -33,9 +33,9 @@ class FEHexa20(Element):
         Number of nodes.
     _n_dof_node : int
         Number of degrees of freedom per node.
-    _node_local_coord : dict
-        Nodes (key, str[int]) local coordinates (item, torch.Tensor(1d)). Nodes
-        are labeled from 1 to n_node.
+    _node_local_coord : torch.Tensor(2d)
+        Nodes local coordinates stored as torch.Tensor(2d) of shape
+        (n_node, n_dof_node).
     _n_gauss : int
         Number of Gauss integration points.
     _gp_coords : dict
@@ -52,8 +52,8 @@ class FEHexa20(Element):
         Set nodes local coordinates.
     eval_shapefun(self, local_coord)
         Evaluate shape functions at given local coordinates.
-    eval_shapefun_deriv(self, local_coord)
-        Evaluate shape functions derivates at given local coordinates.
+    eval_shapefun_local_deriv(self, local_coord)
+        Evaluate shape functions local derivates at given local coordinates.
     _admissible_gauss_quadratures()
         Get admissible Gauss integration quadratures.
     """
@@ -165,21 +165,22 @@ class FEHexa20(Element):
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         return shape_functions
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    def eval_shapefun_deriv(self, local_coord):
-        """Evaluate shape functions derivates at given local coordinates.
+    def eval_shapefun_local_deriv(self, local_coord):
+        """Evaluate shape functions local derivates at given local coordinates.
         
         Parameters
         ----------
         local_coord : torch.Tensor(1d)
-            Local coordinates of point where shape functions are evaluated.
+            Local coordinates of point where shape functions local derivatives
+            are evaluated.
             
         Returns
         -------
         shape_function_deriv : torch.Tensor(2d)
-            Shape functions derivatives evaluated at given local coordinates,
-            sorted according with element nodes. Derivative of the i-th shape
-            function with respect to the j-th local coordinate is stored in
-            shape_function_deriv[i, j].
+            Shape functions local derivatives evaluated at given local
+            coordinates, sorted according with element nodes. Derivative of the
+            i-th shape function with respect to the j-th local coordinate is
+            stored in shape_function_deriv[i, j].
         """
         # Unpack local coordinates
         c1, c2, c3 = local_coord
