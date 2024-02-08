@@ -124,7 +124,7 @@ class FEHexa20(Element):
             
         Returns
         -------
-        shape_functions : torch.Tensor(1d)
+        shape_fun : torch.Tensor(1d)
             Shape functions evaluated at given local coordinates, sorted
             according with element nodes.
         """
@@ -132,38 +132,38 @@ class FEHexa20(Element):
         c1, c2, c3 = local_coord
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Initialize shape functions
-        shape_functions = torch.zeros((self._n_node), dtype=torch.float)
+        shape_fun = torch.zeros((self._n_node), dtype=torch.float)
         # Compute shape functions at given local coordinates
-        shape_functions[0] = \
+        shape_fun[0] = \
             (1.0/8.0)*(1.0 - c1)*(1.0 - c2)*(1.0 - c3)*(-2.0 - c1 - c2 - c3)
-        shape_functions[1] = \
+        shape_fun[1] = \
             (1.0/8.0)*(1.0 + c1)*(1.0 - c2)*(1.0 - c3)*(-2.0 + c1 - c2 - c3)
-        shape_functions[2] = \
+        shape_fun[2] = \
             (1.0/8.0)*(1.0 + c1)*(1.0 + c2)*(1.0 - c3)*(-2.0 + c1 + c2 - c3)
-        shape_functions[3] = \
+        shape_fun[3] = \
             (1.0/8.0)*(1.0 - c1)*(1.0 + c2)*(1.0 - c3)*(-2.0 - c1 + c2 - c3)
-        shape_functions[4] = \
+        shape_fun[4] = \
             (1.0/8.0)*(1.0 - c1)*(1.0 - c2)*(1.0 + c3)*(-2.0 - c1 - c2 + c3)
-        shape_functions[5] = \
+        shape_fun[5] = \
             (1.0/8.0)*(1.0 + c1)*(1.0 - c2)*(1.0 + c3)*(-2.0 + c1 - c2 + c3)
-        shape_functions[6] = \
+        shape_fun[6] = \
             (1.0/8.0)*(1.0 + c1)*(1.0 + c2)*(1.0 + c3)*(-2.0 + c1 + c2 + c3)
-        shape_functions[7] = \
+        shape_fun[7] = \
             (1.0/8.0)*(1.0 - c1)*(1.0 + c2)*(1.0 + c3)*(-2.0 - c1 + c2 + c3)
-        shape_functions[8] = 0.25*(1.0 - c1**2)*(1.0 - c2)*(1.0 - c3)
-        shape_functions[9] = 0.25*(1.0 + c1)*(1.0 - c2**2)*(1.0 - c3)
-        shape_functions[10] = 0.25*(1.0 - c1**2)*(1.0 + c2)*(1.0 - c3)
-        shape_functions[11] = 0.25*(1.0 - c1)*(1.0 - c2**2)*(1.0 - c3)
-        shape_functions[12] = 0.25*(1.0 - c1)*(1.0 - c2)*(1.0 - c3**2)
-        shape_functions[13] = 0.25*(1.0 + c1)*(1.0 - c2)*(1.0 - c3**2)
-        shape_functions[14] = 0.25*(1.0 + c1)*(1.0 + c2)*(1.0 - c3**2)
-        shape_functions[15] = 0.25*(1.0 - c1)*(1.0 + c2)*(1.0 - c3**2)
-        shape_functions[16] = 0.25*(1.0 - c1**2)*(1.0 - c2)*(1.0 + c3)
-        shape_functions[17] = 0.25*(1.0 + c1)*(1.0 - c2**2)*(1.0 + c3)
-        shape_functions[18] = 0.25*(1.0 - c1**2)*(1.0 + c2)*(1.0 + c3)
-        shape_functions[19] = 0.25*(1.0 - c1)*(1.0 - c2**2)*(1.0 + c3)
+        shape_fun[8] = 0.25*(1.0 - c1**2)*(1.0 - c2)*(1.0 - c3)
+        shape_fun[9] = 0.25*(1.0 + c1)*(1.0 - c2**2)*(1.0 - c3)
+        shape_fun[10] = 0.25*(1.0 - c1**2)*(1.0 + c2)*(1.0 - c3)
+        shape_fun[11] = 0.25*(1.0 - c1)*(1.0 - c2**2)*(1.0 - c3)
+        shape_fun[12] = 0.25*(1.0 - c1)*(1.0 - c2)*(1.0 - c3**2)
+        shape_fun[13] = 0.25*(1.0 + c1)*(1.0 - c2)*(1.0 - c3**2)
+        shape_fun[14] = 0.25*(1.0 + c1)*(1.0 + c2)*(1.0 - c3**2)
+        shape_fun[15] = 0.25*(1.0 - c1)*(1.0 + c2)*(1.0 - c3**2)
+        shape_fun[16] = 0.25*(1.0 - c1**2)*(1.0 - c2)*(1.0 + c3)
+        shape_fun[17] = 0.25*(1.0 + c1)*(1.0 - c2**2)*(1.0 + c3)
+        shape_fun[18] = 0.25*(1.0 - c1**2)*(1.0 + c2)*(1.0 + c3)
+        shape_fun[19] = 0.25*(1.0 - c1)*(1.0 - c2**2)*(1.0 + c3)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        return shape_functions
+        return shape_fun
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     def eval_shapefun_local_deriv(self, local_coord):
         """Evaluate shape functions local derivates at given local coordinates.
@@ -176,101 +176,101 @@ class FEHexa20(Element):
             
         Returns
         -------
-        shape_function_deriv : torch.Tensor(2d)
+        shape_fun_local_deriv : torch.Tensor(2d)
             Shape functions local derivatives evaluated at given local
             coordinates, sorted according with element nodes. Derivative of the
             i-th shape function with respect to the j-th local coordinate is
-            stored in shape_function_deriv[i, j].
+            stored in shape_fun_local_deriv[i, j].
         """
         # Unpack local coordinates
         c1, c2, c3 = local_coord
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Initialize shape functions
-        shape_function_deriv = \
+        shape_fun_local_deriv = \
             torch.zeros((self._n_node, 3), dtype=torch.float)
         # Compute shape functions at given local coordinates
-        shape_function_deriv[0, :] = torch.tensor(
+        shape_fun_local_deriv[0, :] = torch.tensor(
             (0.25*(c1 + 0.5*(c2 + c3 + 1.0))*(c2 - 1.0)*(c3 - 1.0),
              0.25*(c2 + 0.5*(c1 + c3 + 1.0))*(c1 - 1.0)*(c3 - 1.0),
              0.25*(c3 + 0.5*(c1 + c2 + 1.0))*(c1 - 1.0)*(c2 - 1.0)))
-        shape_function_deriv[1, :] = torch.tensor(
+        shape_fun_local_deriv[1, :] = torch.tensor(
             (0.25*(c1 - 0.5*(c2 + c3 + 1.0))*(c2 - 1.0)*(c3 - 1.0),
              -0.25*(c2 - 0.5*(c1 - c3 - 1.0))*(c1 + 1.0)*(c3 - 1.0),
              -0.25*(c3 - 0.5*(c1 - c2 - 1.0))*(c1 + 1.0)*(c2 - 1.0)))
-        shape_function_deriv[2, :] = torch.tensor(
+        shape_fun_local_deriv[2, :] = torch.tensor(
             (-0.25*(c1 + 0.5*(c2 - c3 - 1.0))*(c2 + 1.0)*(c3 - 1.0),
              -0.25*(c2 + 0.5*(c1 - c3 - 1.0))*(c1 + 1.0)*(c3 - 1.0),
              0.25*(c3 - 0.5*(c1 + c2 - 1.0))*(c1 + 1.0)*(c2 + 1.0)))
-        shape_function_deriv[3, :] = torch.tensor(
+        shape_fun_local_deriv[3, :] = torch.tensor(
             (-0.25*(c1 - 0.5*(c2 - c3 - 1.0))*(c2 + 1.0)*(c3 - 1.0),
              0.25*(c2 - 0.5*(c1 + c3 + 1.0))*(c1 - 1.0)*(c3 - 1.0),
              -0.25*(c3 + 0.5*(c1 - c2 + 1.0))*(c1 - 1.0)*(c2 + 1.0)))
-        shape_function_deriv[4, :] = torch.tensor(
+        shape_fun_local_deriv[4, :] = torch.tensor(
             (-0.25*(c1 + 0.5*(c2 - c3 + 1.0))*(c2 - 1.0)*(c3 + 1.0),
              -0.25*(c2 + 0.5*(c1 - c3 + 1.0))*(c1 - 1.0)*(c3 + 1.0),
              0.25*(c3 - 0.5*(c1 + c2 + 1.0))*(c1 - 1.0)*(c2 - 1.0)))
-        shape_function_deriv[5, :] = torch.tensor(
+        shape_fun_local_deriv[5, :] = torch.tensor(
             (-0.25*(c1 - 0.5*(c2 - c3 + 1.0))*(c2 - 1.0)*(c3 + 1.0),
              0.25*(c2 - 0.5*(c1 + c3 - 1.0))*(c1 + 1.0)*(c3 + 1.0),
              -0.25*(c3 + 0.5*(c1 - c2 - 1.0))*(c1 + 1.0)*(c2 - 1.0)))
-        shape_function_deriv[6, :] = torch.tensor(
+        shape_fun_local_deriv[6, :] = torch.tensor(
             (0.25*(c1 + 0.5*(c2 + c3 - 1.0))*(c2 + 1.0)*(c3 + 1.0),
              0.25*(c2 + 0.5*(c1 + c3 - 1.0))*(c1 + 1.0)*(c3 + 1.0),
              0.25*(c3 + 0.5*(c1 + c2 - 1.0))*(c1 + 1.0)*(c2 + 1.0)))
-        shape_function_deriv[7, :] = torch.tensor(
+        shape_fun_local_deriv[7, :] = torch.tensor(
             (0.25*(c1 - 0.5*(c2 + c3 - 1.0))*(c2 + 1.0)*(c3 + 1.0),
              -0.25*(c2 - 0.5*(c1 - c3 + 1.0))*(c1 - 1.0)*(c3 + 1.0),
              -0.25*(c3 - 0.5*(c1 - c2 + 1.0))*(c1 - 1.0)*(c2 + 1.0)))
-        shape_function_deriv[8, :] = torch.tensor(
+        shape_fun_local_deriv[8, :] = torch.tensor(
             (-0.5*c1*(c2 - 1.0)*(c3 - 1.0),
              -0.25*(c1**2 - 1.0)*(c3 - 1.0),
              -0.25*(c1**2 - 1.0)*(c2 - 1.0)))
-        shape_function_deriv[9, :] = torch.tensor(
+        shape_fun_local_deriv[9, :] = torch.tensor(
             (0.25*(c2**2 - 1.0)*(c3 - 1.0),
              0.5*c2*(c1 + 1.0)*(c3 - 1.0),
              0.25*(c1 + 1.0)*(c2**2 - 1.0)))
-        shape_function_deriv[10, :] = torch.tensor(
+        shape_fun_local_deriv[10, :] = torch.tensor(
             (0.5*c1*(c2 + 1.0)*(c3 - 1.0),
               0.25*(c1**2 - 1.0)*(c3 - 1.0),
               0.25*(c1**2 - 1.0)*(c2 + 1.0)))
-        shape_function_deriv[11, :] = torch.tensor(
+        shape_fun_local_deriv[11, :] = torch.tensor(
             (-0.25*(c2**2 - 1.0)*(c3 - 1.0),
               -0.5*c2*(c1 - 1.0)*(c3 - 1.0),
               -0.25*(c1 - 1.0)*(c2**2 - 1.0)))
-        shape_function_deriv[12, :] = torch.tensor(
+        shape_fun_local_deriv[12, :] = torch.tensor(
             (-0.25*(c2 - 1.0)*(c3**2 - 1.0),
               -0.25*(c1 - 1.0)*(c3**2 - 1.0),
               -0.5*c3*(c1 - 1.0)*(c2 - 1.0)))
-        shape_function_deriv[13, :] = torch.tensor(
+        shape_fun_local_deriv[13, :] = torch.tensor(
             (0.25*(c2 - 1.0)*(c3**2 - 1.0),
               0.25*(c1 + 1.0)*(c3**2 - 1.0),
               0.5*c3*(c1 + 1.0)*(c2 - 1.0)))
-        shape_function_deriv[14, :] = torch.tensor(
+        shape_fun_local_deriv[14, :] = torch.tensor(
             (-0.25*(c2 + 1.0)*(c3**2 - 1.0),
               -0.25*(c1 + 1.0)*(c3**2 - 1.0),
               -0.5*c3*(c1 + 1.0)*(c2 + 1.0)))
-        shape_function_deriv[15, :] = torch.tensor(
+        shape_fun_local_deriv[15, :] = torch.tensor(
             (0.25*(c2 + 1.0)*(c3**2 - 1.0),
               0.25*(c1 - 1.0)*(c3**2 - 1.0),
               0.5*c3*(c1 - 1.0)*(c2 + 1.0)))
-        shape_function_deriv[16, :] = torch.tensor(
+        shape_fun_local_deriv[16, :] = torch.tensor(
             (0.5*c1*(c2 - 1.0)*(c3 + 1.0),
               0.25*(c1**2 - 1.0)*(c3 + 1.0),
               0.25*(c1**2 - 1.0)*(c2 - 1.0)))
-        shape_function_deriv[17, :] = torch.tensor(
+        shape_fun_local_deriv[17, :] = torch.tensor(
             (-0.25*(c2**2 - 1.0)*(c3 + 1.0),
               -0.5*c2*(c1 + 1.0)*(c3 + 1.0),
               -0.25*(c1 + 1.0)*(c2**2 - 1.0)))
-        shape_function_deriv[18, :] = torch.tensor(
+        shape_fun_local_deriv[18, :] = torch.tensor(
             (-0.5*c1*(c2 + 1.0)*(c3 + 1.0),
               -0.25*(c1**2 - 1.0)*(c3 + 1.0),
               -0.25*(c1**2 - 1.0)*(c2 + 1.0)))
-        shape_function_deriv[19, :] = torch.tensor(
+        shape_fun_local_deriv[19, :] = torch.tensor(
             (0.25*(c2**2 - 1.0)*(c3 + 1.0),
               0.5*c2*(c1 - 1.0)*(c3 + 1.0),
               0.25*(c1 - 1.0)*(c2**2 - 1.0)))
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        return shape_function_deriv
+        return shape_fun_local_deriv
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     @staticmethod
     def _admissible_gauss_quadratures():

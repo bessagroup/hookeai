@@ -112,7 +112,7 @@ class FEQuad8(Element):
             
         Returns
         -------
-        shape_functions : torch.Tensor(1d)
+        shape_fun : torch.Tensor(1d)
             Shape functions evaluated at given local coordinates, sorted
             according with element nodes.
         """
@@ -120,18 +120,18 @@ class FEQuad8(Element):
         c1, c2 = local_coord
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Initialize shape functions
-        shape_functions = torch.zeros((self._n_node), dtype=torch.float)
+        shape_fun = torch.zeros((self._n_node), dtype=torch.float)
         # Compute shape functions at given local coordinates
-        shape_functions[0] = 0.25*(1.0 - c1)*(1.0 - c2)*(-1.0 - c1 - c2)
-        shape_functions[1] = 0.25*(1.0 + c1)*(1.0 - c2)*(-1.0 + c1 - c2)
-        shape_functions[2] = 0.25*(1.0 + c1)*(1.0 + c2)*(-1.0 + c1 + c2)
-        shape_functions[3] = 0.25*(1.0 - c1)*(1.0 + c2)*(-1.0 - c1 + c2)
-        shape_functions[4] = 0.5*(1.0 - c1**2)*(1.0 - c2)
-        shape_functions[5] = 0.5*(1.0 + c1)*(1.0 - c2**2)
-        shape_functions[6] = 0.5*(1.0 - c1**2)*(1.0 + c2)
-        shape_functions[7] = 0.5*(1.0 - c1)*(1.0 - c2**2)
+        shape_fun[0] = 0.25*(1.0 - c1)*(1.0 - c2)*(-1.0 - c1 - c2)
+        shape_fun[1] = 0.25*(1.0 + c1)*(1.0 - c2)*(-1.0 + c1 - c2)
+        shape_fun[2] = 0.25*(1.0 + c1)*(1.0 + c2)*(-1.0 + c1 + c2)
+        shape_fun[3] = 0.25*(1.0 - c1)*(1.0 + c2)*(-1.0 - c1 + c2)
+        shape_fun[4] = 0.5*(1.0 - c1**2)*(1.0 - c2)
+        shape_fun[5] = 0.5*(1.0 + c1)*(1.0 - c2**2)
+        shape_fun[6] = 0.5*(1.0 - c1**2)*(1.0 + c2)
+        shape_fun[7] = 0.5*(1.0 - c1)*(1.0 - c2**2)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        return shape_functions
+        return shape_fun
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     def eval_shapefun_local_deriv(self, local_coord):
         """Evaluate shape functions local derivates at given local coordinates.
@@ -144,37 +144,37 @@ class FEQuad8(Element):
             
         Returns
         -------
-        shape_function_deriv : torch.Tensor(2d)
+        shape_fun_local_deriv : torch.Tensor(2d)
             Shape functions local derivatives evaluated at given local
             coordinates, sorted according with element nodes. Derivative of the
             i-th shape function with respect to the j-th local coordinate is
-            stored in shape_function_deriv[i, j].
+            stored in shape_fun_local_deriv[i, j].
         """
         # Unpack local coordinates
         c1, c2 = local_coord
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Initialize shape functions
-        shape_function_deriv = \
+        shape_fun_local_deriv = \
             torch.zeros((self._n_node, 2), dtype=torch.float)
         # Compute shape functions at given local coordinates
-        shape_function_deriv[0, :] = torch.tensor(
+        shape_fun_local_deriv[0, :] = torch.tensor(
             (0.25*(1.0 - c2)*(2.0*c1 + c2), 0.25*(1.0 - c1)*(c1 + 2.0*c2)))
-        shape_function_deriv[1, :] = torch.tensor(
+        shape_fun_local_deriv[1, :] = torch.tensor(
             (0.25*(1.0 - c2)*(2.0*c1 - c2), -0.25*(1.0 + c1)*(c1 - 2.0*c2)))
-        shape_function_deriv[2, :] = torch.tensor(
+        shape_fun_local_deriv[2, :] = torch.tensor(
             (0.25*(1.0 + c2)*(2.0*c1 + c2), 0.25*(1.0 + c1)*(c1 + 2.0*c2)))
-        shape_function_deriv[3, :] = torch.tensor(
+        shape_fun_local_deriv[3, :] = torch.tensor(
             (0.25*(1.0 + c2)*(2.0*c1 - c2), -0.25*(1.0 - c1)*(c1 - 2.0*c2)))
-        shape_function_deriv[4, :] = torch.tensor(
+        shape_fun_local_deriv[4, :] = torch.tensor(
             (-c1*(1.0 - c2), -0.5*(1.0 - c1**2)))
-        shape_function_deriv[5, :] = torch.tensor(
+        shape_fun_local_deriv[5, :] = torch.tensor(
             (0.5*(1.0 - c2**2), -c2*(1.0 + c1)))
-        shape_function_deriv[6, :] = torch.tensor(
+        shape_fun_local_deriv[6, :] = torch.tensor(
             (-c1*(1.0 + c2), 0.5*(1.0 - c1**2)))
-        shape_function_deriv[7, :] = torch.tensor(
+        shape_fun_local_deriv[7, :] = torch.tensor(
             (-0.5*(1.0 - c2**2), -c2*(1.0 - c1)))
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        return shape_function_deriv
+        return shape_fun_local_deriv
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     @staticmethod
     def _admissible_gauss_quadratures():

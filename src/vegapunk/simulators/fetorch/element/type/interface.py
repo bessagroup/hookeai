@@ -89,7 +89,7 @@ class Element(ABC):
             
         Returns
         -------
-        shape_functions : torch.Tensor(1d)
+        shape_fun : torch.Tensor(1d)
             Shape functions evaluated at given local coordinates, sorted
             according with element nodes.
         """
@@ -107,11 +107,11 @@ class Element(ABC):
             
         Returns
         -------
-        shape_function_deriv : torch.Tensor(2d)
+        shape_fun_local_deriv : torch.Tensor(2d)
             Shape functions local derivatives evaluated at given local
             coordinates, sorted according with element nodes. Derivative of the
             i-th shape function with respect to the j-th local coordinate is
-            stored in shape_function_deriv[i, j].
+            stored in shape_fun_local_deriv[i, j].
         """
         pass
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -154,15 +154,15 @@ class Element(ABC):
             # Get node local coordinates
             local_coord = self._node_local_coord[i, :]
             # Evaluate shape functions
-            shape_functions = self.eval_shapefun(local_coord)
+            shape_fun = self.eval_shapefun(local_coord)
             # Loop over shape functions
             for j in range(self._n_node):
                 # Check property
-                if i == j and not torch.isclose(shape_functions[j],
+                if i == j and not torch.isclose(shape_fun[j],
                                                 torch.tensor(1.0)):
                     raise RuntimeError(f'Shape function of node {j} does '
                                        f'not evaluate to 1 at node {i}.')
-                elif i != j and not torch.isclose(shape_functions[j],
+                elif i != j and not torch.isclose(shape_fun[j],
                                                   torch.tensor(0.0)):
                     raise RuntimeError(f'Shape function of node {j} does '
                                        f'not evaluate to 0 at node {i}.')
@@ -174,9 +174,9 @@ class Element(ABC):
         # Set random point
         local_coord = torch.rand(size=(self._n_dof_node,))
         # Compute shape functions sum
-        sum_shape_functions = torch.sum(self.eval_shapefun(local_coord))
+        sum_shape_fun = torch.sum(self.eval_shapefun(local_coord))
         # Check property
-        if not torch.isclose(sum_shape_functions, torch.tensor(1.0)):
+        if not torch.isclose(sum_shape_fun, torch.tensor(1.0)):
             raise RuntimeError(f'Sum of shape functions evaluated at point '
                                f'{local_coord} does not equal 1.')
         # Display
@@ -188,10 +188,10 @@ class Element(ABC):
         # Set random point
         local_coord = torch.rand(size=(self._n_dof_node,))
         # Compute shape functions derivatives sum
-        sum_shape_functions_deriv = \
+        sum_shape_fun_local_deriv = \
             torch.sum(self.eval_shapefun_local_deriv(local_coord))
         # Check property
-        if not torch.isclose(sum_shape_functions_deriv, torch.tensor(0.0),
+        if not torch.isclose(sum_shape_fun_local_deriv, torch.tensor(0.0),
                              atol=1e-05):
             raise RuntimeError(f'Sum of shape functions derivatives evaluated '
                                f'at point {local_coord} does not equal 0.')
