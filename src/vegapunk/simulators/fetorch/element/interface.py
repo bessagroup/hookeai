@@ -1,0 +1,186 @@
+"""FETorch: Finite Element Interface.
+
+Classes
+-------
+Element(ABC)
+    FETorch finite element interface.
+"""
+#
+#                                                                       Modules
+# =============================================================================
+# Standard
+from abc import ABC, abstractmethod
+# Third-party
+import torch
+#
+#                                                          Authorship & Credits
+# =============================================================================
+__author__ = 'Bernardo Ferreira (bernardo_ferreira@brown.edu)'
+__credits__ = ['Bernardo Ferreira', ]
+__status__ = 'Planning'
+# =============================================================================
+#
+# =============================================================================
+class Element(ABC):
+    """FETorch finite element interface.
+    
+    Attributes
+    ----------
+    _name : str
+        Name.
+    _n_node : int
+        Number of nodes.
+    _n_dof_node : int
+        Number of degrees of freedom per node.
+    _node_local_coord : dict
+        Nodes (key, str[int]) local coordinates (item, torch.Tensor(1d)). Nodes
+        are labeled from 1 to n_node.
+    _n_gauss : int
+        Number of Gauss integration points.
+    _gp_coords : dict
+        Gauss quadrature integration points (key, str[int]) reference
+        coordinates (item, tuple). Gauss integration points are labeled from
+        1 to n_gauss.
+    _gp_weights : dict
+        Gauss quadrature integration points (key, str[int]) weights
+        (item, float). Gauss integration points are labeled from
+        1 to n_gauss.
+        
+    Methods
+    -------
+    _set_nodes_local_coords(self)
+        *abstract*: Set nodes local coordinates.
+    eval_shapefun(self, local_coord)
+        *abstract*: Evaluate shape functions at given local coordinates.
+    eval_shapefun_deriv(self, local_coord)
+        *abstract*: Evaluate shape functions derivates at given local
+        coordinates.
+    _admissible_gauss_quadratures()
+        *abstract*: Get admissible Gauss integration quadratures.
+    check_shape_functions_properties(self)
+        Check if element shape functions satisfy known properties.
+    """
+    @abstractmethod
+    def __init__(self, n_gauss=None):
+        """Constructor.
+        
+        Parameters
+        ----------
+        n_gauss : int, default=None
+            Number of Gauss integration points.
+        """
+        pass
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    @abstractmethod
+    def _set_nodes_local_coords(self):
+        """Set nodes local coordinates."""
+        pass
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    @abstractmethod
+    def eval_shapefun(self, local_coord):
+        """Evaluate shape functions at given local coordinates.
+        
+        Parameters
+        ----------
+        local_coord : torch.Tensor(1d)
+            Local coordinates of point where shape functions are evaluated.
+            
+        Returns
+        -------
+        shape_functions : torch.Tensor(1d)
+            Shape functions evaluated at given local coordinates, sorted
+            according with element nodes.
+        """
+        pass
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    @abstractmethod
+    def eval_shapefun_deriv(self, local_coord):
+        """Evaluate shape functions derivates at given local coordinates.
+        
+        Parameters
+        ----------
+        local_coord : torch.Tensor(1d)
+            Local coordinates of point where shape functions are evaluated.
+            
+        Returns
+        -------
+        shape_function_deriv : torch.Tensor(2d)
+            Shape functions derivatives evaluated at given local coordinates,
+            sorted according with element nodes. Derivative of the i-th shape
+            function with respect to the j-th local coordinate is stored in
+            shape_function_deriv[i, j].
+        """
+        pass
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    @staticmethod
+    @abstractmethod
+    def _admissible_gauss_quadratures():
+        """Get admissible Gauss integration quadratures.
+        
+        Returns
+        -------
+        admissible_n_gauss : tuple[int]
+            Admissible Gauss integration quadratures (number of Gauss
+            integration points).
+        """
+        pass
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    def check_shape_functions_properties(self):
+        """Check if element shape functions satisfy known properties."""
+        # Display
+        print(f'\nTesting element shape functions and derivatives'
+              f'\n-----------------------------------------------')
+        print(f'Element: {self._name}')
+        print(f'\nShape functions properties:')
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Property: At a given element node, shape function evaluates to 1 if
+        #           corresponding node, otherwise evaluates to 0
+        #
+        # Loop over element nodes
+        for i in range(self._n_node):
+            # Get node local coordinates
+            local_coord = self._node_local_coord[i, :]
+            # Evaluate shape functions
+            shape_functions = self.eval_shapefun(local_coord)
+            # Loop over shape functions
+            for j in range(self._n_node):
+                # Check property
+                if i == j and not torch.isclose(shape_functions[j],
+                                                torch.tensor(1.0)):
+                    raise RuntimeError(f'Shape function of node {j} does '
+                                       f'not evaluate to 1 at node {i}.')
+                elif i != j and not torch.isclose(shape_functions[j],
+                                                  torch.tensor(0.0)):
+                    raise RuntimeError(f'Shape function of node {j} does '
+                                       f'not evaluate to 0 at node {i}.')
+        # Display
+        print(f'  > PASS: Shape functions Delta Dirac\'s property')
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Property: Sum of shape functions at any point must equal 1
+        #
+        # Set random point
+        local_coord = torch.rand(size=(self._n_dof_node,))
+        # Compute shape functions sum
+        sum_shape_functions = torch.sum(self.eval_shapefun(local_coord))
+        # Check property
+        if not torch.isclose(sum_shape_functions, torch.tensor(1.0)):
+            raise RuntimeError(f'Sum of shape functions evaluated at point '
+                               f'{local_coord} does not equal 1.')
+        # Display
+        print(f'  > PASS: Sum of shape functions equals 1')
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Property : Sum of shape functions derivatives at any point must
+        #            equal 0
+        #
+        # Set random point
+        local_coord = torch.rand(size=(self._n_dof_node,))
+        # Compute shape functions derivatives sum
+        sum_shape_functions_deriv = \
+            torch.sum(self.eval_shapefun_deriv(local_coord))
+        # Check property
+        if not torch.isclose(sum_shape_functions_deriv, torch.tensor(0.0),
+                             atol=1e-05):
+            raise RuntimeError(f'Sum of shape functions derivatives evaluated '
+                               f'at point {local_coord} does not equal 0.')
+        # Display
+        print(f'  > PASS: Sum of shape functions derivatives equals 0')

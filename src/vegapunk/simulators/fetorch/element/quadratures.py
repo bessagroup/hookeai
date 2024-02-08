@@ -41,9 +41,8 @@ def gauss_quadrature(n_gauss, domain):
     Returns
     -------
     gp_coords : dict
-        Gauss quadrature integration points (key, str[int]) coordinates
-        (item, tuple). Gauss integration points are labeled from
-        1 to n_gauss.
+        Gauss quadrature integration points (key, str[int]) local coordinates
+        (item, tuple). Gauss integration points are labeled from 1 to n_gauss.
     gp_weights : dict
         Gauss quadrature integration points (key, str[int]) weights
         (item, float). Gauss integration points are labeled from
@@ -76,9 +75,8 @@ def gauss_quadrature_1d(n_gauss):
     Returns
     -------
     gp_coords : dict
-        Gauss quadrature integration points (key, str[int]) coordinates
-        (item, tuple). Gauss integration points are labeled from
-        1 to n_gauss.
+        Gauss quadrature integration points (key, str[int]) local coordinates
+        (item, tuple). Gauss integration points are labeled from 1 to n_gauss.
     gp_weights : dict
         Gauss quadrature integration points (key, str[int]) weights
         (item, float). Gauss integration points are labeled from
@@ -125,9 +123,8 @@ def gauss_quadrature_2d(n_gauss, domain):
     Returns
     -------
     gp_coords : dict
-        Gauss quadrature integration points (key, str[int]) coordinates
-        (item, np.ndarray(1d)). Gauss integration points are labeled from
-        1 to n_gauss.
+        Gauss quadrature integration points (key, str[int]) local coordinates
+        (item, tuple). Gauss integration points are labeled from 1 to n_gauss.
     gp_weights : dict
         Gauss quadrature integration points (key, str[int]) weights
         (item, float). Gauss integration points are labeled from
@@ -186,9 +183,8 @@ def gauss_quadrature_3d(n_gauss, domain):
     Returns
     -------
     gp_coords : dict
-        Gauss quadrature integration points (key, str[int]) coordinates
-        (item, np.ndarray(1d)). Gauss integration points are labeled from
-        1 to n_gauss.
+        Gauss quadrature integration points (key, str[int]) local coordinates
+        (item, tuple). Gauss integration points are labeled from 1 to n_gauss.
     gp_weights : dict
         Gauss quadrature integration points (key, str[int]) weights
         (item, float). Gauss integration points are labeled from
@@ -259,9 +255,8 @@ def uniform_grid_quadrature(n_dim, n_gauss, n_gauss_dim):
     Returns
     -------
     gp_coords : dict
-        Gauss quadrature integration points (key, str[int]) coordinates
-        (item, np.ndarray(1d)). Gauss integration points are labeled from
-        1 to n_gauss.
+        Gauss quadrature integration points (key, str[int]) local coordinates
+        (item, tuple). Gauss integration points are labeled from 1 to n_gauss.
     gp_weights : dict
         Gauss quadrature integration points (key, str[int]) weights
         (item, float). Gauss integration points are labeled from

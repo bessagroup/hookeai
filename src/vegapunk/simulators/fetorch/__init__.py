@@ -1,5 +1,4 @@
 #
 #                                                                       Modules
 # =============================================================================
-from simulators import links
-from simulators import fetorch
+from simulators.fetorch import element
