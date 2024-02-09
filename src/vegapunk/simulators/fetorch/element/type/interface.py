@@ -10,6 +10,7 @@ Element(ABC)
 # =============================================================================
 # Standard
 from abc import ABC, abstractmethod
+import copy
 # Third-party
 import torch
 #
@@ -36,10 +37,10 @@ class Element(ABC):
         Nodes local coordinates stored as torch.Tensor(2d) of shape
         (n_node, n_dof_node).
     _n_gauss : int
-        Number of Gauss integration points.
+        Number of Gauss quadrature integration points.
     _gp_coords : dict
-        Gauss quadrature integration points (key, str[int]) reference
-        coordinates (item, tuple). Gauss integration points are labeled from
+        Gauss quadrature integration points (key, str[int]) local coordinates
+        (item, torch.Tensor(1d)). Gauss integration points are labeled from
         1 to n_gauss.
     _gp_weights : dict
         Gauss quadrature integration points (key, str[int]) weights
@@ -50,9 +51,9 @@ class Element(ABC):
     -------
     _set_nodes_local_coords(self)
         *abstract*: Set nodes local coordinates.
-    eval_shapefun(self, local_coord)
+    eval_shapefun(self, local_coords)
         *abstract*: Evaluate shape functions at given local coordinates.
-    eval_shapefun_local_deriv(self, local_coord)
+    eval_shapefun_local_deriv(self, local_coords)
         *abstract*: Evaluate shape functions local derivates at given local
         coordinates.
     _admissible_gauss_quadratures()
@@ -69,7 +70,7 @@ class Element(ABC):
         Parameters
         ----------
         n_gauss : int, default=None
-            Number of Gauss integration points.
+            Number of Gauss quadrature integration points.
         """
         pass
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -79,12 +80,12 @@ class Element(ABC):
         pass
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     @abstractmethod
-    def eval_shapefun(self, local_coord):
+    def eval_shapefun(self, local_coords):
         """Evaluate shape functions at given local coordinates.
         
         Parameters
         ----------
-        local_coord : torch.Tensor(1d)
+        local_coords : torch.Tensor(1d)
             Local coordinates of point where shape functions are evaluated.
             
         Returns
@@ -96,12 +97,12 @@ class Element(ABC):
         pass
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     @abstractmethod
-    def eval_shapefun_local_deriv(self, local_coord):
+    def eval_shapefun_local_deriv(self, local_coords):
         """Evaluate shape functions local derivates at given local coordinates.
         
         Parameters
         ----------
-        local_coord : torch.Tensor(1d)
+        local_coords : torch.Tensor(1d)
             Local coordinates of point where shape functions local derivatives
             are evaluated.
             
@@ -128,6 +129,16 @@ class Element(ABC):
         """
         pass
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    def get_n_node(self):
+        """Get number of nodes.
+        
+        Returns
+        -------
+        n_node : int
+            Number of nodes.
+        """
+        return self._n_node
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     def get_n_dof_node(self):
         """Get number of degrees of freedom per node.
         
@@ -137,6 +148,32 @@ class Element(ABC):
             Number of degrees of freedom per node.
         """
         return self._n_dof_node
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    def get_n_gauss(self):
+        """Get number of Gauss quadrature integration points.
+        
+        Returns
+        -------
+        n_gauss : int
+            Number of Gauss quadrature integration points.
+        """
+        return self._n_gauss
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    def get_gauss_integration_points(self):
+        """Get Gaussian quadrature points local coordinates and weights.
+        
+        Returns
+        -------
+        gp_coords : dict
+            Gauss quadrature integration points (key, str[int]) local
+            coordinates (item, torch.Tensor(1d)). Gauss integration points are
+            labeled from 1 to n_gauss.
+        gp_weights : dict
+            Gauss quadrature integration points (key, str[int]) weights
+            (item, float). Gauss integration points are labeled from
+            1 to n_gauss.
+        """
+        return copy.deepcopy(self._gp_coords), copy.deepcopy(self._gp_weights)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     def check_shape_functions_properties(self):
         """Check if element shape functions satisfy known properties."""
@@ -152,9 +189,9 @@ class Element(ABC):
         # Loop over element nodes
         for i in range(self._n_node):
             # Get node local coordinates
-            local_coord = self._node_local_coord[i, :]
+            local_coords = self._nodes_local_coords[i, :]
             # Evaluate shape functions
-            shape_fun = self.eval_shapefun(local_coord)
+            shape_fun = self.eval_shapefun(local_coords)
             # Loop over shape functions
             for j in range(self._n_node):
                 # Check property
@@ -172,13 +209,13 @@ class Element(ABC):
         # Property: Sum of shape functions at any point must equal 1
         #
         # Set random point
-        local_coord = torch.rand(size=(self._n_dof_node,))
+        local_coords = torch.rand(size=(self._n_dof_node,))
         # Compute shape functions sum
-        sum_shape_fun = torch.sum(self.eval_shapefun(local_coord))
+        sum_shape_fun = torch.sum(self.eval_shapefun(local_coords))
         # Check property
         if not torch.isclose(sum_shape_fun, torch.tensor(1.0)):
             raise RuntimeError(f'Sum of shape functions evaluated at point '
-                               f'{local_coord} does not equal 1.')
+                               f'{local_coords} does not equal 1.')
         # Display
         print(f'  > PASS: Sum of shape functions equals 1')
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -186,14 +223,14 @@ class Element(ABC):
         #            equal 0
         #
         # Set random point
-        local_coord = torch.rand(size=(self._n_dof_node,))
+        local_coords = torch.rand(size=(self._n_dof_node,))
         # Compute shape functions derivatives sum
         sum_shape_fun_local_deriv = \
-            torch.sum(self.eval_shapefun_local_deriv(local_coord))
+            torch.sum(self.eval_shapefun_local_deriv(local_coords))
         # Check property
         if not torch.isclose(sum_shape_fun_local_deriv, torch.tensor(0.0),
                              atol=1e-05):
             raise RuntimeError(f'Sum of shape functions derivatives evaluated '
-                               f'at point {local_coord} does not equal 0.')
+                               f'at point {local_coords} does not equal 0.')
         # Display
         print(f'  > PASS: Sum of shape functions derivatives equals 0')

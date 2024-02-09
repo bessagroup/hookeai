@@ -33,14 +33,15 @@ class FETri3(Element):
         Number of nodes.
     _n_dof_node : int
         Number of degrees of freedom per node.
-    _node_local_coord : torch.Tensor(2d)
+    _nodes_local_coords : torch.Tensor(2d)
         Nodes local coordinates stored as torch.Tensor(2d) of shape
         (n_node, n_dof_node).
     _n_gauss : int
-        Number of Gauss integration points.
+        Number of Gauss quadrature integration points.
     _gp_coords : dict
         Gauss quadrature integration points (key, str[int]) local coordinates
-        (item, tuple). Gauss integration points are labeled from 1 to n_gauss.
+        (item, torch.Tensor(1d)). Gauss integration points are labeled from
+        1 to n_gauss.
     _gp_weights : dict
         Gauss quadrature integration points (key, str[int]) weights
         (item, float). Gauss integration points are labeled from
@@ -50,9 +51,9 @@ class FETri3(Element):
     -------
     _set_node_local_coords(self)
         Set nodes local coordinates.
-    eval_shapefun(self, local_coord)
+    eval_shapefun(self, local_coords)
         Evaluate shape functions at given local coordinates.
-    eval_shapefun_local_deriv(self, local_coord)
+    eval_shapefun_local_deriv(self, local_coords)
         Evaluate shape functions local derivates at given local coordinates.
     _admissible_gauss_quadratures()
         Get admissible Gauss integration quadratures.
@@ -63,7 +64,7 @@ class FETri3(Element):
         Parameters
         ----------
         n_gauss : int, default=1
-            Number of Gauss integration points.
+            Number of Gauss quadrature integration points.
         """
         # Set name
         self._name = 'tri3'
@@ -88,21 +89,21 @@ class FETri3(Element):
     def _set_nodes_local_coords(self):
         """Set nodes local coordinates."""
         # Initialize local coordinates
-        node_local_coord = torch.zeros((self._n_node, 2), dtype=torch.float)
+        nodes_local_coords = torch.zeros((self._n_node, 2), dtype=torch.float)
         # Set local coordinates
-        node_local_coord[0, :] = torch.tensor((0.0, 0.0))
-        node_local_coord[1, :] = torch.tensor((1.0, 0.0))
-        node_local_coord[2, :] = torch.tensor((0.0, 1.0))
+        nodes_local_coords[0, :] = torch.tensor((0.0, 0.0))
+        nodes_local_coords[1, :] = torch.tensor((1.0, 0.0))
+        nodes_local_coords[2, :] = torch.tensor((0.0, 1.0))
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Store nodes local coordinates
-        self._node_local_coord = node_local_coord
+        self._nodes_local_coords = nodes_local_coords
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    def eval_shapefun(self, local_coord):
+    def eval_shapefun(self, local_coords):
         """Evaluate shape functions at given local coordinates.
         
         Parameters
         ----------
-        local_coord : torch.Tensor(1d)
+        local_coords : torch.Tensor(1d)
             Local coordinates of point where shape functions are evaluated.
             
         Returns
@@ -112,7 +113,7 @@ class FETri3(Element):
             according with element nodes.
         """
         # Unpack local coordinates
-        c1, c2 = local_coord
+        c1, c2 = local_coords
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Initialize shape functions
         shape_fun = torch.zeros((self._n_node), dtype=torch.float)
@@ -123,12 +124,12 @@ class FETri3(Element):
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         return shape_fun
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    def eval_shapefun_local_deriv(self, local_coord):
+    def eval_shapefun_local_deriv(self, local_coords):
         """Evaluate shape functions local derivates at given local coordinates.
         
         Parameters
         ----------
-        local_coord : torch.Tensor(1d)
+        local_coords : torch.Tensor(1d)
             Local coordinates of point where shape functions local derivatives
             are evaluated.
             
@@ -141,7 +142,7 @@ class FETri3(Element):
             stored in shape_fun_local_deriv[i, j].
         """
         # Unpack local coordinates
-        c1, c2 = local_coord
+        c1, c2 = local_coords
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Initialize shape functions
         shape_fun_local_deriv = \
