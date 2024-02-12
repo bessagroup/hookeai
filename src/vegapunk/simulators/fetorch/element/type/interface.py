@@ -73,12 +73,12 @@ class ElementType(ABC):
             Number of Gauss quadrature integration points.
         """
         pass
-    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # -------------------------------------------------------------------------
     @abstractmethod
     def _set_nodes_local_coords(self):
         """Set nodes local coordinates."""
         pass
-    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # -------------------------------------------------------------------------
     @abstractmethod
     def eval_shapefun(self, local_coords):
         """Evaluate shape functions at given local coordinates.
@@ -95,7 +95,7 @@ class ElementType(ABC):
             according with element nodes.
         """
         pass
-    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # -------------------------------------------------------------------------
     @abstractmethod
     def eval_shapefun_local_deriv(self, local_coords):
         """Evaluate shape functions local derivates at given local coordinates.
@@ -115,7 +115,7 @@ class ElementType(ABC):
             stored in shape_fun_local_deriv[i, j].
         """
         pass
-    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # -------------------------------------------------------------------------
     @staticmethod
     @abstractmethod
     def _admissible_gauss_quadratures():
@@ -128,7 +128,7 @@ class ElementType(ABC):
             integration points).
         """
         pass
-    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # -------------------------------------------------------------------------
     def get_n_node(self):
         """Get number of nodes.
         
@@ -138,7 +138,7 @@ class ElementType(ABC):
             Number of nodes.
         """
         return self._n_node
-    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # -------------------------------------------------------------------------
     def get_n_dof_node(self):
         """Get number of degrees of freedom per node.
         
@@ -148,7 +148,7 @@ class ElementType(ABC):
             Number of degrees of freedom per node.
         """
         return self._n_dof_node
-    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # -------------------------------------------------------------------------
     def get_n_gauss(self):
         """Get number of Gauss quadrature integration points.
         
@@ -158,7 +158,7 @@ class ElementType(ABC):
             Number of Gauss quadrature integration points.
         """
         return self._n_gauss
-    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # -------------------------------------------------------------------------
     def get_gauss_integration_points(self):
         """Get Gaussian quadrature points local coordinates and weights.
         
@@ -174,7 +174,7 @@ class ElementType(ABC):
             1 to n_gauss.
         """
         return copy.deepcopy(self._gp_coords), copy.deepcopy(self._gp_weights)
-    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # -------------------------------------------------------------------------
     def check_shape_functions_properties(self):
         """Check if element shape functions satisfy known properties."""
         # Display
