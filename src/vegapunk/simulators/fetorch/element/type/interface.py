@@ -22,7 +22,7 @@ __status__ = 'Planning'
 # =============================================================================
 #
 # =============================================================================
-class Element(ABC):
+class ElementType(ABC):
     """FETorch finite element interface.
     
     Attributes

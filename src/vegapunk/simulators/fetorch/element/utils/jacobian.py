@@ -19,12 +19,12 @@ __status__ = 'Planning'
 # =============================================================================
 #
 # =============================================================================
-def eval_jacobian(element, nodes_coords, local_coords):
+def eval_jacobian(element_type, nodes_coords, local_coords):
     """Evaluate finite element Jacobian and determinant at given coordinates.
     
     Parameters
     ----------
-    element : Element
+    element_type : Element
         FETorch finite element.
     nodes_coords : torch.Tensor(2d)
         Nodes coordinates stored as torch.Tensor(2d) of shape
@@ -45,9 +45,10 @@ def eval_jacobian(element, nodes_coords, local_coords):
         stored in shape_fun_local_deriv[i, j].
     """
     # Get element number of degrees of freedom per node
-    n_dof_node = element.get_n_dof_node()
+    n_dof_node = element_type.get_n_dof_node()
     # Evaluate element shape functions local derivatives
-    shape_fun_local_deriv = element.eval_shapefun_local_deriv(local_coords)
+    shape_fun_local_deriv = \
+        element_type.eval_shapefun_local_deriv(local_coords)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Initialize Jacobian
     jacobian = torch.zeros((n_dof_node, n_dof_node))

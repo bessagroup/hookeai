@@ -2,7 +2,7 @@
 
 Classes
 -------
-FETetra10(Element)
+FETetra10(ElementType)
     FETorch finite element: 10-Node Tetrahedral.
 """
 #
@@ -11,7 +11,7 @@ FETetra10(Element)
 # Third-party
 import torch
 # Local
-from simulators.fetorch.element.type.interface import Element
+from simulators.fetorch.element.type.interface import ElementType
 from simulators.fetorch.element.type.quadratures import gauss_quadrature
 #
 #                                                          Authorship & Credits
@@ -22,7 +22,7 @@ __status__ = 'Planning'
 # =============================================================================
 #
 # =============================================================================
-class FETetra10(Element):
+class FETetra10(ElementType):
     """FETorch finite element: 10-Node Tetrahedral.
     
     Attributes

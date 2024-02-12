@@ -22,15 +22,16 @@ __status__ = 'Planning'
 # =============================================================================
 #
 # =============================================================================
-def compute_element_internal_forces(strain_formulation, element, nodes_coords,
-                                    nodes_disps, nodes_inc_disps):
+def compute_element_internal_forces(strain_formulation, element_type,
+                                    nodes_coords, nodes_disps,
+                                    nodes_inc_disps):
     """Compute finite element internal forces.
     
     Parameters
     ----------
     strain_formulation: {'infinitesimal', 'finite'}
         Strain formulation.
-    element : Element
+    element_type : Element
         FETorch finite element.
     nodes_coords : torch.Tensor(2d)
         Nodes coordinates stored as torch.Tensor(2d) of shape
@@ -48,13 +49,13 @@ def compute_element_internal_forces(strain_formulation, element, nodes_coords,
         Element internal forces.
     """
     # Get element number of degrees of freedom per node
-    n_dof_node = element.get_n_dof_node()
+    n_dof_node = element_type.get_n_dof_node()
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Get element number of Gauss quadrature integration points
-    n_gauss = element.get_n_gauss()
+    n_gauss = element_type.get_n_gauss()
     # Get element Gauss quadrature integration points local coordinates and
     # weights
-    gp_coords, gp_weights = element.get_gauss_integration_points()
+    gp_coords, gp_weights = element_type.get_gauss_integration_points()
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Initialize element internal forces
     internal_forces = torch.zeros((n_dof_node))
@@ -67,7 +68,7 @@ def compute_element_internal_forces(strain_formulation, element, nodes_coords,
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Evaluate shape functions derivates and Jacobian
         shape_fun_deriv, _, jacobian_det = \
-            eval_shapefun_deriv(element, nodes_coords, local_coords)
+            eval_shapefun_deriv(element_type, nodes_coords, local_coords)
         # Build discrete symmetric gradient operator
         grad_operator_sym = build_discrete_sym_gradient(shape_fun_deriv)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

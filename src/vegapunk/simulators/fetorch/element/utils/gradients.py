@@ -25,12 +25,12 @@ __status__ = 'Planning'
 # =============================================================================
 #
 # =============================================================================
-def eval_shapefun_deriv(element, nodes_coords, local_coords):
+def eval_shapefun_deriv(element_type, nodes_coords, local_coords):
     """Evaluate shape functions derivates at given coordinates.
     
     Parameters
     ----------
-    element : Element
+    element_type : Element
         FETorch finite element.
     nodes_coords : torch.Tensor(2d)
         Nodes coordinates stored as torch.Tensor(2d) of shape
@@ -51,11 +51,11 @@ def eval_shapefun_deriv(element, nodes_coords, local_coords):
         Determinant of element jacobian.
     """
     # Get element number of nodes
-    n_node = element.get_n_node()
+    n_node = element_type.get_n_node()
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Evaluate element shape functions local derivatives and Jacobian
     jacobian, jacobian_det, shape_fun_local_deriv = \
-        eval_jacobian(element, nodes_coords, local_coords)
+        eval_jacobian(element_type, nodes_coords, local_coords)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Initialize element shape functions derivatives
     shape_fun_deriv = torch.zeros_like(shape_fun_local_deriv)

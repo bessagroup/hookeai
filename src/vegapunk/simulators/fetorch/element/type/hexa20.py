@@ -2,7 +2,7 @@
 
 Classes
 -------
-FEHexa20(Element)
+FEHexa20(ElementType)
     FETorch finite element: 20-Node Hexahedral.
 """
 #
@@ -11,7 +11,7 @@ FEHexa20(Element)
 # Third-party
 import torch
 # Local
-from simulators.fetorch.element.type.interface import Element
+from simulators.fetorch.element.type.interface import ElementType
 from simulators.fetorch.element.type.quadratures import gauss_quadrature
 #
 #                                                          Authorship & Credits
@@ -22,7 +22,7 @@ __status__ = 'Planning'
 # =============================================================================
 #
 # =============================================================================
-class FEHexa20(Element):
+class FEHexa20(ElementType):
     """FETorch finite element: 20-Node Hexahedral.
     
     Attributes
