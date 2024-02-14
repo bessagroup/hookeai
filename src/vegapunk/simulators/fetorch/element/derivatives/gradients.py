@@ -15,7 +15,7 @@ build_discrete_gradient
 # Third-party
 import torch
 # Local
-from simulators.fetorch.element.utils.jacobian import eval_jacobian
+from simulators.fetorch.element.derivatives.jacobian import eval_jacobian
 #
 #                                                          Authorship & Credits
 # =============================================================================

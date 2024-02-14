@@ -11,8 +11,8 @@ compute_element_internal_forces
 # Third-party
 import torch
 # Local
-from simulators.fetorch.element.utils.gradients import eval_shapefun_deriv, \
-    build_discrete_sym_gradient, build_discrete_gradient
+from simulators.fetorch.element.derivatives.gradients import \
+    eval_shapefun_deriv, build_discrete_sym_gradient, build_discrete_gradient
 #
 #                                                          Authorship & Credits
 # =============================================================================
