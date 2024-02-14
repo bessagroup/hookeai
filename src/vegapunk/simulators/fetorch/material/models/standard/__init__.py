@@ -1,7 +1,4 @@
 #
 #                                                                       Modules
 # =============================================================================
-from simulators.fetorch import element
-from simulators.fetorch import material
-from simulators.fetorch import math
-from simulators.fetorch import structure
+from simulators.fetorch.material.models.standard import elastic
