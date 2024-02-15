@@ -8,11 +8,18 @@ compute_element_internal_forces
 #
 #                                                                       Modules
 # =============================================================================
+# Standard
+import copy
 # Third-party
 import torch
 # Local
 from simulators.fetorch.element.derivatives.gradients import \
-    eval_shapefun_deriv, build_discrete_sym_gradient, build_discrete_gradient
+    eval_shapefun_deriv, build_discrete_sym_gradient
+from simulators.fetorch.material.material_su import material_state_update
+from simulators.fetorch.math.matrixops import get_problem_type_parameters, \
+    get_tensor_from_mf
+from simulators.fetorch.math.voigt_notation import get_strain_from_vfm, \
+    get_stress_vfm
 #
 #                                                          Authorship & Credits
 # =============================================================================
@@ -22,7 +29,9 @@ __status__ = 'Planning'
 # =============================================================================
 #
 # =============================================================================
-def compute_element_internal_forces(strain_formulation, element_type,
+def compute_element_internal_forces(strain_formulation, problem_type,
+                                    element_type, element_material,
+                                    element_state, element_state_old,
                                     nodes_coords, nodes_disps,
                                     nodes_inc_disps):
     """Compute finite element internal forces.
@@ -31,8 +40,16 @@ def compute_element_internal_forces(strain_formulation, element_type,
     ----------
     strain_formulation: {'infinitesimal', 'finite'}
         Strain formulation.
+    problem_type : int
+        Problem type: 2D plane strain (1), 2D plane stress (2),
+        2D axisymmetric (3) and 3D (4).
     element_type : Element
         FETorch finite element.
+    element_material : ConstitutiveModel
+        FETorch material constitutive model.
+    element_state_old : dict
+        Last converged Material constitutive model state variables (item, dict)
+        for each Gauss integration point (key, str[int]).
     nodes_coords : torch.Tensor(2d)
         Nodes coordinates stored as torch.Tensor(2d) of shape
         (n_node, n_dof_node).
@@ -47,7 +64,14 @@ def compute_element_internal_forces(strain_formulation, element_type,
     -------
     internal_forces : torch.Tensor(1d)
         Element internal forces.
+    element_state : dict
+        Material constitutive model state variables (item, dict) for each Gauss
+        integration point (key, str[int]).
     """
+    # Get problem type parameters
+    n_dim, comp_order_sym, _ = \
+        get_problem_type_parameters(problem_type)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Get element number of degrees of freedom per node
     n_dof_node = element_type.get_n_dof_node()
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -59,6 +83,8 @@ def compute_element_internal_forces(strain_formulation, element_type,
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Initialize element internal forces
     internal_forces = torch.zeros((n_dof_node))
+    # Initialize element material constitutive model state variables
+    element_state = {key: None for key in element_state_old.keys()}
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Loop over Gauss integration points
     for i in range(n_gauss):
@@ -72,22 +98,46 @@ def compute_element_internal_forces(strain_formulation, element_type,
         # Build discrete symmetric gradient operator
         grad_operator_sym = build_discrete_sym_gradient(shape_fun_deriv)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        # Compute incremental strains
+        # Compute incremental strain tensor
         if strain_formulation == 'infinitesimal':
             # Compute incremental infinitesimal strain tensor (Voigt matricial
             # form)
             inc_strain_vmf = compute_infinitesimal_inc_strain(
                 grad_operator_sym, nodes_inc_disps)
+            # Get incremental strain tensor
+            inc_strain = get_strain_from_vfm(
+                inc_strain_vmf, n_dim, comp_order_sym)
         else:
             raise RuntimeError('Not implemented.')
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Get Gauss integration point last converged material constitutive
+        # model state variables
+        state_variables_old = copy.deepcopy(element_state_old[str(i + 1)])
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Material state update
-        stress_vmf = None
+        state_variables, _ = material_state_update(
+            strain_formulation, problem_type, element_material, inc_strain,
+            state_variables_old, def_gradient_old=None)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Store Gauss integration point material constitutive model state
+        # variables
+        element_state[str(i + 1)] = state_variables
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Get stress tensor
+        if strain_formulation == 'infinitesimal':
+            # Get Cauchy stress tensor
+            stress = get_tensor_from_mf(state_variables['stress_mf'],
+                                        n_dim, comp_order_sym)
+            # Get Cauchy stress tensor (Voigt matricial form)
+            stress_vmf = get_stress_vfm(stress, n_dim, comp_order_sym)
+        else:
+            raise RuntimeError('Not implemented.')
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Add Gauss integration point contribution to element internal forces
-        internal_forces += weight*grad_operator_sym.T*stress_vmf*jacobian_det
+        internal_forces += \
+            weight*torch.matmul(grad_operator_sym.T, stress_vmf)*jacobian_det
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    return internal_forces
+    return internal_forces, element_state
 # =============================================================================
 def compute_infinitesimal_inc_strain(grad_operator_sym, nodes_inc_disps):
     """Compute incremental infinitesimal strain tensor.
