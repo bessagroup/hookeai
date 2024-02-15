@@ -214,7 +214,7 @@ class StructureMesh:
             element mesh.
         element_id : int
             Element label. Elements labels must be within the range of
-            1 to n_elem (included). within the range of 1 to n_elem (included). 
+            1 to n_elem (included).
             
         Returns
         -------
@@ -246,7 +246,7 @@ class StructureMesh:
             element mesh.
         element_id : int
             Element label. Elements labels must be within the range of
-            1 to n_elem (included). within the range of 1 to n_elem (included). 
+            1 to n_elem (included).
             
         Returns
         -------
