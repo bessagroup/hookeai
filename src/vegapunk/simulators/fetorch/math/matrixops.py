@@ -8,8 +8,8 @@ most of the code is taken from the package cratepy [#]_.
 
 .. [#] Ferreira, B.P., Andrade Pires, F.M., and Bessa, M.A. (2023). CRATE: A
        Python package to perform fast material simulations. The Journal of Open
-       Source Software, 8(87) (see
-       `here <https://joss.theoj.org/papers/10.21105/joss.05594>`_)
+       Source Software, 8(87)
+       (see `here <https://joss.theoj.org/papers/10.21105/joss.05594>`_)
 
 Functions
 ---------
