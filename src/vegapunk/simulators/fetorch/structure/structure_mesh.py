@@ -26,6 +26,8 @@ class StructureMesh:
     
     Attributes
     ----------
+    _n_dim : int
+        Number of spatial dimensions.
     _n_node_mesh : int
         Number of nodes of finite element mesh.
     _n_elem : int
@@ -105,6 +107,8 @@ class StructureMesh:
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Set number of nodes
         self._n_node_mesh = nodes_coords_mesh_init.shape[0]
+        # Set number of spatial dimensions
+        self._n_dim = nodes_coords_mesh_init.shape[1]
         # Set number of elements
         self._n_elem = len(elements_type.keys())
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -118,6 +122,26 @@ class StructureMesh:
         self._internal_forces_mesh = torch.zeros_like(self._nodes_coords_mesh)
         self._external_forces_mesh = torch.zeros_like(self._nodes_coords_mesh)
         self._reaction_forces_mesh = torch.zeros_like(self._nodes_coords_mesh)
+    # -------------------------------------------------------------------------
+    def get_n_dim(self):
+        """Get number of spatial dimensions.
+        
+        Returns
+        -------
+        n_dim : int
+            Number of spatial dimensions.
+        """
+        return self._n_dim
+    # -------------------------------------------------------------------------
+    def get_n_node_mesh(self):
+        """Get number of nodes of finite element mesh.
+        
+        Returns
+        -------
+        n_node_mesh : int
+            Number of nodes of finite element mesh.
+        """
+        return self._n_node_mesh
     # -------------------------------------------------------------------------
     def element_assembler(self, elements_array):
         """Assemble element level arrays into mesh level counterparts.
