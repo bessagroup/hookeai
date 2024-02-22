@@ -37,7 +37,8 @@ class StructureMesh:
         element (str[int]). Elements are labeled from 1 to n_elem.
     _connectivities : dict
         Nodes (item, tuple[int]) of each finite element mesh element
-        (key, str[int]). Elements are labeled from 1 to n_elem.
+        (key, str[int]). Nodes are labeled from 1 to n_node_mesh. Elements are
+        labeled from 1 to n_elem.
     _nodes_coords_mesh_init : torch.Tensor(2d)
         Initial coordinates of finite element mesh nodes stored as
         torch.Tensor(2d) of shape (n_node_mesh, n_dim).
@@ -53,6 +54,10 @@ class StructureMesh:
     _nodes_disps_mesh_old : torch.Tensor(2d)
         Last converged displacements of finite element mesh nodes stored as
         torch.Tensor(2d) of shape (n_node_mesh, n_dim).
+    _dirichlet_bool_mesh : torch.Tensor(2d)
+        Degrees of freedom of finite element mesh subject to Dirichlet boundary
+        conditions. Stored as torch.Tensor(2d) of shape (n_node_mesh, n_dim)
+        where constrained degrees of freedom are labeled 1, otherwise 0.
     _internal_forces_mesh : torch.Tensor(2d)
         Internal forces of finite element mesh nodes stored as torch.Tensor(2d)
         of shape (n_node_mesh, n_dim).
@@ -65,6 +70,20 @@ class StructureMesh:
 
     Methods
     -------
+    get_n_dim(self)
+        Get number of spatial dimensions.
+    get_n_node_mesh(self)
+        Get number of nodes of finite element mesh.
+    get_n_elem(self)
+        Number of elements of finite element mesh.
+    get_elements_type(self)
+        Number of elements of finite element mesh.
+    get_dirichlet_bool_mesh(self)
+        Get degrees of freedom subject to Dirichlet boundary conditions.
+    get_element_configuration(self, element_id, time='current')
+        Get element nodes coordinates and displacements.
+    update_mesh_configuration(self, nodes_disps_mesh, \
+                              nodes_disps_mesh_old=None)
     element_assembler(self, elements_array)
         Assemble element level arrays into mesh level counterparts.
     _element_assembler_1d(self, elements_array_1d)
@@ -77,7 +96,8 @@ class StructureMesh:
                                connectivities)
         Check finite element mesh initialization.
     """
-    def __init__(self, nodes_coords_mesh_init, elements_type, connectivities):
+    def __init__(self, nodes_coords_mesh_init, elements_type, connectivities,
+                 dirichlet_bool_mesh):
         """Constructor.
         
         Parameters
@@ -93,17 +113,24 @@ class StructureMesh:
             Nodes (item, tuple[int]) of each finite element mesh element
             (key, str[int]). Elements labels must be within the range of
             1 to n_elem (included).
+        dirichlet_bool_mesh : torch.Tensor(2d)
+            Degrees of freedom of finite element mesh subject to Dirichlet
+            boundary conditions. Stored as torch.Tensor(2d) of shape
+            (n_node_mesh, n_dim) where constrained degrees of freedom are
+            labeled 1, otherwise 0.
         """
         # Check finite element mesh initialization
         self._check_mesh_initialization(nodes_coords_mesh_init, elements_type,
                                         connectivities)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set nodes initial coordinates
+        self._nodes_coords_mesh_init = nodes_coords_mesh_init
         # Set elements types
         self._elements_type = elements_type
         # Set elements connectivities
         self._connectivities = connectivities
-        # Set nodes initial coordinates
-        self._nodes_coords_mesh_init = nodes_coords_mesh_init
+        # Set Dirichlet boundary conditions (boolean)
+        self._dirichlet_bool_mesh = dirichlet_bool_mesh
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Set number of nodes
         self._n_node_mesh = nodes_coords_mesh_init.shape[0]
@@ -142,6 +169,106 @@ class StructureMesh:
             Number of nodes of finite element mesh.
         """
         return self._n_node_mesh
+    # -------------------------------------------------------------------------
+    def get_n_elem(self):
+        """Number of elements of finite element mesh.
+        
+        Returns
+        -------
+        n_elem : int
+            Number of elements of finite element mesh.
+        """
+        return self._n_elem
+    # -------------------------------------------------------------------------
+    def get_elements_type(self):
+        """Number of elements of finite element mesh.
+        
+        Returns
+        -------
+        elements_type : dict
+            FETorch element type (item, ElementType) of each finite element
+            mesh element (str[int]). Elements are labeled from 1 to n_elem.
+        """
+        return self._elements_type
+    # -------------------------------------------------------------------------
+    def get_dirichlet_bool_mesh(self):
+        """Get degrees of freedom subject to Dirichlet boundary conditions.
+        
+        Returns
+        -------
+        dirichlet_bool_mesh : torch.Tensor(2d)
+            Degrees of freedom of finite element mesh subject to Dirichlet
+            boundary conditions. Stored as torch.Tensor(2d) of shape
+            (n_node_mesh, n_dim) where constrained degrees of freedom are
+            labeled 1, otherwise 0.
+        """
+        return self._dirichlet_bool_mesh.clone()
+    # -------------------------------------------------------------------------
+    def get_element_configuration(self, element_id, time='current'):
+        """Get element nodes coordinates and displacements.
+        
+        Parameters
+        ----------
+        element_id : int
+            Element label. Elements labels must be within the range of
+            1 to n_elem (included).
+        time : {'init', 'last', 'current'}, default='current'
+            Time where element configuration is returned: initial configuration
+            ('init'), last converged configuration ('last'), or current
+            configuration ('current').
+        
+        Returns
+        -------
+        nodes_coords : torch.Tensor(2d)
+            Nodes coordinates stored as torch.Tensor(2d) of shape
+            (n_node, n_dof_node).
+        nodes_disps : torch.Tensor(2d)
+            Nodes displacements stored as torch.Tensor(2d) of shape
+            (n_node, n_dof_node).
+        """
+        # Get element nodes indexes
+        elem_nodes_idxs = \
+            [node - 1 for node in self._connectivities[str(element_id)]]
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Get element nodes coordinates and displacements
+        if time == 'init':
+            nodes_coords = self._nodes_coords_mesh_init[elem_nodes_idxs, :]
+            nodes_disps = torch.zeros_like(nodes_coords)
+        elif time == 'last':
+            nodes_coords = self._nodes_coords_mesh_old[elem_nodes_idxs, :]
+            nodes_disps = self._nodes_disps_mesh_old[elem_nodes_idxs, :]
+        elif time == 'current':
+            nodes_coords = self._nodes_coords_mesh[elem_nodes_idxs, :]
+            nodes_disps = self._nodes_disps_mesh[elem_nodes_idxs, :]
+        else:
+            raise RuntimeError('Unknown time option.')
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        return nodes_coords, nodes_disps
+    # -------------------------------------------------------------------------
+    def update_mesh_configuration(self, nodes_disps_mesh, time='current'):
+        """Update finite element mesh configuration from nodes displacements.
+
+        Parameters
+        ----------
+        nodes_disps_mesh : torch.Tensor(2d)
+            Displacements of finite element mesh nodes stored as
+            torch.Tensor(2d) of shape (n_node_mesh, n_dim).
+        time : {'last', 'current'}, default='current'
+            Time where update of element state variables is performed: last
+            converged state variables ('last') or current state variables
+            ('current').
+        """            
+        # Update nodes coordinates and displacements
+        if time == 'last':
+            self._nodes_disps_mesh_old = nodes_disps_mesh.clone()
+            self._nodes_coords_mesh_old = \
+                self._nodes_coords_mesh_init + self.nodes_disps_mesh_old
+        elif time == 'current':
+            self._nodes_disps_mesh = nodes_disps_mesh.clone()
+            self._nodes_coords_mesh = \
+                self._nodes_coords_mesh_init + self.nodes_disps_mesh
+        else:
+            raise RuntimeError('Unknown time option.')
     # -------------------------------------------------------------------------
     def element_assembler(self, elements_array):
         """Assemble element level arrays into mesh level counterparts.
