@@ -57,6 +57,18 @@ class StructureMaterialState:
     init_elements_model(self, model_name, model_parameters, element_ids, \
                         elements_type)
         Initialize constitutive model assigned to given set of elements.
+    get_strain_formulation(self)
+        Get problem strain formulation.
+    get_problem_type(self)
+        Get problem type.
+    get_elements_material(self)
+        Get elements material constitutive models.
+    update_element_state(self, element_id, state_variables, time='current')
+        Update element material constitutive state variables.
+    get_element_state(self, element_id, element_state, time='current')
+        Get element material constitutive state variables.
+    update_converged_elements_state(self)
+        Update elements last converged material state variables.
     """
     def __init__(self, strain_formulation, problem_type, n_elem):
         """Constructor.
@@ -137,3 +149,95 @@ class StructureMaterialState:
                  for i in range(1, n_gauss + 1)}
             self._elements_state_old[str(element_id)] = \
                 copy.deepcopy(self._elements_state[str(element_id)])
+    # -------------------------------------------------------------------------
+    def get_strain_formulation(self):
+        """Get problem strain formulation.
+        
+        Returns
+        -------
+        strain_formulation: {'infinitesimal', 'finite'}
+            Problem strain formulation.
+        """
+        return self._strain_formulation
+    # -------------------------------------------------------------------------
+    def get_problem_type(self):
+        """Get problem type.
+        
+        Returns
+        -------
+        problem_type : int
+            Problem type: 2D plane strain (1), 2D plane stress (2),
+            2D axisymmetric (3) and 3D (4).
+        """
+        return self._problem_type
+    # -------------------------------------------------------------------------
+    def get_elements_material(self):
+        """Get elements material constitutive models.
+        
+        Returns
+        -------
+        elements_material : dict
+            FETorch material constitutive model (item, ConstitutiveModel) of
+            each finite element mesh element (str[int]). Elements are labeled
+            from 1 to n_elem.
+        """
+        return self._elements_material
+    # -------------------------------------------------------------------------
+    def update_element_state(self, element_id, element_state, time='current'):
+        """Update element material constitutive state variables.
+        
+        Parameters
+        ----------
+        element_id : int
+            Element label. Elements labels must be within the range of
+            1 to n_elem (included).
+        element_state : dict
+            Material constitutive model state variables (item, dict) for each
+            Gauss integration point (key, str[int]).
+        time : {'last', 'current'}, default='current'
+            Time where update of element state variables is performed: last
+            converged state variables ('last') or current state variables
+            ('current').
+        """
+        # Update element material constitutive state variables
+        if time == 'last':
+            self._elements_state_old[str(element_id)] = \
+                copy.deepcopy(element_state)
+        elif time == 'current':
+            self._elements_state[str(element_id)] = \
+                copy.deepcopy(element_state)
+        else:
+            raise RuntimeError('Unknown time option.')
+    # -------------------------------------------------------------------------
+    def get_element_state(self, element_id, time='current'):
+        """Get element material constitutive state variables.
+        
+        Parameters
+        ----------
+        element_id : int
+            Element label. Elements labels must be within the range of
+            1 to n_elem (included).
+        time : {'last', 'current'}, default='current'
+            Time where update of element state variables is performed: last
+            converged state variables ('last') or current state variables
+            ('current').
+
+        Returns
+        -------
+        element_state : dict
+            Material constitutive model state variables (item, dict) for each
+            Gauss integration point (key, str[int]).
+        """
+        # Update element material constitutive state variables
+        if time == 'last':
+            element_state = self._elements_state_old[str(element_id)]
+        elif time == 'current':
+            element_state = self._elements_state[str(element_id)]
+        else:
+            raise RuntimeError('Unknown time option.')
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        return copy.deepcopy(element_state)
+    # -------------------------------------------------------------------------
+    def update_converged_elements_state(self):
+        """Update elements last converged material state variables."""
+        self._elements_state_old = copy.deepcopy(self._elements_state)
