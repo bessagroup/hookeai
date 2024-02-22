@@ -31,9 +31,8 @@ __status__ = 'Planning'
 # =============================================================================
 def compute_element_internal_forces(strain_formulation, problem_type,
                                     element_type, element_material,
-                                    element_state, element_state_old,
-                                    nodes_coords, nodes_disps,
-                                    nodes_inc_disps):
+                                    element_state_old, nodes_coords,
+                                    nodes_disps, nodes_inc_disps):
     """Compute finite element internal forces.
     
     Parameters
