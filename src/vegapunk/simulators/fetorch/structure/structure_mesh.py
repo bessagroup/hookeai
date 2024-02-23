@@ -8,6 +8,8 @@ StructureMesh
 #
 #                                                                       Modules
 # =============================================================================
+# Standard
+import copy
 # Third-party
 import torch
 # Local
@@ -82,6 +84,8 @@ class StructureMesh:
         Get degrees of freedom subject to Dirichlet boundary conditions.
     get_element_configuration(self, element_id, time='current')
         Get element nodes coordinates and displacements.
+    get_mesh_configuration(self, time='current')
+        Get finite element mesh configuration.
     update_mesh_configuration(self, nodes_disps_mesh, \
                               nodes_disps_mesh_old=None)
     element_assembler(self, elements_array)
@@ -181,7 +185,7 @@ class StructureMesh:
         return self._n_elem
     # -------------------------------------------------------------------------
     def get_elements_type(self):
-        """Number of elements of finite element mesh.
+        """Get type of elements of finite element mesh.
         
         Returns
         -------
@@ -189,7 +193,7 @@ class StructureMesh:
             FETorch element type (item, ElementType) of each finite element
             mesh element (str[int]). Elements are labeled from 1 to n_elem.
         """
-        return self._elements_type
+        return copy.deepcopy(self._elements_type)
     # -------------------------------------------------------------------------
     def get_dirichlet_bool_mesh(self):
         """Get degrees of freedom subject to Dirichlet boundary conditions.
@@ -245,6 +249,40 @@ class StructureMesh:
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         return nodes_coords, nodes_disps
     # -------------------------------------------------------------------------
+    def get_mesh_configuration(self, time='current'):
+        """Get finite element mesh configuration.
+
+        Parameters
+        ----------
+        time : {'init', 'last', 'current'}, default='current'
+            Time where element configuration is returned: initial configuration
+            ('init'), last converged configuration ('last'), or current
+            configuration ('current').
+
+        Returns
+        -------
+        nodes_coords_mesh : torch.Tensor(2d)
+            Coordinates of finite element mesh nodes stored as torch.Tensor(2d)
+            of shape (n_node_mesh, n_dim).
+        nodes_disps_mesh : torch.Tensor(2d)
+            Displacements of finite element mesh nodes stored as
+            torch.Tensor(2d) of shape (n_node_mesh, n_dim).
+        """
+        # Get nodes coordinates and displacements
+        if time == 'init':
+            nodes_coords_mesh = self._nodes_coords_mesh_init.clone()
+            nodes_disps_mesh = torch.zeros_like(nodes_coords_mesh)
+        elif time == 'last':
+            nodes_coords_mesh = self._nodes_coords_mesh_old.clone()
+            nodes_disps_mesh = self._nodes_disps_mesh_old.clone()
+        elif time == 'current':
+            nodes_coords_mesh = self._nodes_coords_mesh.clone()
+            nodes_disps_mesh = self._nodes_disps_mesh.clone()
+        else:
+            raise RuntimeError('Unknown time option.')
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        return nodes_coords_mesh, nodes_disps_mesh
+    # -------------------------------------------------------------------------
     def update_mesh_configuration(self, nodes_disps_mesh, time='current'):
         """Update finite element mesh configuration from nodes displacements.
 
@@ -262,11 +300,11 @@ class StructureMesh:
         if time == 'last':
             self._nodes_disps_mesh_old = nodes_disps_mesh.clone()
             self._nodes_coords_mesh_old = \
-                self._nodes_coords_mesh_init + self.nodes_disps_mesh_old
+                self._nodes_coords_mesh_init + self._nodes_disps_mesh_old
         elif time == 'current':
             self._nodes_disps_mesh = nodes_disps_mesh.clone()
             self._nodes_coords_mesh = \
-                self._nodes_coords_mesh_init + self.nodes_disps_mesh
+                self._nodes_coords_mesh_init + self._nodes_disps_mesh
         else:
             raise RuntimeError('Unknown time option.')
     # -------------------------------------------------------------------------
@@ -462,7 +500,7 @@ class StructureMesh:
         for element_type in elements_type.values():
             if not isinstance(element_type, ElementType):
                 raise RuntimeError('All finite element mesh elements must be '
-                                   'of type ElementType.')
+                                   'of instances of class ElementType.')
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Check elements
         if set(connectivities.keys()) != set(elements_labels):
