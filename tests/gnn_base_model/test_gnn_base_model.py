@@ -29,7 +29,7 @@ __status__ = 'Planning'
     'hidden_activ_type, output_activ_type, device_type',
     [(2, 5, 4, 3, 2, 2, 10, 2, 3,
       'material_patch_model', True, 'add', 'add', 'relu', 'identity', 'cpu'),
-     (0, 5, 4, 0, 3, 0, 10, 2, 3,
+     (0, 5, 4, 0, 3, 3, 10, 2, 3,
       'material_patch_model', True, 'add', 'add', 'relu', 'identity', 'cpu'),
      (2, 5, 0, 0, 2, 4, 10, 2, 3,
       'material_patch_model', True, 'add', 'add', 'relu', 'identity', 'cpu'),
