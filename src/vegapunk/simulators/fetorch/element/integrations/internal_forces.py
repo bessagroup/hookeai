@@ -95,7 +95,8 @@ def compute_element_internal_forces(strain_formulation, problem_type,
         shape_fun_deriv, _, jacobian_det = \
             eval_shapefun_deriv(element_type, nodes_coords, local_coords)
         # Build discrete symmetric gradient operator
-        grad_operator_sym = build_discrete_sym_gradient(shape_fun_deriv)
+        grad_operator_sym = \
+            build_discrete_sym_gradient(shape_fun_deriv, comp_order_sym)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Compute incremental strain tensor
         if strain_formulation == 'infinitesimal':

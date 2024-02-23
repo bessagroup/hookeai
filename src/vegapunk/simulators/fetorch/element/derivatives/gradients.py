@@ -66,7 +66,7 @@ def eval_shapefun_deriv(element_type, nodes_coords, local_coords):
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     return shape_fun_deriv, jacobian, jacobian_det
 # =============================================================================
-def build_discrete_sym_gradient(shape_fun_deriv, comp_order_sym=None):
+def build_discrete_sym_gradient(shape_fun_deriv, comp_order_sym):
     """Build discrete symmetric gradient operator.
     
     Parameters
@@ -76,13 +76,8 @@ def build_discrete_sym_gradient(shape_fun_deriv, comp_order_sym=None):
         sorted according with element nodes. Derivative of the i-th shape
         function with respect to the j-th local coordinate is stored in
         shape_fun_deriv[i, j].
-    comp_order_sym : tuple, default=None
-        Strain/Stress components symmetric order. If None, then the following
-        order is assumed by default:
-        
-        2D : ('11', '22', '12')
-        
-        3D : ('11', '22', '33', '12', '23', '13')
+    comp_order_sym : tuple
+        Strain/Stress components symmetric order.
         
     Returns
     -------
@@ -94,12 +89,6 @@ def build_discrete_sym_gradient(shape_fun_deriv, comp_order_sym=None):
     # functions derivatives
     n_node, n_dof_node = shape_fun_deriv.shape
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Set strain/stress components order
-    if comp_order_sym is None:
-        if n_dof_node == 2:
-            comp_order_sym = ('11', '22', '12')
-        else:
-            comp_order_sym = ('11', '22', '33', '12', '23', '13')
     # Get number of strain/stress components
     n_comps = len(comp_order_sym)
     # Check number of strain/stress components
@@ -107,7 +96,8 @@ def build_discrete_sym_gradient(shape_fun_deriv, comp_order_sym=None):
         raise RuntimeError('Invalid number of strain/stress components.')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Initialize discrete symmetric gradient operator
-    grad_operator_sym = torch.zeros((n_comps, n_node*n_dof_node))
+    grad_operator_sym = torch.zeros((n_comps, n_node*n_dof_node),
+                                    dtype=torch.float)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Loop over nodes
     for j in range(n_node):
@@ -131,7 +121,7 @@ def build_discrete_sym_gradient(shape_fun_deriv, comp_order_sym=None):
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     return grad_operator_sym
 # =============================================================================
-def build_discrete_gradient(shape_fun_deriv, comp_order_nsym=None):
+def build_discrete_gradient(shape_fun_deriv, comp_order_nsym):
     """Build discrete gradient operator.
     
     Parameters
@@ -141,13 +131,8 @@ def build_discrete_gradient(shape_fun_deriv, comp_order_nsym=None):
         sorted according with element nodes. Derivative of the i-th shape
         function with respect to the j-th local coordinate is stored in
         shape_fun_deriv[i, j].
-    comp_order_nsym : tuple, default=None
-        Strain/Stress components nonsymmetric order. If None, then the
-        following order is assumed by default:
-
-        2D : ('11', '21', '12', '22')
-
-        3D : ('11', '21', '31', '12', '22', '32', '13', '23', '33')
+    comp_order_nsym : tuple
+        Strain/Stress components nonsymmetric order.
 
     Returns
     -------
