@@ -55,7 +55,7 @@ class MaterialModelFinder(torch.nn.Module):
                            reaction_forces_mesh, dirichlet_bool_mesh):
         Compute force equilibrium loss for given discrete time.
     """
-    def __init__(self, device_type):
+    def __init__(self, device_type='cpu'):
         """Constructor.
         
         Parameters

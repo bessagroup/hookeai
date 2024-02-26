@@ -79,7 +79,7 @@ class StructureMesh:
     get_n_elem(self)
         Number of elements of finite element mesh.
     get_elements_type(self)
-        Number of elements of finite element mesh.
+        Get type of elements of finite element mesh.
     get_dirichlet_bool_mesh(self)
         Get degrees of freedom subject to Dirichlet boundary conditions.
     get_element_configuration(self, element_id, time='current')
