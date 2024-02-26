@@ -116,9 +116,9 @@ def generate_dataset_samples_files(dataset_directory, node_features,
                                + str(i) + ' of data set).')
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Get sample data
-        nodes_coords_hist = node_data[:, 1:4, :]
-        nodes_disps_hist=node_data[:, 4:7, :]
-        nodes_int_forces_hist=node_data[:, 7:10, :]
+        nodes_coords_hist = node_data[:, 3:6, :]
+        nodes_disps_hist=node_data[:, 6:9, :]
+        nodes_int_forces_hist=node_data[:, 9:12, :]
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Get material patch reference node coordinates
         node_coord_ref = nodes_coords_hist[:, 0:3, 0]
