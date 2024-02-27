@@ -135,6 +135,11 @@ class MaterialModelFinder(torch.nn.Module):
         n_dim, _, _ = get_problem_type_parameters(problem_type)
         # Get elements material
         elements_material = specimen_material_state.get_elements_material()
+        # Set finite element mesh nodes coordinates update flag
+        if strain_formulation == 'infinitesimal':
+            is_update_coords = False
+        else:
+            is_update_coords = True
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Initialize force equilibrium history loss
         force_equilibrium_hist_loss = 0
@@ -142,7 +147,8 @@ class MaterialModelFinder(torch.nn.Module):
         # Loop over discrete time
         for time_idx in range(n_time):
             # Update mesh configuration with known displacement history
-            specimen_data.update_specimen_mesh_configuration(time_idx)
+            specimen_data.update_specimen_mesh_configuration(
+                time_idx, is_update_coords=is_update_coords)
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Initialize elements internal forces
             elements_internal_forces = {}

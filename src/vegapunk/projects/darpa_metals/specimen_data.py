@@ -49,7 +49,7 @@ class SpecimenNumericalData:
         Set the specimen finite element mesh.
     set_specimen_data(self, nodes_disps_mesh_hist, reaction_forces_mesh_hist)
         Set specimen numerical data translated from experimental results.
-    update_specimen_mesh_configuration(self, time_idx)
+    update_specimen_mesh_configuration(self, time_idx, is_update_coords=True)
         Update the specimen mesh configuration for given discrete time.
     """
     def __init__(self):
@@ -156,7 +156,8 @@ class SpecimenNumericalData:
         # Store discrete time history
         self.time_hist = time_hist
     # -------------------------------------------------------------------------
-    def update_specimen_mesh_configuration(self, time_idx):
+    def update_specimen_mesh_configuration(self, time_idx,
+                                           is_update_coords=True):
         """Update the specimen mesh configuration for given discrete time.
         
         For a given discrete time, the known nodes displacement history is used
@@ -168,6 +169,11 @@ class SpecimenNumericalData:
         ----------
         time_idx : int
             Discrete time index.
+        is_update_coords : bool, default=True
+            If False, then only updates the displacements of the finite element
+            mesh nodes, leaving the nodes coordinates unchanged. If True, then
+            update both coordinates and displacements of finite element mesh
+            nodes.
         """
         # Check discrete time index
         if time_idx < 0 or time_idx >= self.time_hist.shape[0]:
@@ -180,8 +186,10 @@ class SpecimenNumericalData:
         time_idx_old = max((0, time_idx - 1))
         # Update specimen last converged mesh configuration
         self.specimen_mesh.update_mesh_configuration(
-            self.nodes_disps_mesh_hist[:, :, time_idx_old], time='last')
+            self.nodes_disps_mesh_hist[:, :, time_idx_old], time='last',
+            is_update_coords=is_update_coords)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Update specimen mesh current configuration
         self.specimen_mesh.update_mesh_configuration(
-            self.nodes_disps_mesh_hist[:, :, time_idx], time='current')
+            self.nodes_disps_mesh_hist[:, :, time_idx], time='current',
+            is_update_coords=is_update_coords)

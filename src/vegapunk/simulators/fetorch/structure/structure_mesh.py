@@ -87,7 +87,7 @@ class StructureMesh:
     get_mesh_configuration(self, time='current')
         Get finite element mesh configuration.
     update_mesh_configuration(self, nodes_disps_mesh, \
-                              nodes_disps_mesh_old=None)
+                              nodes_disps_mesh_old=None, is_update_coords=True)
     element_assembler(self, elements_array)
         Assemble element level arrays into mesh level counterparts.
     _element_assembler_1d(self, elements_array_1d)
@@ -283,7 +283,8 @@ class StructureMesh:
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         return nodes_coords_mesh, nodes_disps_mesh
     # -------------------------------------------------------------------------
-    def update_mesh_configuration(self, nodes_disps_mesh, time='current'):
+    def update_mesh_configuration(self, nodes_disps_mesh, time='current',
+                                  is_update_coords=True):
         """Update finite element mesh configuration from nodes displacements.
 
         Parameters
@@ -295,16 +296,27 @@ class StructureMesh:
             Time where update of element state variables is performed: last
             converged state variables ('last') or current state variables
             ('current').
+        is_update_coords : bool, default=True
+            If False, then only updates the displacements of the finite element
+            mesh nodes, leaving the nodes coordinates unchanged. If True, then
+            update both coordinates and displacements of finite element mesh
+            nodes.
         """            
         # Update nodes coordinates and displacements
         if time == 'last':
+            # Update last converged nodes displacements
             self._nodes_disps_mesh_old = nodes_disps_mesh.clone()
-            self._nodes_coords_mesh_old = \
-                self._nodes_coords_mesh_init + self._nodes_disps_mesh_old
+            # Update last converged nodes coordinates
+            if is_update_coords:
+                self._nodes_coords_mesh_old = \
+                    self._nodes_coords_mesh_init + self._nodes_disps_mesh_old
         elif time == 'current':
+            # Update current nodes displacements
             self._nodes_disps_mesh = nodes_disps_mesh.clone()
-            self._nodes_coords_mesh = \
-                self._nodes_coords_mesh_init + self._nodes_disps_mesh
+            # Update current nodes coordinates
+            if is_update_coords:
+                self._nodes_coords_mesh = \
+                    self._nodes_coords_mesh_init + self._nodes_disps_mesh
         else:
             raise RuntimeError('Unknown time option.')
     # -------------------------------------------------------------------------

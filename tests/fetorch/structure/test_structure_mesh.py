@@ -36,7 +36,8 @@ def test_update_mesh_configuration(toy_uniaxial_specimen_2d_quad4,
         random_nodes_disps_mesh = torch.rand(nodes_coords_mesh_init.shape)
         # Update finite element mesh configuration (last converged)
         structure_mesh.update_mesh_configuration(random_nodes_disps_mesh,
-                                                time='last')
+                                                 time='last',
+                                                 is_update_coords=True)
         # Get finite element mesh configuration (last converged)
         nodes_coords_mesh_old, nodes_disps_mesh_old = \
             structure_mesh.get_mesh_configuration(time='last')
@@ -50,7 +51,8 @@ def test_update_mesh_configuration(toy_uniaxial_specimen_2d_quad4,
                             'coordinates were not properly updated.')
         # Update finite element mesh configuration (current)
         structure_mesh.update_mesh_configuration(random_nodes_disps_mesh,
-                                                time='current')
+                                                 time='current',
+                                                 is_update_coords=True)
         # Get finite element mesh configuration (current)
         nodes_coords_mesh, nodes_disps_mesh = \
             structure_mesh.get_mesh_configuration(time='current')
