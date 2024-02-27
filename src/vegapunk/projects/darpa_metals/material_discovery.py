@@ -13,6 +13,7 @@ import torch
 # Local
 from simulators.fetorch.element.integrations.internal_forces import \
     compute_element_internal_forces
+from simulators.fetorch.math.matrixops import get_problem_type_parameters
 #
 #                                                          Authorship & Credits
 # =============================================================================
@@ -125,11 +126,13 @@ class MaterialModelFinder(torch.nn.Module):
         # Get degrees of freedom subject to Dirichlet boundary conditions
         dirichlet_bool_mesh = specimen_mesh.get_dirichlet_bool_mesh()
         # Get time history length
-        n_time = specimen_mesh.time_hist.shape[0]
+        n_time = specimen_data.time_hist.shape[0]
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Get strain formulation and problem type
         strain_formulation = specimen_material_state.get_strain_formulation()
         problem_type = specimen_material_state.get_problem_type()
+        # Get problem type parameters
+        n_dim, _, _ = get_problem_type_parameters(problem_type)
         # Get elements material
         elements_material = specimen_material_state.get_elements_material()
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -186,6 +189,7 @@ class MaterialModelFinder(torch.nn.Module):
             # Assemble element internal forces of finite element mesh nodes
             internal_forces_mesh = \
                 specimen_mesh.element_assembler(elements_internal_forces)
+            internal_forces_mesh = internal_forces_mesh.reshape(-1, n_dim)            
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Update elements last converged material constitutive state
             # variables

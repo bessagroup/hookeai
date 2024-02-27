@@ -141,22 +141,20 @@ class SpecimenNumericalData:
         if not isinstance(time_hist, torch.Tensor):
             raise RuntimeError(f'The discrete time history must be provided '
                                f'as a torch.Tensor(1d).')
-        elif (nodes_disps_mesh_hist.shape[3] != time_hist.shape[0]
-              or reaction_forces_mesh_hist.shape[3] != time_hist.shape[0]):
+        elif (nodes_disps_mesh_hist.shape[2] != time_hist.shape[0]
+              or reaction_forces_mesh_hist.shape[2] != time_hist.shape[0]):
             raise RuntimeError(
                 f'The time history length of the {data_labels[0]} '
-                f'({nodes_disps_mesh_hist.shape[3]}) or the {data_labels[1]} '
+                f'({nodes_disps_mesh_hist.shape[2]}) or the {data_labels[1]} '
                 f'is not consistent the discrete time history '
                 f'({time_hist.shape[0]}).')
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Store nodes displacements history
-        self.nodes_disps_mesh_hist = \
-            torch.tensor(nodes_disps_mesh_hist, dtype=torch.float)
+        self.nodes_disps_mesh_hist = nodes_disps_mesh_hist
         # Store nodes reaction forces history
-        self.reaction_forces_mesh_hist = \
-            torch.tensor(reaction_forces_mesh_hist, dtype=torch.float)
+        self.reaction_forces_mesh_hist = reaction_forces_mesh_hist
         # Store discrete time history
-        self.time_hist = torch.tensor(time_hist, dtype=torch.float)
+        self.time_hist = time_hist
     # -------------------------------------------------------------------------
     def update_specimen_mesh_configuration(self, time_idx):
         """Update the specimen mesh configuration for given discrete time.
@@ -179,7 +177,7 @@ class SpecimenNumericalData:
                                f'({self.time_hist.shape[0]}).')
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Set last converged time index
-        time_idx_old = max((0, time_idx_old - 1))
+        time_idx_old = max((0, time_idx - 1))
         # Update specimen last converged mesh configuration
         self.specimen_mesh.update_mesh_configuration(
             self.nodes_disps_mesh_hist[:, :, time_idx_old], time='last')

@@ -71,6 +71,8 @@ def compute_element_internal_forces(strain_formulation, problem_type,
     n_dim, comp_order_sym, _ = \
         get_problem_type_parameters(problem_type)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Get element number of nodes
+    n_node = element_type.get_n_node()
     # Get element number of degrees of freedom per node
     n_dof_node = element_type.get_n_dof_node()
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -81,7 +83,7 @@ def compute_element_internal_forces(strain_formulation, problem_type,
     gp_coords, gp_weights = element_type.get_gauss_integration_points()
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Initialize element internal forces
-    internal_forces = torch.zeros((n_dof_node))
+    internal_forces = torch.zeros((n_node*n_dof_node))
     # Initialize element material constitutive model state variables
     element_state = {key: None for key in element_state_old.keys()}
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

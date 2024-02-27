@@ -12,7 +12,7 @@ StructureMaterialState
 import copy
 # Local
 from simulators.fetorch.math.matrixops import get_problem_type_parameters
-from simulators.fetorch.material.models.standard import elastic
+from simulators.fetorch.material.models.standard.elastic import Elastic
 #
 #                                                          Authorship & Credits
 # =============================================================================
@@ -122,7 +122,7 @@ class StructureMaterialState:
         """
         # Initialize constitutive model
         if model_name == 'elastic':
-            constitutive_model = elastic(
+            constitutive_model = Elastic(
                 self._strain_formulation, self._problem_type, model_parameters)
         elif model_name == 'data_driven_model':
             constitutive_model = None
@@ -130,6 +130,9 @@ class StructureMaterialState:
             raise RuntimeError(f'Unknown material constitutive model '
                                f'\'{model_name}\'.')
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Initialize elements Gauss integration points state variables
+        self._elements_state = {}
+        self._elements_state_old = {}
         # Loop over elements
         for element_id in element_ids:
             # Assign constitutive model
