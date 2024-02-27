@@ -60,15 +60,6 @@ class StructureMesh:
         Degrees of freedom of finite element mesh subject to Dirichlet boundary
         conditions. Stored as torch.Tensor(2d) of shape (n_node_mesh, n_dim)
         where constrained degrees of freedom are labeled 1, otherwise 0.
-    _internal_forces_mesh : torch.Tensor(2d)
-        Internal forces of finite element mesh nodes stored as torch.Tensor(2d)
-        of shape (n_node_mesh, n_dim).
-    _external_forces_mesh : torch.Tensor(2d)
-        External forces of finite element mesh nodes stored as torch.Tensor(2d)
-        of shape (n_node_mesh, n_dim).
-    _reaction_forces_mesh : torch.Tensor(2d)
-        Reaction forces (Dirichlet boundary conditions) of finite element mesh
-        nodes stored as torch.Tensor(2d) of shape (n_node_mesh, n_dim).
 
     Methods
     -------
@@ -149,10 +140,6 @@ class StructureMesh:
         # Initialize displacements
         self._nodes_disps_mesh = torch.zeros_like(self._nodes_coords_mesh)
         self._nodes_disps_mesh_old = self._nodes_disps_mesh.clone()
-        # Initialize forces
-        self._internal_forces_mesh = torch.zeros_like(self._nodes_coords_mesh)
-        self._external_forces_mesh = torch.zeros_like(self._nodes_coords_mesh)
-        self._reaction_forces_mesh = torch.zeros_like(self._nodes_coords_mesh)
     # -------------------------------------------------------------------------
     def get_n_dim(self):
         """Get number of spatial dimensions.
