@@ -195,7 +195,7 @@ class MaterialModelFinder(torch.nn.Module):
             # Assemble element internal forces of finite element mesh nodes
             internal_forces_mesh = \
                 specimen_mesh.element_assembler(elements_internal_forces)
-            internal_forces_mesh = internal_forces_mesh.reshape(-1, n_dim)            
+            internal_forces_mesh = internal_forces_mesh.reshape(-1, n_dim)
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Update elements last converged material constitutive state
             # variables
