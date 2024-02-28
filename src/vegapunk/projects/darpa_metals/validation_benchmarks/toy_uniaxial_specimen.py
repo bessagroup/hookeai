@@ -87,27 +87,33 @@ def validate_force_equilibrium_loss(specimen_name, strain_formulation,
     # Initialize specimen material state
     specimen_material_state = StructureMaterialState(
         strain_formulation, problem_type, n_elem)
-    # Initialize elements constitutive model
-    specimen_material_state.init_elements_model(model_name, model_parameters,
-                                                elements_ids, elements_type)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Initialize material model finder
     material_finder = MaterialModelFinder()
-    # Compute force equilibrium history loss
-    force_equilibrium_hist_loss = \
-        material_finder(specimen_data, specimen_material_state)
-    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Display results
-    print('\nDARPA METALS PROJECT: Validate force equilibrium history loss')
-    print('-------------------------------------------------------------')
-    print(f'Specimen:           {specimen_name}')
-    print(f'Data source:        FEM numerical simulation')
-    print(f'\nElement type:       {mesh_type}')
-    print(f'Material model:     {model_name}')
-    print(f'Strain formulation: {strain_formulation}')
-    print(f'\nForce equilibrium history loss: '
-          f'{force_equilibrium_hist_loss:.4e}')
-    print('-------------------------------------------------------------\n')
+    # Loop over sequential modes
+    for sequential_mode in ('sequential_time', 'sequential_element'):
+        # Initialize elements constitutive model
+        specimen_material_state.init_elements_model(
+            model_name, model_parameters, elements_ids, elements_type)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Compute force equilibrium history loss
+        force_equilibrium_hist_loss = material_finder(
+            sequential_mode, specimen_data, specimen_material_state)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Display results
+        print('')
+        print('DARPA METALS PROJECT: Validate force equilibrium history loss')
+        print('-------------------------------------------------------------')
+        print(f'Specimen:           {specimen_name}')
+        print(f'Data source:        FEM numerical simulation')
+        print(f'\nSequential mode:    {sequential_mode}')
+        print(f'\nElement type:       {mesh_type}')
+        print(f'Material model:     {model_name}')
+        print(f'Strain formulation: {strain_formulation}')
+        print(f'\nForce equilibrium history loss: '
+            f'{force_equilibrium_hist_loss:.4e}')
+        print('-------------------------------------------------------------')
+        print('')
 # =============================================================================
 def get_toy_uniaxial_specimen_mesh(mesh_type):
     """Get toy uniaxial specimen finite element mesh data.
