@@ -47,7 +47,7 @@ def compute_element_internal_forces(strain_formulation, problem_type,
     element_material : ConstitutiveModel
         FETorch material constitutive model.
     element_state_old : dict
-        Last converged Material constitutive model state variables (item, dict)
+        Last converged material constitutive model state variables (item, dict)
         for each Gauss integration point (key, str[int]).
     nodes_coords : torch.Tensor(2d)
         Nodes coordinates stored as torch.Tensor(2d) of shape
