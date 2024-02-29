@@ -24,6 +24,8 @@ from simulators.fetorch.element.type.quad8 import FEQuad8
 from simulators.fetorch.element.type.tetra4 import FETetra4
 from simulators.fetorch.element.type.hexa8 import FEHexa8
 from simulators.fetorch.structure.structure_state import StructureMaterialState
+from simulators.fetorch.material.models.standard.hardening import \
+    get_hardening_law
 from simulators.fetorch.math.matrixops import get_problem_type_parameters
 from projects.darpa_metals.specimen_data import SpecimenNumericalData
 from projects.darpa_metals.material_discovery import MaterialModelFinder
@@ -240,7 +242,7 @@ def get_toy_uniaxial_specimen_mesh(mesh_type):
                           [3.00, 1.00],
                           [4.00, 1.00]], dtype=torch.float)
         # Set finite element mesh elements types
-        elements_type = {str(i): FEQuad4(n_gauss=1) for i in range(1, 5)}
+        elements_type = {str(i): FEQuad4(n_gauss=4) for i in range(1, 5)}
         # Set elements connectivies
         connectivities = {'1': (1, 2, 7, 6),
                           '2': (2, 3, 8, 7),
@@ -321,7 +323,7 @@ def get_toy_uniaxial_specimen_mesh(mesh_type):
                           [3.00, 1.00, 1.0],
                           [4.00, 1.00, 1.0]], dtype=torch.float)
         # Set finite element mesh elements types
-        elements_type = {str(i): FETetra4() for i in range(1, 25)}
+        elements_type = {str(i): FETetra4(n_gauss=4) for i in range(1, 25)}
         # Set elements connectivies
         connectivities = {'1': (1, 6, 16, 17),
                           '2': (1, 7, 6, 17),
@@ -388,7 +390,7 @@ def get_toy_uniaxial_specimen_mesh(mesh_type):
                           [3.00, 1.00, 1.0],
                           [4.00, 1.00, 1.0]], dtype=torch.float)
         # Set finite element mesh elements types
-        elements_type = {str(i): FEHexa8(n_gauss=1) for i in range(1, 5)}
+        elements_type = {str(i): FEHexa8(n_gauss=8) for i in range(1, 5)}
         # Set elements connectivies
         connectivities = {'1': (1, 11, 12, 2, 6, 16, 17, 7),
                           '2': (2, 12, 13, 3, 7, 17, 18, 8),
@@ -519,10 +521,24 @@ if __name__ == '__main__':
     strain_formulation = 'infinitesimal'
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set constitutive model name and parameters
-    model_name = 'elastic'
-    model_parameters = {'elastic_symmetry': 'isotropic',
-                        'E': 100, 'v': 0.3,
-                        'euler_angles': (0.0, 0.0, 0.0)}
+    model_name = 'von_mises'
+    # Set constitutive model parameters
+    if model_name == 'elastic':
+        model_parameters = {
+            'elastic_symmetry': 'isotropic',
+            'E': 100, 'v': 0.3,
+            'euler_angles': (0.0, 0.0, 0.0)}
+    elif model_name == 'von_mises':
+        model_parameters = {
+            'elastic_symmetry': 'isotropic',
+            'E': 100, 'v': 0.3,
+            'euler_angles': (0.0, 0.0, 0.0),
+            'hardening_law': get_hardening_law('piecewise_linear'),
+            'hardening_parameters':
+                {'hardening_points': torch.tensor([[0.0, 2.0],
+                                                   [1.0, 4.0]])}}
+    else:
+        raise RuntimeError('Unknown constitutive model.')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set toy uniaxial specimen finite element mesh types
     mesh_types = ('tri3', 'tri6', 'quad4', 'quad8', 'tetra4', 'hexa8')
