@@ -13,6 +13,7 @@ import copy
 # Local
 from simulators.fetorch.math.matrixops import get_problem_type_parameters
 from simulators.fetorch.material.models.standard.elastic import Elastic
+from simulators.fetorch.material.models.standard.von_mises import VonMises
 #
 #                                                          Authorship & Credits
 # =============================================================================
@@ -124,8 +125,9 @@ class StructureMaterialState:
         if model_name == 'elastic':
             constitutive_model = Elastic(
                 self._strain_formulation, self._problem_type, model_parameters)
-        elif model_name == 'data_driven_model':
-            constitutive_model = None
+        elif model_name == 'von_mises':
+            constitutive_model = VonMises(
+                self._strain_formulation, self._problem_type, model_parameters)
         else:
             raise RuntimeError(f'Unknown material constitutive model '
                                f'\'{model_name}\'.')
