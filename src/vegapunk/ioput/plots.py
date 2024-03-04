@@ -735,18 +735,20 @@ def scatter_xy_data(data_xy, data_labels=None, is_identity_line=False,
     if is_identity_line:
         # Plot identity line
         axes.axline((0, 0), slope=1, color='k', linestyle='--', zorder=5)
-        # Set identity error bounds label
-        if is_latex:
-            label = f'{identity_error*100:.0f}\\% error'
-        else:
-            label = f'{identity_error*100:.0f}% error'
-        # Plot identity error bounds
-        if identity_error is not None:            
-            x = np.linspace(0.0, axes.axis()[1])
-            axes.fill_between(x=x, y1=(1 + identity_error)*x,
-                              y2=(1 - identity_error)*x,
-                              color='#BBBBBB', label=label,
-                              zorder=-15)
+        # Identity error bounds
+        if identity_error is not None:
+            # Set identity error bounds label
+            if is_latex:
+                label = f'{identity_error*100:.0f}\\% error'
+            else:
+                label = f'{identity_error*100:.0f}% error'
+            # Plot identity error bounds
+            if identity_error is not None:            
+                x = np.linspace(0.0, axes.axis()[1])
+                axes.fill_between(x=x, y1=(1 + identity_error)*x,
+                                  y2=(1 - identity_error)*x,
+                                  color='#BBBBBB', label=label,
+                                  zorder=-15)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Compute and plot coefficient of determination
     if is_r2_coefficient and n_datasets == 1:
