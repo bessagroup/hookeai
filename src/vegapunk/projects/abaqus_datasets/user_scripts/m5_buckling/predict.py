@@ -16,6 +16,7 @@ import re
 import shutil
 import time
 import datetime
+import pandas as pd
 # Third-party
 import torch
 import numpy as np
@@ -95,6 +96,9 @@ def perform_model_prediction(predict_directory, dataset_file_path,
         generate_prediction_plots(predict_subdir, samples_ids=[i,], 
                                   plot_filename_suffix=plot_filename_suffix)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Generate csv files with the prediction history
+    generate_prediction_history_csv_files(predict_subdir, dataset, bottle_id)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set new name for prediction results subdirectory
     predict_subdir_new = os.path.join(os.path.dirname(predict_subdir),
                                       f'prediction_bottle_{str(bottle_id)}')
@@ -125,9 +129,9 @@ def generate_prediction_plots(predict_subdir, samples_ids='all',
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set prediction data arrays types and filenames
     prediction_types = {}
-    prediction_types['coord_comps'] = ('prediction_coord_dim_1',
-                                       'prediction_coord_dim_2',
-                                       'prediction_coord_dim_3')
+    prediction_types['disp_comps'] = ('prediction_disp_dim_1',
+                                      'prediction_disp_dim_2',
+                                      'prediction_disp_dim_3')
     # Plot model predictions against ground-truth
     for key, val in prediction_types.items():
         # Build samples predictions data arrays with predictions and
@@ -144,6 +148,9 @@ def generate_prediction_plots(predict_subdir, samples_ids='all',
             # Set prediction process
             if key == 'coord_comps':
                 prediction_sets = {'$x_{n+1} (\\mathrm{dim}: '
+                                   + str(i + 1) + ')$': data_array}
+            elif key == 'disp_comps':
+                prediction_sets = {'$u_{n+1} (\\mathrm{dim}: '
                                    + str(i + 1) + ')$': data_array}
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Set plot file name
@@ -184,11 +191,68 @@ def generate_prediction_plots(predict_subdir, samples_ids='all',
                                      save_dir=plot_dir, is_save_fig=True,
                                      is_stdout_display=False, is_latex=True)
 # =============================================================================
+def generate_prediction_history_csv_files(predict_subdir, dataset, bottle_id):
+    """Generate csv files with the prediction history for a given bottle.
+    
+    Assumes given node output features (and corresponding targets).
+    
+    Parameters
+    ----------
+    predict_subdir : str
+        Subdirectory where samples predictions results files are stored.
+    dataset : torch.utils.data.Dataset
+        Graph Neural Network graph data set. Each sample corresponds to a
+        torch_geometric.data.Data object describing a homogeneous graph.
+    bottle_id : int
+        ABAQUS data file ID.
+    """
+    # Get initial node coordinates
+    coords_init = dataset[0].pos.numpy()
+    # Get number of nodes
+    n_nodes = coords_init.shape[0]
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Get number of time steps
+    n_time_steps = len(dataset)
+    # Loop over time steps
+    for i in range(n_time_steps):
+        # Build samples predictions data arrays with predictions and
+        # ground-truth
+        prediction_data_arrays = build_prediction_data_arrays(
+                predict_subdir, prediction_type='disp_comps')
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Initialize csv file data array
+        csv_data_array = np.zeros((n_nodes, 9))
+        # Assemble nodes initial coordinates
+        csv_data_array[:, 0:3] = coords_init
+        # Loop over spatial dimensions
+        for dim in range(3):
+            # Assemble nodes displacements predictions
+            csv_data_array[:, 3 + dim] = prediction_data_arrays[dim][:, 1]
+            # Assemble nodes displacements ground-truth
+            csv_data_array[:, 6 + dim] = prediction_data_arrays[dim][:, 0]
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Create data frame
+        df = pd.DataFrame(csv_data_array,
+                          columns=['X1', 'X2', 'X3',
+                                   'PRED_U1', 'PRED_U2', 'PRED_U3' ,
+                                   'TRUTH_U1', 'TRUTH_U2', 'TRUTH_U3'],
+                          index=[k for k in range(1, n_nodes + 1)])
+        # Set index label
+        df.index.name = 'Node'
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set csv file path
+        csv_file_path = os.path.join(os.path.normpath(predict_subdir),
+                                     'disps_bottle_{bottle_id}_tstep_{i}.csv')
+        # Save csv file
+        df.to_csv(csv_file_path, encoding='utf-8', index=True)
+# =============================================================================
 def perform_model_rollout(predict_directory, dataset_file_path,
                           model_directory, load_model_state=None,
                           device_type='cpu', is_normalized_loss=False,
                           seed=None, is_verbose=False):
     """Perform prediction with GNN-based model.
+    
+    Assumes given node output features (and corresponding targets).
     
     Parameters
     ----------
