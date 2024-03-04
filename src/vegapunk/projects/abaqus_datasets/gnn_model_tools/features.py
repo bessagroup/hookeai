@@ -42,6 +42,12 @@ class FEMMeshFeaturesGenerator:
         Edges indexes matrix stored as numpy.ndarray[int](2d) with shape
         (num_edges, 2), where the i-th edge is stored in
         edges_indexes[i, :] as (start_node_index, end_node_index).
+    _nodes_disps_hist : numpy.ndarray(3d)
+        Nodes displacements history stored as a numpy.ndarray(3d) with
+        shape (n_nodes, n_dim, n_time_steps). Displacements of i-th node at
+        k-th time step are stored in nodes_disps_hist[i, :, k].
+    _time_hist : tuple
+        Discrete time history.
             
     Methods
     -------
@@ -55,7 +61,7 @@ class FEMMeshFeaturesGenerator:
         Get available edges features.   
     """
     def __init__(self, n_dim, nodes_coords_hist, n_edge=None,
-                 edges_indexes=None):
+                 edges_indexes=None, nodes_disps_hist=None, time_hist=None):
         """Constructor.
         
         Parameters
@@ -74,12 +80,20 @@ class FEMMeshFeaturesGenerator:
             (num_edges, 2), where the i-th edge is stored in
             edges_indexes[i, :] as (start_node_index, end_node_index). Required
             to compute edge features based on corresponding node features.
+        nodes_disps_hist : numpy.ndarray(3d), default=None
+            Nodes displacements history stored as a numpy.ndarray(3d) with
+            shape (n_nodes, n_dim, n_time_steps). Displacements of i-th node at
+            k-th time step are stored in nodes_disps_hist[i, :, k].
+        time_hist : tuple, default=None
+            Discrete time history.
         """
         self._n_dim = n_dim
         self._nodes_coords_hist = \
             copy.deepcopy(nodes_coords_hist)[:, :n_dim, :]
         self._n_edge = n_edge
         self._edges_indexes = copy.deepcopy(edges_indexes)
+        self._nodes_disps_hist = copy.deepcopy(nodes_disps_hist)[:, :n_dim, :]
+        self._time_hist = time_hist
         # Set current nodes coordinates
         self._nodes_coords = nodes_coords_hist[:, :n_dim, -1]
         # Check number of edges
@@ -127,12 +141,14 @@ class FEMMeshFeaturesGenerator:
                 raise RuntimeError('Unavailable node feature: ' + str(feature))
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         for feature in features:
-            if feature in ('coord_old', 'coord'):
+            if feature in ('coord_init', 'coord_old', 'coord'):
                 # Initialize node feature matrix
                 feature_matrix = np.zeros((n_nodes, n_dim))
                 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                 # Set time step index
-                if feature == 'coord_old':
+                if feature == 'coord_init':
+                    time_id = 0
+                elif feature == 'coord_old':
                     time_id = -2
                 else:
                     time_id = -1
@@ -141,6 +157,23 @@ class FEMMeshFeaturesGenerator:
                 for i in range(n_nodes):
                     feature_matrix[i, :] = \
                         self._nodes_coords_hist[i, :n_dim, time_id]
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            elif feature == 'disp':
+                # Initialize node feature matrix
+                feature_matrix = np.zeros((n_nodes, n_dim))
+                # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                # Loop over nodes
+                for i in range(n_nodes):
+                    feature_matrix[i, :] = \
+                        self._nodes_disps_hist[i, :n_dim, -1]
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            elif feature == 'time':
+                # Initialize node feature matrix
+                feature_matrix = np.zeros((n_nodes, 1))
+                # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                # Loop over nodes
+                for i in range(n_nodes):
+                    feature_matrix[i, :] = self._time_hist[-1]
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~     
             # Assemble node feature
             node_features_matrix = \
@@ -161,13 +194,22 @@ class FEMMeshFeaturesGenerator:
         available_features : tuple[str]
             Available nodes features.
 
+            'coord_init'     : numpy.ndarray(1d) of shape (n_dim,) with the \
+                               node initial coordinates.
+
             'coord_old'      : numpy.ndarray(1d) of shape (n_dim,) with the \
                                node previous coordinates.
 
             'coord'          : numpy.ndarray(1d) of shape (n_dim,) with the \
                                node current coordinates.
+
+            'disp'           : numpy.ndarray(1d) of shape (n_dim,) with the \
+                               node current displacements.
+            
+            'time'           : current time (float)
         """
-        available_features = ('coord_old', 'coord')
+        available_features = ('coord_init', 'coord_old', 'coord', 'disp',
+                              'time')
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         return available_features
     # -------------------------------------------------------------------------
@@ -221,7 +263,27 @@ class FEMMeshFeaturesGenerator:
                 raise RuntimeError('Unavailable edge feature: ' + str(feature))
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         for feature in features:
-            if feature == 'edge_vector_old':
+            if feature == 'edge_vector_init':
+                # Initialize edge feature matrix
+                feature_matrix = np.zeros((n_edge, n_dim))
+                # Loop over edges
+                for k, (i, j) in enumerate(self._edges_indexes):
+                    # Assemble edge feature
+                    feature_matrix[k, :] = \
+                        self._nodes_coords_hist[i, :n_dim, 0] \
+                        - self._nodes_coords_hist[j, :n_dim, 0]
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            elif feature == 'edge_vector_init_norm':
+                # Initialize edge feature matrix
+                feature_matrix = np.zeros((n_edge, 1))
+                # Loop over edges
+                for k, (i, j) in enumerate(self._edges_indexes):
+                    # Assemble edge feature
+                    feature_matrix[k, :] = np.linalg.norm(
+                        self._nodes_coords_hist[i, :n_dim, 0]
+                        - self._nodes_coords_hist[j, :n_dim, 0])
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            elif feature == 'edge_vector_old':
                 # Initialize edge feature matrix
                 feature_matrix = np.zeros((n_edge, n_dim))
                 # Loop over edges
@@ -260,6 +322,16 @@ class FEMMeshFeaturesGenerator:
         available_features : tuple[str]
             Available edges features:
             
+            'edge_vector_init' : numpy.ndarray(1d) of shape (n_dim,) \
+                                 resulting from the difference of the initial \
+                                 coordinates between the starting node and \
+                                 the end node.
+            
+            'edge_vector_init_norm' : float corresponding to the norm of the \
+                                      difference of the initial coordinates \
+                                      between the starting node and the end \
+                                      node.
+
             'edge_vector_old' : numpy.ndarray(1d) of shape (n_dim,) resulting \
                                 from the difference of the previous \
                                 coordinates between the starting node and the \
@@ -270,6 +342,7 @@ class FEMMeshFeaturesGenerator:
                                      between the starting node and the end \
                                      node.
         """
-        available_features = ('edge_vector_old', 'edge_vector_old_norm')
+        available_features = ('edge_vector_init', 'edge_vector_init_norm',
+                              'edge_vector_old', 'edge_vector_old_norm')
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         return available_features
