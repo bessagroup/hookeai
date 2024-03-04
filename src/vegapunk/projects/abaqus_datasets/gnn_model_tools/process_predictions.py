@@ -28,6 +28,8 @@ def build_prediction_data_arrays(predictions_dir, prediction_type,
                                  samples_ids='all'):
     """Build samples predictions data arrays with predictions and ground-truth.
     
+    Assumes given node output features (and corresponding targets).
+    
     Parameters
     ----------
     predictions_dir : str
@@ -36,6 +38,8 @@ def build_prediction_data_arrays(predictions_dir, prediction_type,
         Type of prediction data arrays:
         
         'coord_comps' : Node coordinates (one array per dimension)
+        
+        'disp_comps'  : Node displacements (one array per dimension)
 
     samples_ids : {'all', list[int]}, default='all'
         Samples IDs whose prediction results are collated in each prediction
@@ -91,6 +95,9 @@ def build_prediction_data_arrays(predictions_dir, prediction_type,
     if prediction_type == 'coord_comps':   
         # Set number of prediction data arrays
         n_data_arrays = 3
+    elif prediction_type == 'disp_comps':   
+        # Set number of prediction data arrays
+        n_data_arrays = 3
     else:
         raise RuntimeError('Unknown prediction data array type.')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -132,6 +139,25 @@ def build_prediction_data_arrays(predictions_dir, prediction_type,
                     data_array = np.concatenate(
                         (coords_target[:, i].reshape((-1, 1)),
                          coords[:, i].reshape((-1, 1))), axis=1)
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Build sample data array
+            elif prediction_type in ('disp_comps',):
+                # Get node displacements predictions
+                disps = sample_results['node_features_out']
+                # Get node internal forces ground-truth
+                disps_target = sample_results['node_targets']
+                # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                # Check availability of ground-truth
+                if disps_target is None:
+                    raise RuntimeError(f'Node displacements ground-truth is '
+                                       f'not available for sample '
+                                       f'{sample_id}.')
+                # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                # Build sample data array
+                if prediction_type == 'disp_comps':
+                    data_array = np.concatenate(
+                        (disps_target[:, i].reshape((-1, 1)),
+                         disps[:, i].reshape((-1, 1))), axis=1)
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Assemble sample prediction data
             prediction_data_arrays[i] = \
