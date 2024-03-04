@@ -31,7 +31,8 @@ from projects.abaqus_datasets.gnn_model_tools.process_predictions import \
     build_prediction_data_arrays
 from projects.abaqus_datasets.gnn_model_tools.features import \
     FEMMeshFeaturesGenerator
-from gnn_base_model.predict.prediction_plots import plot_truth_vs_prediction
+from gnn_base_model.predict.prediction_plots import plot_truth_vs_prediction, \
+    plot_dle_error_histogram
 from ioput.iostandard import make_directory, find_unique_file_with_regex, \
     write_summary_file
 #
@@ -145,6 +146,10 @@ def generate_prediction_plots(predict_subdir, samples_ids='all',
                 prediction_sets = {'$x_{n+1} (\\mathrm{dim}: '
                                    + str(i + 1) + ')$': data_array}
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Set plot file name
+            filename = val[i]
+            if plot_filename_suffix:
+                filename += str(plot_filename_suffix)
             # Plot model predictions against ground-truth
             plot_truth_vs_prediction(prediction_sets, error_bound=0.1,
                                      is_r2_coefficient=True,
@@ -154,6 +159,30 @@ def generate_prediction_plots(predict_subdir, samples_ids='all',
                                      save_dir=plot_dir,
                                      is_save_fig=True, is_stdout_display=False,
                                      is_latex=True)
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Set plot file name
+            filename = val[i] + '_dle'
+            if plot_filename_suffix:
+                filename += str(plot_filename_suffix)
+            # Plot model predictions against ground-truth (with DLE)
+            plot_truth_vs_prediction(prediction_sets, error_bound=0.1,
+                                     is_r2_coefficient=True,
+                                     is_direct_loss_estimator=True,
+                                     is_normalize_data=False,
+                                     filename=filename,
+                                     save_dir=plot_dir,
+                                     is_save_fig=True, is_stdout_display=False,
+                                     is_latex=True)
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Set plot file name
+            filename = val[i] + '_dle_error_dist'
+            if plot_filename_suffix:
+                filename += str(plot_filename_suffix)
+            # Plot Direct Loss Estimator (DLE) absolute error histogram 
+            plot_dle_error_histogram(data_array, is_normalize_data=False,
+                                     filename=filename,
+                                     save_dir=plot_dir, is_save_fig=True,
+                                     is_stdout_display=False, is_latex=True)
 # =============================================================================
 def perform_model_rollout(predict_directory, dataset_file_path,
                           model_directory, load_model_state=None,
