@@ -6,7 +6,7 @@
 
 # Model parameters
 # Number of node input features
-n_node_in: 3
+n_node_in: 4
 # Number of node output features
 n_node_out: 3
 # Number of edge input features 

@@ -145,26 +145,28 @@ def generate_dataset_samples_files(dataset_directory, input_files_paths,
         n_times = len(time_hist)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Set node features
-        node_features = ('coord_old',)
+        node_features = ('coord_old', 'time')
         # Set edge features
-        edge_features = ('edge_vector_old', 'edge_vector_old_norm')
+        edge_features = ('edge_vector_init', 'edge_vector_init_norm')
         # Set node targets
-        node_targets = ('coord',)
+        node_targets = ('disp',)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Loop over time steps
         for j in tqdm.tqdm(range(n_times - 1),
                            desc='  > Processing time steps: ', leave=False):
             # Instantiate graph data
             graph_data = GraphData(n_dim=n_dim,
-                                   nodes_coords=nodes_coords_hist[:, :, j])
+                                   nodes_coords=nodes_coords_hist[:, :, 0])
             # Set graph edges
             graph_data.set_graph_edges_indexes(
                 edges_indexes_mesh=edges_indexes_mesh)
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Instantiate finite element mesh features generator
             features_generator = FEMMeshFeaturesGenerator(
-                n_dim=n_dim, nodes_coords_hist=nodes_coords_hist[:, :, j:j+2],
-                edges_indexes=graph_data.get_graph_edges_indexes())
+                n_dim=n_dim, nodes_coords_hist=nodes_coords_hist[:, :, 0:j+2],
+                edges_indexes=graph_data.get_graph_edges_indexes(),
+                nodes_disps_hist=nodes_disps_hist[:, :, 0:j+2],
+                time_hist=time_hist[0:j+2])
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Build node features matrix
             node_features_matrix = \

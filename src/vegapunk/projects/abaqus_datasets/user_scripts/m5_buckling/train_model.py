@@ -260,7 +260,7 @@ def set_case_study_model_parameters(case_study_name, model_directory,
         model_name = 'bottle_incremental_model'
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Set number of node input and output features
-        n_node_in = 3
+        n_node_in = 4
         n_node_out = 3
         # Set number of edge input and output features
         n_edge_in = 4
