@@ -107,9 +107,8 @@ class GraphData:
         Set global targets matrix.
     get_global_targets_matrix(self)
         Get global targets matrix.
-    plot_material_patch_graph(self, is_show_plot=False, is_save_plot=False, \
-                              save_directory=None, plot_name=None, \
-                              is_overwrite_file=False)
+    plot_graph(self, is_show_plot=False, is_save_plot=False, \
+               save_directory=None, plot_name=None, is_overwrite_file=False)
         Generate plot of graph.
     _get_edges_from_local_radius(nodes_coords, connect_radius)
         Get edges between nodes that are within a given connectivity radius.
@@ -632,9 +631,9 @@ class GraphData:
         """
         return copy.deepcopy(self._global_targets_matrix)
     # -------------------------------------------------------------------------
-    def plot_material_patch_graph(self, is_show_plot=False, is_save_plot=False,
-                                  save_directory=None, plot_name=None,
-                                  is_overwrite_file=False):
+    def plot_graph(self, is_show_plot=False, is_save_plot=False,
+                   save_directory=None, plot_name=None,
+                   is_overwrite_file=False):
         """Generate plot of graph.
         
         Parameters

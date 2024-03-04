@@ -182,7 +182,7 @@ def generate_dataset_samples_files(dataset_directory, node_features,
             # Set sample plot name
             sample_file_name = sample_file_basename + '_' + str(i) + '_plot'
             # Save sample plot
-            gnn_patch_data.plot_material_patch_graph(
+            gnn_patch_data.plot_graph(
                 is_save_plot=is_save_plot_patch,
                 save_directory=dataset_directory,
                 plot_name=sample_file_name,

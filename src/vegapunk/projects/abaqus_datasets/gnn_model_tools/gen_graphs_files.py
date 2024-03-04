@@ -210,11 +210,10 @@ def generate_dataset_samples_files(dataset_directory, input_files_paths,
                     (f'{sample_file_basename}_{str(sample_graph_id)}'
                      f'_bottle_{str(abaqus_file_id)}_tstep_{str(j)}_plot')
                 # Save sample plot
-                graph_data.plot_material_patch_graph(
-                    is_save_plot=is_save_sample_plot,
-                    save_directory=dataset_directory,
-                    plot_name=sample_file_name,
-                    is_overwrite_file=True)
+                graph_data.plot_graph(is_save_plot=is_save_sample_plot,
+                                      save_directory=dataset_directory,
+                                      plot_name=sample_file_name,
+                                      is_overwrite_file=True)
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Increment sample graph index
             sample_graph_id += 1

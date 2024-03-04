@@ -276,15 +276,15 @@ def test_get_torch_data_object(gnn_patch_graph_2d):
     assert isinstance(gnn_patch_graph_2d.get_torch_data_object(),
                       torch_geometric.data.Data), 'Unexpected return type.'
 # -----------------------------------------------------------------------------
-def test_plot_material_patch_graph(gnn_patch_graph_2d, tmp_path, monkeypatch):
+def test_plot_graph(gnn_patch_graph_2d, tmp_path, monkeypatch):
     """Test plot of material patch graph."""
     monkeypatch.setattr(plt, 'show', lambda: None)
     is_error_raised = False
     try:
-        gnn_patch_graph_2d.plot_material_patch_graph(
+        gnn_patch_graph_2d.plot_graph(
             is_show_plot=True, is_save_plot=True, save_directory=str(tmp_path),
             plot_name='material_patch_graph', is_overwrite_file=True)
-        gnn_patch_graph_2d.plot_material_patch_graph(
+        gnn_patch_graph_2d.plot_graph(
             is_show_plot=True, is_save_plot=True, save_directory=str(tmp_path),
             plot_name=None, is_overwrite_file=False)
     except:

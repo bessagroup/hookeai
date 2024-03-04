@@ -211,11 +211,10 @@ def generate_dataset_samples_files(dataset_directory, dataset_csv_file_path,
             # Set sample plot name
             sample_file_name = sample_file_basename + '_' + str(i) + '_plot'
             # Save sample plot
-            graph_data.plot_material_patch_graph(
-                is_save_plot=is_save_sample_plot,
-                save_directory=dataset_directory,
-                plot_name=sample_file_name,
-                is_overwrite_file=True)
+            graph_data.plot_graph(is_save_plot=is_save_sample_plot,
+                                  save_directory=dataset_directory,
+                                  plot_name=sample_file_name,
+                                  is_overwrite_file=True)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     if is_verbose:
         print('\n> Finished graphs generation process!\n')
