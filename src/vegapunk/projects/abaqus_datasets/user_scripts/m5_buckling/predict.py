@@ -206,6 +206,11 @@ def generate_prediction_history_csv_files(predict_subdir, dataset, bottle_id):
     bottle_id : int
         ABAQUS data file ID.
     """
+    # Create plot directory
+    csv_dir = os.path.join(os.path.normpath(predict_subdir), 'csv_files')
+    if not os.path.isdir(csv_dir):
+        make_directory(csv_dir)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Get initial node coordinates
     coords_init = dataset[0].pos.numpy()
     # Get number of nodes
@@ -218,7 +223,7 @@ def generate_prediction_history_csv_files(predict_subdir, dataset, bottle_id):
         # Build samples predictions data arrays with predictions and
         # ground-truth
         prediction_data_arrays = build_prediction_data_arrays(
-                predict_subdir, prediction_type='disp_comps')
+                predict_subdir, prediction_type='disp_comps', samples_ids=[i,])
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Initialize csv file data array
         csv_data_array = np.zeros((n_nodes, 9))
@@ -241,8 +246,8 @@ def generate_prediction_history_csv_files(predict_subdir, dataset, bottle_id):
         df.index.name = 'Node'
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Set csv file path
-        csv_file_path = os.path.join(os.path.normpath(predict_subdir),
-                                     'disps_bottle_{bottle_id}_tstep_{i}.csv')
+        csv_file_path = os.path.join(os.path.normpath(csv_dir),
+                                     f'disps_bottle_{bottle_id}_tstep_{i}.csv')
         # Save csv file
         df.to_csv(csv_file_path, encoding='utf-8', index=True)
 # =============================================================================
