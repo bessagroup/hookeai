@@ -28,7 +28,7 @@ def build_prediction_data_arrays(predictions_dir, prediction_type,
                                  samples_ids='all'):
     """Build samples predictions data arrays with predictions and ground-truth.
     
-    Assumes given node output features (and corresponding targets).
+    Assumes given node output features (set prediction type accordingly).
     
     Parameters
     ----------
