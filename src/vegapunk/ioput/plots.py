@@ -761,6 +761,10 @@ def scatter_xy_data(data_xy, data_labels=None, is_identity_line=False,
         ssres = np.sum((ref_data - pred_data)**2)
         # Compute total sum of squares
         sstot = np.sum((ref_data - data_mean)**2)
+        # Avoid division by zero
+        tolerance = 1e-8
+        if sstot < tolerance*ssres:
+            sstot = 1.0
         # Compute coefficient of determination
         r2 = 1 - ssres/sstot
         # Get coefficient of determination string
