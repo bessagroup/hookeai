@@ -61,11 +61,11 @@ def perform_model_standard_training(case_study_name, dataset_file_path,
                 set_default_training_options()
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set GNN-based model training options
-    if case_study_name in ('incremental_model',):
+    if case_study_name in ('incremental_model', 'time_model'):
         # Set number of epochs
         n_max_epochs = 200
         # Set batch size
-        batch_size = 16
+        batch_size = 8
         # Set learning rate
         lr_init = 1.0e-03
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -81,7 +81,7 @@ def perform_model_standard_training(case_study_name, dataset_file_path,
         early_stopping_kwargs = {'validation_size': 0.2,
                                  'validation_frequency': 1,
                                  'trigger_tolerance': 20,
-                                 'improvement_tolerance':1e-3}
+                                 'improvement_tolerance':1e-2}
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     else:
         raise RuntimeError('Unknown case study.')
@@ -255,7 +255,7 @@ def set_case_study_model_parameters(case_study_name, model_directory,
         GNN-based model class initialization parameters (check
         class GNNEPDBaseModel).
     """
-    if case_study_name in ('incremental_model',):
+    if case_study_name in ('incremental_model', 'time_model'):
         # Set GNN-based model name
         model_name = 'bottle_incremental_model'
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -391,10 +391,10 @@ if __name__ == "__main__":
     is_cross_validation = False
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set case studies base directory
-    base_dir = ('/home/bernardoferreira/Documents/brown/projects/'
+    base_dir = ('/home/bernardoferreira/Documents/projects/'
                 'abaqus_datasets/case_studies/M5_buckling')
     # Set case study directory
-    case_study_name = 'incremental_model'
+    case_study_name = 'time_model'
     case_study_dir = os.path.join(os.path.normpath(base_dir),
                                   f'{case_study_name}')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
