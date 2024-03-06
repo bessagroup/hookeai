@@ -149,7 +149,7 @@ def generate_dataset_samples_files(dataset_directory, input_files_paths,
         # Set edge features
         edge_features = ('edge_vector_init', 'edge_vector_init_norm')
         # Set node targets
-        node_targets = ('disp',)
+        node_targets = ('coord',)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Loop over time steps
         for j in tqdm.tqdm(range(n_times - 1),
