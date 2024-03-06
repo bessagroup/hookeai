@@ -61,7 +61,7 @@ def perform_model_standard_training(case_study_name, dataset_file_path,
                 set_default_training_options()
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set GNN-based model training options
-    if case_study_name in ('incremental_model', 'time_model'):
+    if case_study_name in ('coord_time_to_coord_model',):
         # Set number of epochs
         n_max_epochs = 200
         # Set batch size
@@ -185,7 +185,7 @@ def perform_model_kfold_cross_validation(case_study_name, dataset_file_path,
                 set_default_training_options()
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set GNN-based model training options
-    if case_study_name in ('incremental_model',):
+    if case_study_name in ('coord_time_to_coord_model',):
         # Set number of epochs
         n_max_epochs = 200
         # Set batch size
@@ -205,7 +205,7 @@ def perform_model_kfold_cross_validation(case_study_name, dataset_file_path,
         early_stopping_kwargs = {'validation_size': 0.2,
                                  'validation_frequency': 1,
                                  'trigger_tolerance': 20,
-                                 'improvement_tolerance':1e-3}
+                                 'improvement_tolerance':1e-2}
     else:
         raise RuntimeError('Unknown case study.')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -255,7 +255,7 @@ def set_case_study_model_parameters(case_study_name, model_directory,
         GNN-based model class initialization parameters (check
         class GNNEPDBaseModel).
     """
-    if case_study_name in ('incremental_model', 'time_model'):
+    if case_study_name in ('coord_time_to_coord_model',):
         # Set GNN-based model name
         model_name = 'bottle_incremental_model'
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -379,7 +379,7 @@ def set_default_training_options():
     early_stopping_kwargs = {'validation_size': 0.2,
                              'validation_frequency': 1,
                              'trigger_tolerance': 10,
-                             'improvement_tolerance':1e-3}
+                             'improvement_tolerance':1e-2}
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     return opt_algorithm, lr_init, lr_scheduler_type, lr_scheduler_kwargs, \
         loss_nature, loss_type, loss_kwargs, is_sampler_shuffle, \
@@ -394,7 +394,7 @@ if __name__ == "__main__":
     base_dir = ('/home/bernardoferreira/Documents/projects/'
                 'abaqus_datasets/case_studies/M5_buckling')
     # Set case study directory
-    case_study_name = 'time_model'
+    case_study_name = 'coord_time_to_coord_model'
     case_study_dir = os.path.join(os.path.normpath(base_dir),
                                   f'{case_study_name}')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
