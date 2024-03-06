@@ -99,6 +99,10 @@ def perform_model_prediction(predict_directory, dataset_file_path,
     # Generate csv files with the prediction history
     generate_prediction_history_csv_files(predict_subdir, dataset, bottle_id)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Generate predicted deformed configuration graphs
+    generate_deformed_configuration_graph(predict_subdir, dataset, bottle_id,
+                                          time_steps=[44,])
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set new name for prediction results subdirectory
     predict_subdir_new = os.path.join(os.path.dirname(predict_subdir),
                                       f'prediction_bottle_{str(bottle_id)}')
@@ -112,6 +116,8 @@ def generate_prediction_plots(predict_subdir, samples_ids='all',
                               plot_filename_suffix=None):
     """Generate plots of model predictions.
     
+    Assumes given node output features (set prediction types accordingly).
+
     Parameters
     ----------
     predict_subdir : str
@@ -129,9 +135,9 @@ def generate_prediction_plots(predict_subdir, samples_ids='all',
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set prediction data arrays types and filenames
     prediction_types = {}
-    prediction_types['disp_comps'] = ('prediction_disp_dim_1',
-                                      'prediction_disp_dim_2',
-                                      'prediction_disp_dim_3')
+    prediction_types['coord_comps'] = ('prediction_coord_dim_1',
+                                       'prediction_coord_dim_2',
+                                       'prediction_coord_dim_3')
     # Plot model predictions against ground-truth
     for key, val in prediction_types.items():
         # Build samples predictions data arrays with predictions and
@@ -194,7 +200,7 @@ def generate_prediction_plots(predict_subdir, samples_ids='all',
 def generate_prediction_history_csv_files(predict_subdir, dataset, bottle_id):
     """Generate csv files with the prediction history for a given bottle.
     
-    Assumes given node output features (and corresponding targets).
+    Assumes given node output features (set prediction type accordingly).
     
     Parameters
     ----------
@@ -218,6 +224,8 @@ def generate_prediction_history_csv_files(predict_subdir, dataset, bottle_id):
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Get number of time steps
     n_time_steps = len(dataset)
+    # Set prediction type
+    prediction_type = 'coord_comps'
     # Loop over time steps
     for i in range(n_time_steps):
         # Build samples predictions data arrays with predictions and
@@ -231,10 +239,18 @@ def generate_prediction_history_csv_files(predict_subdir, dataset, bottle_id):
         csv_data_array[:, 0:3] = coords_init
         # Loop over spatial dimensions
         for dim in range(3):
-            # Assemble nodes displacements predictions
-            csv_data_array[:, 3 + dim] = prediction_data_arrays[dim][:, 1]
-            # Assemble nodes displacements ground-truth
-            csv_data_array[:, 6 + dim] = prediction_data_arrays[dim][:, 0]
+            if prediction_type == 'coord_comps':
+                # Assemble nodes displacements predictions
+                csv_data_array[:, 3 + dim] = \
+                    prediction_data_arrays[dim][:, 1] - coords_init[:, dim]
+                # Assemble nodes displacements ground-truth
+                csv_data_array[:, 6 + dim] = \
+                    prediction_data_arrays[dim][:, 0] - coords_init[:, dim]
+            elif prediction_type == 'disp_comps':
+                # Assemble nodes displacements predictions
+                csv_data_array[:, 3 + dim] = prediction_data_arrays[dim][:, 1]
+                # Assemble nodes displacements ground-truth
+                csv_data_array[:, 6 + dim] = prediction_data_arrays[dim][:, 0]
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Create data frame
         df = pd.DataFrame(csv_data_array,
@@ -250,6 +266,74 @@ def generate_prediction_history_csv_files(predict_subdir, dataset, bottle_id):
                                      f'disps_bottle_{bottle_id}_tstep_{i}.csv')
         # Save csv file
         df.to_csv(csv_file_path, encoding='utf-8', index=True)
+# =============================================================================
+def generate_deformed_configuration_graph(predict_subdir, dataset, bottle_id,
+                                          time_steps):
+    """Generate predicted deformed configuration graph of given bottle.
+
+    Assumes given node output features (set prediction type accordingly).
+
+    Parameters
+    ----------
+    predict_subdir : str
+        Subdirectory where samples predictions results files are stored.
+    dataset : torch.utils.data.Dataset
+        Graph Neural Network graph data set. Each sample corresponds to a
+        torch_geometric.data.Data object describing a homogeneous graph.
+    bottle_id : int
+        ABAQUS data file ID.
+    plot_time_steps : tuple[int]
+        Time steps for which the deformed configuration graph is to be plotted.
+        Must be within the range of 0 to len(dataset).
+    """
+    # Create plot directory
+    plot_dir = os.path.join(os.path.normpath(predict_subdir), 'plots')
+    if not os.path.isdir(plot_dir):
+        make_directory(plot_dir)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Get initial node coordinates
+    coords_init = dataset[0].pos.numpy()
+    # Get number of nodes
+    n_nodes = coords_init.shape[0]
+    # Get number of spatial dimensions
+    n_dim = coords_init.shape[1]
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Loop over time steps
+    for i in time_steps:
+        # Get time step sample graph
+        time_step_graph = dataset[i]
+        # Get number of dimensions and edges indexes matrix
+        n_dim, edges_indexes = GraphData.extract_data_torch_data_object(
+            time_step_graph, attributes=('n_dim', 'edge_indexes'))
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set prediction type
+        prediction_type = 'coord_comps'
+        # Build samples predictions data arrays with predictions and
+        # ground-truth
+        prediction_data_arrays = build_prediction_data_arrays(
+            predict_subdir, prediction_type=prediction_type, samples_ids=[i,])
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Initialize node coordinates
+        coords = np.zeros((n_nodes, n_dim))
+        # Loop over spatial dimensions
+        for dim in range(n_dim):
+            # Assembles nodes coordinates 
+            if prediction_type == 'coord_comps':
+                coords[:, dim] = prediction_data_arrays[dim][:, 1]
+            elif prediction_type == 'disp_comps':
+                coords[:, dim] = \
+                    coords_init[:, dim] + prediction_data_arrays[dim][:, 1]
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Instantiate graph data
+        graph_data = GraphData(n_dim=n_dim, nodes_coords=coords)
+        # Set graph edges indexes
+        graph_data.set_graph_edges_indexes(edges_indexes_mesh=edges_indexes)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set plot name
+        plot_name = f'deformed_configuration_bottle_{bottle_id}_step_{i}'
+        # Generate plot
+        graph_data.plot_graph(is_save_plot=True, save_directory=plot_dir,
+                              plot_name=plot_name, is_overwrite_file=True)
 # =============================================================================
 def perform_model_rollout(predict_directory, dataset_file_path,
                           model_directory, load_model_state=None,
@@ -587,7 +671,7 @@ if __name__ == "__main__":
     base_dir = ('/home/bernardoferreira/Documents/projects/'
                 'abaqus_datasets/case_studies/M5_buckling/')
     # Set case study directory
-    case_study_name = 'incremental_model'
+    case_study_name = 'coord_time_to_coord_model'
     case_study_dir = os.path.join(os.path.normpath(base_dir),
                                   f'{case_study_name}')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
