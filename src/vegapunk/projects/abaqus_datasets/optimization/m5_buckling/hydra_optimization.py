@@ -267,12 +267,14 @@ if __name__ == "__main__":
     elif process == 'training-validation':
         datasets_paths['training'] = \
             ('/home/bernardoferreira/Documents/projects/abaqus_datasets/'
-             'case_studies/M5_buckling/time_model/1_training_dataset/'
-             'graph_dataset_n4500.pkl')
+             'case_studies/M5_buckling/graph_datasets/'
+             'coord_time_to_coord_capped_tstep_44/'
+             '1_training_dataset/graph_dataset_n4500.pkl')
         datasets_paths['validation'] = \
             ('/home/bernardoferreira/Documents/projects/abaqus_datasets/'
              'case_studies/M5_buckling/hyperparameter_opt/'
-             'validation_dataset/graph_dataset_n1260.pkl')
+             'validation_dataset/coord_time_to_coord_capped_tstep_44/'
+             'graph_dataset_n1260.pkl')
     else:
         datasets_paths['training'] = None
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

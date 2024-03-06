@@ -94,7 +94,7 @@ hydra:
   # Hydra job
   job:
     # Job basename
-    name: optimize_bottle_gnn_model
+    name: optimize_coord_time_to_coord_model
     # Change working directory to last output directory
     chdir: false
 
