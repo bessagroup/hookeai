@@ -1639,17 +1639,26 @@ class TorchStandardScaler:
     def fit(self, tensor, is_bessel=False):
         """Fit features standardization mean and standard deviation tensors.
         
+        If sequential data is provided, then all sequence times are
+        concatenated and the standardization procedures take into account the
+        whole sequence length data for each feature.
+
         Parameters
         ----------
         tensor : torch.Tensor
             Features PyTorch tensor stored as torch.Tensor with shape
-            (n_samples, n_features).
+            (n_samples, n_features) or as torch.Tensor with shape
+            (sequence_length, n_samples, n_features).
         is_bessel : bool, default=False
             If True, apply Bessel's correction to compute standard deviation,
             False otherwise.
         """
         # Check features tensor
         self._check_tensor(tensor)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Concatenate sequential data
+        if len(tensor.shape) == 3:
+            tensor = torch.reshape(tensor, (-1, self._n_features))
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Set standardization mean and standard deviation
         self._mean = self._check_mean(torch.mean(tensor, dim=0))
@@ -1658,21 +1667,33 @@ class TorchStandardScaler:
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     def transform(self, tensor):
         """Standardize features tensor.
-        
+
+        If sequential data is provided, then all sequence times are
+        concatenated and the standardization procedures take into account the
+        whole sequence length data for each feature.
+
         Parameters
         ----------
         tensor : torch.Tensor
             Features PyTorch tensor stored as torch.Tensor with shape
-            (n_samples, n_features).
+            (n_samples, n_features) or as torch.Tensor with shape
+            (sequence_length, n_samples, n_features).
             
         Returns
         -------
         transformed_tensor : torch.Tensor
             Standardized features PyTorch tensor stored as torch.Tensor with
-            shape (n_samples, n_features).
+            shape (n_samples, n_features) or as torch.Tensor with shape
+            (sequence_length, n_samples, n_features).
         """
         # Check features tensor
         self._check_tensor(tensor)
+        # Store input tensor shape
+        input_shape = tensor.shape
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Concatenate sequential data
+        if len(input_shape) == 3:
+            tensor = torch.reshape(tensor, (-1, self._n_features))
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Get number of samples
         n_samples = tensor.shape[0]
@@ -1686,9 +1707,13 @@ class TorchStandardScaler:
         transformed_tensor[non_null_mask] = \
             torch.div(transformed_tensor[non_null_mask], std[non_null_mask])
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Revert concatenation of sequential data
+        if len(input_shape) == 3:
+            transformed_tensor = torch.reshape(transformed_tensor, input_shape)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Check transformed tensor
-        if not torch.equal(torch.tensor(transformed_tensor.size()),
-                           torch.tensor(tensor.size())):
+        if not torch.equal(torch.tensor(transformed_tensor.shape),
+                           torch.tensor(input_shape)):
             raise RuntimeError('Input and transformed tensors do not have the '
                                'same shape.')
         elif torch.any(torch.isnan(transformed_tensor)):
@@ -1699,21 +1724,33 @@ class TorchStandardScaler:
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     def inverse_transform(self, tensor):
         """Destandardize features tensor.
-        
+
+        If sequential data is provided, then all sequence times are
+        concatenated and the standardization procedures take into account the
+        whole sequence length data for each feature.
+
         Parameters
         ----------
         tensor : torch.Tensor
             Standardized features PyTorch tensor stored as torch.Tensor with
-            shape (n_samples, n_features).
+            shape (n_samples, n_features) or as torch.Tensor with shape
+            (sequence_length, n_samples, n_features).
             
         Returns
         -------
         transformed_tensor : torch.Tensor
             Features PyTorch tensor stored as torch.Tensor with shape
-            (n_samples, n_features).
+            (n_samples, n_features) or as torch.Tensor with shape
+            (sequence_length, n_samples, n_features).
         """
         # Check features tensor
         self._check_tensor(tensor)
+        # Store input tensor shape
+        input_shape = tensor.shape
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Concatenate sequential data
+        if len(input_shape) == 3:
+            tensor = torch.reshape(tensor, (-1, self._n_features))
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Get number of samples
         n_samples = tensor.shape[0]
@@ -1723,9 +1760,13 @@ class TorchStandardScaler:
         # Destandardize features tensor
         transformed_tensor = torch.mul(tensor, std) + mean
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Revert concatenation of sequential data
+        if len(input_shape) == 3:
+            transformed_tensor = torch.reshape(transformed_tensor, input_shape)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Check transformed tensor
-        if not torch.equal(torch.tensor(transformed_tensor.size()),
-                           torch.tensor(tensor.size())):
+        if not torch.equal(torch.tensor(transformed_tensor.shape),
+                           torch.tensor(input_shape)):
             raise RuntimeError('Input and transformed tensors do not have the '
                                'same shape.')
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -1793,10 +1834,12 @@ class TorchStandardScaler:
         """
         if not isinstance(tensor, torch.Tensor):
             raise RuntimeError('Features tensor is not a torch.Tensor.')
-        elif len(tensor.shape) != 2:
+        elif len(tensor.shape) not in (2, 3):
             raise RuntimeError('Features tensor is not a torch.Tensor with '
-                               'shape (n_samples, n_features).')
-        elif tensor.shape[1] != self._n_features:
+                               'shape (n_samples, n_features) or '
+                               'torch.Tensor with shape '
+                               '(sequence_length, n_samples, n_features).')
+        elif tensor.shape[-1] != self._n_features:
             raise RuntimeError('Features tensor is not consistent with data'
                                'scaler number of features.')
 # =============================================================================
