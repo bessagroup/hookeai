@@ -235,9 +235,9 @@ def train_model(n_max_epochs, dataset, model_init_args, lr_init,
     # Initialize number of training steps
     step = 0
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Load Graph Neural Network model model state
+    # Load Graph Neural Network model state
     if load_model_state is not None:   
-        # Initialize Graph Neural Network model model
+        # Initialize Graph Neural Network model
         # (includes loading of data scalers)
         model = GNNEPDBaseModel.init_model_from_file(
             model_init_args['model_directory'])
@@ -250,7 +250,7 @@ def train_model(n_max_epochs, dataset, model_init_args, lr_init,
         if is_verbose:
             print('\n> Loading model state...')
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        # Load Graph Neural Network model model state
+        # Load Graph Neural Network model state
         loaded_epoch = load_training_state(model, opt_algorithm, optimizer,
                                            load_model_state)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -604,7 +604,7 @@ def save_training_state(model, optimizer, epoch=None,
         training epochs posterior to the saved state file. Effective only if
         saved epoch is known.
     """
-    # Save Graph Neural Network model
+    # Save model
     model.save_model_state(epoch=epoch, is_best_state=is_best_state)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set optimizer state file
@@ -689,7 +689,7 @@ def load_training_state(model, opt_algorithm, optimizer,
         Training epoch corresponding to loaded state data. Defaults to 0 if
         training epoch is unknown.
     """
-    # Load Graph Neural Network model model state        
+    # Load model state        
     loaded_epoch = \
         model.load_model_state(load_model_state=load_model_state,
                                is_remove_posterior=is_remove_posterior)
@@ -775,19 +775,10 @@ def save_loss_history(model, n_max_epochs, loss_nature, loss_type,
         Model.
     n_max_epochs : int
         Maximum number of epochs of training process.
-    loss_nature : {'node_features_out', 'global_features_out'}, \
-                  default='node_features_out'
-        Loss nature:
-        
-        'node_features_out' : Based on node output features
-
-        'global_features_out' : Based on global output features
-
-    loss_type : {'mse',}, default='mse'
-        Loss function type:
-        
-        'mse'  : MSE (torch.nn.MSELoss)
-
+    loss_nature : str
+        Loss nature.
+    loss_type : str
+        Loss function type.
     training_loss_history : list[float]
         Training process training loss history (per epoch).
     lr_scheduler_type : {'steplr', 'explr', 'linlr'}, default=None
@@ -840,19 +831,10 @@ def load_loss_history(model, loss_nature, loss_type, epoch=None):
     ----------
     model : torch.nn.Module
         Model.
-    loss_nature : {'node_features_out', 'global_features_out'}, \
-                  default='node_features_out'
-        Loss nature:
-        
-        'node_features_out' : Based on node output features
-
-        'global_features_out' : Based on global output features
-
-    loss_type : {'mse',}, default='mse'
-        Loss function type:
-        
-        'mse'  : MSE (torch.nn.MSELoss)
-        
+    loss_nature : str
+        Loss nature.
+    loss_type : str
+        Loss function type.
     epoch : int, default=None
         Epoch to which loss history is loaded (included), with the first epoch
         being 0. If None, then loads the full loss history.
@@ -1008,19 +990,10 @@ def read_loss_history_from_file(loss_record_path):
     
     Returns
     -------
-    loss_nature : {'node_features_out', 'global_features_out'}, \
-                  default='node_features_out'
-        Loss nature:
-        
-        'node_features_out' : Based on node output features
-
-        'global_features_out' : Based on global output features
-
-    loss_type : {'mse',}
-        Loss function type:
-        
-        'mse'  : MSE (torch.nn.MSELoss)
-
+    loss_nature : str
+        Loss nature.
+    loss_type : str
+        Loss function type.
     training_loss_history : list[float]
         Training process training loss history (per epoch).
     validation_loss_history : {None, list[float]}
@@ -1157,18 +1130,18 @@ def write_training_summary_file(
         Number of samples loaded per batch.
     is_sampler_shuffle : bool
         If True, shuffles data set samples at every epoch.
-    loss_nature : {'node_features_out', 'global_features_out'}
+    loss_nature : str
         Loss nature.
-    loss_type : {'mse',}
+    loss_type : str
         Loss function type.
     loss_kwargs : dict
         Arguments of torch.nn._Loss initializer.
-    opt_algorithm : {'adam',}
+    opt_algorithm : str
         Optimization algorithm.
     lr_init : float
         Initial value optimizer learning rate. Constant learning rate value if
         no learning rate scheduler is specified (lr_scheduler_type=None).
-    lr_scheduler_type : {'steplr', 'explr', 'linlr'}
+    lr_scheduler_type : str
         Type of learning rate scheduler.
     lr_scheduler_kwargs : dict
         Arguments of torch.optim.lr_scheduler.LRScheduler initializer.
@@ -1223,7 +1196,7 @@ def write_training_summary_file(
     # Write summary file
     write_summary_file(
         summary_directory=model_directory,
-        summary_title='Summary: Graph Neural Network model training',
+        summary_title='Summary: Model training',
         **summary_data)
 # =============================================================================
 class EarlyStopper:
@@ -1279,7 +1252,7 @@ class EarlyStopper:
         Load minimum validation loss model and optimizer states.
     """
     def __init__(self, dataset, validation_size=0.2, validation_frequency=1,
-                 trigger_tolerance=1, improvement_tolerance=1e-3):
+                 trigger_tolerance=1, improvement_tolerance=1e-2):
         """Constructor.
         
         Parameters
@@ -1298,7 +1271,7 @@ class EarlyStopper:
         trigger_tolerance : int, default=1
             Number of consecutive model validation procedures without
             performance improvement to trigger early stopping.
-        improvement_tolerance : float, default=1e-3
+        improvement_tolerance : float, default=1e-2
             Minimum relative improvement required to count as a performance
             improvement.
         """
@@ -1319,8 +1292,6 @@ class EarlyStopper:
         # Set training and validation datasets
         self._training_dataset = dataset_split['training']
         self._validation_dataset = dataset_split['validation']
-        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Initialize validation training steps history
         self._validation_steps_history = []

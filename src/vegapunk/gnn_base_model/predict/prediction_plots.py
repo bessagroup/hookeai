@@ -1,4 +1,4 @@
-"""Plots to assess prediction of Graph Neural Network model.
+"""Plots to assess model predictions.
 
 Functions
 ---------

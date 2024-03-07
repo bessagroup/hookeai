@@ -11,7 +11,7 @@ save_sample_predictions
 load_sample_predictions
     Load model prediction results for given sample.
 compute_sample_prediction_loss
-    Compute loss of sample node output features prediction.
+    Compute loss of sample output features prediction.
 seed_worker
     Set workers seed in PyTorch data loaders to preserve reproducibility.
 write_prediction_summary_file
@@ -358,12 +358,10 @@ def load_sample_predictions(sample_prediction_path):
 # =============================================================================
 def compute_sample_prediction_loss(model, loss_nature, loss_function,
                                    features_out, targets, is_normalized=False):
-    """Compute loss of sample node output features prediction.
+    """Compute loss of sample output features prediction.
     
     Parameters
     ----------
-    pyg_graph : torch_geometric.data.Data
-        Homogeneous graph.
     model : GNNEPDBaseModel
         Graph Neural Network model.
     loss_nature : {'node_features_out', 'global_features_out'}
@@ -449,10 +447,10 @@ def write_prediction_summary_file(
         other libraries (e.g., NumPy, PyTorch) for all devices to preserve
         reproducibility. Does also set workers seed in PyTorch data loaders.
     model_directory : str
-        Directory where Graph Neural Network model is stored.
+        Directory where model is stored.
     load_model_state : {'best', 'last', int, None}
-        Load available Graph Neural Network model state from the model
-        directory. Data scalers are also loaded from model initialization file.
+        Load availabl model state from the model directory. Data scalers are
+        also loaded from model initialization file.
     loss_type : {'mse',}
         Loss function type.
     loss_kwargs : dict
@@ -462,11 +460,9 @@ def write_prediction_summary_file(
         data, False otherwise. Normalization requires that model features data
         scalers are fitted.
     dataset_file_path : str
-        Graph Neural Network model graph data set file path if such file
-        exists. Only used for output purposes.
+        Data set file path if such file exists. Only used for output purposes.
     dataset : torch.utils.data.Dataset
-        Graph Neural Network model graph data set. Each sample corresponds to a
-        torch_geometric.data.Data object describing a homogeneous graph.
+        Data set.
     avg_predict_loss : float
         Average prediction loss per sample.
     total_time_sec : int
@@ -496,5 +492,5 @@ def write_prediction_summary_file(
     # Write summary file
     write_summary_file(
         summary_directory=predict_subdir,
-        summary_title='Summary: Graph Neural Network model prediction',
+        summary_title='Summary: Model prediction',
         **summary_data)

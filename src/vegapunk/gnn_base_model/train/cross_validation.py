@@ -4,13 +4,14 @@ Functions
 ---------
 kfold_cross_validation
     k-fold cross validation of Graph Neural Network model.
+write_cross_validation_summary_file
+    Write summary data file for model cross-validation process.
 """
 #
 #                                                                       Modules
 # =============================================================================
 # Standard
 import os
-import pickle
 import time
 import datetime
 # Third-party
@@ -263,7 +264,7 @@ def kfold_cross_validation(cross_validation_dir, n_fold, n_max_epochs,
     write_cross_validation_summary_file(
         cross_validation_dir, device_type, n_fold, n_max_epochs,
         is_data_normalization, batch_size, loss_nature, loss_type, loss_kwargs,
-        dataset, dataset_file_path, k_fold_loss_array, total_time_sec,
+        dataset_file_path, dataset, k_fold_loss_array, total_time_sec,
         avg_time_fold)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     return k_fold_loss_array
@@ -271,7 +272,7 @@ def kfold_cross_validation(cross_validation_dir, n_fold, n_max_epochs,
 def write_cross_validation_summary_file(
     cross_validation_dir, device_type, n_fold, n_max_epochs,
     is_data_normalization, batch_size, loss_nature, loss_type, loss_kwargs,
-    dataset, dataset_file_path, k_fold_loss_array, total_time_sec,
+    dataset_file_path, dataset, k_fold_loss_array, total_time_sec,
     avg_time_fold):
     """Write summary data file for model cross-validation process.
     
@@ -292,18 +293,16 @@ def write_cross_validation_summary_file(
         and are stored as model attributes.
     batch_size : int
         Number of samples loaded per batch.
-    loss_nature : {'node_features_out', 'global_features_out'}
+    loss_nature : str
         Loss nature.
-    loss_type : {'mse',}
+    loss_type : str
         Loss function type.
     loss_kwargs : dict
         Arguments of torch.nn._Loss initializer.
-    dataset : torch.utils.data.Dataset
-        Graph Neural Network graph data set. Each sample corresponds to a
-        torch_geometric.data.Data object describing a homogeneous graph.
     dataset_file_path : str
-        Graph Neural Network graph data set file path if such file exists. Only
-        used for output purposes.
+        Data set file path if such file exists. Only used for output purposes
+    dataset : torch.utils.data.Dataset
+        Data set.
     k_fold_loss_array : numpy.ndarray(2d)
         k-fold cross-validation loss array. For the i-th fold,
         data_array[i, 0] stores the best training loss and data_array[i, 1]
@@ -323,17 +322,16 @@ def write_cross_validation_summary_file(
     summary_data['loss_nature'] = loss_nature
     summary_data['loss_type'] = loss_type
     summary_data['loss_kwargs'] = loss_kwargs if loss_kwargs else None
-    summary_data['Data set file'] = \
+    summary_data['k-fold cross-validation data set file'] = \
         dataset_file_path if dataset_file_path else None
-    summary_data['Data set size'] = len(dataset)
+    summary_data['k-fold cross-validation data set size'] = len(dataset)
     summary_data['k-fold cross-validation results'] = k_fold_loss_array
     summary_data['Total cross-validation time'] = \
         str(datetime.timedelta(seconds=int(total_time_sec)))
     summary_data['Avg. cross-validation time per fold'] = \
         str(datetime.timedelta(seconds=int(avg_time_fold)))
     # Set summary title
-    summary_title = \
-        'Summary: Graph Neural Network model k-fold cross-validation'
+    summary_title = 'Summary: Model k-fold cross-validation'
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Write summary file
     write_summary_file(summary_directory=cross_validation_dir,

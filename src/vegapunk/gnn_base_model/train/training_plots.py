@@ -1,4 +1,4 @@
-"""Plots to assess training of Graph Neural Network model.
+"""Plots to assess model training.
 
 Functions
 ---------
