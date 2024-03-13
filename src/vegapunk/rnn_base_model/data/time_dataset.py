@@ -133,10 +133,10 @@ class TimeSeriesDatasetInMemory(torch.utils.data.Dataset):
     
     Attributes
     ----------
-    dataset : torch.utils.data.Dataset
-        Time series data set. Each sample is stored as a dictionary where each
-        feature (key, str) data is a torch.Tensor(2d) of shape
-        (sequence_length, n_features).
+    dataset_samples : list
+        Time series data set samples data. Each sample is stored as a
+        dictionary where each feature (key, str) data is a torch.Tensor(2d) of
+        shape (sequence_length, n_features).
     
     Methods
     -------
