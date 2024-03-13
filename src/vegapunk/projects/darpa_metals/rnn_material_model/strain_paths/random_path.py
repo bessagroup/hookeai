@@ -35,7 +35,7 @@ __status__ = 'Planning'
 #
 # =============================================================================
 class RandomStrainPathGenerator(StrainPathGenerator):
-    """Random strain deformation path generator.
+    """Random strain path generator.
     
     Attributes
     ----------
@@ -52,11 +52,11 @@ class RandomStrainPathGenerator(StrainPathGenerator):
     -------
     generate_strain_path(self, n_control, strain_bounds, n_time,
                          time_init=0.0, time_end=1.0):
-        Generate strain deformation path.
+        Generate strain path.
     """
     def generate_strain_path(self, n_control, strain_bounds, n_time,
                              time_init=0.0, time_end=1.0):
-        """Generate strain deformation path.
+        """Generate strain path.
         
         Parameters
         ----------
@@ -78,8 +78,8 @@ class RandomStrainPathGenerator(StrainPathGenerator):
             Strain components order.
         time_hist : tuple
             Discrete time history.
-        strain_path : torch.Tensor(2d)
-            Strain path history stored as torch.Tensor(2d) of shape
+        strain_path : numpy.ndarray(2d)
+            Strain path history stored as numpy.ndarray(2d) of shape
             (sequence_length, n_strain_comps).
         """
         # Get strain components
@@ -159,7 +159,7 @@ if __name__ == '__main__':
     # Set strain parameters
     strain_formulation = 'infinitesimal'
     n_dim = 2
-    # Initialize strain deformation path generator
+    # Initialize strain path generator
     strain_path_generator = \
         RandomStrainPathGenerator(strain_formulation, n_dim)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -172,12 +172,12 @@ if __name__ == '__main__':
     # Set number of discrete times
     n_time = 100
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Generate strain deformation path
+    # Generate strain path
     strain_comps, time_hist, strain_path = \
         strain_path_generator.generate_strain_path(n_control, strain_bounds,
                                                    n_time)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Plot strain deformation path
+    # Plot strain path
     strain_path_generator.plot_strain_path(strain_comps, time_hist,
                                            strain_path,
                                            is_stdout_display=True,

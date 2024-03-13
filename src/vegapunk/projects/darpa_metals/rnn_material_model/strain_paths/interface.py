@@ -1,9 +1,9 @@
-"""DARPA METALS PROJECT: Strain deformation paths numerical data.
+"""DARPA METALS PROJECT: Strain paths numerical data.
 
 Classes
 -------
 StrainPathGenerator(ABC)
-    Strain deformation paths generator interface.
+    Strain paths generator interface.
 """
 #
 #                                                                       Modules
@@ -33,7 +33,7 @@ __status__ = 'Planning'
 #
 # =============================================================================
 class StrainPathGenerator(ABC):
-    """Strain deformation path generator interface.
+    """Strain path generator interface.
     
     Attributes
     ----------
@@ -49,12 +49,12 @@ class StrainPathGenerator(ABC):
     Methods
     -------
     generate_strain_path(self):
-        Generate strain deformation path.
+        Generate strain path.
     plot_strain_path(strain_comps, time_hist, strain_path, \
-                     filename='strain_deformation_path_random', \
+                     filename='strain_path_random', \
                      save_dir=None, is_save_fig=False, \
                      is_stdout_display=False, is_latex=False)
-        Plot strain deformation path.
+        Plot strain path.
     """
     def __init__(self, strain_formulation, n_dim):
         """Constructor.
@@ -81,7 +81,7 @@ class StrainPathGenerator(ABC):
     # -------------------------------------------------------------------------
     @abstractmethod
     def generate_strain_path(self):
-        """Generate strain deformation path.
+        """Generate strain path.
 
         Returns
         -------
@@ -98,10 +98,10 @@ class StrainPathGenerator(ABC):
     @staticmethod
     def plot_strain_path(strain_comps, time_hist, strain_path,
                          strain_axis_lims = None,
-                         filename='strain_deformation_path_random',
+                         filename='strain_path_random',
                          save_dir=None, is_save_fig=False,
                          is_stdout_display=False, is_latex=False):
-        """Plot strain deformation path.
+        """Plot strain path.
         
         Parameters
         ----------
@@ -115,7 +115,7 @@ class StrainPathGenerator(ABC):
         strain_axis_lims : tuple, default=None
             Enforce the limits of the plot strain axis, stored as
             tuple(min, max).
-        filename : str, default='strain_deformation_path_random'
+        filename : str, default='strain_path_random'
             Figure name.
         save_dir : str, default=None
             Directory where figure is saved. If None, then figure is saved in
@@ -147,7 +147,7 @@ class StrainPathGenerator(ABC):
         figure, _ = plot_xy_data(data_xy, data_labels=data_labels,
                                  x_lims=(time_hist[0], time_hist[-1]),
                                  y_lims=y_lims,
-                                 title='Strain deformation paths',
+                                 title='Strain path',
                                  x_label='Time', y_label='Strain',
                                  is_latex=is_latex)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
