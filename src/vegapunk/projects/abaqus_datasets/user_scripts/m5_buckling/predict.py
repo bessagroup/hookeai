@@ -213,6 +213,10 @@ def generate_prediction_history_csv_files(predict_subdir, dataset, bottle_id):
         ABAQUS data file ID.
     """
     # Create plot directory
+    plot_dir = os.path.join(os.path.normpath(predict_subdir), 'plots')
+    if not os.path.isdir(plot_dir):
+        make_directory(plot_dir)
+    # Create cvs file directory
     csv_dir = os.path.join(os.path.normpath(predict_subdir), 'csv_files')
     if not os.path.isdir(csv_dir):
         make_directory(csv_dir)
@@ -231,10 +235,10 @@ def generate_prediction_history_csv_files(predict_subdir, dataset, bottle_id):
         # Build samples predictions data arrays with predictions and
         # ground-truth
         prediction_data_arrays = build_prediction_data_arrays(
-                predict_subdir, prediction_type='disp_comps', samples_ids=[i,])
+            predict_subdir, prediction_type=prediction_type, samples_ids=[i,])
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Initialize csv file data array
-        csv_data_array = np.zeros((n_nodes, 9))
+        csv_data_array = np.zeros((n_nodes, 15))
         # Assemble nodes initial coordinates
         csv_data_array[:, 0:3] = coords_init
         # Loop over spatial dimensions
@@ -251,12 +255,82 @@ def generate_prediction_history_csv_files(predict_subdir, dataset, bottle_id):
                 csv_data_array[:, 3 + dim] = prediction_data_arrays[dim][:, 1]
                 # Assemble nodes displacements ground-truth
                 csv_data_array[:, 6 + dim] = prediction_data_arrays[dim][:, 0]
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Get prediction and ground-truth nodes displacements
+            predict_array = csv_data_array[:, 3 + dim]
+            truth_array = csv_data_array[:, 6 + dim]
+            # Assemble nodes displacements absolute error
+            csv_data_array[:, 9 + dim] = np.abs(predict_array - truth_array)
+            # Assemble nodes displacements relative error
+            # (outputs zero when ground-truth is zero)
+            csv_data_array[:, 12 + dim] = np.divide(
+                np.abs(predict_array - truth_array), np.abs(truth_array),
+                out=np.zeros_like(predict_array),
+                where=np.invert(np.isclose(truth_array,
+                                           np.zeros_like(truth_array))))
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Plot model displacements predictions against ground-truth
+            # (only required when model predicts coordinates as the node
+            # output features)
+            if prediction_type == 'coord_comps':
+                # Set plot filename base
+                plot_filename_base = f'prediction_disp_dim_{dim + 1}'
+                # Set plot filename suffix
+                plot_filename_suffix = \
+                    f'_bottle_{str(bottle_id)}_tstep_{str(i)}'
+                # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                # Build prediction data array with displacements predictions
+                # and ground-truth
+                data_array = np.stack((csv_data_array[:, 6 + dim],
+                                       csv_data_array[:, 3 + dim]),
+                                       axis=1)                         
+                # Set prediction process
+                prediction_sets = {'$u_{n+1} (\\mathrm{dim}: '
+                                   + str(dim + 1) + ')$': data_array}
+                # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                # Set plot file name
+                filename = plot_filename_base + plot_filename_suffix
+                # Plot model predictions against ground-truth
+                plot_truth_vs_prediction(prediction_sets, error_bound=0.1,
+                                         is_r2_coefficient=True,
+                                         is_direct_loss_estimator=False,
+                                         is_normalize_data=False,
+                                         filename=filename,
+                                         save_dir=plot_dir, is_save_fig=True,
+                                         is_stdout_display=False,
+                                         is_latex=True)
+                # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                # Set plot file name
+                filename = plot_filename_base + '_dle' + plot_filename_suffix
+                # Plot model predictions against ground-truth (with DLE)
+                plot_truth_vs_prediction(prediction_sets, error_bound=0.1,
+                                         is_r2_coefficient=True,
+                                         is_direct_loss_estimator=True,
+                                         is_normalize_data=False,
+                                         filename=filename,
+                                         save_dir=plot_dir, is_save_fig=True,
+                                         is_stdout_display=False,
+                                         is_latex=True)
+                # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                # Set plot file name
+                filename = (plot_filename_base + '_dle_error_dist'
+                            + plot_filename_suffix)
+                # Plot Direct Loss Estimator (DLE) absolute error histogram 
+                plot_dle_error_histogram(data_array, is_normalize_data=False,
+                                         filename=filename,
+                                         save_dir=plot_dir, is_save_fig=True,
+                                         is_stdout_display=False,
+                                         is_latex=True)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Create data frame
         df = pd.DataFrame(csv_data_array,
                           columns=['X1', 'X2', 'X3',
                                    'PRED_U1', 'PRED_U2', 'PRED_U3' ,
-                                   'TRUTH_U1', 'TRUTH_U2', 'TRUTH_U3'],
+                                   'TRUTH_U1', 'TRUTH_U2', 'TRUTH_U3',
+                                   'ABS_ERROR_U1', 'ABS_ERROR_U2',
+                                   'ABS_ERROR_U3',
+                                   'REL_ERROR_U1', 'REL_ERROR_U2',
+                                   'REL_ERROR_U3'],
                           index=[k for k in range(1, n_nodes + 1)])
         # Set index label
         df.index.name = 'Node'
