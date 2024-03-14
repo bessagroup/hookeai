@@ -744,7 +744,7 @@ def scatter_xy_data(data_xy, data_labels=None, is_identity_line=False,
                 label = f'{identity_error*100:.0f}% error'
             # Plot identity error bounds
             if identity_error is not None:            
-                x = np.linspace(0.0, axes.axis()[1])
+                x = np.linspace(axes.axis()[0], axes.axis()[1])
                 axes.fill_between(x=x, y1=(1 + identity_error)*x,
                                   y2=(1 - identity_error)*x,
                                   color='#BBBBBB', label=label,
