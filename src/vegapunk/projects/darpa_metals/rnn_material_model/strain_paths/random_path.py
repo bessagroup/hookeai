@@ -17,11 +17,11 @@ root_dir = str(pathlib.Path(__file__).parents[4])
 if root_dir not in sys.path:
     sys.path.insert(0, root_dir)
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+import random
 # Third-party
 import numpy as np
 import sklearn.gaussian_process
 import sklearn.gaussian_process.kernels
-import matplotlib.pyplot as plt
 # Local
 from projects.darpa_metals.rnn_material_model.strain_paths.interface import \
     StrainPathGenerator
@@ -51,11 +51,15 @@ class RandomStrainPathGenerator(StrainPathGenerator):
     Methods
     -------
     generate_strain_path(self, n_control, strain_bounds, n_time,
-                         time_init=0.0, time_end=1.0):
+                         time_init=0.0, time_end=1.0,
+                         inc_strain_norm=None, strain_noise_std=None,
+                         is_cyclic_loading=False, random_seed=None)
         Generate strain path.
     """
     def generate_strain_path(self, n_control, strain_bounds, n_time,
-                             time_init=0.0, time_end=1.0):
+                             time_init=0.0, time_end=1.0,
+                             inc_strain_norm=None, strain_noise_std=None,
+                             is_cyclic_loading=False, random_seed=None):
         """Generate strain path.
         
         Parameters
@@ -71,10 +75,26 @@ class RandomStrainPathGenerator(StrainPathGenerator):
             Initial time.
         time_end : float, default=1.0
             Final time.
-        
+        inc_strain_norm : float, default=None
+            Enforce given incremental strain norm in all time steps of the
+            strain path.
+        strain_noise_std : float, default=None
+            For each discrete time, add noise to the strain components sampled
+            from a Gaussian distribution with zero mean and given standard
+            deviation.
+        is_cyclic_loading : bool, default=False
+            If True, then the strain loading path is reversed after half of the
+            prescribed discrete time steps (rounding-up) are generated. In the
+            case of a even number of prescribed discrete time points, the
+            strain loading path is appended with a last time point equal to the
+            initial strain state.
+        random_seed : int
+            Seed used to initialize the random number generator of Python and
+            other libraries to preserve reproducibility.
+
         Returns
         -------
-        strain_comps : tuple
+        strain_comps_order : tuple[str]
             Strain components order.
         time_hist : tuple
             Discrete time history.
@@ -82,17 +102,22 @@ class RandomStrainPathGenerator(StrainPathGenerator):
             Strain path history stored as numpy.ndarray(2d) of shape
             (sequence_length, n_strain_comps).
         """
+        # Set random number generators initialization for reproducibility
+        if isinstance(random_seed, int):
+            random.seed(random_seed)
+            np.random.seed(random_seed)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Get strain components
         if self._strain_formulation == 'infinitesimal':
-            strain_comps = self._comp_order_sym
+            strain_comps_order = self._comp_order_sym
         else:
-            strain_comps = self._comp_order_nsym
+            strain_comps_order = self._comp_order_nsym
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Check strain components
-        if set(strain_bounds.keys()) != set(strain_comps):
+        if set(strain_bounds.keys()) != set(strain_comps_order):
             raise RuntimeError('The sampling bounds must be provided for all '
                                'independent strain components: '
-                               '\n\n', strain_comps)
+                               '\n\n', strain_comps_order)
         # Check sampling bounds
         for key, val in strain_bounds.items():
             if val[0] > val[1]:
@@ -103,21 +128,28 @@ class RandomStrainPathGenerator(StrainPathGenerator):
         time_hist = np.linspace(time_init, time_end, n_time,
                                 endpoint=True, dtype=float)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        # Initialize strain path
-        strain_path = np.zeros((n_time, len(strain_comps)))
+        # Set number of discrete time points in the forward direction
+        if is_cyclic_loading:
+            n_time_forward = int(np.floor(0.5*(n_time + 1)))
+        else:
+            n_time_forward = n_time
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Initialize trial strain path
+        strain_path_trial = np.zeros((n_time_forward, len(strain_comps_order)))
         # Set strain control times (normalized)
-        control_times_norm = np.linspace(-1.0, 1.0, n_control,
-                                         endpoint=True, dtype=float)
+        control_times_normalized = np.linspace(-1.0, 1.0, n_control,
+                                               endpoint=True, dtype=float)
         # Set discrete time history (normalized)
-        time_hist_norm = np.linspace(-1.0, 1.0, n_time,
-                                     endpoint=True, dtype=float)
-        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        # Loop over strain components
-        for j, comp in enumerate(strain_comps):
+        time_hist_normalized = np.linspace(-1.0, 1.0, n_time_forward,
+                                           endpoint=True, dtype=float)
+        # Train Gaussian Processes regression model to generate trial strain
+        # path (normalized)
+        for j, comp in enumerate(strain_comps_order):
             # Sample control strains (normalized)
-            control_strains_norm = \
+            control_strains_normalized = \
                 np.random.uniform(low=-1.0, high=1.0, size=n_control)
+            # Enforce initial null strain
+            control_strains_normalized[0] = 0.0
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Set constant kernel
             constant_kernel = \
@@ -135,25 +167,77 @@ class RandomStrainPathGenerator(StrainPathGenerator):
             gp_model = sklearn.gaussian_process.GaussianProcessRegressor(
                 kernel=kernel, alpha=constant_noise, optimizer='fmin_l_bfgs_b',
                 n_restarts_optimizer=20)
-            # Train Gaussian Processes model
-            gp_model.fit(control_times_norm.reshape(-1, 1),
-                         control_strains_norm)
+            # Train Gaussian Processes regression model
+            gp_model.fit(control_times_normalized.reshape(-1, 1),
+                         control_strains_normalized)
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Predict with Gaussian Processes model
-            strain_norm_mean, _ = gp_model.predict(
-                time_hist_norm.reshape(-1, 1), return_std=True)
+            strain_mean_normalized, _ = gp_model.predict(
+                time_hist_normalized.reshape(-1, 1), return_std=True)
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Get strain component sampling bounds
             lbound, ubound = strain_bounds[comp]
             # Denormalize strain component path
             strain_comp_hist = \
                 np.array([lbound + 0.5*(ubound - lbound)*(x - lbound)
-                          for x in strain_norm_mean])
-            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                          for x in strain_mean_normalized])
             # Assemble strain component path
-            strain_path[:, j] = strain_comp_hist
+            strain_path_trial[:, j] = strain_comp_hist
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        return strain_comps, time_hist, strain_path
+        # Initialize strain path
+        strain_path = strain_path_trial[:, :]
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Loop over time
+        for i in range(1, n_time_forward):
+            # Enforce increment strain norm
+            if inc_strain_norm is not None:
+                # Check increment strain norm
+                if inc_strain_norm <= 0:
+                    raise RuntimeError('Prescribed incremental strain norm '
+                                       'must be positive value.')
+                # Get strain tensors
+                strain = StrainPathGenerator.build_strain_tensor(
+                    strain_path[i, :], self._n_dim, strain_comps_order,
+                    is_symmetric=self._strain_formulation == 'infinitesimal')
+                strain_old = StrainPathGenerator.build_strain_tensor(
+                    strain_path[i - 1, :], self._n_dim, strain_comps_order,
+                    is_symmetric=self._strain_formulation == 'infinitesimal')
+                # Compute strain increment
+                if strain_formulation == 'infinitesimal':
+                    inc_strain = strain - strain_old
+                else:
+                    raise RuntimeError('Not implemented.')
+                # Compute strain increment unit vector
+                inc_strain_direction = inc_strain/np.linalg.norm(inc_strain)
+                # Enforce strain increment norm
+                strain = strain_old + inc_strain_norm*inc_strain_direction
+                # Update strain path
+                strain_path[i, :] = [strain[int(x[0])-1, int(x[1])-1]
+                                     for x in strain_comps_order]
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Add noise to strain components
+            if strain_noise_std is not None:
+                # Check noise standard deviation
+                if strain_noise_std < 0:
+                    raise RuntimeError('Prescribed strain noise standard '
+                                       'deviation must be non-negative value.')
+                # Sample strain components noise
+                strain_comps_noise = \
+                    np.random.normal(loc=0.0, scale=strain_noise_std,
+                                        size=len(strain_comps_order))
+                # Add strain components noise
+                strain_path[i, :] += strain_comps_noise
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Generate cyclic strain loading path
+        if is_cyclic_loading:
+            # Reverse forward strain path to complete cyclic loading
+            strain_path = np.vstack((strain_path, strain_path[-2::-1, :]))
+            # Append initial strain state to comply with prescribed even number
+            # of discrete time points
+            if n_time % 2 == 0:
+                strain_path = np.vstack((strain_path, strain_path[0, :]))        
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        return strain_comps_order, time_hist, strain_path
 # =============================================================================
 if __name__ == '__main__':
     # Set strain parameters
@@ -170,15 +254,19 @@ if __name__ == '__main__':
                      '22': (-1.0, 1.0),
                      '12': (-1.0, 1.0)}
     # Set number of discrete times
-    n_time = 100
+    n_time = 40
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Generate strain path
-    strain_comps, time_hist, strain_path = \
-        strain_path_generator.generate_strain_path(n_control, strain_bounds,
-                                                   n_time)
+    strain_comps_order, time_hist, strain_path = \
+        strain_path_generator.generate_strain_path(
+            n_control, strain_bounds, n_time, time_init=0.0, time_end=1.0,
+            inc_strain_norm=None, strain_noise_std=None,
+            is_cyclic_loading=False, random_seed=None)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Plot strain path
-    strain_path_generator.plot_strain_path(strain_comps, time_hist,
+    strain_path_generator.plot_strain_path(strain_comps_order, time_hist,
                                            strain_path,
+                                           is_plot_strain_norm=True,
+                                           is_plot_inc_strain_norm=True,
                                            is_stdout_display=True,
                                            is_latex=True)
