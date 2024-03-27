@@ -2,8 +2,8 @@
 
 Classes
 -------
-RandomStrainPathGenerator(StrainPathGenerator)
-    Random strain deformation path generator.
+ProportionalStrainPathGenerator(StrainPathGenerator)
+    Proportional strain path generator.
 """
 #
 #                                                                       Modules
@@ -20,8 +20,6 @@ if root_dir not in sys.path:
 import random
 # Third-party
 import numpy as np
-import sklearn.gaussian_process
-import sklearn.gaussian_process.kernels
 # Local
 from projects.darpa_metals.rnn_material_model.strain_paths.interface import \
     StrainPathGenerator
@@ -34,8 +32,8 @@ __status__ = 'Planning'
 # =============================================================================
 #
 # =============================================================================
-class RandomStrainPathGenerator(StrainPathGenerator):
-    """Random strain path generator.
+class ProportionalStrainPathGenerator(StrainPathGenerator):
+    """Proportional strain path generator.
     
     Attributes
     ----------
@@ -50,13 +48,13 @@ class RandomStrainPathGenerator(StrainPathGenerator):
     
     Methods
     -------
-    generate_strain_path(self, n_control, strain_bounds, n_time,
+    generate_strain_path(self, strain_bounds, n_time,
                          time_init=0.0, time_end=1.0,
                          inc_strain_norm=None, strain_noise_std=None,
                          is_cyclic_loading=False, random_seed=None)
         Generate strain path.
     """
-    def generate_strain_path(self, n_control, strain_bounds, n_time,
+    def generate_strain_path(self, strain_bounds, n_time,
                              time_init=0.0, time_end=1.0,
                              inc_strain_norm=None, strain_noise_std=None,
                              is_cyclic_loading=False, random_seed=None):
@@ -64,8 +62,6 @@ class RandomStrainPathGenerator(StrainPathGenerator):
         
         Parameters
         ----------
-        n_control : int
-            Number of control points.
         strain_bounds : dict
             Lower and upper sampling bounds (item, tuple(lower, upper)) for
             each independent strain component (key, str).
@@ -85,8 +81,8 @@ class RandomStrainPathGenerator(StrainPathGenerator):
         is_cyclic_loading : bool, default=False
             If True, then the strain loading path is reversed after half of the
             prescribed discrete time steps (rounding-up) are generated. In the
-            case of a even number of prescribed discrete time points, the
-            strain loading path is appended with a last time point equal to the
+            case of a even number of prescribed discrete time steps, the strain
+            loading path is appended with a last time point equal to the
             initial strain state.
         random_seed : int, default=None
             Seed used to initialize the random number generator of Python and
@@ -136,44 +132,16 @@ class RandomStrainPathGenerator(StrainPathGenerator):
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Initialize trial strain path
         strain_path_trial = np.zeros((n_time_forward, len(strain_comps_order)))
-        # Set strain control times (normalized)
-        control_times_normalized = np.linspace(-1.0, 1.0, n_control,
-                                               endpoint=True, dtype=float)
-        # Set discrete time history (normalized)
-        time_hist_normalized = np.linspace(-1.0, 1.0, n_time_forward,
-                                           endpoint=True, dtype=float)
-        # Train Gaussian Processes regression model to generate trial strain
-        # path (normalized)
+        # Generate trial strain path (normalized)
         for j, comp in enumerate(strain_comps_order):
             # Sample control strains (normalized)
             control_strains_normalized = \
-                np.random.uniform(low=-1.0, high=1.0, size=n_control)
-            # Enforce initial null strain
-            control_strains_normalized[0] = 0.0
+                np.array([0.0, np.random.uniform(low=-1.0, high=1.0)])
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            # Set constant kernel
-            constant_kernel = \
-                sklearn.gaussian_process.kernels.ConstantKernel(1.0,
-                                                                (1e-1, 1e1))
-            # Set RBF kernel
-            rbf_kernel = sklearn.gaussian_process.kernels.RBF(1.0,
-                                                              (1e-1, 1e1))
-            # Set kernel function
-            kernel = constant_kernel*rbf_kernel
-            # Set homoscedastic noise
-            constant_noise = 1e-5
-            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            # Initialize Gaussian Processes regression model
-            gp_model = sklearn.gaussian_process.GaussianProcessRegressor(
-                kernel=kernel, alpha=constant_noise, optimizer='fmin_l_bfgs_b',
-                n_restarts_optimizer=20)
-            # Train Gaussian Processes regression model
-            gp_model.fit(control_times_normalized.reshape(-1, 1),
-                         control_strains_normalized)
-            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            # Predict with Gaussian Processes model
-            strain_mean_normalized, _ = gp_model.predict(
-                time_hist_normalized.reshape(-1, 1), return_std=True)
+            # Predict with linear regression model
+            strain_mean_normalized = np.linspace(control_strains_normalized[0],
+                                                 control_strains_normalized[1],
+                                                 num=n_time_forward)
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Get strain component sampling bounds
             lbound, ubound = strain_bounds[comp]
@@ -213,7 +181,7 @@ class RandomStrainPathGenerator(StrainPathGenerator):
                 strain = strain_old + inc_strain_norm*inc_strain_direction
                 # Update strain path
                 strain_path[i, :] = [strain[int(x[0])-1, int(x[1])-1]
-                                     for x in strain_comps_order]
+                                    for x in strain_comps_order]
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Add noise to strain components
             if strain_noise_std is not None:
@@ -245,10 +213,8 @@ if __name__ == '__main__':
     n_dim = 2
     # Initialize strain path generator
     strain_path_generator = \
-        RandomStrainPathGenerator(strain_formulation, n_dim)
+        ProportionalStrainPathGenerator(strain_formulation, n_dim)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Set number of strain control points
-    n_control = 6
     # Set strain components bounds
     strain_bounds = {'11': (-1.0, 1.0),
                      '22': (-1.0, 1.0),
@@ -259,7 +225,7 @@ if __name__ == '__main__':
     # Generate strain path
     strain_comps_order, time_hist, strain_path = \
         strain_path_generator.generate_strain_path(
-            n_control, strain_bounds, n_time, time_init=0.0, time_end=1.0,
+            strain_bounds, n_time, time_init=0.0, time_end=1.0,
             inc_strain_norm=None, strain_noise_std=None,
             is_cyclic_loading=False, random_seed=None)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
