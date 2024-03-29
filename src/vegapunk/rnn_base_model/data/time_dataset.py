@@ -34,6 +34,9 @@ __status__ = 'Planning'
 def time_collator(batch_data):
     """Collate time series batch data.
     
+    Ignores all features that are not stored as a torch.Tensor(2d) of shape
+    (sequence_length, n_features).
+    
     Parameters
     ----------
     batch_data : list[dict]
@@ -45,16 +48,22 @@ def time_collator(batch_data):
     -------
     batch : dict
         Collated batch sample data for each feature (key, str), stored as
-        torch.Tensor(2d) of shape (sequence_length, batch_size, n_features).
+        torch.Tensor(3d) of shape (sequence_length, batch_size, n_features).
     """
     # Probe features from first batch sample
     features = tuple(batch_data[0].keys())
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Initialize collated batch sample data
     batch = {}
     # Loop over features
     for feature in features:
+        # Probe feature type and shape from first batch sample
+        is_batchable = (isinstance(batch_data[0][feature], torch.Tensor)
+                        and len(batch_data[0][feature].shape) == 2)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Collate batch sample feature data
-        batch[feature] = torch.stack([x[feature] for x in batch_data], 1)
+        if is_batchable:
+            batch[feature] = torch.stack([x[feature] for x in batch_data], 1)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     return batch
 # =============================================================================
