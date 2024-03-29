@@ -50,27 +50,33 @@ class RandomStrainPathGenerator(StrainPathGenerator):
     
     Methods
     -------
-    generate_strain_path(self, n_control, strain_bounds, n_time,
-                         time_init=0.0, time_end=1.0,
-                         inc_strain_norm=None, strain_noise_std=None,
+    generate_strain_path(self, n_control, strain_bounds, n_time, \
+                         generative_type='polynomial', \
+                         time_init=0.0, time_end=1.0, \
+                         inc_strain_norm=None, strain_noise_std=None, \
                          is_cyclic_loading=False, random_seed=None)
         Generate strain path.
     """
     def generate_strain_path(self, n_control, strain_bounds, n_time,
-                             time_init=0.0, time_end=1.0,
-                             inc_strain_norm=None, strain_noise_std=None,
-                             is_cyclic_loading=False, random_seed=None):
+                             generative_type='polynomial', time_init=0.0,
+                             time_end=1.0, inc_strain_norm=None,
+                             strain_noise_std=None, is_cyclic_loading=False,
+                             random_seed=None):
         """Generate strain path.
         
         Parameters
         ----------
         n_control : int
-            Number of control points.
+            Number of strain control points.
         strain_bounds : dict
             Lower and upper sampling bounds (item, tuple(lower, upper)) for
             each independent strain component (key, str).
         n_time : int
             Number of discrete time points.
+        generative_type : {'polynomial', 'gaussian_process'}, \
+                          default='polynomial'
+            Regression model employed to generate strain loading path by
+            fitting the randomly sampled strain control points.
         time_init : float, default=0.0
             Initial time.
         time_end : float, default=1.0
@@ -96,7 +102,7 @@ class RandomStrainPathGenerator(StrainPathGenerator):
         -------
         strain_comps_order : tuple[str]
             Strain components order.
-        time_hist : tuple
+        time_hist : numpy.ndarray(1d)
             Discrete time history.
         strain_path : numpy.ndarray(2d)
             Strain path history stored as numpy.ndarray(2d) of shape
@@ -142,8 +148,9 @@ class RandomStrainPathGenerator(StrainPathGenerator):
         # Set discrete time history (normalized)
         time_hist_normalized = np.linspace(-1.0, 1.0, n_time_forward,
                                            endpoint=True, dtype=float)
-        # Train Gaussian Processes regression model to generate trial strain
-        # path (normalized)
+        
+        # Generate trial strain path (normalized) by fitting generative
+        # regression model
         for j, comp in enumerate(strain_comps_order):
             # Sample control strains (normalized)
             control_strains_normalized = \
@@ -151,29 +158,48 @@ class RandomStrainPathGenerator(StrainPathGenerator):
             # Enforce initial null strain
             control_strains_normalized[0] = 0.0
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            # Set constant kernel
-            constant_kernel = \
-                sklearn.gaussian_process.kernels.ConstantKernel(1.0,
-                                                                (1e-1, 1e1))
-            # Set RBF kernel
-            rbf_kernel = sklearn.gaussian_process.kernels.RBF(1.0,
-                                                              (1e-1, 1e1))
-            # Set kernel function
-            kernel = constant_kernel*rbf_kernel
-            # Set homoscedastic noise
-            constant_noise = 1e-5
+            # Fit polynomial regression model
+            if generative_type == 'polynomial':
+                # Set polynomial degree
+                polynomial_degree = n_control - 1
+                # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                # Fit polynomial model
+                polynomial_coefficients = \
+                    np.polyfit(control_times_normalized,
+                               control_strains_normalized,
+                               polynomial_degree)
+                # Get polynomial model
+                polynomial_model = np.poly1d(polynomial_coefficients)
+                # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                # Predict with polynomial model
+                strain_mean_normalized = np.array(
+                    [polynomial_model(x) for x in time_hist_normalized])
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            # Initialize Gaussian Processes regression model
-            gp_model = sklearn.gaussian_process.GaussianProcessRegressor(
-                kernel=kernel, alpha=constant_noise, optimizer='fmin_l_bfgs_b',
-                n_restarts_optimizer=20)
-            # Train Gaussian Processes regression model
-            gp_model.fit(control_times_normalized.reshape(-1, 1),
-                         control_strains_normalized)
-            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            # Predict with Gaussian Processes model
-            strain_mean_normalized, _ = gp_model.predict(
-                time_hist_normalized.reshape(-1, 1), return_std=True)
+            # Fit Gaussian process regression model
+            elif generative_type == 'gaussian_process':
+                # Set constant kernel (hyperparameter: variance)
+                constant_kernel = \
+                    sklearn.gaussian_process.kernels.ConstantKernel(
+                        1.0, (0.1, 10))
+                # Set RBF kernel (hyperparameter: length scale)
+                rbf_kernel = sklearn.gaussian_process.kernels.RBF(
+                        1.0, (0.1, 10))
+                # Set kernel function
+                kernel = constant_kernel*rbf_kernel
+                # Set homoscedastic noise
+                constant_noise = 1e-5
+                # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                # Initialize Gaussian Processes regression model
+                gp_model = sklearn.gaussian_process.GaussianProcessRegressor(
+                    kernel=kernel, alpha=constant_noise,
+                    optimizer='fmin_l_bfgs_b', n_restarts_optimizer=20)
+                # Fit Gaussian Processes regression model
+                gp_model.fit(control_times_normalized.reshape(-1, 1),
+                             control_strains_normalized)
+                # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                # Predict with Gaussian Processes model
+                strain_mean_normalized, _ = gp_model.predict(
+                    time_hist_normalized.reshape(-1, 1), return_std=True)
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Get strain component sampling bounds
             lbound, ubound = strain_bounds[comp]
@@ -197,10 +223,10 @@ class RandomStrainPathGenerator(StrainPathGenerator):
                                        'must be positive value.')
                 # Get strain tensors
                 strain = StrainPathGenerator.build_strain_tensor(
-                    strain_path[i, :], self._n_dim, strain_comps_order,
+                    self._n_dim, strain_path[i, :], strain_comps_order,
                     is_symmetric=self._strain_formulation == 'infinitesimal')
                 strain_old = StrainPathGenerator.build_strain_tensor(
-                    strain_path[i - 1, :], self._n_dim, strain_comps_order,
+                    self._n_dim, strain_path[i - 1, :], strain_comps_order,
                     is_symmetric=self._strain_formulation == 'infinitesimal')
                 # Compute strain increment
                 if strain_formulation == 'infinitesimal':
@@ -248,25 +274,66 @@ if __name__ == '__main__':
         RandomStrainPathGenerator(strain_formulation, n_dim)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set number of strain control points
-    n_control = 6
+    n_control = 5
     # Set strain components bounds
     strain_bounds = {'11': (-1.0, 1.0),
                      '22': (-1.0, 1.0),
                      '12': (-1.0, 1.0)}
     # Set number of discrete times
-    n_time = 40
+    n_time = 100
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Generate strain path
-    strain_comps_order, time_hist, strain_path = \
-        strain_path_generator.generate_strain_path(
-            n_control, strain_bounds, n_time, time_init=0.0, time_end=1.0,
-            inc_strain_norm=None, strain_noise_std=None,
-            is_cyclic_loading=False, random_seed=None)
+    # Set number of strain paths
+    n_path = 1
+    # Initialize strain paths data
+    time_hists = []
+    strain_paths = []
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Plot strain path
-    strain_path_generator.plot_strain_path(strain_comps_order, time_hist,
-                                           strain_path,
-                                           is_plot_strain_norm=True,
-                                           is_plot_inc_strain_norm=True,
-                                           is_stdout_display=True,
-                                           is_latex=True)
+    # Loop over strain paths
+    for i in range(n_path):
+        # Generate strain path
+        strain_comps_order, time_hist, strain_path = \
+            strain_path_generator.generate_strain_path(
+                n_control, strain_bounds, n_time,
+                generative_type='polynomial',
+                time_init=0.0, time_end=1.0,
+                inc_strain_norm=None, strain_noise_std=None,
+                is_cyclic_loading=False, random_seed=None)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Plot strain path
+        strain_path_generator.plot_strain_path(
+            strain_formulation, n_dim,
+            strain_comps_order, time_hist, strain_path,
+            is_plot_strain_path=True,
+            is_plot_strain_comp_hist=False,
+            is_plot_strain_norm=False,
+            is_plot_strain_norm_hist=False,
+            is_plot_inc_strain_norm=False,
+            is_plot_inc_strain_norm_hist=False,
+            is_plot_strain_path_pairs=False,
+            is_plot_strain_pairs_hist=False,
+            is_plot_strain_pairs_marginals=False,
+            is_plot_strain_comp_box=False,
+            is_stdout_display=True,
+            is_latex=True)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Store strain path data
+        time_hists.append(time_hist)
+        strain_paths.append(strain_path)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Plot global strain paths data
+    if n_path > 1:
+        # Concatenate strain paths data
+        global_strain_path = np.vstack(strain_paths)
+        global_time_hist = np.concatenate(time_hists)
+        # Plot strain paths data
+        strain_path_generator.plot_strain_path(
+            strain_formulation, n_dim,
+            strain_comps_order, global_time_hist, global_strain_path,
+            is_plot_strain_comp_hist=False,
+            is_plot_strain_norm_hist=False,
+            is_plot_inc_strain_norm_hist=False,
+            is_plot_strain_pairs_hist=True,
+            is_plot_strain_pairs_marginals=True,
+            is_plot_strain_comp_box=True,
+            is_stdout_display=True,
+            is_latex=True)
