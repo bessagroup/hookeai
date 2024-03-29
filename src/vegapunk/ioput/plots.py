@@ -14,6 +14,10 @@ grouped_bar_chart
     Plot grouped bar chart.
 plot_boxplots
     Plot set of box plots.
+plot_histogram_1d
+    Plot 1D histogram.
+plot_histogram_2d
+    Plot 2D histogram.
 save_figure
     Save Matplotlib figure.
 tex_str
@@ -41,7 +45,8 @@ __status__ = 'Planning'
 def plot_xy_data(data_xy, data_labels=None, x_lims=(None, None),
                  y_lims=(None, None), title=None, x_label=None, y_label=None,
                  x_scale='linear', y_scale='linear', x_tick_format=None,
-                 y_tick_format=None, is_latex=False):
+                 y_tick_format=None, marker=None, markersize=None,
+                 is_latex=False):
     """Plot data in xy axes.
 
     Parameters
@@ -74,6 +79,10 @@ def plot_xy_data(data_xy, data_labels=None, x_lims=(None, None),
     y_tick_format : {'int', 'float', 'exp'}, default=None
         y-axis ticks formatting. If None or invalid format, then default
         formatting is set.
+    marker : str, default=None
+        Marker type.
+    markersize : float, default=None
+        Marker size in points.
     is_latex : bool, default=False
         If True, then render all strings in LaTeX. If LaTex is not available,
         then this option is silently set to False and all input strings are
@@ -178,7 +187,8 @@ def plot_xy_data(data_xy, data_labels=None, x_lims=(None, None),
     for i in range(n_datasets):
         # Plot dataset
         axes.plot(data_xy[:, 2*i], data_xy[:, 2*i + 1],
-                  label=tex_str(data_labels[i], is_latex))
+                  label=tex_str(data_labels[i], is_latex),
+                  marker=marker, markersize=markersize)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set legend
     if not all([x is None for x in data_labels]):
@@ -569,7 +579,7 @@ def plot_xny_data(data_xy_list, range_type='min-max', data_labels=None,
 # =============================================================================
 def scatter_xy_data(data_xy, data_labels=None, is_identity_line=False,
                     identity_error=None, is_r2_coefficient=False,
-                    is_direct_loss_estimator=False,
+                    is_direct_loss_estimator=False, is_marginal_dists=False,
                     x_lims=(None, None), y_lims=(None, None), title=None,
                     x_label=None, y_label=None, x_scale='linear',
                     y_scale='linear', x_tick_format=None, y_tick_format=None,
@@ -597,6 +607,9 @@ def scatter_xy_data(data_xy, data_labels=None, is_identity_line=False,
         Plot Direct Loss Estimator (DLE) based on Linear Regression model.
         Only effective if plotting a single data set: reference data stored in
         data_xy[:, 0] and prediction data stored in data_xy[:, 1].
+    is_marginal_dists : bool, default=False
+        Plot marginal distributions along both dimensions. Multiple data sets
+        are concatenated along each dimension.
     x_lims : tuple, default=(None, None)
         x-axis limits in data coordinates.
     y_lims : tuple, default=(None, None)
@@ -677,7 +690,28 @@ def scatter_xy_data(data_xy, data_labels=None, is_identity_line=False,
     figure.set_figwidth(6, forward=True)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Create axes
-    axes = figure.add_subplot(1, 1, 1)
+    if is_marginal_dists:
+        # Create grid layout to place subplots
+        gs = figure.add_gridspec(2, 2, 
+                                 width_ratios=(4, 1), height_ratios=(1, 4),
+                                 left=0.1, right=0.9, bottom=0.1, top=0.9,
+                                 wspace=0.05, hspace=0.05)
+        # Set main axes
+        axes = figure.add_subplot(gs[1, 0])
+        # Set marginal distributions axes
+        axes_hist_x = figure.add_subplot(gs[0, 0], sharex=axes)
+        axes_hist_y = figure.add_subplot(gs[1, 1], sharey=axes)
+        # Supress marginal distributions tick labels
+        axes_hist_x.tick_params(axis='both',
+                                bottom=False, labelbottom=False,
+                                left=False, labelleft=False)
+        axes_hist_y.tick_params(axis='both',
+                                left=False, labelleft=False,
+                                bottom=False, labelbottom=False)
+    else:
+        # Set main axes
+        axes = figure.add_subplot(1, 1, 1)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set title
     axes.set_title(tex_str(title, is_latex), fontsize=12, pad=10)
     # Set axes labels
@@ -723,7 +757,7 @@ def scatter_xy_data(data_xy, data_labels=None, is_identity_line=False,
     for i in range(n_datasets):
         # Plot dataset
         axes.scatter(data_xy[:, 2*i], data_xy[:, 2*i + 1],
-                     s=10, facecolor='#4477AA', edgecolor='k', linewidth=0.5,
+                     s=10, edgecolor='k', linewidth=0.5,
                      label=tex_str(data_labels[i], is_latex),
                      zorder=10)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -810,6 +844,18 @@ def scatter_xy_data(data_xy, data_labels=None, is_identity_line=False,
                   ls='--', zorder=40)
         axes.plot(ref_data, pred_data_monitored_ubound, color='#EE7733',
                   ls='--', zorder=40)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Plot marginal distributions
+    if is_marginal_dists:
+        # Set marginal distributions (concatenating data from all data sets)
+        hist_x_data = \
+            np.concatenate([data_xy[:, 2*i] for i in range(n_datasets)])
+        hist_y_data = \
+            np.concatenate([data_xy[:, 2*i + 1] for i in range(n_datasets)])
+        # Plot marginal distributions
+        axes_hist_x.hist(hist_x_data, bins=20, density=True, color='#EE7733')
+        axes_hist_y.hist(hist_y_data, bins=20, density=True, color='#EE7733',
+                         orientation='horizontal')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set legend
     if not all([x is None for x in data_labels]) or identity_error is not None:
@@ -1146,7 +1192,7 @@ def plot_histogram(data, data_labels=None, bins=None, bins_range=None,
     Parameters
     ----------
     data : tuple[numpy.ndarray(1d)]
-        Histogram data sets.
+        Histogram data set.
     data_labels : tuple[str], default=None
         Histogram data sets labels. If None, then no labels are displayed.
     bins : {int, tuple, str}, default=None
@@ -1290,6 +1336,159 @@ def plot_histogram(data, data_labels=None, bins=None, bins_range=None,
         axes.legend(loc='upper left', frameon=True, fancybox=True,
                     facecolor='inherit', edgecolor='inherit', fontsize=10,
                     framealpha=1.0)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Set axes limits
+    if x_lims != (None, None):
+        axes.set_xlim(x_lims)
+    if y_lims != (None, None):
+        axes.set_ylim(y_lims)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Return figure and axes handlers
+    return figure, axes
+# =============================================================================
+def plot_histogram_2d(data, bins=10, bins_range=None,
+                      density=False, x_lims=(None, None), y_lims=(None, None),
+                      title=None, x_label=None, y_label=None,
+                      x_scale='linear', y_scale='linear', x_tick_format=None,
+                      y_tick_format=None, is_latex=False):
+    """Plot 2D histogram.
+
+    Parameters
+    ----------
+    data : numpy.ndarray(2d)
+        Histogram data set provided as a numpy.ndarray(2d) of shape
+        (n_points, 2).
+    bins : {int, [int, int]}, default=10
+        Histogram bins for each dimension.
+    bins_range : np.ndarray(2d), default=None
+        The lower and upper range of the bins along each dimension, ignoring
+        outliers outside the provided range. The bounds for the i-th dimension
+        are stored as [min, max] in bins_range[i, :].
+    density : bool, default=False
+        If True, draw and return a probability density (area under the
+        histogram integrates to 1).
+    title : str, default=None
+        Plot title.
+    x_label : str, default=None
+        x-axis label.
+    y_label : str, default=None
+        y-axis label.
+    x_scale : str {'linear', 'log'}, default='linear'
+        x-axis scale. If None or invalid format, then default scale is set.
+        Scale 'log' overrides any x-axis ticks formatting.
+    y_scale : str {'linear', 'log'}, default='linear'
+        y-axis scale. If None or invalid format, then default scale is set.
+        Scale 'log' overrides any y-axis ticks formatting.
+    x_tick_format : {'int', 'float', 'exp'}, default=None
+        x-axis ticks formatting. If None or invalid format, then default
+        formatting is set.
+    y_tick_format : {'int', 'float', 'exp'}, default=None
+        y-axis ticks formatting. If None or invalid format, then default
+        formatting is set.
+    is_latex : bool, default=False
+        If True, then render all strings in LaTeX. If LaTex is not available,
+        then this option is silently set to False and all input strings are
+        processed to remove $(...)$ enclosure.
+
+    Returns
+    -------
+    figure : Matplotlib Figure
+        Figure.
+    axes : Matplotlib Axes
+        Axes.
+    """
+    # Reset matplotlib internal default style
+    plt.rcParams.update(plt.rcParamsDefault)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Check data
+    if not isinstance(data, np.ndarray):
+        raise RuntimeError('Histogram data set must be provided as a '
+                           'numpy.ndarray(2d) of shape (n_points, 2).')
+    elif len(data.shape) != 2 or data.shape[1] != 2:
+        raise RuntimeError('Histogram data set must be provided as a '
+                           'numpy.ndarray(2d) of shape (n_points, 2).')
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Set default color cycle
+    cycler_color = cycler.cycler('color',['#4477AA', '#EE6677', '#228833',
+                                          '#CCBB44', '#66CCEE', '#AA3377',
+                                          '#BBBBBB', '#000000'])
+    # Set default cycler
+    default_cycler = cycler_color
+    plt.rc('axes', prop_cycle = cycler_color)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~    
+    # Check LaTeX availability
+    if not bool(shutil.which('latex')):
+        is_latex = False
+    # Set LaTeX font
+    if is_latex:
+        # Default LaTeX Computer Modern Roman
+        plt.rc('text', usetex=True)
+        plt.rc('font', **{'family': 'serif',
+                          'serif': ['Computer Modern Roman']})        
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Create figure
+    figure = plt.figure()
+    # Set figure size (inches) - stdout print purpose
+    figure.set_figheight(6, forward=True)
+    figure.set_figwidth(7, forward=True)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Create axes
+    axes = figure.add_subplot(1, 1, 1)
+    # Set title
+    axes.set_title(tex_str(title, is_latex), fontsize=12, pad=10)
+    # Set axes labels
+    axes.set_xlabel(tex_str(x_label, is_latex), fontsize=12, labelpad=10)
+    axes.set_ylabel(tex_str(y_label, is_latex), fontsize=12, labelpad=10)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Set axes scales
+    if x_scale in ('linear', 'log'):
+        axes.set_xscale(x_scale)
+    if y_scale in ('linear', 'log'):
+        axes.set_yscale(y_scale)
+    # Set tick formatting functions
+    def intTickFormat(x, pos):
+        frmt = tex_str('{:2d}', is_latex)
+        return frmt.format(int(x))
+    def floatTickFormat(x, pos):
+        frmt = tex_str('{:3.1f}', is_latex)
+        return frmt.format(x)
+    def expTickFormat(x, pos):
+        frmt = tex_str('{:7.2e}', is_latex)
+        return frmt.format(x)
+    tick_formats = {'int': intTickFormat, 'float': floatTickFormat,
+                    'exp': expTickFormat}
+    # Set axes tick formats
+    if x_scale != 'log' and x_tick_format in ('int', 'float', 'exp'):
+        axes.xaxis.set_major_formatter(
+            ticker.FuncFormatter(tick_formats[x_tick_format]))
+    if y_scale != 'log' and y_tick_format in ('int', 'float', 'exp'):
+        axes.yaxis.set_major_formatter(
+            ticker.FuncFormatter(tick_formats[y_tick_format]))
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Configure grid major lines
+    axes.grid(which='major', axis='both', linestyle='-', linewidth=0.5,
+              color='0.0', zorder=-20)
+    # Configure grid minor lines
+    axis_option = {'log-log': 'both', 'log-linear': 'x', 'linear-log': 'y'}
+    xy_scale = f'{x_scale}-{y_scale}'
+    if xy_scale in axis_option.keys():
+        axes.grid(which='minor', axis=axis_option[xy_scale], linestyle='-',
+                  linewidth=0.5, color='0.0', zorder=-20)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Plot 2D histogram
+    _, x_bins_edges, y_bins_edges, image = \
+        axes.hist2d(data[:, 0], data[:, 1], bins=bins, range=bins_range,
+                    density=density, cmap='Blues')
+    # Plot colorbar
+    cb = figure.colorbar(image, ax=axes)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Set colobar label
+    if density:
+        colorbar_label = 'Probability density'
+    else:
+        colorbar_label = 'Frequency'
+    # Plot colorbar label
+    cb.set_label(label=colorbar_label, size=12)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set axes limits
     if x_lims != (None, None):
