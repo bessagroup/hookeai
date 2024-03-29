@@ -48,9 +48,9 @@ class ProportionalStrainPathGenerator(StrainPathGenerator):
     
     Methods
     -------
-    generate_strain_path(self, strain_bounds, n_time,
-                         time_init=0.0, time_end=1.0,
-                         inc_strain_norm=None, strain_noise_std=None,
+    generate_strain_path(self, strain_bounds, n_time, \
+                         time_init=0.0, time_end=1.0, \
+                         inc_strain_norm=None, strain_noise_std=None, \
                          is_cyclic_loading=False, random_seed=None)
         Generate strain path.
     """
@@ -92,7 +92,7 @@ class ProportionalStrainPathGenerator(StrainPathGenerator):
         -------
         strain_comps_order : tuple[str]
             Strain components order.
-        time_hist : tuple
+        time_hist : numpy.ndarray(1d)
             Discrete time history.
         strain_path : numpy.ndarray(2d)
             Strain path history stored as numpy.ndarray(2d) of shape
@@ -165,10 +165,10 @@ class ProportionalStrainPathGenerator(StrainPathGenerator):
                                        'must be positive value.')
                 # Get strain tensors
                 strain = StrainPathGenerator.build_strain_tensor(
-                    strain_path[i, :], self._n_dim, strain_comps_order,
+                    self._n_dim, strain_path[i, :], strain_comps_order,
                     is_symmetric=self._strain_formulation == 'infinitesimal')
                 strain_old = StrainPathGenerator.build_strain_tensor(
-                    strain_path[i - 1, :], self._n_dim, strain_comps_order,
+                    self._n_dim, strain_path[i - 1, :], strain_comps_order,
                     is_symmetric=self._strain_formulation == 'infinitesimal')
                 # Compute strain increment
                 if strain_formulation == 'infinitesimal':
@@ -220,19 +220,59 @@ if __name__ == '__main__':
                      '22': (-1.0, 1.0),
                      '12': (-1.0, 1.0)}
     # Set number of discrete times
-    n_time = 40
+    n_time = 100
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Generate strain path
-    strain_comps_order, time_hist, strain_path = \
-        strain_path_generator.generate_strain_path(
-            strain_bounds, n_time, time_init=0.0, time_end=1.0,
-            inc_strain_norm=None, strain_noise_std=None,
-            is_cyclic_loading=False, random_seed=None)
+    # Set number of strain paths
+    n_path = 10
+    # Initialize strain paths data
+    time_hists = []
+    strain_paths = []
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Plot strain path
-    strain_path_generator.plot_strain_path(strain_comps_order, time_hist,
-                                           strain_path,
-                                           is_plot_strain_norm=True,
-                                           is_plot_inc_strain_norm=True,
-                                           is_stdout_display=True,
-                                           is_latex=True)
+    # Loop over strain paths
+    for i in range(n_path):
+        # Generate strain path
+        strain_comps_order, time_hist, strain_path = \
+            strain_path_generator.generate_strain_path(
+                strain_bounds, n_time,
+                time_init=0.0, time_end=1.0,
+                inc_strain_norm=None, strain_noise_std=None,
+                is_cyclic_loading=False, random_seed=None)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Plot strain path
+        strain_path_generator.plot_strain_path(
+            strain_formulation, n_dim,
+            strain_comps_order, time_hist, strain_path,
+            is_plot_strain_path=False,
+            is_plot_strain_comp_hist=False,
+            is_plot_strain_norm=False,
+            is_plot_strain_norm_hist=False,
+            is_plot_inc_strain_norm=False,
+            is_plot_inc_strain_norm_hist=False,
+            is_plot_strain_path_pairs=False,
+            is_plot_strain_pairs_hist=False,
+            is_plot_strain_pairs_marginals=False,
+            is_plot_strain_comp_box=False,
+            is_stdout_display=True,
+            is_latex=True)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Store strain path data
+        time_hists.append(time_hist)
+        strain_paths.append(strain_path)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Plot global strain paths data
+    if n_path > 1:
+        # Concatenate strain paths data
+        global_strain_path = np.vstack(strain_paths)
+        global_time_hist = np.concatenate(time_hists)
+        # Plot strain paths data
+        strain_path_generator.plot_strain_path(
+            strain_formulation, n_dim,
+            strain_comps_order, global_time_hist, global_strain_path,
+            is_plot_strain_comp_hist=False,
+            is_plot_strain_norm_hist=False,
+            is_plot_inc_strain_norm_hist=False,
+            is_plot_strain_pairs_hist=True,
+            is_plot_strain_pairs_marginals=True,
+            is_plot_strain_comp_box=True,
+            is_stdout_display=True,
+            is_latex=True)
