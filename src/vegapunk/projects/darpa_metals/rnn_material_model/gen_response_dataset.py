@@ -23,9 +23,14 @@ import torch
 import numpy as np
 import matplotlib.pyplot as plt
 # Local
-from rnn_base_model.data.time_dataset import TimeSeriesDatasetInMemory
+from rnn_base_model.data.time_dataset import TimeSeriesDatasetInMemory, \
+    get_time_series_data_loader
+from projects.darpa_metals.rnn_material_model.strain_paths.interface import \
+    StrainPathGenerator
 from projects.darpa_metals.rnn_material_model.strain_paths.random_path import \
     RandomStrainPathGenerator
+from projects.darpa_metals.rnn_material_model.strain_paths.proportional_path \
+    import ProportionalStrainPathGenerator
 from simulators.fetorch.math.matrixops import get_problem_type_parameters, \
     get_tensor_from_mf
 from simulators.fetorch.material.material_su import material_state_update
@@ -67,7 +72,7 @@ class MaterialResponseDatasetGenerator():
     compute_stress_path(self, strain_comps, time_hist, strain_path, \
                         constitutive_model)
         Compute material stress response for given strain path.
-    build_tensor_from_comps(n_dim, comps, comps_array, is_sym=False)
+    build_tensor_from_comps(n_dim, comps, comps_array, is_symmetric=False)
         Build strain/stress tensor from given components.
     store_tensor_comps(comps, tensor)
         Store strain/stress tensor components in array.
@@ -108,13 +113,11 @@ class MaterialResponseDatasetGenerator():
         Parameters
         ----------
         n_path : int
-            Number of strain-stress paths to include in the material response
-            data set.
-        strain_path_type : {'random',}
+            Number of strain-stress paths.
+        strain_path_type : {'random', 'proportional'}
             Strain path type that sets the corresponding generator. 
         strain_path_kwargs : dict
-            Parameters of strain path generator method
-            (StrainPathGenerator.generate_strain_path()).
+            Parameters of strain path generator method set by strain_path_type.
         model_name : str
             FETorch material constitutive model name.
         model_parameters : dict
@@ -136,6 +139,9 @@ class MaterialResponseDatasetGenerator():
         if strain_path_type == 'random':
             strain_path_generator = RandomStrainPathGenerator(
                 self._strain_formulation, self._n_dim)
+        elif strain_path_type == 'proportional':
+            strain_path_generator = ProportionalStrainPathGenerator(
+                self._strain_formulation, self._n_dim)
         else:
             raise RuntimeError('Unknown strain path type.')
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -156,24 +162,26 @@ class MaterialResponseDatasetGenerator():
         # Loop over samples
         for i in range(n_path):
             # Generate strain path
-            strain_comps, time_hist, strain_path = \
+            strain_comps_order, time_hist, strain_path = \
                 strain_path_generator.generate_strain_path(
                     **strain_path_kwargs)
             # Compute material stress response
-            stress_comps, stress_path = \
-                self.compute_stress_path(strain_comps, time_hist,
+            stress_comps_order, stress_path = \
+                self.compute_stress_path(strain_comps_order, time_hist,
                                          strain_path, constitutive_model)
             # Store strain-stress material response path
             dataset_samples.append(
-                {'strain_comps': strain_comps,
+                {'strain_comps_order': strain_comps_order,
                  'strain_path': torch.tensor(strain_path, dtype=torch.float),
-                 'stress_comps': stress_comps,
+                 'stress_comps_order': stress_comps_order,
                  'stress_path': torch.tensor(stress_path, dtype=torch.float),
-                 'time_hist': time_hist})
+                 'time_hist': torch.tensor(time_hist,
+                                           dtype=torch.float).reshape(-1, 1)})
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Plot material response path
             self.plot_material_response_path(
-                strain_comps, strain_path, stress_comps, stress_path,
+                strain_comps_order, strain_path,
+                stress_comps_order, stress_path,
                 time_hist,
                 strain_filename=f'strain_path_{i}',
                 stress_filename=f'stress_path_{i}',
@@ -185,15 +193,15 @@ class MaterialResponseDatasetGenerator():
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         return dataset
     # -------------------------------------------------------------------------
-    def compute_stress_path(self, strain_comps, time_hist, strain_path,
+    def compute_stress_path(self, strain_comps_order, time_hist, strain_path,
                             constitutive_model):
         """Compute material stress response for given strain path.
 
         Parameters
         ----------
-        strain_comps : tuple
+        strain_comps_order : tuple[str]
             Strain components order.
-        time_hist : tuple
+        time_hist : numpy.ndarray(1d)
             Discrete time history.
         strain_path : numpy.ndarray(2d)
             Strain path history stored as numpy.ndarray(2d) of shape
@@ -210,7 +218,7 @@ class MaterialResponseDatasetGenerator():
             (sequence_length, n_stress_comps).
         """
         # Set stress components order
-        stress_comps = strain_comps
+        stress_comps = strain_comps_order
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Get time history length
         n_time = time_hist.shape[0]
@@ -227,11 +235,11 @@ class MaterialResponseDatasetGenerator():
         for time_idx in range(1, n_time):
             # Get previous and current strain tensors
             strain_tensor_old = self.build_tensor_from_comps(
-                self._n_dim, strain_comps, strain_path[time_idx - 1, :],
-                is_sym=self._strain_formulation=='infinitesimal')
+                self._n_dim, strain_comps_order, strain_path[time_idx - 1, :],
+                is_symmetric=self._strain_formulation=='infinitesimal')
             strain_tensor = self.build_tensor_from_comps(
-                self._n_dim, strain_comps, strain_path[time_idx, :],
-                is_sym=self._strain_formulation=='infinitesimal')
+                self._n_dim, strain_comps_order, strain_path[time_idx, :],
+                is_symmetric=self._strain_formulation=='infinitesimal')
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Compute incremental strain tensor
             if self._strain_formulation == 'infinitesimal':
@@ -268,7 +276,7 @@ class MaterialResponseDatasetGenerator():
         return stress_comps, stress_path
     # -------------------------------------------------------------------------
     @staticmethod
-    def build_tensor_from_comps(n_dim, comps, comps_array, is_sym=False):
+    def build_tensor_from_comps(n_dim, comps, comps_array, is_symmetric=False):
         """Build strain/stress tensor from given components.
         
         Parameters
@@ -279,10 +287,9 @@ class MaterialResponseDatasetGenerator():
             Strain/Stress components order.
         comps_array : numpy.ndarray(1d)
             Strain/Stress components array.
-        is_sym : bool, default=False
-            If True, then tensor is assumed symmetric and whenever a
-            off-diagonal component is assembled so is its symmetric
-            counterpart.
+        is_symmetric : bool, default=False
+            If True, then assembles off-diagonal strain components from
+            symmetric component.
         
         Returns
         -------
@@ -299,7 +306,7 @@ class MaterialResponseDatasetGenerator():
             # Assemble tensor component
             tensor[i, j] = comps_array[k]
             # Assemble symmetric tensor component
-            if is_sym:
+            if is_symmetric and i != j:
                 tensor[j, i] = comps_array[k]
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         return tensor
@@ -356,7 +363,7 @@ class MaterialResponseDatasetGenerator():
         stress_path : numpy.ndarray(2d)
             Stress path history stored as numpy.ndarray(2d) of shape
             (sequence_length, n_stress_comps).
-        time_hist : tuple
+        time_hist : numpy.ndarray(1d)
             Discrete time history.
         strain_filename : str, default='strain_path'
             Strain path figure name.
@@ -389,8 +396,6 @@ class MaterialResponseDatasetGenerator():
                 comps = strain_comps
                 # Set component label
                 comp_label = 'Strain'
-                # Set plot title
-                title = 'Strain deformation path'
                 # Set y-axis label
                 y_label = 'Strain'
                 # Set axis limits
@@ -404,8 +409,6 @@ class MaterialResponseDatasetGenerator():
                 comps = stress_comps
                 # Set component label
                 comp_label = 'Stress'
-                # Set plot title
-                title = 'Stress deformation path'
                 # Set y-axis label
                 y_label = 'Stress'
                 # Set axis limits
@@ -415,8 +418,9 @@ class MaterialResponseDatasetGenerator():
                 # Set filename
                 filename = stress_filename
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            # Set data array
+            # Initialize data array
             data_xy = np.zeros((len(time_hist), 2*len(comps)))
+            # Set data array
             for j in range(len(comps)):
                 data_xy[:, 2*j] = time_hist
                 data_xy[:, 2*j + 1] = path[:, j]
@@ -432,7 +436,6 @@ class MaterialResponseDatasetGenerator():
             figure, _ = plot_xy_data(data_xy, data_labels=data_labels,
                                      x_lims=(time_hist[0], time_hist[-1]),
                                      y_lims=y_lims,
-                                     title=title,
                                      x_label='Time', y_label=y_label,
                                      is_latex=is_latex)
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
