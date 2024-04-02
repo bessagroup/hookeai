@@ -184,6 +184,7 @@ class StrainPathGenerator(ABC):
                          is_plot_strain_pairs_marginals=False,
                          is_plot_strain_comp_box=False,
                          strain_label='Strain',
+                         strain_units='',
                          filename='strain_path',
                          save_dir=None, is_save_fig=False,
                          is_stdout_display=False, is_latex=False):
@@ -229,6 +230,8 @@ class StrainPathGenerator(ABC):
             components.
         strain_label : str, default='Strain'
             Strain label.
+        strain_units : str, default=''
+            Strain units label.
         filename : str, default='strain_path'
             Figure name.
         save_dir : str, default=None
@@ -290,7 +293,8 @@ class StrainPathGenerator(ABC):
             figure, _ = plot_xy_data(data_xy=strain_data_xy,
                                      data_labels=data_labels,
                                      x_lims=(time_min, time_max),
-                                     x_label='Time', y_label=strain_label,
+                                     x_label='Time',
+                                     y_label=strain_label + strain_units,
                                      is_latex=is_latex)
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Save figure
@@ -309,7 +313,7 @@ class StrainPathGenerator(ABC):
                 # Plot strain component distribution
                 figure, _ = plot_histogram(
                      strain_paths, bins=20, density=True,
-                     x_label=f'{strain_label} {comp}',
+                     x_label=f'{strain_label} {comp}' + strain_units,
                      y_label='Probability density',
                      is_latex=is_latex)
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -357,7 +361,8 @@ class StrainPathGenerator(ABC):
                                          x_lims=(time_min, time_max),
                                          y_lims=(0, None),
                                          x_label='Time',
-                                         y_label=f'{strain_label} norm',
+                                         y_label=(f'{strain_label} norm'
+                                                  + strain_units),
                                          is_latex=is_latex)
                 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                 # Save figure
@@ -377,7 +382,7 @@ class StrainPathGenerator(ABC):
                 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                 figure, _ = plot_histogram(
                     strain_paths_norm, bins=20, density=True,
-                    x_label=f'{strain_label} norm',
+                    x_label=f'{strain_label} norm' + strain_units,
                     y_label='Probability density',
                     is_latex=is_latex)
                 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -442,7 +447,7 @@ class StrainPathGenerator(ABC):
                     x_lims=(time_min, time_max),
                     y_lims=(0, None),
                     x_label='Time',
-                    y_label=f'{strain_label} increment norm',
+                    y_label=f'{strain_label} increment norm' + strain_units,
                     is_latex=is_latex)
                 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                 # Save figure
@@ -463,7 +468,7 @@ class StrainPathGenerator(ABC):
                 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                 figure, _ = plot_histogram(
                     inc_strain_paths_norm, bins=20, density=True,
-                    x_label=f'{strain_label} increment norm',
+                    x_label=f'{strain_label} increment norm' + strain_units,
                     y_label='Probability density',
                     is_latex=is_latex)
                 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -499,8 +504,10 @@ class StrainPathGenerator(ABC):
                     # Loop over strain paths
                     for k in range(n_path):
                         # Set strain data array
-                        strain_data_xy[:, 2*k] = strain_path[k][:, j_x]
-                        strain_data_xy[:, 2*k + 1] = strain_path[k][:, j_y]
+                        strain_data_xy[:len(time_hist[k]), 2*k] = \
+                            strain_path[k][:, j_x]
+                        strain_data_xy[:len(time_hist[k]), 2*k + 1] = \
+                            strain_path[k][:, j_y]
                 else:
                     # Initialize strain data array
                     strain_data_xy = np.zeros((n_time_max, 2))
@@ -512,8 +519,10 @@ class StrainPathGenerator(ABC):
                 if is_plot_strain_path_pairs:
                     figure, _ = plot_xy_data(
                         data_xy=strain_data_xy,
-                        x_label=f'{strain_label} {strain_pair[0]}',
-                        y_label=f'{strain_label} {strain_pair[1]}',
+                        x_label=(f'{strain_label} {strain_pair[0]}'
+                                 + strain_units),
+                        y_label=(f'{strain_label} {strain_pair[1]}'
+                                 + strain_units),
                         marker='o', is_latex=is_latex)
                     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                     # Save figure
@@ -526,8 +535,10 @@ class StrainPathGenerator(ABC):
                 if is_plot_strain_pairs_marginals:
                     figure, _ = scatter_xy_data(
                         data_xy=strain_data_xy,
-                        x_label=f'{strain_label} {strain_pair[0]}',
-                        y_label=f'{strain_label} {strain_pair[1]}',
+                        x_label=(f'{strain_label} {strain_pair[0]}'
+                                 + strain_units),
+                        y_label=(f'{strain_label} {strain_pair[1]}'
+                                 + strain_units),
                         is_marginal_dists = True,
                         is_latex=is_latex)
                     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -547,8 +558,10 @@ class StrainPathGenerator(ABC):
                     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                     figure, _ = plot_histogram_2d(
                         strain_data_xy, bins=20, density=False,
-                        x_label=f'{strain_label} {strain_pair[0]}',
-                        y_label=f'{strain_label} {strain_pair[1]}',
+                        x_label=(f'{strain_label} {strain_pair[0]}'
+                                 + strain_units),
+                        y_label=(f'{strain_label} {strain_pair[1]}'
+                                 + strain_units),
                         is_latex=True)
                     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                     # Save figure
@@ -564,18 +577,20 @@ class StrainPathGenerator(ABC):
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Concatenate strain paths
             if n_path > 1:
-                strain_path = np.vstack(strain_path)
+                strain_data = np.vstack(strain_path)
+            else:
+                strain_data = strain_path[:, :]
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Plot strain components box plot
-            figure, _ = plot_boxplots(strain_path, data_labels,
+            figure, _ = plot_boxplots(strain_data, data_labels,
                                       x_label=f'{strain_label} components',
-                                      y_label=f'{strain_label}',
+                                      y_label=f'{strain_label}' + strain_units,
                                       is_latex=True)
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Save figure
             if is_save_fig:
                 save_figure(figure, filename + '_boxplot'
-                            + f'{strain_pair[0]}v{strain_pair[1]}',
+                            + f'_{strain_pair[0]}v{strain_pair[1]}',
                             format='pdf', save_dir=save_dir)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Display figures
