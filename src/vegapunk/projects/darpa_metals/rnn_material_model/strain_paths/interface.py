@@ -274,6 +274,9 @@ class StrainPathGenerator(ABC):
             # Set minimum and maximum discrete times
             time_min = time_hist[0]
             time_max = time_hist[-1]
+            # Store discrete time history and stress path in list
+            time_hist = [time_hist,]
+            strain_path = [strain_path,]
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Initialize figure
         figure = None
@@ -284,8 +287,8 @@ class StrainPathGenerator(ABC):
             strain_data_xy = \
                 np.zeros((n_time_max, 2*len(strain_comps_order)))
             for j in range(len(strain_comps_order)):
-                strain_data_xy[:, 2*j] = time_hist
-                strain_data_xy[:, 2*j + 1] = strain_path[:, j]
+                strain_data_xy[:, 2*j] = time_hist[0][:, 0]
+                strain_data_xy[:, 2*j+1] = strain_path[0][:, j]
             # Set strain data labels
             data_labels = [f'{strain_label} {x}' for x in strain_comps_order]
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -306,10 +309,7 @@ class StrainPathGenerator(ABC):
             # Loop over strain components
             for j, comp in enumerate(strain_comps_order):
                 # Set strain data array
-                if n_path > 1:
-                    strain_paths = tuple([path[:, j] for path in strain_path])
-                else:
-                    strain_paths = tuple([strain_path[:, j],])
+                strain_paths = tuple([path[:, j] for path in strain_path])
                 # Plot strain component distribution
                 figure, _ = plot_histogram(
                      strain_paths, bins=20, density=True,
@@ -324,36 +324,21 @@ class StrainPathGenerator(ABC):
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Plot strain norm (path and distribution)
         if (is_plot_strain_norm or is_plot_strain_norm_hist):
-            # Set strain norm data array
-            if n_path > 1:
-                # Initialize strain norm data array
-                strain_norm_data_xy = np.full((n_time_max, 2*n_path),
-                                              fill_value=np.nan)
-                # Loop over strain paths
-                for k in range(n_path):     
-                    # Loop over time steps
-                    for i in range(len(time_hist[k])):
-                        # Assemble discrete time history
-                        strain_norm_data_xy[i, 2*k] = time_hist[k][i]
-                        # Get strain tensor
-                        strain = StrainPathGenerator.build_strain_tensor(
-                            n_dim, strain_path[k][i, :], strain_comps_order,
-                            is_symmetric=strain_formulation == 'infinitesimal')
-                        # Compute strain norm
-                        strain_norm_data_xy[i, 2*k+1] = np.linalg.norm(strain)
-            else:
-                # Initialize strain norm data array
-                strain_norm_data_xy = np.zeros((n_time_max, 2))
+            # Initialize strain norm data array
+            strain_norm_data_xy = np.full((n_time_max, 2*n_path),
+                                            fill_value=np.nan)
+            # Loop over strain paths
+            for k in range(n_path):     
                 # Loop over time steps
-                for i in range(len(time_hist)):
+                for i in range(len(time_hist[k])):
                     # Assemble discrete time history
-                    strain_norm_data_xy[i, 0] = time_hist[i]
+                    strain_norm_data_xy[i, 2*k] = time_hist[k][i]
                     # Get strain tensor
                     strain = StrainPathGenerator.build_strain_tensor(
-                        n_dim, strain_path[i, :], strain_comps_order,
+                        n_dim, strain_path[k][i, :], strain_comps_order,
                         is_symmetric=strain_formulation == 'infinitesimal')
                     # Compute strain norm
-                    strain_norm_data_xy[i, 1] = np.linalg.norm(strain)
+                    strain_norm_data_xy[i, 2*k+1] = np.linalg.norm(strain)
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Plot strain norm path
             if is_plot_strain_norm:
@@ -373,12 +358,7 @@ class StrainPathGenerator(ABC):
             # Plot strain norm distribution
             if is_plot_strain_norm_hist:
                 # Set strain data array
-                if n_path > 1:
-                    strain_paths_norm = \
-                        tuple([strain_norm_data_xy[:len(time_hist[k]), 2*k+1]
-                               for k in range(n_path)])
-                else:
-                    strain_paths_norm = tuple([strain_norm_data_xy[:, 1],])
+                strain_paths_norm = tuple([strain_norm_data_xy[:, 1],])
                 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                 figure, _ = plot_histogram(
                     strain_paths_norm, bins=20, density=True,
@@ -393,44 +373,20 @@ class StrainPathGenerator(ABC):
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Plot strain increment norm (path and distribution)
         if (is_plot_inc_strain_norm or is_plot_inc_strain_norm_hist):
-            # Set strain norm data array
-            if n_path > 1:
-                # Initialize strain increment norm data array
-                inc_strain_norm_data_xy = np.zeros((n_time_max, 2*n_path))
-                # Loop over strain paths
-                for k in range(n_path):     
-                    # Loop over time steps
-                    for i in range(1, len(time_hist[k])):
-                        # Assemble discrete time history
-                        inc_strain_norm_data_xy[i, 2*k] = time_hist[k][i]
-                        # Get strain tensors
-                        strain = StrainPathGenerator.build_strain_tensor(
-                            n_dim, strain_path[k][i, :], strain_comps_order,
-                            is_symmetric=strain_formulation == 'infinitesimal')
-                        strain_old = StrainPathGenerator.build_strain_tensor(
-                            n_dim, strain_path[k][i-1, :], strain_comps_order,
-                            is_symmetric=strain_formulation == 'infinitesimal')
-                        # Compute strain increment
-                        if strain_formulation == 'infinitesimal':
-                            inc_strain = strain - strain_old
-                        else:
-                            raise RuntimeError('Not implemented.')
-                        # Compute strain increment norm
-                        inc_strain_norm_data_xy[i, 2*k+1] = \
-                            np.linalg.norm(inc_strain)
-            else:
-                # Initialize strain increment norm data array
-                inc_strain_norm_data_xy = np.zeros((n_time_max, 2))
+            # Initialize strain increment norm data array
+            inc_strain_norm_data_xy = np.zeros((n_time_max, 2*n_path))
+            # Loop over strain paths
+            for k in range(n_path):     
                 # Loop over time steps
-                for i in range(1, len(time_hist)):
+                for i in range(1, len(time_hist[k])):
                     # Assemble discrete time history
-                    inc_strain_norm_data_xy[i, 0] = time_hist[i]
+                    inc_strain_norm_data_xy[i, 2*k] = time_hist[k][i]
                     # Get strain tensors
                     strain = StrainPathGenerator.build_strain_tensor(
-                        n_dim, strain_path[i, :], strain_comps_order,
+                        n_dim, strain_path[k][i, :], strain_comps_order,
                         is_symmetric=strain_formulation == 'infinitesimal')
                     strain_old = StrainPathGenerator.build_strain_tensor(
-                        n_dim, strain_path[i-1, :], strain_comps_order,
+                        n_dim, strain_path[k][i-1, :], strain_comps_order,
                         is_symmetric=strain_formulation == 'infinitesimal')
                     # Compute strain increment
                     if strain_formulation == 'infinitesimal':
@@ -438,7 +394,8 @@ class StrainPathGenerator(ABC):
                     else:
                         raise RuntimeError('Not implemented.')
                     # Compute strain increment norm
-                    inc_strain_norm_data_xy[i, 1] = np.linalg.norm(inc_strain)
+                    inc_strain_norm_data_xy[i, 2*k+1] = \
+                        np.linalg.norm(inc_strain)
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Plot strain path increment norm
             if is_plot_inc_strain_norm:
@@ -458,13 +415,9 @@ class StrainPathGenerator(ABC):
             # Plot strain increment norm distribution
             if is_plot_inc_strain_norm_hist:
                 # Set strain data array
-                if n_path > 1:
-                    inc_strain_paths_norm = tuple(
-                        [inc_strain_norm_data_xy[:len(time_hist[k]), 2*k+1]
-                         for k in range(n_path)])
-                else:
-                    inc_strain_paths_norm = tuple(
-                        [inc_strain_norm_data_xy[:, 1],])
+                inc_strain_paths_norm = tuple(
+                    [inc_strain_norm_data_xy[:len(time_hist[k]), 2*k+1]
+                        for k in range(n_path)])
                 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                 figure, _ = plot_histogram(
                     inc_strain_paths_norm, bins=20, density=True,
@@ -496,24 +449,16 @@ class StrainPathGenerator(ABC):
                 # Get strain components indexes
                 j_x = strain_comps_order.index(strain_pair[0])
                 j_y = strain_comps_order.index(strain_pair[1])
-                # Set strain data array
-                if n_path > 1:
-                    # Initialize strain data array
-                    strain_data_xy = np.full((n_time_max, 2*n_path),
-                                             fill_value=np.nan)
-                    # Loop over strain paths
-                    for k in range(n_path):
-                        # Set strain data array
-                        strain_data_xy[:len(time_hist[k]), 2*k] = \
-                            strain_path[k][:, j_x]
-                        strain_data_xy[:len(time_hist[k]), 2*k + 1] = \
-                            strain_path[k][:, j_y]
-                else:
-                    # Initialize strain data array
-                    strain_data_xy = np.zeros((n_time_max, 2))
+                # Initialize strain data array
+                strain_data_xy = np.full((n_time_max, 2*n_path),
+                                            fill_value=np.nan)
+                # Loop over strain paths
+                for k in range(n_path):
                     # Set strain data array
-                    strain_data_xy[:, 0] = strain_path[:, j_x]
-                    strain_data_xy[:, 1] = strain_path[:, j_y]
+                    strain_data_xy[:len(time_hist[k]), 2*k] = \
+                        strain_path[k][:, j_x]
+                    strain_data_xy[:len(time_hist[k]), 2*k + 1] = \
+                        strain_path[k][:, j_y]
                 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                 # Plot strain path for strain components pair
                 if is_plot_strain_path_pairs:
@@ -551,10 +496,9 @@ class StrainPathGenerator(ABC):
                 # Plot strain components pair distribution
                 if is_plot_strain_pairs_hist:
                     # Concatenate strain paths
-                    if n_path > 1:
-                        strain_data_xy = np.vstack(
-                            [np.stack((x[:, j_x], x[:, j_y]), axis=1)
-                             for x in strain_path])
+                    strain_data_xy = np.vstack(
+                        [np.stack((x[:, j_x], x[:, j_y]), axis=1)
+                            for x in strain_path])
                     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                     figure, _ = plot_histogram_2d(
                         strain_data_xy, bins=20, density=False,
@@ -576,10 +520,7 @@ class StrainPathGenerator(ABC):
             data_labels = [f'{x}' for x in strain_comps_order]
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Concatenate strain paths
-            if n_path > 1:
-                strain_data = np.vstack(strain_path)
-            else:
-                strain_data = strain_path[:, :]
+            strain_data = np.vstack(strain_path)
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Plot strain components box plot
             figure, _ = plot_boxplots(strain_data, data_labels,
