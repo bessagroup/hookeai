@@ -287,7 +287,7 @@ class StrainPathGenerator(ABC):
             strain_data_xy = \
                 np.zeros((n_time_max, 2*len(strain_comps_order)))
             for j in range(len(strain_comps_order)):
-                strain_data_xy[:, 2*j] = time_hist[0][:, 0]
+                strain_data_xy[:, 2*j] = time_hist[0].reshape(-1)
                 strain_data_xy[:, 2*j+1] = strain_path[0][:, j]
             # Set strain data labels
             data_labels = [f'{strain_label} {x}' for x in strain_comps_order]
