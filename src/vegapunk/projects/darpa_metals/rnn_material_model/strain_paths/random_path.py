@@ -152,61 +152,70 @@ class RandomStrainPathGenerator(StrainPathGenerator):
         # Generate trial strain path (normalized) by fitting generative
         # regression model
         for j, comp in enumerate(strain_comps_order):
-            # Sample control strains (normalized)
-            control_strains_normalized = \
-                np.random.uniform(low=-1.0, high=1.0, size=n_control)
-            # Enforce initial null strain
-            control_strains_normalized[0] = 0.0
-            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            # Fit polynomial regression model
-            if generative_type == 'polynomial':
-                # Set polynomial degree
-                polynomial_degree = n_control - 1
-                # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-                # Fit polynomial model
-                polynomial_coefficients = \
-                    np.polyfit(control_times_normalized,
-                               control_strains_normalized,
-                               polynomial_degree)
-                # Get polynomial model
-                polynomial_model = np.poly1d(polynomial_coefficients)
-                # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-                # Predict with polynomial model
-                strain_mean_normalized = np.array(
-                    [polynomial_model(x) for x in time_hist_normalized])
-            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            # Fit Gaussian process regression model
-            elif generative_type == 'gaussian_process':
-                # Set constant kernel (hyperparameter: variance)
-                constant_kernel = \
-                    sklearn.gaussian_process.kernels.ConstantKernel(
-                        1.0, (0.1, 10))
-                # Set RBF kernel (hyperparameter: length scale)
-                rbf_kernel = sklearn.gaussian_process.kernels.RBF(
-                        1.0, (0.1, 10))
-                # Set kernel function
-                kernel = constant_kernel*rbf_kernel
-                # Set homoscedastic noise
-                constant_noise = 1e-5
-                # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-                # Initialize Gaussian Processes regression model
-                gp_model = sklearn.gaussian_process.GaussianProcessRegressor(
-                    kernel=kernel, alpha=constant_noise,
-                    optimizer='fmin_l_bfgs_b', n_restarts_optimizer=20)
-                # Fit Gaussian Processes regression model
-                gp_model.fit(control_times_normalized.reshape(-1, 1),
-                             control_strains_normalized)
-                # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-                # Predict with Gaussian Processes model
-                strain_mean_normalized, _ = gp_model.predict(
-                    time_hist_normalized.reshape(-1, 1), return_std=True)
-            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Get strain component sampling bounds
             lbound, ubound = strain_bounds[comp]
-            # Denormalize strain component path
-            strain_comp_hist = \
-                np.array([lbound + 0.5*(ubound - lbound)*(x - lbound)
-                          for x in strain_mean_normalized])
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Generate strain component strain path
+            if np.isclose(lbound, ubound):
+                # Enforce constant strain
+                strain_comp_hist = np.linspace(lbound, lbound,
+                                               num=n_time_forward)
+            else:
+                # Sample control strains (normalized)
+                control_strains_normalized = \
+                    np.random.uniform(low=-1.0, high=1.0, size=n_control)
+                # Enforce initial null strain (normalized)
+                control_strains_normalized[0] = \
+                    -(ubound + lbound)/(ubound - lbound)
+                # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                # Fit polynomial regression model
+                if generative_type == 'polynomial':
+                    # Set polynomial degree
+                    polynomial_degree = n_control - 1
+                    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                    # Fit polynomial model
+                    polynomial_coefficients = \
+                        np.polyfit(control_times_normalized,
+                                control_strains_normalized,
+                                polynomial_degree)
+                    # Get polynomial model
+                    polynomial_model = np.poly1d(polynomial_coefficients)
+                    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                    # Predict with polynomial model
+                    strain_mean_normalized = np.array(
+                        [polynomial_model(x) for x in time_hist_normalized])
+                # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                # Fit Gaussian process regression model
+                elif generative_type == 'gaussian_process':
+                    # Set constant kernel (hyperparameter: variance)
+                    constant_kernel = \
+                        sklearn.gaussian_process.kernels.ConstantKernel(
+                            1.0, (0.1, 10))
+                    # Set RBF kernel (hyperparameter: length scale)
+                    rbf_kernel = sklearn.gaussian_process.kernels.RBF(
+                            1.0, (0.1, 10))
+                    # Set kernel function
+                    kernel = constant_kernel*rbf_kernel
+                    # Set homoscedastic noise
+                    constant_noise = 1e-5
+                    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                    # Initialize Gaussian Processes regression model
+                    gp_model = \
+                        sklearn.gaussian_process.GaussianProcessRegressor(
+                            kernel=kernel, alpha=constant_noise,
+                            optimizer='fmin_l_bfgs_b', n_restarts_optimizer=20)
+                    # Fit Gaussian Processes regression model
+                    gp_model.fit(control_times_normalized.reshape(-1, 1),
+                                control_strains_normalized)
+                    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                    # Predict with Gaussian Processes model
+                    strain_mean_normalized, _ = gp_model.predict(
+                        time_hist_normalized.reshape(-1, 1), return_std=True)
+                # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                # Denormalize strain component path
+                strain_comp_hist = \
+                    np.array([lbound + 0.5*(ubound - lbound)*(x + 1.0)
+                            for x in strain_mean_normalized])
             # Assemble strain component path
             strain_path_trial[:, j] = strain_comp_hist
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -229,7 +238,7 @@ class RandomStrainPathGenerator(StrainPathGenerator):
                     self._n_dim, strain_path[i - 1, :], strain_comps_order,
                     is_symmetric=self._strain_formulation == 'infinitesimal')
                 # Compute strain increment
-                if strain_formulation == 'infinitesimal':
+                if self._strain_formulation == 'infinitesimal':
                     inc_strain = strain - strain_old
                 else:
                     raise RuntimeError('Not implemented.')

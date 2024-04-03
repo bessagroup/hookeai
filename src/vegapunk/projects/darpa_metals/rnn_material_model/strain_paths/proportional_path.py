@@ -134,21 +134,34 @@ class ProportionalStrainPathGenerator(StrainPathGenerator):
         strain_path_trial = np.zeros((n_time_forward, len(strain_comps_order)))
         # Generate trial strain path (normalized)
         for j, comp in enumerate(strain_comps_order):
-            # Sample control strains (normalized)
-            control_strains_normalized = \
-                np.array([0.0, np.random.uniform(low=-1.0, high=1.0)])
-            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            # Predict with linear regression model
-            strain_mean_normalized = np.linspace(control_strains_normalized[0],
-                                                 control_strains_normalized[1],
-                                                 num=n_time_forward)
-            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Get strain component sampling bounds
             lbound, ubound = strain_bounds[comp]
-            # Denormalize strain component path
-            strain_comp_hist = \
-                np.array([lbound + 0.5*(ubound - lbound)*(x - lbound)
-                          for x in strain_mean_normalized])
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Generate strain component strain path
+            if np.isclose(lbound, ubound):
+                # Enforce constant strain
+                strain_comp_hist = np.linspace(lbound, lbound,
+                                               num=n_time_forward)
+            else:
+                # Initialize control strains (normalized)
+                control_strains_normalized = np.zeros(2)
+                # Enforce initial null strain (normalized)
+                control_strains_normalized[0] = \
+                    -(ubound + lbound)/(ubound - lbound)
+                # Sample final strain (normalized)
+                control_strains_normalized[1] = \
+                    np.random.uniform(low=-1.0, high=1.0)
+                # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                # Predict with linear regression model
+                strain_mean_normalized = \
+                    np.linspace(control_strains_normalized[0],
+                                control_strains_normalized[1],
+                                num=n_time_forward)
+                # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                # Denormalize strain component path
+                strain_comp_hist = \
+                    np.array([lbound + 0.5*(ubound - lbound)*(x + 1.0)
+                              for x in strain_mean_normalized])
             # Assemble strain component path
             strain_path_trial[:, j] = strain_comp_hist
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
