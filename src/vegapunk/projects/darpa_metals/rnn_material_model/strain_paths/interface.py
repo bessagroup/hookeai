@@ -539,5 +539,4 @@ class StrainPathGenerator(ABC):
             plt.show()
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Close plot
-        if figure is not None:
-            plt.close(figure)
+        plt.close('all')
