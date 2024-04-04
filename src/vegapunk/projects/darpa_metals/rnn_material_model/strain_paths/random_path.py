@@ -66,8 +66,9 @@ class RandomStrainPathGenerator(StrainPathGenerator):
         
         Parameters
         ----------
-        n_control : int
-            Number of strain control points.
+        n_control : {int, tuple[int]}
+            Number of strain control points or number of strain control points
+            lower and upper sampling bounds stored as tuple(lower, upper).
         strain_bounds : dict
             Lower and upper sampling bounds (item, tuple(lower, upper)) for
             each independent strain component (key, str).
@@ -129,6 +130,15 @@ class RandomStrainPathGenerator(StrainPathGenerator):
             if val[0] > val[1]:
                 raise RuntimeError(f'The lower bound of strain component '
                                    f'{key} is greater than the upper bound.')
+        # Check number of strain control points
+        if isinstance(n_control, tuple) and len(n_control) == 2:
+            n_control_bounds = n_control
+        elif isinstance(n_control, int):
+            n_control_bounds = (n_control, n_control)
+        else:
+            raise RuntimeError('Invalid specification of number of strain '
+                               'control points. Must be either int or '
+                               'tuple(lower, upper).')
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Set discrete time history
         time_hist = np.linspace(time_init, time_end, n_time,
@@ -142,9 +152,6 @@ class RandomStrainPathGenerator(StrainPathGenerator):
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Initialize trial strain path
         strain_path_trial = np.zeros((n_time_forward, len(strain_comps_order)))
-        # Set strain control times (normalized)
-        control_times_normalized = np.linspace(-1.0, 1.0, n_control,
-                                               endpoint=True, dtype=float)
         # Set discrete time history (normalized)
         time_hist_normalized = np.linspace(-1.0, 1.0, n_time_forward,
                                            endpoint=True, dtype=float)
@@ -161,6 +168,15 @@ class RandomStrainPathGenerator(StrainPathGenerator):
                 strain_comp_hist = np.linspace(lbound, lbound,
                                                num=n_time_forward)
             else:
+                # Sample number of strain control points
+                n_control = np.random.randint(n_control_bounds[0],
+                                              n_control_bounds[1] + 1)
+                # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                # Set strain control times (normalized)
+                control_times_normalized = \
+                    np.linspace(-1.0, 1.0, n_control, endpoint=True,
+                                dtype=float)
+                # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                 # Sample control strains (normalized)
                 control_strains_normalized = \
                     np.random.uniform(low=-1.0, high=1.0, size=n_control)
@@ -176,8 +192,8 @@ class RandomStrainPathGenerator(StrainPathGenerator):
                     # Fit polynomial model
                     polynomial_coefficients = \
                         np.polyfit(control_times_normalized,
-                                control_strains_normalized,
-                                polynomial_degree)
+                                   control_strains_normalized,
+                                   polynomial_degree)
                     # Get polynomial model
                     polynomial_model = np.poly1d(polynomial_coefficients)
                     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
