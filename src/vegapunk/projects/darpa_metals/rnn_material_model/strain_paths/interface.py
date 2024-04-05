@@ -313,11 +313,11 @@ class StrainPathGenerator(ABC):
                      x_label=f'{strain_label} {comp}' + strain_units,
                      y_label='Probability density',
                      is_latex=is_latex)
-            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            # Save figure
-            if is_save_fig:
-                save_figure(figure, filename + f'_hist_{comp}', format='pdf',
-                            save_dir=save_dir)
+                # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                # Save figure
+                if is_save_fig:
+                    save_figure(figure, filename + f'_hist_{comp}',
+                                format='pdf', save_dir=save_dir)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Plot strain norm (path and distribution)
         if (is_plot_strain_norm or is_plot_strain_norm_hist):
