@@ -11,13 +11,21 @@ time_collator
     Collate time series batch data.
 get_time_series_data_loader
     Get time series data set data loader.
+save_dataset
+    Save PyTorch time series data set to file.
+load_dataset
+    Load PyTorch time series data set.
+write_time_series_dataset_summary_file
+    Write summary data file for time series data set generation.
 """
 #
 #                                                                       Modules
 # =============================================================================
 # Standard
+import os
 import datetime
 import copy
+import pickle
 # Third-party
 import torch
 # Local
@@ -97,6 +105,79 @@ def get_time_series_data_loader(dataset, batch_size=1, is_shuffle=False,
                                               **kwargs)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     return data_loader
+# =============================================================================
+def save_dataset(dataset, dataset_basename, dataset_directory,
+                 is_append_n_sample=True):
+    """Save PyTorch time series data set to file.
+    
+    Parameters
+    ----------
+    dataset : torch.utils.data.Dataset
+        Time series data set. Each sample is stored as a dictionary where
+        each feature (key, str) data is a torch.Tensor(2d) of shape
+        (sequence_length, n_features).
+    dataset_basename : str
+        Data set file basename.
+    dataset_directory : str
+        Directory where the times series data set is stored.
+    is_append_n_sample : bool, default=True
+        If True, then data set size (number of samples) is appended to
+        data set filename.
+        
+    Returns
+    -------
+    dataset_file_path : str
+        PyTorch data set file path.
+    """
+    # Check data set directory
+    if not os.path.isdir(dataset_directory):
+        raise RuntimeError('The data set directory has not been found:\n\n'
+                           + dataset_directory)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Set data set file
+    dataset_file = dataset_basename
+    # Append data set size
+    if is_append_n_sample:
+        dataset_file += f'_n{len(dataset)}'
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Set data set file path
+    dataset_file_path = os.path.join(dataset_directory,
+                                     dataset_file + '.pkl')   
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Save data set
+    with open(dataset_file_path, 'wb') as dataset_file:
+        pickle.dump(dataset, dataset_file)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    return dataset_file_path
+# =============================================================================
+def load_dataset(dataset_file_path):
+    """Load PyTorch time series data set.
+    
+    Parameters
+    ----------
+    dataset_file_path : str
+        PyTorch data set file path.
+    
+    Returns
+    -------
+    dataset : torch.utils.data.Dataset
+        PyTorch data set.
+    """
+    # Check PyTorch data set file
+    if not os.path.isfile(dataset_file_path):
+        raise RuntimeError('PyTorch data set file has not been found:\n\n'
+                           + dataset_file_path)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Load PyTorch data set
+    with open(dataset_file_path, 'rb') as dataset_file:
+        dataset = pickle.load(dataset_file)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Check PyTorch data set
+    if not isinstance(dataset, torch.utils.data.Dataset):
+        raise RuntimeError('Loaded data set is not a '
+                           'torch.utils.data.Dataset.')
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    return dataset
 # =============================================================================
 def write_time_series_dataset_summary_file(
     dataset_directory, n_sample, total_time_sec, avg_time_sample,
