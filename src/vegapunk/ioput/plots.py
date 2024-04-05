@@ -194,7 +194,15 @@ def plot_xy_data(data_xy, data_labels=None, x_lims=(None, None),
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set legend
     if not all([x is None for x in data_labels]):
-        axes.legend(loc='upper left', frameon=True, fancybox=True,
+        # Set legend position and number of columns
+        if len(data_labels) > 2:
+            loc = 'upper center'
+            ncols = 2
+        else:
+            loc = 'upper left'
+            ncols = 1
+        # Plot legend
+        axes.legend(loc=loc, ncols=ncols, frameon=True, fancybox=True,
                     facecolor='inherit', edgecolor='inherit', fontsize=10,
                     framealpha=1.0)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
