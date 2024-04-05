@@ -19,13 +19,16 @@ if root_dir not in sys.path:
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 import os
 import copy
+import time
+import datetime
 # Third-party
 import torch
 import numpy as np
+import tqdm
 import matplotlib.pyplot as plt
 # Local
 from rnn_base_model.data.time_dataset import TimeSeriesDatasetInMemory, \
-    get_time_series_data_loader
+    get_time_series_data_loader, save_dataset
 from projects.darpa_metals.rnn_material_model.strain_paths.interface import \
     StrainPathGenerator
 from projects.darpa_metals.rnn_material_model.strain_paths.random_path import \
@@ -39,8 +42,9 @@ from simulators.fetorch.material.models.standard.elastic import Elastic
 from simulators.fetorch.material.models.standard.von_mises import VonMises
 from simulators.fetorch.material.models.standard.hardening import \
     get_hardening_law
-from ioput.plots import plot_xy_data, plot_xyz_data, plot_histogram, \
-    plot_boxplots, save_figure
+from ioput.iostandard import make_directory
+from ioput.plots import plot_xy_data, plot_xyz_data, scatter_xy_data, \
+    plot_histogram, plot_boxplots, save_figure
 #
 #                                                          Authorship & Credits
 # =============================================================================
@@ -80,11 +84,14 @@ class MaterialResponseDatasetGenerator():
         Build strain/stress tensor from given components.
     store_tensor_comps(comps, tensor)
         Store strain/stress tensor components in array.
-    plot_material_response_path(strain_comps, strain_path, stress_comps, \
-                                stress_path, time_hist, \
-                                strain_filename='strain_path', \
-                                stress_filename='stress_path', \
-                                strain_axis_lims=None, stress_axis_lims=None, \
+    plot_material_response_path(cls, strain_formulation, n_dim, \
+                                strain_comps_order, strain_path, \
+                                stress_comps_order, stress_path, \
+                                time_hist, \
+                                is_plot_strain_stress_paths=False, \
+                                is_plot_eq_strain_stress=False, \
+                                stress_units='', \
+                                filename='response_path', \
                                 save_dir=None, is_save_fig=False, \
                                 is_stdout_display=False, is_latex=False)
         Plot strain-stress material response path.
@@ -126,7 +133,8 @@ class MaterialResponseDatasetGenerator():
     def generate_response_dataset(self, n_path, strain_path_type,
                                   strain_path_kwargs, model_name,
                                   model_parameters, state_features={},
-                                  save_dir=None, is_save_fig=False):
+                                  save_dir=None, is_save_fig=False,
+                                  is_verbose=False):
         """Generate strain-stress material response path data set.
 
         Parameters
@@ -151,6 +159,8 @@ class MaterialResponseDatasetGenerator():
             current working directory.
         is_save_fig : bool, default=False
             Save figure.
+        is_verbose : bool, default=False
+            If True, enable verbose output.
 
         Returns
         -------
@@ -159,6 +169,11 @@ class MaterialResponseDatasetGenerator():
             each feature (key, str) data is a torch.Tensor(2d) of shape
             (sequence_length, n_features).
         """
+        start_time_sec = time.time()
+        if is_verbose:
+            print('\nGenerate strain-stress material response path data set'
+                  '\n------------------------------------------------------')
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Initialize strain path generator
         if strain_path_type == 'random':
             strain_path_generator = RandomStrainPathGenerator(
@@ -183,8 +198,14 @@ class MaterialResponseDatasetGenerator():
         # Initialize time series data set samples
         dataset_samples = []
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        if is_verbose:
+            print(f'\n> Strain paths type: {strain_path_type}\n')
+            print('\n> Starting strain-stress paths generation process...\n')
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Loop over samples
-        for i in range(n_path):
+        for i in tqdm.tqdm(range(n_path),
+                           desc='> Generating strain-stress paths: ',
+                           disable=not is_verbose):
             # Generate strain path
             strain_comps_order, time_hist, strain_path = \
                 strain_path_generator.generate_strain_path(
@@ -216,16 +237,31 @@ class MaterialResponseDatasetGenerator():
             # Plot material response path
             if is_save_fig and os.path.isdir(save_dir):
                 self.plot_material_response_path(
+                    self._strain_formulation, self._n_dim,
                     strain_comps_order, strain_path,
                     stress_comps_order, stress_path,
                     time_hist,
-                    strain_filename=f'strain_path_{i}',
-                    stress_filename=f'stress_path_{i}',
+                    is_plot_strain_stress_paths=True,
+                    is_plot_eq_strain_stress=True,
+                    filename=f'response_path_{i}',
                     save_dir=save_dir, is_save_fig=is_save_fig,
-                    is_stdout_display=False, is_latex=True)
+                    is_stdout_display=True, is_latex=True)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        if is_verbose:
+            print('\n> Finished strain-stress paths generation process!\n')
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Create strain-stress material response path data set
         dataset = TimeSeriesDatasetInMemory(dataset_samples)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Compute total generation time and average generation time per path
+        total_time_sec = time.time() - start_time_sec
+        avg_time_sec = total_time_sec/n_path
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        if is_verbose:
+            print(f'\n> Total generation time: '
+                  f'{str(datetime.timedelta(seconds=int(total_time_sec)))} | '
+                  f'Avg. generation time per path: '
+                  f'{str(datetime.timedelta(seconds=int(avg_time_sec)))}\n')
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         return dataset
     # -------------------------------------------------------------------------
@@ -412,19 +448,24 @@ class MaterialResponseDatasetGenerator():
         return comps_array
     # -------------------------------------------------------------------------
     @classmethod
-    def plot_material_response_path(cls, strain_comps_order, strain_path,
+    def plot_material_response_path(cls, strain_formulation, n_dim,
+                                    strain_comps_order, strain_path,
                                     stress_comps_order, stress_path,
                                     time_hist,
-                                    strain_filename='strain_path',
-                                    stress_filename='stress_path',
-                                    strain_axis_lims=None,
-                                    stress_axis_lims=None,
+                                    is_plot_strain_stress_paths=False,
+                                    is_plot_eq_strain_stress=False,
+                                    stress_units='',
+                                    filename='response_path',
                                     save_dir=None, is_save_fig=False,
                                     is_stdout_display=False, is_latex=False):
         """Plot strain-stress material response path.
         
         Parameters
         ----------
+        strain_formulation: {'infinitesimal', 'finite'}
+            Problem strain formulation.
+        n_dim : int
+            Problem number of spatial dimensions.
         strain_comps_order : tuple[str]
             Strain components order.
         strain_path : numpy.ndarray(2d)
@@ -437,16 +478,15 @@ class MaterialResponseDatasetGenerator():
             (sequence_length, n_stress_comps).
         time_hist : numpy.ndarray(1d)
             Discrete time history.
-        strain_filename : str, default='strain_path'
-            Strain path figure name.
-        stress_filename : str, default='stress_path'
-            Stress path figure name.
-        strain_axis_lims : tuple, default=None
-            Enforce the limits of the plot strain axis, stored as
-            tuple(min, max).
-        stress_axis_lims : tuple, default=None
-            Enforce the limits of the plot stress axis, stored as
-            tuple(min, max).
+        is_plot_strain_stress_paths : bool, default=False
+            Plot strain and stress components path (only available for single
+            path).
+        is_plot_eq_strain_stress : bool, default=False
+            Plot equivalent strain-stress path.
+        stress_units : str, default=''
+            Stress units label.
+        filename : str, default='response_path'
+            Figure name.
         save_dir : str, default=None
             Directory where figure is saved. If None, then figure is saved in
             current working directory.
@@ -460,60 +500,126 @@ class MaterialResponseDatasetGenerator():
             available, then this option is silently set to False and all input
             strings are processed to remove $(...)$ enclosure.
         """
-        # Loop over path types
-        for path_type in ('strain', 'stress'):
-            # Set path specific parameters
-            if path_type == 'strain':
-                # Set components
-                comps = strain_comps_order
-                # Set component label
-                comp_label = 'Strain'
-                # Set y-axis label
-                y_label = 'Strain'
-                # Set axis limits
-                axis_lims = strain_axis_lims
-                # Set path
-                path = strain_path
-                # Set filename
-                filename = strain_filename
-            else:
-                # Set components
-                comps = stress_comps_order
-                # Set component label
-                comp_label = 'Stress'
-                # Set y-axis label
-                y_label = 'Stress'
-                # Set axis limits
-                axis_lims = stress_axis_lims
-                # Set path
-                path = stress_path
-                # Set filename
-                filename = stress_filename
+        # Check strain-stress paths data
+        if isinstance(time_hist, list):
+            # Get number of strain-stress paths
+            n_path = len(time_hist)
+            # Get longest path
+            n_time_max = max([len(x) for x in time_hist])
+            # Get minimum and maximum discrete times
+            time_min = min([x[0] for x in time_hist])
+            time_max = max([x[-1] for x in time_hist])
+        else:
+            # Set number of strain-stress paths
+            n_path = 1
+            # Set longest strain-stress path
+            n_time_max = len(time_hist)
+            # Set minimum and maximum discrete times
+            time_min = time_hist[0]
+            time_max = time_hist[-1]
+            # Store discrete time history and strain-stress path in list
+            time_hist = [time_hist,]
+            strain_path = [strain_path,]
+            stress_path = [stress_path,]
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Plot strain-stress path
+        if is_plot_strain_stress_paths and n_path == 1:
+            # Loop over path types
+            for path_type in ('strain', 'stress'):
+                # Set path specific parameters
+                if path_type == 'strain':
+                    # Set components
+                    comps = strain_comps_order
+                    # Set component label
+                    comp_label = 'Strain'
+                    # Set y-axis label
+                    y_label = 'Strain'
+                    # Set path
+                    path = strain_path
+                    # Set filename
+                    filename = filename + '_strain'
+                else:
+                    # Set components
+                    comps = stress_comps_order
+                    # Set component label
+                    comp_label = 'Stress'
+                    # Set y-axis label
+                    y_label = 'Stress' + stress_units
+                    # Set path
+                    path = stress_path
+                    # Set filename
+                    filename = filename + '_stress'
+                # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                # Initialize data array
+                data_xy = np.zeros((n_time_max, 2*len(comps)))
+                # Set data array
+                for j in range(len(comps)):
+                    data_xy[:, 2*j] = time_hist[0].reshape(-1)
+                    data_xy[:, 2*j + 1] = path[0][:, j]
+                # Set data labels
+                data_labels = [f'{comp_label} {x}' for x in comps]
+                # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                # Plot path
+                figure, _ = plot_xy_data(data_xy, data_labels=data_labels,
+                                         x_lims=(time_min, time_max),
+                                         x_label='Time', y_label=y_label,
+                                         is_latex=is_latex)
+                # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                # Save figure
+                if is_save_fig:
+                    save_figure(figure, filename, format='pdf',
+                                save_dir=save_dir)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Initialize equivalent strain and stress paths
+        eq_strain_paths = []
+        eq_stress_paths = []
+        # Loop over strain-stress paths
+        for k in range(n_path):
+            # Initialize equivalent strain and stress path
+            eq_strain = np.zeros((n_time_max, 1))
+            eq_stress = np.zeros((n_time_max, 1))
+            # Loop over discrete time
+            for i in range(len(time_hist[k])):
+                # Get strain tensor
+                strain = cls.build_tensor_from_comps(
+                    n_dim, strain_comps_order, strain_path[k][i, :],
+                    is_symmetric=strain_formulation == 'infinitesimal')
+                # Get stress tensor
+                stress = cls.build_tensor_from_comps(
+                    n_dim, stress_comps_order, stress_path[k][i, :],
+                    is_symmetric=strain_formulation == 'infinitesimal')
+                # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                # Compute equivalent strain and stress
+                if strain_formulation == 'infinitesimal':
+                    eq_strain[i, 0] = np.sqrt(2.0/3.0)*np.linalg.norm(
+                        strain - (1.0/3.0)*np.trace(strain))
+                    eq_stress[i, 0] = np.sqrt(3.0/2.0)*np.linalg.norm(
+                        stress - (1.0/3.0)*np.trace(stress))
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            # Initialize data array
-            data_xy = np.zeros((len(time_hist), 2*len(comps)))
-            # Set data array
-            for j in range(len(comps)):
-                data_xy[:, 2*j] = time_hist.reshape(-1)
-                data_xy[:, 2*j + 1] = path[:, j]
-            # Set data labels
-            data_labels = [f'{comp_label} {x}' for x in comps]
+            # Store equivalent strain and stress path
+            eq_strain_paths.append(eq_strain)
+            eq_stress_paths.append(eq_stress)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Plot equivalent strain-stress path
+        if n_dim == 3 and is_plot_eq_strain_stress:
+            # Build equivalent strain-stress paths data array
+            eq_strain_stress_data_xy = np.concatenate(
+                [np.concatenate((eq_strain_paths[k], eq_stress_paths[k]),
+                                axis=1) for k in range(n_path)], axis=1)
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            # Set axis limits
-            y_lims = (None, None)
-            if isinstance(axis_lims, tuple):
-                y_lims = axis_lims
-            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            # Plot path
-            figure, _ = plot_xy_data(data_xy, data_labels=data_labels,
-                                     x_lims=(time_hist[0], time_hist[-1]),
-                                     y_lims=y_lims,
-                                     x_label='Time', y_label=y_label,
-                                     is_latex=is_latex)
+            # Plot equivalent strain-stress path
+            figure, _ = plot_xy_data(
+                data_xy=eq_strain_stress_data_xy,
+                x_lims=(0, None),
+                y_lims=(0, None),
+                x_label='Equivalent strain',
+                y_label='Equivalent stress' + stress_units,
+                is_latex=is_latex)
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Save figure
             if is_save_fig:
-                save_figure(figure, filename, format='pdf', save_dir=save_dir)
+                save_figure(figure, filename + '_eq_strain_stress',
+                            format='pdf', save_dir=save_dir)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Display figure
         if is_stdout_display:
@@ -529,6 +635,7 @@ class MaterialResponseDatasetGenerator():
                                   is_plot_stress_invar_hist=False,
                                   is_plot_stress_invar_box=False,
                                   is_plot_stress_path_triax_lode=False,
+                                  is_plot_stress_triax_lode_space=False,
                                   is_plot_stress_triax_lode_hist=False,
                                   is_plot_stress_triax_lode_box=False,
                                   stress_units='',
@@ -559,6 +666,8 @@ class MaterialResponseDatasetGenerator():
             Plot box plot with stress invariants.
         is_plot_stress_path_triax_lode : bool, default=False
             Plot stress triaxiality and Lode parameter paths.
+        is_plot_stress_triax_lode_space : bool, default=False
+            Plot stress triaxiality and Lode parameter space.
         is_plot_stress_triax_lode_hist : bool, default=False
             Plot stress triaxiality and Lode parameter distributions.
         is_plot_stress_triax_lode_box : bool, default=False
@@ -620,14 +729,11 @@ class MaterialResponseDatasetGenerator():
             time_hist = [time_hist,]
             stress_path = [stress_path,]
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        # Initialize figure
-        figure = None
-        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Initialize principal stresses
         stress_paths_principal = []
         # Compute stress invariants
         for k in range(n_path):
-            # Compute principal stresses
+            # Initialize principal stresses
             stress_eigen = np.zeros((n_time_max, n_dim))
             # Loop over discrete time
             for i in range(len(time_hist[k])):
@@ -658,7 +764,7 @@ class MaterialResponseDatasetGenerator():
                 x_label='Stress 1' + stress_units,
                 y_label='Stress 2' + stress_units,
                 z_label='Stress 3' + stress_units,
-                view_angles_deg=(30, 30, 0),
+                view_angles_deg=(20, 15, 0),
                 is_latex=is_latex)
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Save figure
@@ -703,7 +809,7 @@ class MaterialResponseDatasetGenerator():
             if is_plot_stress_invar_hist:
                 for i, invariant in enumerate(invar_labels):
                     figure, _ = plot_histogram(
-                        (stress_invar_data[:, i],), bins=20, density=True,
+                        (stress_invar_data[:, i],), bins=50, density=True,
                         x_label=(f'Stress invariant ({invariant})'
                                  + stress_units),
                         y_label='Probability density',
@@ -752,7 +858,7 @@ class MaterialResponseDatasetGenerator():
                     stress_lode[i, 0] = np.nan
                 else:                    
                     stress_triax[i, 0] = (((1.0/3.0)*i1)/(np.sqrt(3.0*j2)))
-                    stress_lode[i, 0] = -(j3/2.0)*((3.0/j2)**(3/2))
+                    stress_lode[i, 0] = (3.0*np.sqrt(3)/2.0)*(j3/(j2**(3/2)))
             # Store stress path triaxiality and Lode parameter
             stress_paths_triax.append(stress_triax)
             stress_paths_lode.append(stress_lode)
@@ -762,7 +868,7 @@ class MaterialResponseDatasetGenerator():
             # Set stress triaxiality data array
             triax_data_xy = np.zeros((n_time_max, 2*n_path))
             for k in range(n_path):
-                triax_data_xy[:len(time_hist[k]), 2*k] = time_hist[k][:, 0]
+                triax_data_xy[:len(time_hist[k]), 2*k] = time_hist[k]
                 triax_data_xy[:len(time_hist[k]), 2*k+1] = \
                     stress_paths_triax[k][:, 0]
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -780,7 +886,7 @@ class MaterialResponseDatasetGenerator():
             # Set stress Lode parameter data array
             lode_data_xy = np.zeros((n_time_max, 2*n_path))
             for k in range(n_path):
-                lode_data_xy[:len(time_hist[k]), 2*k] = time_hist[k][:, 0]
+                lode_data_xy[:len(time_hist[k]), 2*k] = time_hist[k]
                 lode_data_xy[:len(time_hist[k]), 2*k+1] = \
                     stress_paths_lode[k][:, 0]
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -792,11 +898,12 @@ class MaterialResponseDatasetGenerator():
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Save figure
             if is_save_fig:
-                save_figure(figure, filename + '_lode', format='pdf',
+                save_figure(figure, filename + '_lode_parameter', format='pdf',
                             save_dir=save_dir)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Plot stress invariants (distribution and box plot)
-        if is_plot_stress_triax_lode_hist or is_plot_stress_triax_lode_box:
+        if (is_plot_stress_triax_lode_space or is_plot_stress_triax_lode_hist
+                or is_plot_stress_triax_lode_box):
             # Set stress triaxiality and Lode parameter data labels
             data_labels = ('Triaxiality', 'Lode parameter')
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -807,11 +914,27 @@ class MaterialResponseDatasetGenerator():
             stress_triax_lode_data = stress_triax_lode_data[
                 ~np.isnan(stress_triax_lode_data).any(axis=1), :]
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Plot stress triaxiality and Lode parameter space
+            if is_plot_stress_triax_lode_space:
+                figure, _ = scatter_xy_data(
+                    data_xy=stress_triax_lode_data[:,::-1],
+                    x_label=data_labels[1],
+                    y_label=data_labels[0],
+                    is_marginal_dists = True,
+                    x_lims=(-1, 1),
+                    is_latex=is_latex)
+                # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                # Save figure
+                if is_save_fig:
+                    save_figure(figure, filename
+                                + '_triaxiality_lode_marginals',
+                                format='pdf', save_dir=save_dir)
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Plot stress triaxiality and Lode parameter distributions
             if is_plot_stress_triax_lode_hist:
                 for i, metric in enumerate(data_labels):
                     figure, _ = plot_histogram(
-                        (stress_triax_lode_data[:, i],), bins=20, density=True,
+                        (stress_triax_lode_data[:, i],), bins=50, density=True,
                         x_label=metric, y_label='Probability density',
                         is_latex=is_latex)
                     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -831,7 +954,7 @@ class MaterialResponseDatasetGenerator():
                 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                 # Save figure
                 if is_save_fig:
-                    save_figure(figure, filename + 'invariants_boxplot',
+                    save_figure(figure, filename + '_triaxiality_lode_boxplot',
                                 format='pdf', save_dir=save_dir)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Display figures
@@ -986,7 +1109,7 @@ class MaterialResponseDatasetGenerator():
             state_data = np.vstack(state_path).reshape(-1)
             # Plot state variable distribution
             figure, _ = plot_histogram(
-                (state_data,), bins=20, density=True,
+                (state_data,), bins=50, density=True,
                 x_label=state_variable_label + state_units,
                 y_label='Probability density',
                 is_latex=is_latex)
@@ -1007,6 +1130,29 @@ class MaterialResponseDatasetGenerator():
         plt.close('all')
 # =============================================================================
 if __name__ == '__main__':
+    # Set save directory and save plots flags
+    is_save_dataset = True
+    is_save_dataset_plots = True
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Set data set name
+    dataset_name = 'j2_random_paths'
+    # Set data set file basename
+    dataset_basename = 'ss_random_paths_dataset'
+    # Set data set directory
+    dataset_directory = ('/home/bernardoferreira/Documents/brown/projects/'
+                         'darpa_project/2_local_rnn_training/von_mises/'
+                         'datasets/' + dataset_name)
+    # Set data set plots directory
+    plots_dir = os.path.join(dataset_directory, 'plots')
+    # Create directories
+    if is_save_dataset:
+        # Create data set directory
+        dataset_directory = make_directory(dataset_directory,
+                                           is_overwrite=True)
+        # Create data set plots directory
+        if is_save_dataset_plots:
+            plots_dir = make_directory(plots_dir)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set strain formulation
     strain_formulation = 'infinitesimal'
     # Set problem type
@@ -1102,7 +1248,7 @@ if __name__ == '__main__':
         # Generate data set
         dataset = dataset_generator.generate_response_dataset(
             n_path, strain_path_type, strain_path_kwargs, model_name,
-            model_parameters, state_features=state_features)
+            model_parameters, state_features=state_features, is_verbose=True)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Store data set
         datasets.append(dataset)
@@ -1112,6 +1258,10 @@ if __name__ == '__main__':
         dataset = datasets[0]
     else:
         dataset = torch.utils.data.ConcatDataset(datasets)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Save data set
+    if is_save_dataset:
+        save_dataset(dataset, dataset_basename, dataset_directory)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Get data loader
     data_loader = get_time_series_data_loader(dataset, batch_size=1)
@@ -1135,17 +1285,19 @@ if __name__ == '__main__':
         is_plot_strain_path=False,
         is_plot_strain_comp_hist=False,
         is_plot_strain_norm=False,
-        is_plot_strain_norm_hist=False,
+        is_plot_strain_norm_hist=True,
         is_plot_inc_strain_norm=False,
-        is_plot_inc_strain_norm_hist=False,
+        is_plot_inc_strain_norm_hist=True,
         is_plot_strain_path_pairs=False,
         is_plot_strain_pairs_hist=False,
         is_plot_strain_pairs_marginals=False,
-        is_plot_strain_comp_box=False,
+        is_plot_strain_comp_box=True,
         strain_label='Strain',
         strain_units='',
         filename='strain_path',
-        is_stdout_display=True,
+        save_dir=plots_dir,
+        is_save_fig=is_save_dataset_plots,
+        is_stdout_display=False,
         is_latex=True)
     # Plot stress paths data
     StrainPathGenerator.plot_strain_path(
@@ -1154,17 +1306,19 @@ if __name__ == '__main__':
         is_plot_strain_path=False,
         is_plot_strain_comp_hist=False,
         is_plot_strain_norm=False,
-        is_plot_strain_norm_hist=False,
+        is_plot_strain_norm_hist=True,
         is_plot_inc_strain_norm=False,
         is_plot_inc_strain_norm_hist=False,
         is_plot_strain_path_pairs=False,
         is_plot_strain_pairs_hist=False,
         is_plot_strain_pairs_marginals=False,
-        is_plot_strain_comp_box=False,
+        is_plot_strain_comp_box=True,
         strain_label='Stress',
-        strain_units='(MPa)',
+        strain_units=' (MPa)',
         filename='stress_path',
-        is_stdout_display=True,
+        save_dir=plots_dir,
+        is_save_fig=is_save_dataset_plots,
+        is_stdout_display=False,
         is_latex=True)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Get stress components order
@@ -1174,36 +1328,41 @@ if __name__ == '__main__':
         dataset_generator.plot_stress_space_metrics(
             strain_formulation, stress_comps_order,
             stress_paths, time_hists,
-            is_plot_principal_stress_path=False,
+            is_plot_principal_stress_path=True,
             is_plot_stress_invar_hist=False,
             is_plot_stress_invar_box=False,
             is_plot_stress_path_triax_lode=False,
-            is_plot_stress_triax_lode_hist=False,
+            is_plot_stress_triax_lode_space=True,
+            is_plot_stress_triax_lode_hist=True,
             is_plot_stress_triax_lode_box=False,
             stress_units='',
             filename='stress_path',
-            save_dir=None, is_save_fig=False,
-            is_stdout_display=True, is_latex=True)
+            save_dir=plots_dir,
+            is_save_fig=is_save_dataset_plots,
+            is_stdout_display=False, is_latex=True)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Initialize state variable path data
-    state_paths = []
-    # Get longest strain path
-    n_time_max = max([len(x) for x in time_hists])
-    # Get minimum and maximum discrete times
-    time_min = min([x[0] for x in time_hists])
-    time_max = max([x[-1] for x in time_hists])
-    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Set state variable name and label
-    state_variable_name = 'acc_p_strain'
-    state_variable_label = 'Accumulated plastic strain'
-    # Loop over strain-stress paths
-    for i, path in enumerate(data_loader):
-        # Collect state variable path data
-        state_paths.append(np.array(path[state_variable_name][:, 0, :]))
     # Plot state variable paths data
-    dataset_generator.plot_state_history(
-        strain_formulation, strain_comps_order, stress_comps_order,
-        state_variable_name, state_variable_label, state_paths, time_hists,
-        state_units='', filename='state_variable_path',
-        save_dir=None, is_save_fig=False,
-        is_stdout_display=True, is_latex=True)
+    is_plot_state_variable_paths = True
+    if is_plot_state_variable_paths:
+        # Initialize state variable path data
+        state_paths = []
+        # Get longest strain path
+        n_time_max = max([len(x) for x in time_hists])
+        # Get minimum and maximum discrete times
+        time_min = min([x[0] for x in time_hists])
+        time_max = max([x[-1] for x in time_hists])
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set state variable name and label
+        state_variable_name = 'acc_p_strain'
+        state_variable_label = 'Accumulated plastic strain'
+        # Loop over strain-stress paths
+        for i, path in enumerate(data_loader):
+            # Collect state variable path data
+            state_paths.append(np.array(path[state_variable_name][:, 0, :]))
+        # Plot state variable paths data
+        dataset_generator.plot_state_history(
+            strain_formulation, strain_comps_order, stress_comps_order,
+            state_variable_name, state_variable_label, state_paths, time_hists,
+            state_units='', filename='acc_p_strain_path',
+            save_dir=plots_dir, is_save_fig=is_save_dataset_plots,
+            is_stdout_display=False, is_latex=True)

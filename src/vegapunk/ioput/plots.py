@@ -706,6 +706,8 @@ def plot_xyz_data(data_xyz, data_labels=None, x_lims=(None, None),
     # Set view angle
     axes.view_init(elev=view_angles_deg[0], azim=view_angles_deg[1],
                    roll=view_angles_deg[2])
+    # Set zoom
+    axes.set_box_aspect(None, zoom=0.75)
     # Set title
     axes.set_title(tex_str(title, is_latex), fontsize=12, pad=10)
     # Set axes labels

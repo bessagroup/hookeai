@@ -209,7 +209,7 @@ class StrainPathGenerator(ABC):
         is_plot_strain_comp_hist : bool, default=False
             Plot a histogram for each strain component.
         is_plot_strain_norm : bool, default=False
-            Plot strain norm path. and distribution.
+            Plot strain norm path and distribution.
         is_plot_strain_norm_hist : bool, default=False
             Plot strain norm distribution.
         is_plot_inc_strain_norm : bool, default=False
@@ -307,9 +307,13 @@ class StrainPathGenerator(ABC):
             for j, comp in enumerate(strain_comps_order):
                 # Set strain data array
                 strain_paths = tuple([path[:, j] for path in strain_path])
+                # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                # Concatenate strain paths
+                strain_paths = (np.concatenate(strain_paths, axis=0),)
+                # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                 # Plot strain component distribution
                 figure, _ = plot_histogram(
-                     strain_paths, bins=20, density=True,
+                     strain_paths, bins=50, density=True,
                      x_label=f'{strain_label} {comp}' + strain_units,
                      y_label='Probability density',
                      is_latex=is_latex)
@@ -355,10 +359,15 @@ class StrainPathGenerator(ABC):
             # Plot strain norm distribution
             if is_plot_strain_norm_hist:
                 # Set strain data array
-                strain_paths_norm = tuple([strain_norm_data_xy[:, 1],])
+                strain_paths_norm = tuple([strain_norm_data_xy[:, 2*k+1]
+                                           for k in range(n_path)])
+                # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                # Concatenate strain paths
+                strain_paths_norm = \
+                    (np.concatenate(strain_paths_norm, axis=0),)
                 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                 figure, _ = plot_histogram(
-                    strain_paths_norm, bins=20, density=True,
+                    strain_paths_norm, bins=50, density=True,
                     x_label=f'{strain_label} norm' + strain_units,
                     y_label='Probability density',
                     is_latex=is_latex)
@@ -416,8 +425,12 @@ class StrainPathGenerator(ABC):
                     [inc_strain_norm_data_xy[:len(time_hist[k]), 2*k+1]
                         for k in range(n_path)])
                 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                # Concatenate strain paths
+                inc_strain_paths_norm = \
+                    (np.concatenate(inc_strain_paths_norm, axis=0),)
+                # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                 figure, _ = plot_histogram(
-                    inc_strain_paths_norm, bins=20, density=True,
+                    inc_strain_paths_norm, bins=50, density=True,
                     x_label=f'{strain_label} increment norm' + strain_units,
                     y_label='Probability density',
                     is_latex=is_latex)
@@ -527,8 +540,7 @@ class StrainPathGenerator(ABC):
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Save figure
             if is_save_fig:
-                save_figure(figure, filename + '_boxplot'
-                            + f'_{strain_pair[0]}v{strain_pair[1]}',
+                save_figure(figure, filename + '_boxplot',
                             format='pdf', save_dir=save_dir)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Display figures
