@@ -145,7 +145,7 @@ def generate_dataset_samples_files(dataset_directory, input_files_paths,
         n_times = len(time_hist)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Set node features
-        node_features = ('coord_old', 'time')
+        node_features = ('coord_init', 'time')
         # Set edge features
         edge_features = ('edge_vector_init', 'edge_vector_init_norm')
         # Set node targets
