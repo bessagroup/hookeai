@@ -837,7 +837,7 @@ class MaterialResponseDatasetGenerator():
                              + stress_units),
                     y_label=(f'Pi-Stress {pi_stress_pair[1]}'
                              + stress_units),
-                    marker='o', is_latex=is_latex)
+                    marker='o', markersize=2, is_latex=is_latex)
                 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                 # Save figure
                 if is_save_fig:
@@ -1278,7 +1278,7 @@ if __name__ == '__main__':
         state_features = {}
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set number of strain-stress paths of each type
-    n_path_type = {'proportional': 0, 'random': 20}
+    n_path_type = {'proportional': 0, 'random': 400}
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set strain path generators parameters
     strain_path_kwargs_type = {}
@@ -1361,10 +1361,10 @@ if __name__ == '__main__':
         is_plot_strain_norm_hist=False,
         is_plot_inc_strain_norm=False,
         is_plot_inc_strain_norm_hist=False,
-        is_plot_strain_path_pairs=False,
-        is_plot_strain_pairs_hist=False,
-        is_plot_strain_pairs_marginals=False,
-        is_plot_strain_comp_box=False,
+        is_plot_strain_path_pairs=True,
+        is_plot_strain_pairs_hist=True,
+        is_plot_strain_pairs_marginals=True,
+        is_plot_strain_comp_box=True,
         strain_label='Strain',
         strain_units='',
         filename='strain_path',
@@ -1385,7 +1385,7 @@ if __name__ == '__main__':
         is_plot_strain_path_pairs=False,
         is_plot_strain_pairs_hist=False,
         is_plot_strain_pairs_marginals=False,
-        is_plot_strain_comp_box=False,
+        is_plot_strain_comp_box=True,
         strain_label='Stress',
         strain_units=' (MPa)',
         filename='stress_path',
@@ -1402,21 +1402,21 @@ if __name__ == '__main__':
             strain_formulation, stress_comps_order,
             stress_paths, time_hists,
             is_plot_principal_stress_path=False,
-            is_plot_pi_stress_path_pairs=False,
+            is_plot_pi_stress_path_pairs=True,
             is_plot_stress_invar_hist=False,
             is_plot_stress_invar_box=False,
-            is_plot_stress_path_triax_lode=False,
-            is_plot_stress_triax_lode_space=False,
+            is_plot_stress_path_triax_lode=True,
+            is_plot_stress_triax_lode_space=True,
             is_plot_stress_triax_lode_hist=False,
-            is_plot_stress_triax_lode_box=False,
-            stress_units='',
+            is_plot_stress_triax_lode_box=True,
+            stress_units=' (MPa)',
             filename='stress_path',
             save_dir=plots_dir,
             is_save_fig=is_save_dataset_plots,
             is_stdout_display=False, is_latex=True)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Plot state variable paths data
-    is_plot_state_variable_paths = False
+    is_plot_state_variable_paths = True
     if is_plot_state_variable_paths:
         # Initialize state variable path data
         state_paths = []

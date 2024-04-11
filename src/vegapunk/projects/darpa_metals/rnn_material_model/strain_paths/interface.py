@@ -478,7 +478,7 @@ class StrainPathGenerator(ABC):
                                  + strain_units),
                         y_label=(f'{strain_label} {strain_pair[1]}'
                                  + strain_units),
-                        marker='o', is_latex=is_latex)
+                        marker='o', markersize=2, is_latex=is_latex)
                     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                     # Save figure
                     if is_save_fig:
