@@ -632,6 +632,7 @@ class MaterialResponseDatasetGenerator():
     def plot_stress_space_metrics(cls, strain_formulation, stress_comps_order,
                                   stress_path, time_hist,
                                   is_plot_principal_stress_path=False,
+                                  is_plot_pi_stress_path_pairs=False,
                                   is_plot_stress_invar_hist=False,
                                   is_plot_stress_invar_box=False,
                                   is_plot_stress_path_triax_lode=False,
@@ -660,6 +661,9 @@ class MaterialResponseDatasetGenerator():
             Discrete time history or list of multiple discrete time histories.
         is_plot_principal_stress_path : bool, default=False
             Plot stress path in the principal stress space.
+        is_plot_pi_stress_path_pairs : bool, default=False
+            Plot the stress path for pairs of pi-stress components in the
+            principal stress space.
         is_plot_stress_invar_hist : bool, default=False
             Plot distribution of stress invariants.
         is_plot_stress_invar_box : bool, default=False
@@ -743,8 +747,15 @@ class MaterialResponseDatasetGenerator():
                     is_symmetric=strain_formulation == 'infinitesimal')
                 # Compute principal stresses
                 eigenvalues, _ = np.linalg.eig(stress)
-                # Store principal stresses (sorted)
-                stress_eigen[i, :] = np.sort(eigenvalues)
+                # Store principal stresses
+                is_sort_principal = True
+                if is_sort_principal:
+                    # Sort principal stresses in descending order
+                    stress_eigen[i, :] = np.sort(eigenvalues)[::-1]
+                else:
+                    # Keep principal stresses order stemming from eigenvalues
+                    # computation algorithm
+                    stress_eigen[i, :] = eigenvalues
             # Store stress path principal stresses
             stress_paths_principal.append(stress_eigen)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -771,6 +782,68 @@ class MaterialResponseDatasetGenerator():
             if is_save_fig:
                 save_figure(figure, filename + '_principal',
                             format='pdf', save_dir=save_dir)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~        
+        # Plot stress path in principal stress space (pi stress coordinates)
+        if is_plot_pi_stress_path_pairs:
+            # Set rotation matrix between principal stress coordinates to pi
+            # stress coordinates
+            rotation_matrix = \
+                np.array([[np.sqrt(2/3), -np.sqrt(1/6), -np.sqrt(1/6)],
+                          [0, np.sqrt(1/2), -np.sqrt(1/2)],
+                          [np.sqrt(1/3), np.sqrt(1/3), np.sqrt(1/3)]])
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Initialize pi stresses
+            stress_paths_pi = []
+            # Loop over stress paths
+            for k in range(n_path):
+                # Randomize path principal stresses order (same permutation is
+                # applied for all time steps)
+                stress_path_principal_random = \
+                    stress_paths_principal[k][:, np.random.permutation(3)]
+                # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                # Initialize stresses in pi-stress space
+                stress_pi = np.zeros((n_time_max, n_dim))
+                # Loop over discrete time
+                for i in range(len(time_hist[k])):
+                    # Get principal stresses
+                    stress_eigen = stress_path_principal_random[i, :]
+                    # Compute pi stresses
+                    stress_pi[i, :] = np.matmul(rotation_matrix, stress_eigen)
+                # Store stress path pi stresses
+                stress_paths_pi.append(stress_pi)
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Set pi stress pairs
+            pi_stress_pairs = (('1', '2'), ('1', '3'), ('2', '3'))
+            # Loop over pi stress pairs
+            for pi_stress_pair in pi_stress_pairs:
+                # Get pi stress components indexes
+                j_x = int(pi_stress_pair[0]) - 1
+                j_y = int(pi_stress_pair[1]) - 1
+                # Initialize stress data array
+                stress_data_xy = np.full((n_time_max, 2*n_path),
+                                         fill_value=np.nan)
+                # Loop over stress paths 
+                for k in range(n_path):
+                    # Set stress data array
+                    stress_data_xy[:len(time_hist[k]), 2*k] = \
+                        stress_paths_pi[k][:, j_x]
+                    stress_data_xy[:len(time_hist[k]), 2*k + 1] = \
+                        stress_paths_pi[k][:, j_y]
+                # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                # Plot stress path for pi stress components pair
+                figure, _ = plot_xy_data(
+                    data_xy=stress_data_xy,
+                    x_label=(f'Pi-Stress {pi_stress_pair[0]}'
+                             + stress_units),
+                    y_label=(f'Pi-Stress {pi_stress_pair[1]}'
+                             + stress_units),
+                    marker='o', is_latex=is_latex)
+                # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                # Save figure
+                if is_save_fig:
+                    save_figure(figure, filename + '_pi_stress_'
+                                + f'{pi_stress_pair[0]}v{pi_stress_pair[1]}',
+                                format='pdf', save_dir=save_dir)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Initialize stress invariants
         stress_paths_invar = []
@@ -1205,7 +1278,7 @@ if __name__ == '__main__':
         state_features = {}
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set number of strain-stress paths of each type
-    n_path_type = {'proportional': 0, 'random': 5}
+    n_path_type = {'proportional': 0, 'random': 20}
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set strain path generators parameters
     strain_path_kwargs_type = {}
@@ -1285,13 +1358,13 @@ if __name__ == '__main__':
         is_plot_strain_path=False,
         is_plot_strain_comp_hist=False,
         is_plot_strain_norm=False,
-        is_plot_strain_norm_hist=True,
+        is_plot_strain_norm_hist=False,
         is_plot_inc_strain_norm=False,
-        is_plot_inc_strain_norm_hist=True,
+        is_plot_inc_strain_norm_hist=False,
         is_plot_strain_path_pairs=False,
         is_plot_strain_pairs_hist=False,
         is_plot_strain_pairs_marginals=False,
-        is_plot_strain_comp_box=True,
+        is_plot_strain_comp_box=False,
         strain_label='Strain',
         strain_units='',
         filename='strain_path',
@@ -1306,13 +1379,13 @@ if __name__ == '__main__':
         is_plot_strain_path=False,
         is_plot_strain_comp_hist=False,
         is_plot_strain_norm=False,
-        is_plot_strain_norm_hist=True,
+        is_plot_strain_norm_hist=False,
         is_plot_inc_strain_norm=False,
         is_plot_inc_strain_norm_hist=False,
         is_plot_strain_path_pairs=False,
         is_plot_strain_pairs_hist=False,
         is_plot_strain_pairs_marginals=False,
-        is_plot_strain_comp_box=True,
+        is_plot_strain_comp_box=False,
         strain_label='Stress',
         strain_units=' (MPa)',
         filename='stress_path',
@@ -1328,12 +1401,13 @@ if __name__ == '__main__':
         dataset_generator.plot_stress_space_metrics(
             strain_formulation, stress_comps_order,
             stress_paths, time_hists,
-            is_plot_principal_stress_path=True,
+            is_plot_principal_stress_path=False,
+            is_plot_pi_stress_path_pairs=False,
             is_plot_stress_invar_hist=False,
             is_plot_stress_invar_box=False,
             is_plot_stress_path_triax_lode=False,
-            is_plot_stress_triax_lode_space=True,
-            is_plot_stress_triax_lode_hist=True,
+            is_plot_stress_triax_lode_space=False,
+            is_plot_stress_triax_lode_hist=False,
             is_plot_stress_triax_lode_box=False,
             stress_units='',
             filename='stress_path',
@@ -1342,7 +1416,7 @@ if __name__ == '__main__':
             is_stdout_display=False, is_latex=True)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Plot state variable paths data
-    is_plot_state_variable_paths = True
+    is_plot_state_variable_paths = False
     if is_plot_state_variable_paths:
         # Initialize state variable path data
         state_paths = []
