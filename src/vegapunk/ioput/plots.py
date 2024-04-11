@@ -288,7 +288,7 @@ def plot_xy2_data(data_xy1, data_xy2, x_lims=(None, None),
     # Set default color cycle
     cycler_color = cycler.cycler('color',['#4477AA', '#EE6677', '#228833',
                                           '#CCBB44', '#66CCEE', '#AA3377',
-                                          '#BBBBBB', '#000000'])
+                                          '#BBBBBB'])
     # Set default linestyle cycle
     cycler_linestyle = cycler.cycler('linestyle',['-','--','-.'])
     # Set default cycler
@@ -481,7 +481,7 @@ def plot_xny_data(data_xy_list, range_type='min-max', data_labels=None,
     # Set default color cycle
     cycler_color = cycler.cycler('color',['#4477AA', '#EE6677', '#228833',
                                           '#CCBB44', '#66CCEE', '#AA3377',
-                                          '#BBBBBB', '#000000'])
+                                          '#BBBBBB'])
     # Set default linestyle cycle
     cycler_linestyle = cycler.cycler('linestyle',['-','--','-.'])
     # Set default cycler
@@ -678,7 +678,7 @@ def plot_xyz_data(data_xyz, data_labels=None, x_lims=(None, None),
     # Set default color cycle
     cycler_color = cycler.cycler('color', ['#4477AA', '#EE6677', '#228833',
                                            '#CCBB44', '#66CCEE', '#AA3377',
-                                           '#BBBBBB', '#000000'])
+                                           '#BBBBBB'])
     # Set default linestyle cycle
     cycler_linestyle = cycler.cycler('linestyle',['-','--','-.'])
     # Set default cycler
@@ -862,7 +862,7 @@ def scatter_xy_data(data_xy, data_labels=None, is_identity_line=False,
     # Set default color cycle
     cycler_color = cycler.cycler('color',['#4477AA', '#EE6677', '#228833',
                                           '#CCBB44', '#66CCEE', '#AA3377',
-                                          '#BBBBBB', '#000000'])
+                                          '#BBBBBB'])
     # Set default linestyle cycle
     cycler_linestyle = cycler.cycler('linestyle',['-','--','-.'])
     # Set default cycler
@@ -1129,7 +1129,7 @@ def grouped_bar_chart(groups_labels, groups_data, bar_width=None,
     # Set default color cycle
     cycler_color = cycler.cycler('color',['#4477AA', '#EE6677', '#228833',
                                           '#CCBB44', '#66CCEE', '#AA3377',
-                                          '#BBBBBB', '#000000'])
+                                          '#BBBBBB'])
     # Set default linestyle cycle
     cycler_linestyle = cycler.cycler('linestyle',['-','--','-.'])
     # Set default cycler
@@ -1279,7 +1279,7 @@ def plot_boxplots(data_boxplots, data_labels=None, is_mean_line=False,
     # Set default color cycle
     cycler_color = cycler.cycler('color',['#4477AA', '#EE6677', '#228833',
                                           '#CCBB44', '#66CCEE', '#AA3377',
-                                          '#BBBBBB', '#000000'])
+                                          '#BBBBBB'])
     # Set default linestyle cycle
     cycler_linestyle = cycler.cycler('linestyle',['-','--','-.'])
     # Set default cycler
@@ -1459,7 +1459,7 @@ def plot_histogram(data, data_labels=None, bins=None, bins_range=None,
     # Set default color cycle
     cycler_color = cycler.cycler('color',['#4477AA', '#EE6677', '#228833',
                                           '#CCBB44', '#66CCEE', '#AA3377',
-                                          '#BBBBBB', '#000000'])
+                                          '#BBBBBB'])
     # Set default cycler
     default_cycler = cycler_color
     plt.rc('axes', prop_cycle = cycler_color)
@@ -1607,7 +1607,7 @@ def plot_histogram_2d(data, bins=10, bins_range=None,
     # Set default color cycle
     cycler_color = cycler.cycler('color',['#4477AA', '#EE6677', '#228833',
                                           '#CCBB44', '#66CCEE', '#AA3377',
-                                          '#BBBBBB', '#000000'])
+                                          '#BBBBBB'])
     # Set default cycler
     default_cycler = cycler_color
     plt.rc('axes', prop_cycle = cycler_color)
