@@ -99,8 +99,7 @@ def train_model(n_max_epochs, dataset, model_init_args, lr_init,
         If True, shuffles data set samples at every epoch.
     is_early_stopping : bool, default=False
         If True, then training process is halted when early stopping criterion
-        is triggered. By default, 20% of the training data set is allocated for
-        the underlying validation procedures.
+        is triggered.
     early_stopping_kwargs : dict, default={}
         Early stopping criterion parameters (key, str, item, value).
     load_model_state : {'best', 'last', int, None}, default=None
@@ -249,15 +248,12 @@ def train_model(n_max_epochs, dataset, model_init_args, lr_init,
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Initialize early stopping criterion
         early_stopper = EarlyStopper(dataset, **early_stopping_kwargs)
-        # Get available training data set (remainder is set aside for early
-        # stopping criterion validation procedures)
-        dataset = early_stopper.get_training_dataset()
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Initialize early stopping flag
         is_stop_training = False
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     if is_verbose:
-        print(f'\n> Training data set (effective) size: {len(dataset)}')
+        print(f'\n> Training data set size: {len(dataset)}')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set data loader
     if isinstance(seed, int):
@@ -453,9 +449,10 @@ class EarlyStopper:
     
     Attributes
     ----------
-    _validation_size : float
-        Size of the validation data set for early stopping evaluation, where
-        size is a fraction of the whole data set contained between 0 and 1.
+    _validation_dataset : torch.utils.data.Dataset
+        Time series data set. Each sample is stored as a dictionary where
+        each feature (key, str) data is a torch.Tensor(2d) of shape
+        (sequence_length, n_features).
     _validation_frequency : int
         Frequency of validation procedures, i.e., frequency with respect to
         training epochs at which model is validated to evaluate early stopping
@@ -483,8 +480,6 @@ class EarlyStopper:
             
     Methods
     -------
-    get_training_dataset(self)
-        Get model available training data set.
     get_validation_loss_history(self)
         Get validation loss history.
     is_evaluate_criterion(self, epoch)
@@ -500,20 +495,16 @@ class EarlyStopper:
     load_best_performance_state(self, model, optimizer)
         Load minimum validation loss model and optimizer states.
     """
-    def __init__(self, dataset, validation_size=0.2, validation_frequency=1,
+    def __init__(self, validation_dataset, validation_frequency=1,
                  trigger_tolerance=1, improvement_tolerance=1e-2):
         """Constructor.
         
         Parameters
         ----------
-        dataset : torch.utils.data.Dataset
+        validation_dataset : torch.utils.data.Dataset
             Time series data set. Each sample is stored as a dictionary where
             each feature (key, str) data is a torch.Tensor(2d) of shape
             (sequence_length, n_features).
-        validation_size : float, default=0.2
-            Size of the validation data set for early stopping evaluation,
-            where size is a fraction of the whole data set contained between 0
-            and 1.
         validation_frequency : int, default=1
             Frequency of validation procedures, i.e., frequency with respect to
             training epochs at which model is validated to evaluate early
@@ -525,23 +516,14 @@ class EarlyStopper:
             Minimum relative improvement required to count as a performance
             improvement.
         """
-        # Set validation data set size
-        self._validation_size = validation_size
+        # Set validation data set
+        self._validation_dataset = validation_dataset
         # Set validation frequency
         self._validation_frequency = validation_frequency
         # Set early stopping trigger tolerance
         self._trigger_tolerance = trigger_tolerance
         # Set minimum relative improvement tolerance
         self._improvement_tolerance = improvement_tolerance
-        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        # Set data set split sizes
-        split_sizes = {'training': (1.0 - validation_size),
-                       'validation': validation_size}
-        # Split data set
-        dataset_split = split_dataset(dataset, split_sizes)
-        # Set training and validation datasets
-        self._training_dataset = dataset_split['training']
-        self._validation_dataset = dataset_split['validation']
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Initialize validation training steps history
         self._validation_steps_history = []
@@ -557,20 +539,6 @@ class EarlyStopper:
         self._best_model_state = None
         self._best_optimizer_state = None
         self._best_training_epoch = None
-    # -------------------------------------------------------------------------
-    def get_training_dataset(self):
-        """Get model available training data set.
-        
-        Returns
-        -------
-        training_dataset : torch.utils.data.Dataset
-            Training data set.
-        """
-        # Get available training data set
-        training_dataset = self._training_dataset
-        self._training_dataset = None
-        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        return training_dataset
     # -------------------------------------------------------------------------
     def get_validation_loss_history(self):
         """Get validation loss history.
