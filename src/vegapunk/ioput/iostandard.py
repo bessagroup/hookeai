@@ -142,6 +142,8 @@ def write_summary_file(summary_directory, filename='summary',
                     summary.append(f'  "{str(key2)}": {str(val2)}\n')
         elif isinstance(val1, np.ndarray):
             summary.append(f'\n"{str(key1)}":\n  {str(val1)}\n')
+        elif isinstance(val1, str) and '\n' in val1:
+            summary.append(f'\n"{str(key1)}":\n\n{str(val1)}\n')
         else:
             summary.append(f'\n"{str(key1)}":  {str(val1)}\n')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
