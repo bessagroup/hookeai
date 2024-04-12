@@ -32,6 +32,7 @@ from gnn_base_model.train.training import get_pytorch_optimizer, \
     save_loss_history, load_loss_history, load_lr_history, seed_worker, \
     write_training_summary_file
 from gnn_base_model.train.torch_loss import get_pytorch_loss
+from gnn_base_model.model.model_summary import get_model_summary
 #
 #                                                          Authorship & Credits
 # =============================================================================
@@ -444,6 +445,8 @@ def train_model(n_max_epochs, dataset, model_init_args, lr_init,
               f'Avg. training time per epoch: '
               f'{str(datetime.timedelta(seconds=int(avg_time_epoch)))}\n')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Get summary of PyTorch model
+    model_statistics = get_model_summary(model, device_type=device_type)
     # Write summary data file for model training process
     write_training_summary_file(
         device_type, seed, model.model_directory, load_model_state,
@@ -451,7 +454,7 @@ def train_model(n_max_epochs, dataset, model_init_args, lr_init,
         loss_nature, loss_type, loss_kwargs, opt_algorithm, lr_init,
         lr_scheduler_type, lr_scheduler_kwargs, epoch, dataset_file_path,
         dataset, best_loss, best_training_epoch, total_time_sec,
-        avg_time_epoch)
+        avg_time_epoch, torchinfo_summary=str(model_statistics))
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     return model, best_loss, best_training_epoch
 # =============================================================================
