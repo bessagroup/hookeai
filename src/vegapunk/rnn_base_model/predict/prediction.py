@@ -183,11 +183,11 @@ def predict(dataset, model_directory, predict_directory=None,
                                         is_normalized=False)
                 # Get output features ground-truth (None if not available)
                 targets = batch['features_out']
-                # Store sample results
-                results['features_out'] = features_out.detach().cpu()
+                # Store sample results (removing batch dimension)
+                results['features_out'] = features_out.detach().cpu()[:, 0, :]
                 results['targets'] = None
                 if targets is not None:
-                    results['targets'] = targets.detach().cpu()
+                    results['targets'] = targets.detach().cpu()[:, 0, :]
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             else:
                 raise RuntimeError('Unknown loss nature.')
