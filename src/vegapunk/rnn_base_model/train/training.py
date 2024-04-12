@@ -183,7 +183,7 @@ def train_model(n_max_epochs, dataset, model_init_args, lr_init,
         # differentiation)
         optimizer = get_pytorch_optimizer(algorithm=opt_algorithm,
                                           params=model_parameters,
-                                          kwargs={'lr': learning_rate})
+                                          **{'lr': learning_rate})
     else:
         raise RuntimeError('Unknown optimization algorithm')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -247,7 +247,7 @@ def train_model(n_max_epochs, dataset, model_init_args, lr_init,
             print('\n> Initializing early stopping criterion...')
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Initialize early stopping criterion
-        early_stopper = EarlyStopper(dataset, **early_stopping_kwargs)
+        early_stopper = EarlyStopper(**early_stopping_kwargs)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Initialize early stopping flag
         is_stop_training = False
@@ -279,7 +279,18 @@ def train_model(n_max_epochs, dataset, model_init_args, lr_init,
         # Loop over batches
         for batch in data_loader:
             # Move batch to device
-            batch.to(device)
+            for key in batch.keys():
+                batch[key] = batch[key].to(device)
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Get output features ground-truth
+            if is_data_normalization:
+                # Normalize features ground-truth
+                features_targets = \
+                    model.data_scaler_transform(tensor=batch['features_out'],
+                                                features_type='features_out',
+                                                mode='normalize')
+            else:
+                features_targets = batch['features_out']
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Compute output features predictions (forward propagation).
             # During the foward pass, PyTorch creates a computation graph for
@@ -296,9 +307,9 @@ def train_model(n_max_epochs, dataset, model_init_args, lr_init,
                 features_out, _ = model(batch['features_in'],
                                         batch['hidden_features_in'],
                                         is_normalized=is_data_normalization)
-                # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~                
                 # Compute loss
-                loss = loss_function(features_out, batch['features_out'])
+                loss = loss_function(features_out, features_targets)
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             else:
                 raise RuntimeError('Unknown loss nature.')
