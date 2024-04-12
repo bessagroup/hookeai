@@ -166,10 +166,11 @@ def predict(dataset, model_directory, predict_directory=None,
     with torch.no_grad():
         # Loop over graph samples
         for i, batch in enumerate(tqdm.tqdm(data_loader,
-                                   desc='> Predictions: ',
-                                   disable=not is_verbose)):
+                                            desc='> Predictions: ',
+                                            disable=not is_verbose)):
             # Move batch to device
-            batch.to(device)
+            for key in batch.keys():
+                batch[key] = batch[key].to(device)
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Initialize sample results
             results = {}
@@ -178,7 +179,8 @@ def predict(dataset, model_directory, predict_directory=None,
             if loss_nature == 'features_out':
                 # Compute output features
                 features_out, _ = model(batch['features_in'],
-                                        batch['hidden_features_in'])
+                                        batch['hidden_features_in'],
+                                        is_normalized=False)
                 # Get output features ground-truth (None if not available)
                 targets = batch['features_out']
                 # Store sample results
