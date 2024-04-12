@@ -1104,7 +1104,8 @@ def write_training_summary_file(
     is_data_normalization, batch_size, is_sampler_shuffle, loss_nature,
     loss_type, loss_kwargs, opt_algorithm, lr_init, lr_scheduler_type,
     lr_scheduler_kwargs, n_epochs, dataset_file_path, dataset, best_loss,
-    best_training_epoch, total_time_sec, avg_time_epoch):
+    best_training_epoch, total_time_sec, avg_time_epoch,
+    torchinfo_summary=None):
     """Write summary data file for model training process.
     
     Parameters
@@ -1161,6 +1162,8 @@ def write_training_summary_file(
         Total training time in seconds.
     avg_time_epoch : float
         Average training time per epoch.
+    torchinfo_summary : str, default=None
+        Torchinfo model architecture summary.
     """
     # Set summary data
     summary_data = {}
@@ -1192,6 +1195,10 @@ def write_training_summary_file(
         str(datetime.timedelta(seconds=int(total_time_sec)))
     summary_data['Avg. training time per epoch'] = \
         str(datetime.timedelta(seconds=int(avg_time_epoch)))
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Set summary optional data
+    if torchinfo_summary is not None:
+        summary_data['torchinfo summary'] = torchinfo_summary
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Write summary file
     write_summary_file(
