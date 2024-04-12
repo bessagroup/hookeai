@@ -22,6 +22,7 @@ import torch
 import tqdm
 import sklearn.preprocessing
 # Local
+from rnn_base_model.data.time_dataset import get_time_series_data_loader
 from gnn_base_model.model.gnn_model import TorchStandardScaler
 #
 #                                                          Authorship & Credits
@@ -129,7 +130,7 @@ class GRURNNModel(torch.nn.Module):
             Number of recurrent layers. A number of recurrent layers greater
             than 1 results in a stacked GRU (output of GRU in each time t is
             the input of next GRU).
-        dropout : int, default=0
+        dropout : float, default=0
             Dropout probability. If non-zero, each GRU recurrent layer is
             followed by a dropout layer with the provided dropout probability.
         is_save_model_init_file: bool, default=True
@@ -302,14 +303,23 @@ class GRURNNModel(torch.nn.Module):
         if is_normalized:
             self.check_normalized_return()
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Normalize input features data
+        if self.is_data_normalization:
+            features_in = \
+                self.data_scaler_transform(tensor=features_in,
+                                           features_type='features_in',
+                                           mode='normalize')
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~        
         # Predict output features
         features_out, hidden_features_out = self._gru_rnn_model(
             features_in, hidden_features_in)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Denormalize output features data
         if self.is_data_normalization and not is_normalized:
-            features_out = self.data_scaler_transform(tensor=features_out,
-                                                      mode='denormalize')
+            features_out = \
+                self.data_scaler_transform(tensor=features_out,
+                                           features_type='features_out',
+                                           mode='denormalize')
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         return features_out, hidden_features_out
     # -------------------------------------------------------------------------
@@ -856,12 +866,12 @@ def standard_partial_fit(dataset, features_type, n_features, is_verbose=False):
     data_scaler = sklearn.preprocessing.StandardScaler()
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set data loader
-    data_loader = torch.utils.data.DataLoader(dataset=dataset)
+    data_loader = get_time_series_data_loader(dataset=dataset)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Loop over samples
     for sample in tqdm.tqdm(data_loader,
                             desc='> Processing data samples: ',
-                            disable=not is_verbose):
+                            disable=not is_verbose):        
         # Check sample
         if not isinstance(sample, dict):
             raise RuntimeError('Time series sample must be dictionary where '
@@ -878,14 +888,14 @@ def standard_partial_fit(dataset, features_type, n_features, is_verbose=False):
         # Process sample to fit data scaler
         if isinstance(features_tensor, torch.Tensor):
             # Check number of features
-            if features_tensor.shape[1] != n_features:
+            if features_tensor.shape[-1] != n_features:
                 raise RuntimeError(f'Mismatch between input graph '
-                                   f'({features_tensor.shape[1]}) and '
+                                   f'({features_tensor.shape[-1]}) and '
                                    f'model ({n_features}) number of '
                                    f'features for features type: '
                                    f'{features_type}')
             # Process sample
-            data_scaler.partial_fit(features_tensor.clone())
+            data_scaler.partial_fit(features_tensor[:, 0, :].clone())
         else:
             raise RuntimeError('Sample features tensor is not torch.Tensor.')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -897,14 +907,14 @@ def standard_partial_fit(dataset, features_type, n_features, is_verbose=False):
     if not isinstance(mean, torch.Tensor):
         raise RuntimeError('Features standardization mean tensor is not a '
                            'torch.Tensor.')
-    elif len(mean) != features_tensor.shape[1]:
+    elif len(mean) != features_tensor.shape[-1]:
         raise RuntimeError('Features standardization mean tensor is not a '
                            'torch.Tensor(1d) with shape (n_features,).')
     # Check features standardization standard deviation tensor
     if not isinstance(std, torch.Tensor):
         raise RuntimeError('Features standardization standard deviation '
-                            'tensor is not a torch.Tensor.')
-    elif len(std) != features_tensor.shape[1]:
+                           'tensor is not a torch.Tensor.')
+    elif len(std) != features_tensor.shape[-1]:
         raise RuntimeError('Features standardization standard deviation '
                            'tensor is not a torch.Tensor(1d) with shape '
                            '(n_features,).')
