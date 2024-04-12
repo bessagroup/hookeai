@@ -15,6 +15,10 @@ save_dataset
     Save PyTorch time series data set to file.
 load_dataset
     Load PyTorch time series data set.
+change_dataset_features_labels
+    Change time series data set features labels.
+add_dataset_feature_init
+    Add feature initialization to all samples of time series data set.
 write_time_series_dataset_summary_file
     Write summary data file for time series data set generation.
 """
@@ -179,6 +183,77 @@ def load_dataset(dataset_file_path):
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     return dataset
 # =============================================================================
+def change_dataset_features_labels(dataset, features_label_map):
+    """Change time series data set features labels.
+    
+    Parameters
+    ----------
+    dataset : torch.utils.data.Dataset
+        Time series data set. Each sample is stored as a dictionary where
+        each feature (key, str) data is a torch.Tensor(2d) of shape
+        (sequence_length, n_features).
+    features_label_map : dict
+        Features labels mapping. For each original feature label
+        (key, str), specifies the new label (item, str). Nonexistent
+        features are silently ignored.
+        
+    Returns
+    -------
+    dataset : torch.utils.data.Dataset
+        Time series data set. Each sample is stored as a dictionary where
+        each feature (key, str) data is a torch.Tensor(2d) of shape
+        (sequence_length, n_features).
+    """
+    # Loop over features
+    for old_label, new_label in features_label_map.items():        
+        # Probe feature existence
+        if old_label not in tuple(dataset[0].keys()):
+            continue
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Loop over samples
+        for i in range(len(dataset)):
+            # Change feature label
+            dataset[i][new_label] = dataset[i].pop(old_label)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    return dataset
+# =============================================================================
+def add_dataset_feature_init(dataset, feature_label, feature_init):
+    """Add feature initialization to all samples of time series data set.
+    
+    Parameters
+    ----------
+    dataset : torch.utils.data.Dataset
+        Time series data set. Each sample is stored as a dictionary where
+        each feature (key, str) data is a torch.Tensor(2d) of shape
+        (sequence_length, n_features).
+    feature_label : str
+        Feature label.
+    feature_init : torch.Tensor(2d)
+        Feature initialization data stored as torch.Tensor(2d) of shape
+        (n, n_features), where n is a general size.
+    
+    Returns
+    -------
+    dataset : torch.utils.data.Dataset
+        Time series data set. Each sample is stored as a dictionary where
+        each feature (key, str) data is a torch.Tensor(2d) of shape
+        (sequence_length, n_features).
+    """
+    # Check feature initialization
+    if not isinstance(feature_init, torch.Tensor):
+        raise RuntimeError('Feature initialization was not provided as '
+                           'torch.Tensor(2d).')
+    elif len(feature_init.shape) != 2:
+        raise RuntimeError('Feature initialization was not provided as '
+                           'torch.Tensor(2d).')
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Loop over samples
+    for i in range(len(dataset)):
+        # Change feature label
+        dataset[i][str(feature_label)] = feature_init
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    return dataset
+# =============================================================================
 def write_time_series_dataset_summary_file(
     dataset_directory, n_sample, total_time_sec, avg_time_sample,
     features=None, targets=None, filename='summary'):
@@ -277,6 +352,6 @@ class TimeSeriesDatasetInMemory(torch.utils.data.Dataset):
             (sequence_length, n_features).
         """
         # Get data set sample
-        sample_data = copy.deepcopy(self._dataset_samples[index])
+        sample_data = self._dataset_samples[index]
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         return sample_data
