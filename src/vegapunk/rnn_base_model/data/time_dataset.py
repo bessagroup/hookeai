@@ -19,6 +19,8 @@ change_dataset_features_labels
     Change time series data set features labels.
 add_dataset_feature_init
     Add feature initialization to all samples of time series data set.
+concatenate_dataset_features
+    Concatenate existing features of time series data set into new feature.
 write_time_series_dataset_summary_file
     Write summary data file for time series data set generation.
 """
@@ -251,6 +253,62 @@ def add_dataset_feature_init(dataset, feature_label, feature_init):
     for i in range(len(dataset)):
         # Change feature label
         dataset[i][str(feature_label)] = feature_init
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    return dataset
+# =============================================================================
+def concatenate_dataset_features(dataset, new_feature_label,
+                                 cat_features_labels,
+                                 is_remove_features=False):
+    """Concatenate existing features of time series data set into new feature.
+    
+    The new feature is stored as a torch.Tensor(2d) of shape
+    (sequence_length, n_concat_features) resulting from the concatenation of
+    the existing features tensors along the second dimension.
+    
+    Parameters
+    ----------
+    dataset : torch.utils.data.Dataset
+        Time series data set. Each sample is stored as a dictionary where
+        each feature (key, str) data is a torch.Tensor(2d) of shape
+        (sequence_length, n_features).
+    new_feature_label : str
+        New feature label.
+    cat_features_labels : tuple[str]
+        Labels of existing features to be concatenated into new feature.
+        Concatenation is sorted accordingly.
+    is_remove_features : bool, default=False
+        If True, then remove concatenated features from data set after
+        concatenating the new feature.
+    
+    Returns
+    -------
+    dataset : torch.utils.data.Dataset
+        Time series data set. Each sample is stored as a dictionary where
+        each feature (key, str) data is a torch.Tensor(2d) of shape
+        (sequence_length, n_features).
+    """
+    # Check concatenation features
+    for label in cat_features_labels:
+        # Probe sample existence from first sample
+        if label not in dataset[0].keys():
+            raise RuntimeError(f'The feature "{label}" cannot be concatenated '
+                               f'because it does not exist in the data set.')
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Loop over samples
+    for i in range(len(dataset)):
+        # Concatenate features
+        if len(cat_features_labels) > 1:
+            dataset[i][str(new_feature_label)] = torch.cat(
+                [dataset[i][label] for label in cat_features_labels], dim=1)
+        else:
+            dataset[i][str(new_feature_label)] = \
+                dataset[i][cat_features_labels[0]]
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Remove concatenated features
+        if is_remove_features:
+            # Loop over concatenated features
+            for label in cat_features_labels:
+                dataset[i].pop(label)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     return dataset
 # =============================================================================
