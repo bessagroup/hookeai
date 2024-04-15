@@ -29,8 +29,10 @@ import torch
 from rnn_base_model.data.time_dataset import load_dataset, \
     change_dataset_features_labels, add_dataset_feature_init
 from rnn_base_model.predict.prediction import predict
+from rnn_base_model.predict.prediction_plots import plot_time_series_prediction
 from projects.darpa_metals.rnn_material_model.rnn_model_tools. \
-    process_predictions import build_prediction_data_arrays
+    process_predictions import build_prediction_data_arrays, \
+        build_time_series_predictions_data
 from gnn_base_model.predict.prediction_plots import plot_truth_vs_prediction
 from ioput.iostandard import make_directory, find_unique_file_with_regex
 #
@@ -100,13 +102,15 @@ def perform_model_prediction(predict_directory, dataset_file_path,
                 device_type=device_type, seed=None, is_verbose=is_verbose)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Generate plots of model predictions
-    generate_prediction_plots(predict_subdir)
+    generate_prediction_plots(dataset_file_path, predict_subdir)
 # =============================================================================
-def generate_prediction_plots(predict_subdir):
+def generate_prediction_plots(dataset_file_path, predict_subdir):
     """Generate plots of model predictions.
     
     Parameters
     ----------
+    dataset_file_path : str
+        Testing data set file path.
     predict_subdir : str
         Subdirectory where samples predictions results files are stored.
     """
@@ -142,6 +146,33 @@ def generate_prediction_plots(predict_subdir):
                                      save_dir=plot_dir,
                                      is_save_fig=True, is_stdout_display=False,
                                      is_latex=True)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Set time series prediction types and components
+    prediction_types = {}
+    prediction_types['stress_comps_paths'] = \
+        ('stress_11', 'stress_22', 'stress_33',
+         'stress_12', 'stress_23', 'stress_13')
+    # Plot model time series prediction and ground-truth
+    for prediction_type, prediction_comps in prediction_types.items():
+        # Build times series predictions data arrays
+        prediction_data_dicts = build_time_series_predictions_data(
+            dataset_file_path, predict_subdir, prediction_type=prediction_type,
+            samples_ids='all')
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~   
+        # Loop over times series predictions components
+        for i, data_dict in enumerate(prediction_data_dicts):
+            # Loop over samples (time series paths)
+            for sample_id, data_array in data_dict.items():
+                # Get prediction plot file name
+                filename = prediction_comps[i] + f'_path_sample_{sample_id}'
+                # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                # Plot model times series predictions against ground-truth
+                plot_time_series_prediction(
+                    data_array, is_normalize_data=False,
+                    x_label='Time', y_label='Stress (MPa)',
+                    filename=filename,
+                    save_dir=plot_dir,is_save_fig=True,
+                    is_stdout_display=False, is_latex=True)
 # =============================================================================
 def set_default_prediction_options():
     """Set default GNN-based model prediction options.
