@@ -33,10 +33,12 @@ def build_prediction_data_arrays(predictions_dir, prediction_type,
     ----------
     predictions_dir : str
         Directory where samples predictions results files are stored.
-    prediction_type : {'stress_comps',}
+    prediction_type : {'stress_comps', 'acc_p_strain'}
         Type of prediction data arrays:
         
-        'stress_comps' : Stress components
+        'stress_comps' : Stress components paths
+        
+        'acc_p_strain' : Accumulated plastic strain
 
     samples_ids : {'all', list[int]}, default='all'
         Samples IDs whose prediction results are collated in each prediction
@@ -90,16 +92,14 @@ def build_prediction_data_arrays(predictions_dir, prediction_type,
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ 
     # Set number of prediction data arrays
     if prediction_type == 'stress_comps':
-        # Probe sample prediction results
-        sample_prediction_path = \
-            os.path.join(os.path.normpath(predictions_dir),
-                         f'prediction_sample_{prediction_files_ids[0]}.pkl')
-        sample_results = load_sample_predictions(sample_prediction_path)
         # Get number of stress components
-        n_stress_comps = sample_results['features_out'].shape[1]
+        n_stress_comps = 6
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~    
         # Set number of prediction data arrays
         n_data_arrays = n_stress_comps
+    elif prediction_type == 'acc_p_strain':   
+        # Set number of prediction data arrays
+        n_data_arrays = 1
     else:
         raise RuntimeError('Unknown prediction data array type.')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -127,9 +127,11 @@ def build_prediction_data_arrays(predictions_dir, prediction_type,
             # Build sample data array
             if prediction_type == 'stress_comps':
                 # Get stress components predictions
-                stress_path = sample_results['features_out']
+                stress_path = \
+                    sample_results['features_out'][:, :n_stress_comps]
                 # Get stress components ground-truth
-                stress_path_target = sample_results['targets']
+                stress_path_target = \
+                    sample_results['targets'][:, :n_stress_comps]
                 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                 # Check availability of ground-truth
                 if stress_path_target is None:
@@ -141,6 +143,25 @@ def build_prediction_data_arrays(predictions_dir, prediction_type,
                 data_array = np.concatenate(
                     (stress_path_target[:, i].reshape((-1, 1)),
                      stress_path[:, i].reshape((-1, 1))), axis=1)
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            elif prediction_type == 'acc_p_strain':
+                # Get accumulated plastic strain prediction
+                acc_p_strain_path = \
+                    sample_results['features_out'][:, n_stress_comps+1]
+                # Get accumulated plastic strain ground-truth
+                acc_p_strain_path_target = \
+                    sample_results['targets'][:, n_stress_comps+1]
+                # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                # Check availability of ground-truth
+                if acc_p_strain_path_target is None:
+                    raise RuntimeError(f'Accumulated plastic strain path '
+                                       f'ground-truth is not available for '
+                                       f'sample {sample_id}.')
+                # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                # Build sample data array
+                data_array = np.concatenate(
+                    (acc_p_strain_path_target[:, i].reshape((-1, 1)),
+                     acc_p_strain_path[:, i].reshape((-1, 1))), axis=1)
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Assemble sample prediction data
             prediction_data_arrays[i] = \
@@ -158,10 +179,12 @@ def build_time_series_predictions_data(dataset_file_path, predictions_dir,
         Time series testing data set file path.
     predictions_dir : str
         Directory where samples predictions results files are stored.
-    prediction_type : {'stress_comps_paths',}
+    prediction_type : {'stress_comps', 'acc_p_strain'}
         Type of prediction data arrays:
         
-        'stress_comps_paths' : Stress components paths
+        'stress_comps' : Stress components paths
+        
+        'acc_p_strain' : Accumulated plastic strain
 
     samples_ids : {'all', list[int]}, default='all'
         Samples for which the data arrays with the time series prediction
@@ -219,17 +242,15 @@ def build_time_series_predictions_data(dataset_file_path, predictions_dir,
         samples_ids = prediction_files_ids
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ 
     # Set number of prediction components
-    if prediction_type == 'stress_comps_paths':
-        # Probe sample prediction results
-        sample_prediction_path = \
-            os.path.join(os.path.normpath(predictions_dir),
-                         f'prediction_sample_{prediction_files_ids[0]}.pkl')
-        sample_results = load_sample_predictions(sample_prediction_path)
+    if prediction_type == 'stress_comps':
         # Get number of stress components
-        n_stress_comps = sample_results['features_out'].shape[1]
+        n_stress_comps = 6
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~    
         # Set number of prediction components
         n_pred_comps = n_stress_comps
+    elif prediction_type == 'acc_p_strain':   
+        # Set number of prediction components
+        n_pred_comps = 1
     else:
         raise RuntimeError('Unknown prediction data array type.')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -258,7 +279,7 @@ def build_time_series_predictions_data(dataset_file_path, predictions_dir,
         # Loop over prediction components
         for i in range(n_pred_comps):
             # Build sample data array
-            if prediction_type == 'stress_comps_paths':
+            if prediction_type == 'stress_comps':
                 # Get stress component predictions
                 stress_path = sample_results['features_out']
                 # Get stress components ground-truth
@@ -275,6 +296,26 @@ def build_time_series_predictions_data(dataset_file_path, predictions_dir,
                     (time_path.reshape((-1, 1)),
                      stress_path_target[:, i].reshape((-1, 1)),
                      stress_path[:, i].reshape((-1, 1))), axis=1)
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            elif prediction_type == 'acc_p_strain':
+                # Get accumulated plastic strain prediction
+                acc_p_strain_path = \
+                    sample_results['features_out'][:, n_stress_comps+1]
+                # Get accumulated plastic strain ground-truth
+                acc_p_strain_path_target = \
+                    sample_results['targets'][:, n_stress_comps+1]
+                # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                # Check availability of ground-truth
+                if acc_p_strain_path_target is None:
+                    raise RuntimeError(f'Accumulated plastic strain path '
+                                       f'ground-truth is not available for '
+                                       f'sample {sample_id}.')
+                # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                # Build sample data array
+                data_array = np.concatenate(
+                    (time_path.reshape((-1, 1)),
+                     acc_p_strain_path_target[:, i].reshape((-1, 1)),
+                     acc_p_strain_path[:, i].reshape((-1, 1))), axis=1)
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Assemble prediction component sample data
             prediction_data_dicts[i][sample_id] = data_array
