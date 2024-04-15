@@ -28,7 +28,7 @@ import os
 import torch
 # Local
 from rnn_base_model.data.time_dataset import load_dataset, \
-    change_dataset_features_labels, add_dataset_feature_init
+    concatenate_dataset_features, add_dataset_feature_init
 from rnn_base_model.train.training import train_model
 from gnn_base_model.train.training import \
     read_loss_history_from_file, read_lr_history_from_file
@@ -73,9 +73,23 @@ def perform_model_standard_training(train_dataset_file_path, model_directory,
             is_early_stopping, early_stopping_kwargs = \
                 set_default_training_options()
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Set data set features labels mapping
-    labels_map = {'strain_path': 'features_in',
-                  'stress_path': 'features_out'}
+    # Set data features for training
+    features_option = 'default'
+    if features_option == 'stress_acc_p_strain':
+        # Set input features
+        new_label_in = 'features_in'
+        cat_features_in = ('strain_path',)
+        # Set output features
+        new_label_out = 'features_out'
+        cat_features_out = ('stress_path', 'acc_p_strain')
+    else:
+        # Set input features
+        new_label_in = 'features_in'
+        cat_features_in = ('strain_path',)
+        # Set output features
+        new_label_out = 'features_out'
+        cat_features_out = ('stress_path',)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set hidden state initialization
     hidden_features_in = torch.zeros((model_init_args['n_recurrent_layers'],
                                       model_init_args['hidden_layer_size']))
@@ -106,9 +120,13 @@ def perform_model_standard_training(train_dataset_file_path, model_directory,
         else:
             # Load validation data set
             val_dataset = load_dataset(val_dataset_file_path)
-            # Change validation data set features labels
-            val_dataset = change_dataset_features_labels(val_dataset,
-                                                         labels_map)
+            # Set validation data set features
+            val_dataset = concatenate_dataset_features(
+                val_dataset, new_label_in, cat_features_in,
+                is_remove_features=True)
+            val_dataset = concatenate_dataset_features(
+                val_dataset, new_label_out, cat_features_out,
+                is_remove_features=True)
             # Add hidden state initialization to data set
             val_dataset = add_dataset_feature_init(
                 val_dataset, 'hidden_features_in', hidden_features_in)
@@ -120,8 +138,13 @@ def perform_model_standard_training(train_dataset_file_path, model_directory,
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Load training data set
     train_dataset = load_dataset(train_dataset_file_path)
-    # Change training data set features labels
-    train_dataset = change_dataset_features_labels(train_dataset, labels_map)
+    # Set training data set features
+    train_dataset = concatenate_dataset_features(train_dataset, new_label_in,
+                                                 cat_features_in,
+                                                 is_remove_features=True)
+    train_dataset = concatenate_dataset_features(train_dataset, new_label_out,
+                                                 cat_features_out,
+                                                 is_remove_features=True)
     # Add hidden state initialization to data set
     train_dataset = add_dataset_feature_init(
         train_dataset, 'hidden_features_in', hidden_features_in)

@@ -27,7 +27,7 @@ import pickle
 import torch
 # Local
 from rnn_base_model.data.time_dataset import load_dataset, \
-    change_dataset_features_labels, add_dataset_feature_init
+    concatenate_dataset_features, add_dataset_feature_init
 from rnn_base_model.predict.prediction import predict
 from rnn_base_model.predict.prediction_plots import plot_time_series_prediction
 from projects.darpa_metals.rnn_material_model.rnn_model_tools. \
@@ -78,9 +78,23 @@ def perform_model_prediction(predict_directory, dataset_file_path,
     # Get model initialization attributes
     model_init_args = model_init_attributes['model_init_args']
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Set data set features labels mapping
-    labels_map = {'strain_path': 'features_in',
-                  'stress_path': 'features_out'}
+    # Set data features for prediction
+    features_option = 'default'
+    if features_option == 'stress_acc_p_strain':
+        # Set input features
+        new_label_in = 'features_in'
+        cat_features_in = ('strain_path',)
+        # Set output features
+        new_label_out = 'features_out'
+        cat_features_out = ('stress_path', 'acc_p_strain')
+    else:
+        # Set input features
+        new_label_in = 'features_in'
+        cat_features_in = ('strain_path',)
+        # Set output features
+        new_label_out = 'features_out'
+        cat_features_out = ('stress_path',)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set hidden state initialization
     hidden_features_in = torch.zeros((model_init_args['n_recurrent_layers'],
                                       model_init_args['hidden_layer_size']))
@@ -88,7 +102,10 @@ def perform_model_prediction(predict_directory, dataset_file_path,
     # Load data set
     dataset = load_dataset(dataset_file_path)
     # Change training data set features labels
-    dataset = change_dataset_features_labels(dataset, labels_map)
+    dataset = concatenate_dataset_features(
+        dataset, new_label_in, cat_features_in, is_remove_features=True)
+    dataset = concatenate_dataset_features(
+        dataset, new_label_out, cat_features_out, is_remove_features=True)
     # Add hidden state initialization to data set
     dataset = add_dataset_feature_init(
         dataset, 'hidden_features_in', hidden_features_in)    
@@ -123,6 +140,8 @@ def generate_prediction_plots(dataset_file_path, predict_subdir):
     prediction_types = {}
     prediction_types['stress_comps'] = ('stress_11', 'stress_22', 'stress_33',
                                         'stress_12', 'stress_23', 'stress_13')
+    prediction_types['acc_p_strain'] = ('acc_p_strain',)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Plot model predictions against ground-truth
     for key, val in prediction_types.items():
         # Build samples predictions data arrays with predictions and
@@ -138,6 +157,9 @@ def generate_prediction_plots(dataset_file_path, predict_subdir):
             if key == 'stress_comps':
                 prediction_sets = \
                     {f'Stress {val[i].split("_")[-1]}': data_array,}
+            elif key == 'acc_p_strain':
+                prediction_sets = \
+                    {f'Accumulated plastic strain': data_array,}
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Plot model predictions against ground-truth
             plot_truth_vs_prediction(prediction_sets, error_bound=0.1,
@@ -147,11 +169,6 @@ def generate_prediction_plots(dataset_file_path, predict_subdir):
                                      is_save_fig=True, is_stdout_display=False,
                                      is_latex=True)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Set time series prediction types and components
-    prediction_types = {}
-    prediction_types['stress_comps_paths'] = \
-        ('stress_11', 'stress_22', 'stress_33',
-         'stress_12', 'stress_23', 'stress_13')
     # Plot model time series prediction and ground-truth
     for prediction_type, prediction_comps in prediction_types.items():
         # Build times series predictions data arrays
@@ -166,10 +183,16 @@ def generate_prediction_plots(dataset_file_path, predict_subdir):
                 # Get prediction plot file name
                 filename = prediction_comps[i] + f'_path_sample_{sample_id}'
                 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                # Set prediction type label
+                if prediction_type == 'stress_comps':
+                    y_label = 'Stress (MPa)'
+                elif prediction_type == 'acc_p_strain':
+                    y_label = 'Accumulated plastic strain'
+                # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                 # Plot model times series predictions against ground-truth
                 plot_time_series_prediction(
                     data_array, is_normalize_data=False,
-                    x_label='Time', y_label='Stress (MPa)',
+                    x_label='Time', y_label=y_label,
                     filename=filename,
                     save_dir=plot_dir,is_save_fig=True,
                     is_stdout_display=False, is_latex=True)
