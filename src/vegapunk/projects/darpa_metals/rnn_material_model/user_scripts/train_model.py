@@ -85,8 +85,6 @@ def perform_model_standard_training(train_dataset_file_path, model_directory,
         # Set number of input and output features
         model_init_args['n_features_in'] = 6
         model_init_args['n_features_out'] = 7
-        model_init_args['hidden_layer_size'] = \
-            model_init_args['n_features_out']
     else:
         # Set input features
         new_label_in = 'features_in'
@@ -97,8 +95,6 @@ def perform_model_standard_training(train_dataset_file_path, model_directory,
         # Set number of input and output features
         model_init_args['n_features_in'] = 6
         model_init_args['n_features_out'] = 6
-        model_init_args['hidden_layer_size'] = \
-            model_init_args['n_features_out']
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set hidden state initialization
     hidden_features_in = torch.zeros((model_init_args['n_recurrent_layers'],
@@ -108,7 +104,7 @@ def perform_model_standard_training(train_dataset_file_path, model_directory,
     # Set number of epochs
     n_max_epochs = 200
     # Set batch size
-    batch_size = 16
+    batch_size = 64
     # Set learning rate
     lr_init = 1.0e-03
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -245,9 +241,9 @@ def set_default_model_parameters(model_directory, device_type='cpu'):
     # Set number of output features
     n_features_out = 6
     # Set hidden layer size
-    hidden_layer_size = n_features_out
+    hidden_layer_size = 500
     # Set number of recurrent layers (stacked RNN)
-    n_recurrent_layers = 1
+    n_recurrent_layers = 3
     # Set dropout probability
     dropout = 0
     # Set data normalization

@@ -79,7 +79,7 @@ def perform_model_prediction(predict_directory, dataset_file_path,
     model_init_args = model_init_attributes['model_init_args']
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set data features for prediction
-    features_option = 'default'
+    features_option = 'stress_acc_p_strain'
     if features_option == 'stress_acc_p_strain':
         # Set input features
         new_label_in = 'features_in'
@@ -163,6 +163,7 @@ def generate_prediction_plots(dataset_file_path, predict_subdir):
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Plot model predictions against ground-truth
             plot_truth_vs_prediction(prediction_sets, error_bound=0.1,
+                                     is_r2_coefficient=True,
                                      is_normalize_data=False,
                                      filename=filename,
                                      save_dir=plot_dir,
