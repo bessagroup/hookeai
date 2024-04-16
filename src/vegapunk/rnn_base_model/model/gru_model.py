@@ -36,6 +36,9 @@ __status__ = 'Planning'
 class GRURNNModel(torch.nn.Module):
     """Multi-layer gated recurrent unit (GRU) recurrent neural network model.
     
+    The model is composed of a multi-layer GRU followed by a (time distributed)
+    linear layer sharing the same number of hidden state features.
+    
     Attributes
     ----------
     model_directory : str
@@ -55,8 +58,10 @@ class GRURNNModel(torch.nn.Module):
     _dropout : int
         Dropout probability. If non-zero, each GRU recurrent layer is followed
         by a dropout layer with the provided dropout probability.
-    _gru_rnn_model : EncodeProcessDecode
-        GNN-based Encoder-Process-Decoder model.
+    _gru_rnn_model : torch.nn.Module
+        Multi-layer gated recurrent unit (GRU) recurrent neural network model.
+    _linear_layer : torch.nn.Module
+        Linear layer.
     _device_type : {'cpu', 'cuda'}
         Type of device on which torch.Tensor is allocated.
     _device : torch.device
@@ -166,7 +171,8 @@ class GRURNNModel(torch.nn.Module):
         # Set device
         self.set_device(device_type)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        # Initialize model
+        # Initialize multi-layer gated recurrent unit (GRU) recurrent neural
+        # network
         self._gru_rnn_model = \
             torch.nn.GRU(input_size=self._n_features_in,
                          hidden_size=self._hidden_layer_size,
@@ -175,6 +181,10 @@ class GRURNNModel(torch.nn.Module):
                          batch_first=False,
                          dropout=self._dropout,
                          device=self._device)
+        # Initialize linear layer
+        self._linear_layer = \
+            torch.nn.Linear(in_features=self._hidden_layer_size,
+                            out_features=n_features_out, bias=True)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Initialize data scalers
         self._data_scalers = None
@@ -282,13 +292,13 @@ class GRURNNModel(torch.nn.Module):
         -------
         features_out : torch.Tensor
             Tensor of output features stored as torch.Tensor(2d) of shape
-            (sequence_length, hidden_layer_size) for unbatched input or
+            (sequence_length, n_features_out) for unbatched input or
             torch.Tensor(3d) of shape
-            (sequence_length, batch_size, hidden_layer_size) for batched input.
+            (sequence_length, batch_size, n_features_out) for batched input.
         hidden_features_out : torch.Tensor
-            Tensor of final hidden state features stored as torch.Tensor(2d)
-            of shape (n_recurrent_layers, hidden_layer_size) for unbatched
-            input or torch.Tensor(3d) of shape
+            Tensor of final multi-layer GRU hidden state features stored as
+            torch.Tensor(2d) of shape (n_recurrent_layers, hidden_layer_size)
+            for unbatched input or torch.Tensor(3d) of shape
             (n_recurrent_layers, batch_size, hidden_layer_size) for batched
             input.
         """
@@ -310,9 +320,11 @@ class GRURNNModel(torch.nn.Module):
                                            features_type='features_in',
                                            mode='normalize')
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~        
-        # Predict output features
+        # Forward propagation: Multi-layer GRU
         features_out, hidden_features_out = self._gru_rnn_model(
             features_in, hidden_features_in)
+        # Forward propagation: Linear layer
+        features_out = self._linear_layer(features_out)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Denormalize output features data
         if self.is_data_normalization and not is_normalized:
