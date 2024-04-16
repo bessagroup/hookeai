@@ -235,7 +235,8 @@ class MaterialResponseDatasetGenerator():
                 torch.tensor(time_hist, dtype=torch.float).reshape(-1, 1)
             # Assemble state variables path
             for state_var in state_path.keys():
-                response_path[state_var] = torch.tensor(state_path[state_var])
+                response_path[state_var] = torch.tensor(state_path[state_var],
+                                                        dtype=torch.float)
             # Store strain-stress material response path
             dataset_samples.append(response_path)
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

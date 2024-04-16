@@ -60,10 +60,6 @@ def build_prediction_data_arrays(predictions_dir, prediction_type,
     if samples_ids != 'all' and not isinstance(samples_ids, list):
         raise RuntimeError('Samples IDs must be specified as "all" or as '
                            'list[int].')
-    elif (isinstance(samples_ids, list)
-          and not all([isinstance(x, int) for x in samples_ids])):
-        raise RuntimeError('Samples IDs must be specified as a list of '
-                           'integers.')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ 
     # Get files in samples predictions results directory
     directory_list = os.listdir(predictions_dir)
@@ -89,12 +85,11 @@ def build_prediction_data_arrays(predictions_dir, prediction_type,
     # Set all available samples
     if samples_ids == 'all':
         samples_ids = prediction_files_ids
-    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ 
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Set number of stress components
+    n_stress_comps = 6
     # Set number of prediction data arrays
-    if prediction_type == 'stress_comps':
-        # Get number of stress components
-        n_stress_comps = 6
-        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~    
+    if prediction_type == 'stress_comps':  
         # Set number of prediction data arrays
         n_data_arrays = n_stress_comps
     elif prediction_type == 'acc_p_strain':   
@@ -147,10 +142,10 @@ def build_prediction_data_arrays(predictions_dir, prediction_type,
             elif prediction_type == 'acc_p_strain':
                 # Get accumulated plastic strain prediction
                 acc_p_strain_path = \
-                    sample_results['features_out'][:, n_stress_comps+1]
+                    sample_results['features_out'][:, n_stress_comps]
                 # Get accumulated plastic strain ground-truth
                 acc_p_strain_path_target = \
-                    sample_results['targets'][:, n_stress_comps+1]
+                    sample_results['targets'][:, n_stress_comps]
                 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                 # Check availability of ground-truth
                 if acc_p_strain_path_target is None:
@@ -160,8 +155,8 @@ def build_prediction_data_arrays(predictions_dir, prediction_type,
                 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                 # Build sample data array
                 data_array = np.concatenate(
-                    (acc_p_strain_path_target[:, i].reshape((-1, 1)),
-                     acc_p_strain_path[:, i].reshape((-1, 1))), axis=1)
+                    (acc_p_strain_path_target.reshape((-1, 1)),
+                     acc_p_strain_path.reshape((-1, 1))), axis=1)
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Assemble sample prediction data
             prediction_data_arrays[i] = \
@@ -212,9 +207,9 @@ def build_time_series_predictions_data(dataset_file_path, predictions_dir,
         raise RuntimeError('Samples IDs must be specified as "all" or as '
                            'list[int].')
     elif (isinstance(samples_ids, list)
-          and not all([isinstance(x, int) for x in samples_ids])):
-        raise RuntimeError('Samples IDs must be specified as a list of '
-                           'integers.')
+          and max(samples_ids) >= len(test_dataset)):
+        raise RuntimeError(f'Sample ID ({max(samples_ids)}) is outside of the '
+                           f'data set of size {len(test_dataset)}.')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Get files in samples predictions results directory
     directory_list = os.listdir(predictions_dir)
@@ -240,12 +235,11 @@ def build_time_series_predictions_data(dataset_file_path, predictions_dir,
     # Set all available samples
     if samples_ids == 'all':
         samples_ids = prediction_files_ids
-    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ 
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Set number of stress components
+    n_stress_comps = 6 
     # Set number of prediction components
-    if prediction_type == 'stress_comps':
-        # Get number of stress components
-        n_stress_comps = 6
-        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~    
+    if prediction_type == 'stress_comps':   
         # Set number of prediction components
         n_pred_comps = n_stress_comps
     elif prediction_type == 'acc_p_strain':   
@@ -300,10 +294,10 @@ def build_time_series_predictions_data(dataset_file_path, predictions_dir,
             elif prediction_type == 'acc_p_strain':
                 # Get accumulated plastic strain prediction
                 acc_p_strain_path = \
-                    sample_results['features_out'][:, n_stress_comps+1]
+                    sample_results['features_out'][:, n_stress_comps]
                 # Get accumulated plastic strain ground-truth
                 acc_p_strain_path_target = \
-                    sample_results['targets'][:, n_stress_comps+1]
+                    sample_results['targets'][:, n_stress_comps]
                 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                 # Check availability of ground-truth
                 if acc_p_strain_path_target is None:
@@ -314,8 +308,8 @@ def build_time_series_predictions_data(dataset_file_path, predictions_dir,
                 # Build sample data array
                 data_array = np.concatenate(
                     (time_path.reshape((-1, 1)),
-                     acc_p_strain_path_target[:, i].reshape((-1, 1)),
-                     acc_p_strain_path[:, i].reshape((-1, 1))), axis=1)
+                     acc_p_strain_path_target.reshape((-1, 1)),
+                     acc_p_strain_path.reshape((-1, 1))), axis=1)
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Assemble prediction component sample data
             prediction_data_dicts[i][sample_id] = data_array
