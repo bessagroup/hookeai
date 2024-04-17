@@ -49,10 +49,10 @@ def build_prediction_data_arrays(predictions_dir, prediction_type,
     Returns
     -------
     prediction_data_arrays : list[numpy.ndarray(2d)]
-        Prediction data arrays. Each data array collates data from all
-        specified samples and is stored as a numpy.ndarray(2d) of shape
-        (n_nodes, 2), where data_array[i, 0] stores the i-th node ground-truth
-        and data_array[i, 1] stores the i-th node prediction.
+        Prediction components data arrays. Each data array collates data from
+        all specified samples and is stored as a numpy.ndarray(2d) of shape
+        (n_points, 2), where data_array[:, 0] stores the ground-truth
+        and data_array[:, 1] stores the predictions.
     """
     # Check sample predictions directory
     if not os.path.isdir(predictions_dir):
@@ -189,7 +189,7 @@ def build_time_series_predictions_data(dataset_file_path, predictions_dir,
     
     Returns
     -------
-    prediction_data_dicts : list[dict]
+    prediction_data_arrays : list[dict]
         Prediction components data arrays for each sample. Each prediction
         component is stored as a dictionary, where the data array
         (item, np.ndarray(2d)) of each sample (key, str) is stored as a
@@ -252,7 +252,7 @@ def build_time_series_predictions_data(dataset_file_path, predictions_dir,
         raise RuntimeError('Unknown prediction data array type.')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Initialize prediction components data
-    prediction_data_dicts = n_pred_comps*[{},]
+    prediction_data_arrays = n_pred_comps*[{},]
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Loop over samples
     for sample_id in samples_ids:
@@ -315,6 +315,6 @@ def build_time_series_predictions_data(dataset_file_path, predictions_dir,
                      acc_p_strain_path.reshape((-1, 1))), axis=1)
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Assemble prediction component sample data
-            prediction_data_dicts[i][sample_id] = data_array
+            prediction_data_arrays[i][str(sample_id)] = data_array
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    return prediction_data_dicts        
+    return prediction_data_arrays       
