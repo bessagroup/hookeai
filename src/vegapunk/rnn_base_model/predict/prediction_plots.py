@@ -3,7 +3,7 @@
 Functions
 ---------
 plot_time_series_prediction
-    Plot time series ground-truth and prediction.
+    Plot time series predictions.
 """
 #
 #                                                                       Modules
@@ -22,27 +22,27 @@ __status__ = 'Planning'
 # =============================================================================
 #
 # =============================================================================
-def plot_time_series_prediction(time_series_data_array,
+def plot_time_series_prediction(prediction_sets,
                                 x_label='Time', y_label='Value',
                                 is_normalize_data=False,
                                 filename='time_series_prediction',
                                 save_dir=None, is_save_fig=False,
                                 is_stdout_display=False, is_latex=False):
-    """Plot time series ground-truth and prediction.
+    """Plot time series predictions.
     
     Parameters
     ----------
-    time_series_data_array : np.ndarray(2d)
-        Time series prediction data array stored as a numpy.ndarray(2d) of
-        shape (n_nodes, 3), where data_array[i, 0] stores the time series time,
-        data_array[i, 0] stores the time series ground-truth and
-        data_array[i, 1] stores the time series prediction prediction.
+    prediction_sets : dict
+        One or more time series prediction processes, where each process
+        (key, str) is stored as a data array (item, numpy.ndarray(2d)) of shape
+        (sequence_length, 2) as follows: data_array[:, 0] stores the time
+        series time, data_array[:, 1] stores the time series prediction.
     x_label : str, default='Time'
         x-axis label.
     y_label : str, default='Value'
         y-axis label.
     is_normalize_data : bool, default=False
-        Normalize time, predictions and ground-truth data to the range [0, 1].
+        Normalize time and predictions data to the range [0, 1].
     filename : str, default='time_series_prediction'
         Figure name.
     save_dir : str, default=None
@@ -57,43 +57,57 @@ def plot_time_series_prediction(time_series_data_array,
         then this option is silently set to False and all input strings are
         processed to remove $(...)$ enclosure.
     """
-    # Check time series data array
-    if not isinstance(time_series_data_array, np.ndarray):
-        raise RuntimeError('Time series predition data array must be a '
-                           'numpy.ndarray of shape (sequence_length, 3).')
-    elif (len(time_series_data_array.shape) != 2
-          or time_series_data_array.shape[1] != 3):
-        raise RuntimeError('Time series predition data array must be a '
-                           'numpy.ndarray of shape (sequence_length, 3).')
+    # Check time series predictions data
+    if not isinstance(prediction_sets, dict):
+        raise RuntimeError('Prediction processes are not provided as a dict.')
+    elif not all([isinstance(x, np.ndarray)
+                  for x in prediction_sets.values()]):
+        raise RuntimeError('Prediction processes must be provided as a dict '
+                           'where each process (key, str) is stored as a '
+                           'numpy.ndarray of shape (sequence_length, 2).')
+    elif not all([x.shape[1] == 2
+                  for x in prediction_sets.values()]):
+        raise RuntimeError('Prediction processes must be provided as a dict '
+                           'where each process (key, str) is stored as a '
+                           'numpy.ndarray of shape (sequence_length, 2).')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Get time series sequence length
-    n_time = time_series_data_array.shape[0]
+    # Get number of prediction processes
+    n_processes = len(prediction_sets.keys())
+    # Get maximum sequence length
+    max_sequence_len = max([x.shape[0] for x in prediction_sets.values()])
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Initialize data array
-    data_xy = np.full((n_time, 4), fill_value=None)
+    # Initialize data array and data labels
+    data_xy = np.full((max_sequence_len, 2*n_processes), fill_value=None)
     data_labels = []
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Build data array
+    # Loop over prediction processes
+    for i, (key, val) in enumerate(prediction_sets.items()):
+        # Get prediction process sequence length
+        n_time = val.shape[0]
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Assemble prediction process data
+        data_xy[:n_time, 2*i] = val[:, 0]
+        data_xy[:n_time, 2*i + 1] = val[:, 1]
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Assebmle prediction process label
+        data_labels.append(key)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Normalize prediction data
     if is_normalize_data:
-        # Get minimum and maximum values
-        min_val = np.min(time_series_data_array[:, 1:])
-        max_val = np.max(time_series_data_array[:, 1:])
-        range_val = max_val - min_val
-        # Set normalized data array
-        data_xy[:, 0] = np.linspace(0, 1.0, num=n_time)
-        data_xy[:, 1] = (time_series_data_array[:, 1] - min_val)/range_val
-        data_xy[:, 2] = np.linspace(0, 1.0, num=n_time)
-        data_xy[:, 3] = (time_series_data_array[:, 2] - min_val)/range_val
-    else:
-        data_xy[:, 0] = time_series_data_array[:, 0]
-        data_xy[:, 1] = time_series_data_array[:, 1]
-        data_xy[:, 2] = time_series_data_array[:, 0]
-        data_xy[:, 3] = time_series_data_array[:, 2]
+        # Get minimum and maximum prediction values
+        min_pred = np.min(data_xy[:, 1::2])
+        max_pred = np.max(data_xy[:, 1::2])
+        # Normalize data array
+        for i in range(n_processes):
+            # Get prediction process sequence length
+            n_time = val.shape[0]
+            # Normalize time
+            data_xy[:n_time, 2*i] = np.linspace(0, 1.0, num=n_time)
+            # Normalize predictions
+            data_xy[:n_time, 2*i+1] = \
+                (data_xy[:, 2*i+1] - min_pred)/(max_pred - min_pred)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Set data labels
-    data_labels = ['Ground-truth', 'Prediction']
-    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Set axes limits and scale
+    # Set axes limits
     if is_normalize_data:
         x_lims = (0, 1)
         y_lims = (0, 1)
@@ -106,7 +120,7 @@ def plot_time_series_prediction(time_series_data_array,
         x_label += ' (Normalized)'
         y_label += ' (Normalized)'
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Plot time series ground-truth and prediction
+    # Plot time series predictions
     figure, _ = plot_xy_data(data_xy, data_labels=data_labels, x_lims=x_lims,
                              y_lims=y_lims, x_label=x_label, y_label=y_label,
                              is_latex=is_latex)

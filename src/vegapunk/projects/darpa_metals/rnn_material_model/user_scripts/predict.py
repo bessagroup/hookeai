@@ -180,7 +180,12 @@ def generate_prediction_plots(dataset_file_path, predict_subdir):
         # Loop over times series predictions components
         for i, data_dict in enumerate(prediction_data_dicts):
             # Loop over samples (time series paths)
-            for sample_id, data_array in data_dict.items():
+            for sample_id, prediction_array in data_dict.items():
+                # Set prediction processes data
+                prediction_sets = {}
+                prediction_sets['Ground-truth'] = prediction_array[:, [0, 1]]
+                prediction_sets['Prediction'] = prediction_array[:, [0, 2]]
+                # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                 # Get prediction plot file name
                 filename = prediction_comps[i] + f'_path_sample_{sample_id}'
                 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -192,7 +197,7 @@ def generate_prediction_plots(dataset_file_path, predict_subdir):
                 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                 # Plot model times series predictions against ground-truth
                 plot_time_series_prediction(
-                    data_array, is_normalize_data=False,
+                    prediction_sets, is_normalize_data=False,
                     x_label='Time', y_label=y_label,
                     filename=filename,
                     save_dir=plot_dir,is_save_fig=True,
