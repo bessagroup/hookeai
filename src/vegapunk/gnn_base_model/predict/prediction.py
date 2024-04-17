@@ -482,7 +482,7 @@ def write_prediction_summary_file(
     summary_data['Prediction data set file'] = \
         dataset_file_path if dataset_file_path else None
     summary_data['Prediction data set size'] = len(dataset)
-    summary_data['Avg. prediction loss per sample: '] = \
+    summary_data['Avg. prediction loss per sample'] = \
         f'{avg_predict_loss:.8e}' if avg_predict_loss else None
     summary_data['Total prediction time'] = \
         str(datetime.timedelta(seconds=int(total_time_sec)))

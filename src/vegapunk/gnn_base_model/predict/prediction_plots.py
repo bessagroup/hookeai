@@ -127,17 +127,12 @@ def plot_truth_vs_prediction(prediction_sets, error_bound=None,
         x_label += ' (Normalized)'
         y_label += ' (Normalized)'
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Set title
-    title = 'Prediction vs Ground-truth'
-    if is_normalize_data:
-        title += ' (Normalized)'
-    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Plot ground-truth versus predictions
     figure, _ = scatter_xy_data(
         data_xy, data_labels=data_labels, is_identity_line=is_identity_line,
         identity_error=identity_error, is_r2_coefficient=is_r2_coefficient,
         is_direct_loss_estimator=is_direct_loss_estimator,
-        x_lims=x_lims, y_lims=y_lims, title=title,
+        x_lims=x_lims, y_lims=y_lims,
         x_label=x_label, y_label=y_label, is_latex=is_latex)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Display figure

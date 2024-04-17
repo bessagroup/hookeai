@@ -4,6 +4,8 @@ Functions
 ---------
 build_prediction_data_arrays
     Build samples predictions data arrays with predictions and ground-truth.
+build_time_series_predictions_data
+    Build times series prediction and ground-truth data arrays.
 """
 #
 #                                                                       Modules
@@ -188,12 +190,13 @@ def build_time_series_predictions_data(dataset_file_path, predictions_dir,
     Returns
     -------
     prediction_data_dicts : list[dict]
-        Prediction components data arrays. Each prediction component is stored
-        as a dictionary, where the data array (item, np.ndarray(2d)) of each
-        sample (key, str) is stored as a numpy.ndarray(2d) of shape
-        (n_nodes, 3), where data_array[i, 0] stores the time series discrete
-        time, data_array[i, 0] stores the time series ground-truth and
-        data_array[i, 1] stores the time series prediction prediction.
+        Prediction components data arrays for each sample. Each prediction
+        component is stored as a dictionary, where the data array
+        (item, np.ndarray(2d)) of each sample (key, str) is stored as a
+        numpy.ndarray(2d) of shape (sequence_length, 3), where data_array[:, 0]
+        stores the time series discrete time, data_array[:, 1] stores the time
+        series ground-truth and data_array[:, 2] stores the time series
+        prediction.
     """
     # Load testing data set
     test_dataset = load_dataset(dataset_file_path)
@@ -314,4 +317,4 @@ def build_time_series_predictions_data(dataset_file_path, predictions_dir,
             # Assemble prediction component sample data
             prediction_data_dicts[i][sample_id] = data_array
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    return prediction_data_dicts
+    return prediction_data_dicts        
