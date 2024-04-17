@@ -104,7 +104,7 @@ def perform_model_standard_training(train_dataset_file_path, model_directory,
     # Set number of epochs
     n_max_epochs = 200
     # Set batch size
-    batch_size = 64
+    batch_size = 32
     # Set learning rate
     lr_init = 1.0e-03
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
