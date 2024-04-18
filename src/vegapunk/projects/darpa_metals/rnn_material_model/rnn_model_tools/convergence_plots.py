@@ -118,7 +118,7 @@ def plot_prediction_loss_convergence(training_dirs, predictions_dirs,
         data_xy[i, 1] = avg_predict_losses[i]
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set axes limits and scale
-    x_lims = (0, None)
+    x_lims = (None, None)
     y_lims = (None, None)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set axes labels
@@ -128,7 +128,7 @@ def plot_prediction_loss_convergence(training_dirs, predictions_dirs,
     # Plot ground-truth versus predictions
     figure, _ = scatter_xy_data(
         data_xy, x_lims=x_lims, y_lims=y_lims, x_label=x_label,
-        y_label=y_label, y_scale='log', is_latex=is_latex)
+        y_label=y_label, x_scale='log', y_scale='log', is_latex=is_latex)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Save figure
     if is_save_fig:
@@ -309,9 +309,9 @@ def plot_time_series_convergence(training_dirs, testing_dirs,
                     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                     # Plot model times series predictions
                     plot_time_series_prediction(
-                        prediction_sets,
-                        is_normalize_data=False,
+                        prediction_sets, is_reference_data=True,
                         x_label='Time', y_label=y_label,
+                        is_normalize_data=False,
                         filename=(filename + f'_{prediction_comp}'
                                   + f'_path_sample_{sample_id}'),
                         save_dir=save_dir, is_save_fig=is_save_fig,

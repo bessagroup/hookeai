@@ -44,11 +44,11 @@ __author__ = 'Bernardo Ferreira (bernardo_ferreira@brown.edu)'
 __credits__ = ['Bernardo Ferreira', ]
 __status__ = 'Planning'
 # =============================================================================
-def plot_xy_data(data_xy, data_labels=None, x_lims=(None, None),
-                 y_lims=(None, None), title=None, x_label=None, y_label=None,
-                 x_scale='linear', y_scale='linear', x_tick_format=None,
-                 y_tick_format=None, marker=None, markersize=None,
-                 is_latex=False):
+def plot_xy_data(data_xy, data_labels=None, is_reference_data=False,
+                 x_lims=(None, None), y_lims=(None, None), title=None,
+                 x_label=None, y_label=None, x_scale='linear',
+                 y_scale='linear', x_tick_format=None, y_tick_format=None,
+                 marker=None, markersize=None, is_latex=False):
     """Plot data in xy axes.
 
     Parameters
@@ -59,6 +59,9 @@ def plot_xy_data(data_xy, data_labels=None, x_lims=(None, None),
     data_labels : list, default=None
         Labels of data sets (x_i, y_i) provided in data_xy and sorted
         accordingly. If None, then no labels are displayed.
+    is_reference_data : bool, default=False
+        If True, then the first data set is assumed to be the reference and is
+        formatted independently (black, dashed, on top).
     x_lims : tuple, default=(None, None)
         x-axis limits in data coordinates.
     y_lims : tuple, default=(None, None)
@@ -119,7 +122,9 @@ def plot_xy_data(data_xy, data_labels=None, x_lims=(None, None),
     # Set default color cycle
     cycler_color = cycler.cycler('color',['#4477AA', '#EE6677', '#228833',
                                           '#CCBB44', '#66CCEE', '#AA3377',
-                                          '#BBBBBB', '#000000'])
+                                          '#BBBBBB', '#EE7733', '#009988',
+                                          '#CC3311', '#DDAA33', '#999933',
+                                          '#DDCC77', '#882255'])
     # Set default linestyle cycle
     cycler_linestyle = cycler.cycler('linestyle',['-','--','-.'])
     # Set default cycler
@@ -187,7 +192,14 @@ def plot_xy_data(data_xy, data_labels=None, x_lims=(None, None),
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Loop over data sets
     for i in range(n_datasets):
-        # Plot dataset
+        # Plot reference data set
+        if is_reference_data and i == 0:
+            axes.plot(data_xy[:, 2*i], data_xy[:, 2*i + 1],
+                      label=tex_str(data_labels[i], is_latex),
+                      marker=marker, markersize=markersize,
+                      color='k', linestyle='--', zorder=20)
+            continue
+        # Plot data set
         axes.plot(data_xy[:, 2*i], data_xy[:, 2*i + 1],
                   label=tex_str(data_labels[i], is_latex),
                   marker=marker, markersize=markersize)
@@ -202,9 +214,10 @@ def plot_xy_data(data_xy, data_labels=None, x_lims=(None, None),
             loc = 'upper left'
             ncols = 1
         # Plot legend
-        axes.legend(loc=loc, ncols=ncols, frameon=True, fancybox=True,
-                    facecolor='inherit', edgecolor='inherit', fontsize=10,
-                    framealpha=1.0)
+        legend = axes.legend(loc=loc, ncols=ncols, frameon=True, fancybox=True,
+                             facecolor='inherit', edgecolor='inherit',
+                             fontsize=8, framealpha=1.0)
+        legend.set_zorder(50)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set axes limits
     if x_lims != (None, None):
@@ -481,7 +494,9 @@ def plot_xny_data(data_xy_list, range_type='min-max', data_labels=None,
     # Set default color cycle
     cycler_color = cycler.cycler('color',['#4477AA', '#EE6677', '#228833',
                                           '#CCBB44', '#66CCEE', '#AA3377',
-                                          '#BBBBBB'])
+                                          '#BBBBBB', '#EE7733', '#009988',
+                                          '#CC3311', '#DDAA33', '#999933',
+                                          '#DDCC77', '#882255'])
     # Set default linestyle cycle
     cycler_linestyle = cycler.cycler('linestyle',['-','--','-.'])
     # Set default cycler
@@ -574,8 +589,16 @@ def plot_xny_data(data_xy_list, range_type='min-max', data_labels=None,
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set legend
     if not all([x is None for x in data_labels]):
-        axes.legend(loc='upper left', frameon=True, fancybox=True,
-                    facecolor='inherit', edgecolor='inherit', fontsize=10,
+        # Set legend position and number of columns
+        if len(data_labels) > 2:
+            loc = 'upper center'
+            ncols = 2
+        else:
+            loc = 'upper left'
+            ncols = 1
+        # Plot legend
+        axes.legend(loc=loc, ncols=ncols, frameon=True, fancybox=True,
+                    facecolor='inherit', edgecolor='inherit', fontsize=8,
                     framealpha=1.0)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set axes limits
@@ -676,9 +699,11 @@ def plot_xyz_data(data_xyz, data_labels=None, x_lims=(None, None),
         data_labels = n_datasets*[None,]
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set default color cycle
-    cycler_color = cycler.cycler('color', ['#4477AA', '#EE6677', '#228833',
-                                           '#CCBB44', '#66CCEE', '#AA3377',
-                                           '#BBBBBB'])
+    cycler_color = cycler.cycler('color',['#4477AA', '#EE6677', '#228833',
+                                          '#CCBB44', '#66CCEE', '#AA3377',
+                                          '#BBBBBB', '#EE7733', '#009988',
+                                          '#CC3311', '#DDAA33', '#999933',
+                                          '#DDCC77', '#882255'])
     # Set default linestyle cycle
     cycler_linestyle = cycler.cycler('linestyle',['-','--','-.'])
     # Set default cycler
@@ -758,8 +783,16 @@ def plot_xyz_data(data_xyz, data_labels=None, x_lims=(None, None),
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set legend
     if not all([x is None for x in data_labels]):
-        axes.legend(loc='upper left', frameon=True, fancybox=True,
-                    facecolor='inherit', edgecolor='inherit', fontsize=10,
+        # Set legend position and number of columns
+        if len(data_labels) > 2:
+            loc = 'upper center'
+            ncols = 2
+        else:
+            loc = 'upper left'
+            ncols = 1
+        # Plot legend
+        axes.legend(loc=loc, ncols=ncols, frameon=True, fancybox=True,
+                    facecolor='inherit', edgecolor='inherit', fontsize=8,
                     framealpha=1.0)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set axes limits
@@ -862,7 +895,9 @@ def scatter_xy_data(data_xy, data_labels=None, is_identity_line=False,
     # Set default color cycle
     cycler_color = cycler.cycler('color',['#4477AA', '#EE6677', '#228833',
                                           '#CCBB44', '#66CCEE', '#AA3377',
-                                          '#BBBBBB'])
+                                          '#BBBBBB', '#EE7733', '#009988',
+                                          '#CC3311', '#DDAA33', '#999933',
+                                          '#DDCC77', '#882255'])
     # Set default linestyle cycle
     cycler_linestyle = cycler.cycler('linestyle',['-','--','-.'])
     # Set default cycler
@@ -1055,8 +1090,16 @@ def scatter_xy_data(data_xy, data_labels=None, is_identity_line=False,
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set legend
     if not all([x is None for x in data_labels]) or identity_error is not None:
-        axes.legend(loc='upper left', frameon=True, fancybox=True,
-                    facecolor='inherit', edgecolor='inherit', fontsize=10,
+        # Set legend position and number of columns
+        if len(data_labels) > 2:
+            loc = 'upper left'
+            ncols = 2
+        else:
+            loc = 'upper left'
+            ncols = 1
+        # Plot legend
+        axes.legend(loc=loc, ncols=ncols, frameon=True, fancybox=True,
+                    facecolor='inherit', edgecolor='inherit', fontsize=8,
                     framealpha=1.0).set_zorder(30)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Return figure and axes handlers
@@ -1129,7 +1172,9 @@ def grouped_bar_chart(groups_labels, groups_data, bar_width=None,
     # Set default color cycle
     cycler_color = cycler.cycler('color',['#4477AA', '#EE6677', '#228833',
                                           '#CCBB44', '#66CCEE', '#AA3377',
-                                          '#BBBBBB'])
+                                          '#BBBBBB', '#EE7733', '#009988',
+                                          '#CC3311', '#DDAA33', '#999933',
+                                          '#DDCC77', '#882255'])
     # Set default linestyle cycle
     cycler_linestyle = cycler.cycler('linestyle',['-','--','-.'])
     # Set default cycler
@@ -1215,7 +1260,7 @@ def grouped_bar_chart(groups_labels, groups_data, bar_width=None,
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set legend
     axes.legend(loc='best', frameon=True, fancybox=True,
-                facecolor='inherit', edgecolor='inherit', fontsize=10,
+                facecolor='inherit', edgecolor='inherit', fontsize=8,
                 framealpha=1.0)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Return figure and axes handlers
@@ -1279,7 +1324,9 @@ def plot_boxplots(data_boxplots, data_labels=None, is_mean_line=False,
     # Set default color cycle
     cycler_color = cycler.cycler('color',['#4477AA', '#EE6677', '#228833',
                                           '#CCBB44', '#66CCEE', '#AA3377',
-                                          '#BBBBBB'])
+                                          '#BBBBBB', '#EE7733', '#009988',
+                                          '#CC3311', '#DDAA33', '#999933',
+                                          '#DDCC77', '#882255'])
     # Set default linestyle cycle
     cycler_linestyle = cycler.cycler('linestyle',['-','--','-.'])
     # Set default cycler
@@ -1459,7 +1506,9 @@ def plot_histogram(data, data_labels=None, bins=None, bins_range=None,
     # Set default color cycle
     cycler_color = cycler.cycler('color',['#4477AA', '#EE6677', '#228833',
                                           '#CCBB44', '#66CCEE', '#AA3377',
-                                          '#BBBBBB'])
+                                          '#BBBBBB', '#EE7733', '#009988',
+                                          '#CC3311', '#DDAA33', '#999933',
+                                          '#DDCC77', '#882255'])
     # Set default cycler
     default_cycler = cycler_color
     plt.rc('axes', prop_cycle = cycler_color)
@@ -1529,8 +1578,16 @@ def plot_histogram(data, data_labels=None, bins=None, bins_range=None,
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set legend
     if not all([x is None for x in data_labels]):
-        axes.legend(loc='upper left', frameon=True, fancybox=True,
-                    facecolor='inherit', edgecolor='inherit', fontsize=10,
+        # Set legend position and number of columns
+        if len(data_labels) > 2:
+            loc = 'upper center'
+            ncols = 2
+        else:
+            loc = 'upper left'
+            ncols = 1
+        # Plot legend
+        axes.legend(loc=loc, ncols=ncols, frameon=True, fancybox=True,
+                    facecolor='inherit', edgecolor='inherit', fontsize=8,
                     framealpha=1.0)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set axes limits
@@ -1607,7 +1664,9 @@ def plot_histogram_2d(data, bins=10, bins_range=None,
     # Set default color cycle
     cycler_color = cycler.cycler('color',['#4477AA', '#EE6677', '#228833',
                                           '#CCBB44', '#66CCEE', '#AA3377',
-                                          '#BBBBBB'])
+                                          '#BBBBBB', '#EE7733', '#009988',
+                                          '#CC3311', '#DDAA33', '#999933',
+                                          '#DDCC77', '#882255'])
     # Set default cycler
     default_cycler = cycler_color
     plt.rc('axes', prop_cycle = cycler_color)

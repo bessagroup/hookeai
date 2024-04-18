@@ -22,7 +22,7 @@ __status__ = 'Planning'
 # =============================================================================
 #
 # =============================================================================
-def plot_time_series_prediction(prediction_sets,
+def plot_time_series_prediction(prediction_sets, is_reference_data=False,
                                 x_label='Time', y_label='Value',
                                 is_normalize_data=False,
                                 filename='time_series_prediction',
@@ -37,6 +37,9 @@ def plot_time_series_prediction(prediction_sets,
         (key, str) is stored as a data array (item, numpy.ndarray(2d)) of shape
         (sequence_length, 2) as follows: data_array[:, 0] stores the time
         series time, data_array[:, 1] stores the time series prediction.
+    is_reference_data : bool, default=False
+        If True, then the first prediction process is assumed to be the
+        reference and is formatted independently (black, dashed, on top).
     x_label : str, default='Time'
         x-axis label.
     y_label : str, default='Value'
@@ -121,9 +124,10 @@ def plot_time_series_prediction(prediction_sets,
         y_label += ' (Normalized)'
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Plot time series predictions
-    figure, _ = plot_xy_data(data_xy, data_labels=data_labels, x_lims=x_lims,
-                             y_lims=y_lims, x_label=x_label, y_label=y_label,
-                             is_latex=is_latex)
+    figure, _ = plot_xy_data(data_xy, data_labels=data_labels,
+                             is_reference_data=is_reference_data,
+                             x_lims=x_lims, y_lims=y_lims, x_label=x_label,
+                             y_label=y_label, is_latex=is_latex)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Display figure
     if is_stdout_display:
