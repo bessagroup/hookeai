@@ -338,7 +338,9 @@ class DruckerPrager(ConstitutiveModel):
         trial_stress_mf = torch.matmul(e_consistent_tangent_mf,
                                        e_trial_strain_mf)
         # Compute trial pressure
-        trial_pressure = (1.0/3.0)*torch.trace(trial_stress_mf)
+        trial_pressure = \
+            (1.0/3.0)*torch.trace(get_tensor_from_mf(trial_stress_mf,
+                                                     n_dim, comp_order_sym))
         # Compute deviatoric trial stress
         dev_trial_stress_mf = torch.matmul(fodevprojsym_mf, trial_stress_mf)
         # Compute second invariant of deviatoric trial stress
@@ -354,7 +356,8 @@ class DruckerPrager(ConstitutiveModel):
                           - xi*trial_cohesion)
         # Check plastic consistency
         if torch.is_nonzero(torch.tensor([trial_cohesion])):
-            plastic_consistency = yield_function/torch.abs(trial_cohesion)
+            plastic_consistency = \
+                yield_function/torch.abs(torch.tensor([trial_cohesion]))
         else:
             plastic_consistency = yield_function
         # If the trial stress state lies inside the Druger-Prager yield
@@ -499,10 +502,10 @@ class DruckerPrager(ConstitutiveModel):
                 stress_mf = pressure*soid_mf
                 # Update accumulated plastic strain
                 acc_p_strain = acc_p_strain_old + alpha*inc_vol_p_strain
-        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        # Update elastic strain
-        e_strain_mf = \
-            (1.0/(3.0*K))*pressure*soid_mf + (1.0/(2.0*G))*dev_stress_mf
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Update elastic strain
+            e_strain_mf = \
+                (1.0/(3.0*K))*pressure*soid_mf + (1.0/(2.0*G))*dev_stress_mf
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Get the out-of-plane strain and stress components
         if self._problem_type == 1:
@@ -538,11 +541,6 @@ class DruckerPrager(ConstitutiveModel):
         if self._problem_type == 1:
             state_variables['e_strain_33'] = e_strain_33
             state_variables['stress_33'] = stress_33
-
-
-
-
-
         #
         #                                            Consistent tangent modulus
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -550,16 +548,29 @@ class DruckerPrager(ConstitutiveModel):
         # modulus is the elastic consistent tangent modulus. Otherwise, compute
         # the elastoplastic consistent tangent modulus
         if is_plast:
-            # Compute elastoplastic consistent tangent modulus
-            factor_1 = ((inc_p_mult*6.0*G**2)/vm_trial_stress)
-            factor_2 = (6.0*G**2)*((inc_p_mult/vm_trial_stress)
-                                   - (1.0/(3.0*G + H)))
-            unit_flow_vector = \
-                np.sqrt(2.0/3.0)*get_tensor_from_mf(flow_vector_mf, n_dim,
-                                                    comp_order_sym)
-            consistent_tangent = e_consistent_tangent \
-                - factor_1*fodevprojsym + factor_2*dyad22_1(
-                    unit_flow_vector, unit_flow_vector)
+            if is_apex_return:
+                # Compute elastoplastic consistent tangent modulus
+                # (cone surface)
+                consistent_tangent = \
+                    K*(1.0 - (K/(K + alpha*beta*H)))*dyad22_1(soid, soid)
+            else:
+                # Compute deviatoric elastic trial strain
+                dev_trial_e_strain = get_tensor_from_mf(
+                    torch.matmul(fodevprojsym_mf, e_trial_strain_mf),
+                    n_dim, comp_order_sym)
+                # Compute deviatoric elastic strain unit vector
+                trial_unit = dev_trial_e_strain/torch.norm(dev_trial_e_strain)
+                # Compute common scalar terms
+                s1 = inc_p_mult/(np.sqrt(2)*torch.norm(
+                    dev_trial_e_strain))
+                s2 = 1.0/(G + K*etay*etaf + H*xi**2)
+                # Compute elastoplastic consistent tangent modulus
+                # (cone apex)
+                consistent_tangent = 2.0*G*(1.0 - s1)*fodevprojsym \
+                    + 2.0*G*(s1 - G*s2)*dyad22_1(trial_unit, trial_unit) \
+                    - np.sqrt(2)*G*s2*K*(etay*dyad22_1(trial_unit, soid)
+                                         + etaf*dyad22_1(soid, trial_unit))\
+                    + K*(1.0 - K*etay*etaf*s2)*dyad22_1(soid, soid)
         else:
             consistent_tangent = e_consistent_tangent
         # Build consistent tangent modulus matricial form
@@ -575,5 +586,4 @@ class DruckerPrager(ConstitutiveModel):
                 self._problem_type, consistent_tangent_mf)
         #
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        # Return
         return state_variables, consistent_tangent_mf

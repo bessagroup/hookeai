@@ -45,6 +45,8 @@ from simulators.fetorch.math.matrixops import get_problem_type_parameters, \
 from simulators.fetorch.material.material_su import material_state_update
 from simulators.fetorch.material.models.standard.elastic import Elastic
 from simulators.fetorch.material.models.standard.von_mises import VonMises
+from simulators.fetorch.material.models.standard.drucker_prager import \
+    DruckerPrager
 from simulators.fetorch.material.models.standard.hardening import \
     get_hardening_law
 from ioput.iostandard import make_directory
@@ -195,6 +197,9 @@ class MaterialResponseDatasetGenerator():
                 self._strain_formulation, self._problem_type, model_parameters)
         elif model_name == 'von_mises':
             constitutive_model = VonMises(
+                self._strain_formulation, self._problem_type, model_parameters)
+        elif model_name == 'drucker_prager':
+            constitutive_model = DruckerPrager(
                 self._strain_formulation, self._problem_type, model_parameters)
         else:
             raise RuntimeError(f'Unknown material constitutive model '
@@ -1416,6 +1421,39 @@ if __name__ == '__main__':
                                  'a': 700,
                                  'b': 0.5,
                                  'ep0': 1e-5}}
+        # Set constitutive state variables to be additionally included in the
+        # data set
+        state_features = {'acc_p_strain': 1}
+    elif model_name == 'drucker_prager':
+        # Set frictional angle
+        friction_angle = np.deg2rad(10)
+        # Set dilatancy angle
+        dilatancy_angle = friction_angle
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Compute angle-related material parameters
+        # (matching with Mohr-Coulomb under uniaxial tension and compression)
+        # Set yield surface cohesion parameter
+        yield_cohesion_parameter = (2.0/np.sqrt(3))*np.cos(friction_angle)
+        # Set yield pressure parameter
+        yield_pressure_parameter = (3.0/np.sqrt(3))*np.sin(friction_angle)
+        # Set plastic flow pressure parameter
+        flow_pressure_parameter = (3.0/np.sqrt(3))*np.sin(dilatancy_angle)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set constitutive model parameters
+        # (matching Von Mises yield surface for null pressure)
+        model_parameters = \
+            {'elastic_symmetry': 'isotropic',
+             'E': 110e3, 'v': 0.33,
+             'euler_angles': (0.0, 0.0, 0.0),
+             'hardening_law': get_hardening_law('nadai_ludwik'),
+             'hardening_parameters':
+                 {'s0': 900/yield_cohesion_parameter,
+                  'a': 700/yield_cohesion_parameter,
+                  'b': 0.5,
+                  'ep0': 1e-5},
+             'yield_cohesion_parameter': yield_cohesion_parameter,
+             'yield_pressure_parameter': yield_pressure_parameter,
+             'flow_pressure_parameter': flow_pressure_parameter}
         # Set constitutive state variables to be additionally included in the
         # data set
         state_features = {'acc_p_strain': 1}

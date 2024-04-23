@@ -397,7 +397,7 @@ class VonMises(ConstitutiveModel):
             # Update elastic strain
             e_strain_mf = e_trial_strain_mf - inc_p_mult*flow_vector_mf
             # Update stress
-            stress_mf = np.matmul(e_consistent_tangent_mf, e_strain_mf)
+            stress_mf = torch.matmul(e_consistent_tangent_mf, e_strain_mf)
             # Update accumulated plastic strain
             acc_p_strain = acc_p_strain_old + inc_p_mult
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
