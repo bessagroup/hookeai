@@ -372,6 +372,7 @@ class MaterialResponseDatasetGenerator():
             for state_var in state_features.keys():
                 # Skip if state variable is not available
                 if state_var not in state_variables.keys():
+                    state_path.pop(state_var)
                     continue
                 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                 # Store state variable
@@ -1330,17 +1331,19 @@ def generate_dataset_plots(strain_formulation, n_dim, dataset,
         state_variable_label = 'Accumulated plastic strain'
         # Loop over strain-stress paths
         for path in data_loader:
+            # Check state variable
+            if state_variable_name not in path.keys():
+                continue
             # Collect state variable path data
             state_paths.append(np.array(path[state_variable_name][:, 0, :]))
         # Plot state variable paths data
-        MaterialResponseDatasetGenerator.plot_state_history(
-            strain_formulation, strain_comps_order, stress_comps_order,
-            state_variable_name, state_variable_label, state_paths, time_hists,
-            state_units='', filename='acc_p_strain_path',
-            save_dir=save_dir, is_save_fig=is_save_fig,
-            is_stdout_display=is_stdout_display, is_latex=True)
-
-
+        if state_paths:
+            MaterialResponseDatasetGenerator.plot_state_history(
+                strain_formulation, strain_comps_order, stress_comps_order,
+                state_variable_name, state_variable_label, state_paths,
+                time_hists, state_units='', filename='acc_p_strain_path',
+                save_dir=save_dir, is_save_fig=is_save_fig,
+                is_stdout_display=is_stdout_display, is_latex=True)
 # =============================================================================
 if __name__ == '__main__':
     # Set data set type
