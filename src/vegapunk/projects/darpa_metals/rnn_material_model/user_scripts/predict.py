@@ -25,6 +25,7 @@ import os
 import pickle
 # Third-party
 import torch
+import numpy as np
 # Local
 from rnn_base_model.data.time_dataset import load_dataset, \
     concatenate_dataset_features, add_dataset_feature_init
@@ -176,7 +177,7 @@ def generate_prediction_plots(dataset_file_path, predict_subdir):
         # Build times series predictions data arrays
         prediction_data_dicts = build_time_series_predictions_data(
             dataset_file_path, predict_subdir, prediction_type=prediction_type,
-            samples_ids='all')
+            samples_ids=list(np.arange(5, dtype=int)))
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~   
         # Loop over times series predictions components
         for i, data_dict in enumerate(prediction_data_dicts):
