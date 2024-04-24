@@ -1347,15 +1347,15 @@ def generate_dataset_plots(strain_formulation, n_dim, dataset,
 # =============================================================================
 if __name__ == '__main__':
     # Set data set type
-    dataset_type = ('training', 'validation', 'testing_id', 'testing_od')[0]
+    dataset_type = ('training', 'validation', 'testing_id', 'testing_od')[1]
     # Set save dataset plots flags
     is_save_dataset_plots = True
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set case studies base directory
     base_dir = ('/home/bernardoferreira/Documents/brown/projects/'
-                'darpa_project/2_local_rnn_training/von_mises/')
+                'darpa_project/3_local_rc_training/elastic/')
     # Set case study directory
-    case_study_name = 'j2_random_paths'
+    case_study_name = 'elastic_proportional_paths'
     case_study_dir = os.path.join(os.path.normpath(base_dir),
                                   f'{case_study_name}')
     # Set data set file basename
@@ -1411,8 +1411,8 @@ if __name__ == '__main__':
     is_cyclic_loading = False
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set constitutive model
-    model_name = 'von_mises'
-    # Set constitutive model parameters
+    model_name = 'elastic'
+    # Set constitutive model parameters:
     if model_name == 'von_mises':
         # Set constitutive model parameters
         model_parameters = {'elastic_symmetry': 'isotropic',
@@ -1469,7 +1469,7 @@ if __name__ == '__main__':
         state_features = {}
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set number of strain-stress paths of each type
-    n_path_type = {'proportional': 0, 'random': 5}
+    n_path_type = {'proportional': 100, 'random': 0}
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set strain path generators parameters
     strain_path_kwargs_type = {}
