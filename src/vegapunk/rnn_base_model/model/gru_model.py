@@ -260,8 +260,8 @@ class GRURNNModel(torch.nn.Module):
     def get_device(self):
         """Get device on which torch.Tensor is allocated.
         
-        Parameters
-        ----------
+        Returns
+        -------
         device_type : {'cpu', 'cuda'}
             Type of device on which torch.Tensor is allocated.
         device : torch.device
