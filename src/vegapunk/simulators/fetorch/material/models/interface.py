@@ -13,6 +13,8 @@ ConstitutiveModel
 # Standard
 from abc import ABC, abstractmethod
 import copy
+# Third-party
+import torch
 #
 #                                                          Authorship & Credits
 # =============================================================================
@@ -36,6 +38,10 @@ class ConstitutiveModel(ABC):
         ('finite-kinext').
     _model_parameters : dict
         Material constitutive model parameters.
+    _device_type : {'cpu', 'cuda'}
+        Type of device on which torch.Tensor is allocated.
+    _device : torch.device
+        Device on which torch.Tensor is allocated.
 
     Methods
     -------
@@ -53,7 +59,8 @@ class ConstitutiveModel(ABC):
         Get material constitutive model parameters.
     """
     @abstractmethod
-    def __init__(self, strain_formulation, problem_type, model_parameters):
+    def __init__(self, strain_formulation, problem_type, model_parameters,
+                 device_type='cpu'):
         """Constructor.
 
         Parameters
@@ -65,6 +72,8 @@ class ConstitutiveModel(ABC):
             2D axisymmetric (3) and 3D (4).
         model_parameters : dict
             Material constitutive model parameters.
+        device_type : {'cpu', 'cuda'}, default='cpu'
+            Type of device on which torch.Tensor is allocated.
         """
         pass
     # -------------------------------------------------------------------------
@@ -144,3 +153,35 @@ class ConstitutiveModel(ABC):
             Material constitutive model parameters.
         """
         return copy.deepcopy(self._model_parameters)
+    # -------------------------------------------------------------------------
+    def set_device(self, device_type):
+        """Set device on which torch.Tensor is allocated.
+        
+        Parameters
+        ----------
+        device_type : {'cpu', 'cuda'}
+            Type of device on which torch.Tensor is allocated.
+        device : torch.device
+            Device on which torch.Tensor is allocated.
+        """
+        if device_type in ('cpu', 'cuda'):
+            if device_type == 'cuda' and not torch.cuda.is_available():
+                raise RuntimeError('PyTorch with CUDA is not available. '
+                                   'Please set the model device type as CPU '
+                                   'as:\n\n' + 'model.set_device(\'cpu\').')
+            self._device_type = device_type
+            self._device = torch.device(device_type)
+        else:
+            raise RuntimeError('Invalid device type.')
+    # -------------------------------------------------------------------------
+    def get_device(self):
+        """Get device on which torch.Tensor is allocated.
+        
+        Returns
+        -------
+        device_type : {'cpu', 'cuda'}
+            Type of device on which torch.Tensor is allocated.
+        device : torch.device
+            Device on which torch.Tensor is allocated.
+        """
+        return self.device_type, self.device

@@ -58,6 +58,10 @@ class Elastic(ConstitutiveModel):
         Strain/Stress components symmetric order.
     _comp_order_nsym : tuple[str]
         Strain/Stress components nonsymmetric order.
+    _device_type : {'cpu', 'cuda'}
+        Type of device on which torch.Tensor is allocated.
+    _device : torch.device
+        Device on which torch.Tensor is allocated.
 
     Methods
     -------
@@ -74,7 +78,8 @@ class Elastic(ConstitutiveModel):
     get_technical_from_elastic_moduli(elastic_symmetry, elastic_properties)
         Get technical constants of elasticity from elastic moduli.
     """
-    def __init__(self, strain_formulation, problem_type, model_parameters):
+    def __init__(self, strain_formulation, problem_type, model_parameters,
+                 device_type='cpu'):
         """Constructor.
 
         Parameters
@@ -86,6 +91,8 @@ class Elastic(ConstitutiveModel):
             2D axisymmetric (3) and 3D (4).
         model_parameters : dict
             Material constitutive model parameters.
+        device_type : {'cpu', 'cuda'}, default='cpu'
+            Type of device on which torch.Tensor is allocated.
         """
         # Set material constitutive model name
         self._name = 'elastic'
@@ -96,6 +103,9 @@ class Elastic(ConstitutiveModel):
         self._strain_formulation = strain_formulation
         self._problem_type = problem_type
         self._model_parameters = model_parameters
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set device
+        self.set_device(device_type)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Get problem type parameters
         self._n_dim, self._comp_order_sym, self._comp_order_nsym = \
@@ -196,20 +206,23 @@ class Elastic(ConstitutiveModel):
         state_variables_init = dict()
         # Initialize strain tensors
         state_variables_init['e_strain_mf'] = get_tensor_mf(
-            torch.zeros((self._n_dim, self._n_dim), dtype=torch.float),
-                        self._n_dim, self._comp_order_sym)
+            torch.zeros((self._n_dim, self._n_dim),
+                        dtype=torch.float, device=self._device),
+            self._n_dim, self._comp_order_sym)
         state_variables_init['strain_mf'] = \
             state_variables_init['e_strain_mf'].clone()
         # Initialize stress tensors
         if self._strain_formulation == 'infinitesimal':
             # Cauchy stress tensor (symmetric)
             state_variables_init['stress_mf'] = get_tensor_mf(
-                torch.zeros((self._n_dim, self._n_dim), dtype=torch.float),
+                torch.zeros((self._n_dim, self._n_dim),
+                            dtype=torch.float, device=self._device),
                             self._n_dim, self._comp_order_sym)
         else:
             # First Piola-Kirchhoff stress tensor (nonsymmetric)
             state_variables_init['stress_mf'] = get_tensor_mf(
-                torch.zeros((self._n_dim, self._n_dim)),
+                torch.zeros((self._n_dim, self._n_dim),
+                            dtype=torch.float, device=self._device),
                             self._n_dim, self._comp_order_nsym)
         # Initialize state flags
         state_variables_init['is_plast'] = False
@@ -251,7 +264,8 @@ class Elastic(ConstitutiveModel):
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Build incremental strain tensor matricial form
         inc_strain_mf = get_tensor_mf(inc_strain, self._n_dim,
-                                      self._comp_order_sym)
+                                      self._comp_order_sym,
+                                      device=self._device)
         #
         #                                                    2D > 3D conversion
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -266,16 +280,19 @@ class Elastic(ConstitutiveModel):
             # Build strain tensors (matricial form) by including the
             # appropriate out-of-plain components
             inc_strain_mf = get_state_3Dmf_from_2Dmf(
-                self._problem_type, inc_strain_mf, comp_33=0.0)
+                self._problem_type, inc_strain_mf, comp_33=0.0,
+                device=self._device)
             e_strain_old_mf = get_state_3Dmf_from_2Dmf(
-                self._problem_type, e_strain_old_mf, e_strain_33_old)
+                self._problem_type, e_strain_old_mf, e_strain_33_old,
+                self._device)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Update elastic strain
         e_strain_mf = e_strain_old_mf + inc_strain_mf
         # Compute 3D elasticity tensor (matricial form)
         consistent_tangent_mf = Elastic.elastic_tangent_modulus(
             self._model_parameters,
-            elastic_symmetry=self._model_parameters['elastic_symmetry'])
+            elastic_symmetry=self._model_parameters['elastic_symmetry'],
+            device=self._device)
         # Update stress
         stress_mf = torch.matmul(consistent_tangent_mf, e_strain_mf)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -292,16 +309,17 @@ class Elastic(ConstitutiveModel):
         if self._problem_type == 1:
             # Builds 2D strain and stress tensors (matricial form) from the
             # associated 3D counterparts
-            e_strain_mf = \
-                get_state_2Dmf_from_3Dmf(self._problem_type, e_strain_mf)
-            stress_mf = get_state_2Dmf_from_3Dmf(self._problem_type, stress_mf)
+            e_strain_mf = get_state_2Dmf_from_3Dmf(
+                self._problem_type, e_strain_mf, device=self._device)
+            stress_mf = get_state_2Dmf_from_3Dmf(
+                self._problem_type, stress_mf, device=self._device)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # When the problem type corresponds to a 2D analysis, build the
         # 2D consistent tangent modulus (matricial form) from the
         # 3D counterpart
         if self._problem_type == 1:
             consistent_tangent_mf = get_state_2Dmf_from_3Dmf(
-                self._problem_type, consistent_tangent_mf)
+                self._problem_type, consistent_tangent_mf, device=self._device)
         #
         #                                                Update state variables
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -347,7 +365,8 @@ class Elastic(ConstitutiveModel):
     # -------------------------------------------------------------------------
     @staticmethod
     def elastic_tangent_modulus(elastic_properties,
-                                elastic_symmetry='isotropic'):
+                                elastic_symmetry='isotropic',
+                                device=None):
         """Compute 3D elasticity tensor under general anisotropic elasticity.
 
         Parameters
@@ -371,6 +390,9 @@ class Elastic(ConstitutiveModel):
             * 'transverse_isotropic': assumes axis of symmetry 3
 
             * 'isotropic': assumes complete symmetry.
+            
+        device : torch.device, default=None
+            Device on which torch.Tensor is allocated.
 
         Returns
         -------
@@ -470,7 +492,8 @@ class Elastic(ConstitutiveModel):
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Initialize elasticity tensor
         elastic_tangent_mf = \
-            torch.zeros(2*(len(comp_order_sym),), dtype=torch.float)
+            torch.zeros(2*(len(comp_order_sym),), dtype=torch.float,
+                        device=device)
         # Build elasticity tensor according with elastic symmetry
         for modulus in all_moduli.keys():
             # Get elastic modulus second-order indexes and associated kelvin
