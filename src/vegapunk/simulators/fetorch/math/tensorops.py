@@ -125,13 +125,15 @@ def dd(i, j):
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     return value
 # =============================================================================
-def get_id_operators(n_dim):
+def get_id_operators(n_dim, device=None):
     """Set common second- and fourth-order identity operators.
 
     Parameters
     ----------
     n_dim : int
         Number of dimensions.
+    device : torch.device, default=None
+        Device on which torch.Tensor is allocated.
 
     Returns
     -------
@@ -183,10 +185,12 @@ def get_id_operators(n_dim):
                       - \\dfrac{1}{3} \\delta_{ij}\\delta_{kl}
     """
     # Set second-order identity tensor
-    soid = torch.eye(n_dim, dtype=torch.float)
+    soid = torch.eye(n_dim, dtype=torch.float, device=device)
     # Set fourth-order identity tensor and fourth-order transposition tensor
-    foid = torch.zeros((n_dim, n_dim, n_dim, n_dim), dtype=torch.float)
-    fotransp = torch.zeros((n_dim, n_dim, n_dim, n_dim), dtype=torch.float)
+    foid = torch.zeros((n_dim, n_dim, n_dim, n_dim),
+                       dtype=torch.float, device=device)
+    fotransp = torch.zeros((n_dim, n_dim, n_dim, n_dim),
+                           dtype=torch.float, device=device)
     for i in range(n_dim):
         for j in range(n_dim):
             foid[i, j, i, j] = 1.0
