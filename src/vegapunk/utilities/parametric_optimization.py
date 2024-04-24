@@ -17,23 +17,73 @@ for i in range(dataset_size):
     target = ground_truth(input)
     dataset.append((input, target))
 # =============================================================================
-# Set model
-class Model:
+# Set standard parametric model
+class StandardParametricModel:
     def __init__(self):
         self.a = torch.zeros(1, requires_grad=True)
         self.b = torch.zeros(1, requires_grad=True)
         self.parameters = (self.a, self.b)
+    # -------------------------------------------------------------------------
     def forward(self, input):
         output = self.a*input + self.b
         return output
+    # -------------------------------------------------------------------------
+    def get_model_parameters_str(self):
+        model_parameters_str = f'({float(self.a)}, {float(self.b)})'
+        return model_parameters_str
 # =============================================================================
+# Set PyTorch model
+class PyTorchModel(torch.nn.Module):
+    def __init__(self):
+        super(PyTorchModel, self).__init__()
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        self._parameter_option = 'saved_as_attr'
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        if self._parameter_option == 'saved_as_attr':
+            self.a = torch.nn.Parameter(torch.zeros(1, requires_grad=True))
+            self.b = torch.nn.Parameter(torch.zeros(1, requires_grad=True))
+        elif self._parameter_option == 'saved_in_dict':
+            self._model_parameters = torch.nn.ParameterDict({})
+            self._model_parameters['a'] = \
+                torch.nn.Parameter(torch.zeros(1, requires_grad=True))
+            self._model_parameters['b'] = \
+                torch.nn.Parameter(torch.zeros(1, requires_grad=True))
+    # -------------------------------------------------------------------------
+    def forward(self, input):
+        if self._parameter_option == 'saved_as_attr':
+            output = self.a*input + self.b
+        elif self._parameter_option == 'saved_in_dict':
+            output = (self._model_parameters['a']*input
+                      + self._model_parameters['b'])
+        return output
+    # -------------------------------------------------------------------------
+    def get_model_parameters_str(self):
+        if self._parameter_option == 'saved_as_attr':
+            model_parameters = {'a': self.a, 'b': self.b}
+        elif self._parameter_option == 'saved_in_dict':
+            model_parameters = self._model_parameters
+        model_parameters_str = \
+            f'({float(model_parameters["a"])}, {float(model_parameters["b"])})'
+        return model_parameters_str
+# =============================================================================
+# Set model type
+model_type = 'standard_parametric'
 # Initialize model
-model = Model()
+if model_type == 'standard_parametric':
+    # Initialize model
+    model = StandardParametricModel()
+    # Get model parameters
+    model_parameters = model.parameters
+elif model_type == 'torch_module':
+    # Initialize model
+    model = PyTorchModel()
+    # Get model parameters
+    model_parameters = model.parameters(recurse=True)
 # =============================================================================
 # Set loss function
 loss_function = torch.nn.MSELoss()
 # Set optimizer
-optimizer = torch.optim.Adam(model.parameters, lr=1e-2)
+optimizer = torch.optim.Adam(model_parameters, lr=1e-2)
 # =============================================================================
 # Set number of epochs
 n_epochs = 100
@@ -47,7 +97,6 @@ for epoch in range(n_epochs):
         prediction = model.forward(input)
         # Compute loss
         loss = loss_function(prediction, target)
-        
         # Initialize gradients (set to zero)
         optimizer.zero_grad()
         # Compute gradients (backpropagation)
@@ -57,7 +106,7 @@ for epoch in range(n_epochs):
 # =============================================================================
 # Display results
 print(f'Ground-truth = ({2.0}, {1.0})')
-print(f'Optimization = ({model.a[0]}, {model.b[0]})')
+print(f'Optimization = ' + model.get_model_parameters_str())
 # =============================================================================
 # Collect training dataset inputs, targets and predictions
 inputs = [sample[0] for sample in dataset]
