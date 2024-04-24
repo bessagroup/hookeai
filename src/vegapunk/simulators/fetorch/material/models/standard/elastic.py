@@ -419,6 +419,8 @@ class Elastic(ConstitutiveModel):
                 elastic_properties['E1111'] = \
                     (E*(1.0 - v))/((1.0 + v)*(1.0 - 2.0*v))
                 elastic_properties['E1122'] = (E*v)/((1.0 + v)*(1.0 - 2.0*v))
+                # Save additional properties
+                additional_properties = ('E1111', 'E1122')
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Initialize independent elastic moduli
             ind_moduli = {str(modulus): 0.0 for modulus in
@@ -435,6 +437,10 @@ class Elastic(ConstitutiveModel):
                 else:
                     raise RuntimeError('Missing elastic moduli for '
                                        + elastic_symmetry + ' material.')
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Delete additional properties (preserve input data)
+            for property in additional_properties:
+                elastic_properties.pop(property)       
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Set all (non-symmetric) elastic moduli according to elastic symmetry
         all_moduli = {str(modulus): 0.0 for modulus in ind_moduli.keys()}
