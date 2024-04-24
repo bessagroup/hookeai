@@ -81,7 +81,7 @@ def get_problem_type_parameters(problem_type):
 #
 #                                        Tensorial - Matricial forms conversion
 # =============================================================================
-def get_tensor_mf(tensor, n_dim, comp_order):
+def get_tensor_mf(tensor, n_dim, comp_order, device=None):
     """Get tensor matricial form.
 
     Store a given second-order or fourth-order tensor in matricial form for a
@@ -106,12 +106,18 @@ def get_tensor_mf(tensor, n_dim, comp_order):
         Problem number of spatial dimensions.
     comp_order : tuple
         Strain/Stress components order associated to matricial form.
+    device : torch.device, default=None
+        Device on which torch.Tensor is allocated.
 
     Returns
     -------
     tensor_mf : torch.Tensor
         Matricial form of input tensor.
     """
+    # Get device from input tensor
+    if device is None:
+        device = tensor.device
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Get tensor order
     tensor_order = len(tensor.shape)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -152,9 +158,11 @@ def get_tensor_mf(tensor, n_dim, comp_order):
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Initialize tensor matricial form
         if tensor.dtype == torch.cfloat:
-            tensor_mf = torch.zeros(len(comp_order), dtype=torch.cfloat)
+            tensor_mf = torch.zeros(len(comp_order), dtype=torch.cfloat,
+                                    device=device)
         else:
-            tensor_mf = torch.zeros(len(comp_order), dtype=torch.float)
+            tensor_mf = torch.zeros(len(comp_order), dtype=torch.float,
+                                    device=device)
         # Store tensor in matricial form
         for i in range(len(mf_indexes)):
             mf_idx = mf_indexes[i]
@@ -179,10 +187,10 @@ def get_tensor_mf(tensor, n_dim, comp_order):
         # Initialize tensor matricial form
         if tensor.dtype == torch.cfloat:
             tensor_mf = torch.zeros((len(comp_order), len(comp_order)),
-                                    dtype=torch.cfloat)
+                                    dtype=torch.cfloat, device=device)
         else:
             tensor_mf = torch.zeros((len(comp_order), len(comp_order)),
-                                    dtype=torch.float)
+                                    dtype=torch.float, device=device)
         # Store tensor in matricial form
         for i in range(len(mf_indexes)):
             mf_idx = tuple(mf_indexes[i])
@@ -198,7 +206,7 @@ def get_tensor_mf(tensor, n_dim, comp_order):
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     return tensor_mf
 # =============================================================================
-def get_tensor_from_mf(tensor_mf, n_dim, comp_order):
+def get_tensor_from_mf(tensor_mf, n_dim, comp_order, device=None):
     """Recover tensor from associated matricial form.
 
     Recover a given second-order or fourth-order tensor from the associated
@@ -224,12 +232,18 @@ def get_tensor_from_mf(tensor_mf, n_dim, comp_order):
         Problem number of spatial dimensions.
     comp_order : tuple
         Strain/Stress components order associated to matricial form.
+    device : torch.device, default=None
+        Device on which torch.Tensor is allocated.
 
     Returns
     -------
     tensor : torch.Tensor
         Tensor recovered from matricial form.
     """
+    # Get device from input tensor
+    if device is None:
+        device = tensor_mf.device
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set tensor order
     if len(tensor_mf.shape) == 1:
         tensor_order = 2
@@ -282,9 +296,11 @@ def get_tensor_from_mf(tensor_mf, n_dim, comp_order):
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Initialize tensor
         if tensor_mf.dtype == torch.cfloat:
-            tensor = torch.zeros(tensor_order*(n_dim,), dtype=torch.cfloat)
+            tensor = torch.zeros(tensor_order*(n_dim,), dtype=torch.cfloat,
+                                 device=device)
         else:
-            tensor = torch.zeros(tensor_order*(n_dim,), dtype=torch.float)
+            tensor = torch.zeros(tensor_order*(n_dim,), dtype=torch.float,
+                                 device=device)
         # Get tensor from matricial form
         for i in range(len(mf_indexes)):
             mf_idx = mf_indexes[i]
@@ -309,9 +325,11 @@ def get_tensor_from_mf(tensor_mf, n_dim, comp_order):
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Initialize tensor
         if tensor_mf.dtype == torch.cfloat:
-            tensor = torch.zeros(tensor_order*(n_dim,), dtype=torch.cfloat)
+            tensor = torch.zeros(tensor_order*(n_dim,), dtype=torch.cfloat,
+                                 device=device)
         else:
-            tensor = torch.zeros(tensor_order*(n_dim,), dtype=torch.float)
+            tensor = torch.zeros(tensor_order*(n_dim,), dtype=torch.float,
+                                 device=device)
         # Get tensor from matricial form
         for i in range(len(mf_indexes)):
             mf_idx = tuple(mf_indexes[i])
@@ -397,7 +415,7 @@ def kelvin_factor(idx, comp_order):
 #
 #                              Strain/Stress 2D - 3D matricial form conversions
 # =============================================================================
-def get_state_3Dmf_from_2Dmf(problem_type, mf_2d, comp_33):
+def get_state_3Dmf_from_2Dmf(problem_type, mf_2d, comp_33, device=None):
     """Build 3D counterpart of 2D strain/stress second-order tensor.
 
     Parameters
@@ -409,12 +427,18 @@ def get_state_3Dmf_from_2Dmf(problem_type, mf_2d, comp_33):
         Matricial form of 2D strain/stress second-order tensor.
     comp_33 : float
         Out-of-plane strain/stress component.
+    device : torch.device, default=None
+        Device on which torch.Tensor is allocated.
 
     Returns
     -------
     mf_3d : torch.Tensor(1d)
         Matricial form of 3D strain/stress second-order tensor.
     """
+    # Get device from input tensor
+    if device is None:
+        device = mf_2d.device
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Get 2D strain/stress components order in symmetric and nonsymmetric cases
     _, comp_order_sym_2d, comp_order_nsym_2d = \
         get_problem_type_parameters(problem_type=1)
@@ -432,7 +456,7 @@ def get_state_3Dmf_from_2Dmf(problem_type, mf_2d, comp_33):
         comp_order_3d = comp_order_nsym_3d
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Build 3D strain/stress second-order tensor (matricial form)
-    mf_3d = torch.zeros(len(comp_order_3d), dtype=torch.float)
+    mf_3d = torch.zeros(len(comp_order_3d), dtype=torch.float, device=device)
     if problem_type in (3, 4):
         raise RuntimeError('Unavailable problem type.')
     else:
@@ -445,7 +469,7 @@ def get_state_3Dmf_from_2Dmf(problem_type, mf_2d, comp_33):
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     return mf_3d
 # =============================================================================
-def get_state_2Dmf_from_3Dmf(problem_type, mf_3d):
+def get_state_2Dmf_from_3Dmf(problem_type, mf_3d, device=None):
     """Build 2D counterpart of 3D strain/stress second- or fourth-order tensor.
 
     Parameters
@@ -455,6 +479,8 @@ def get_state_2Dmf_from_3Dmf(problem_type, mf_3d):
         2D axisymmetric (3) and 3D (4).
     mf_3d : numpy.ndarray (1d or 2d)
         Matricial form of 3D strain/stress related tensor.
+    device : torch.device, default=None
+        Device on which torch.Tensor is allocated.
 
     Returns
     -------
@@ -479,7 +505,7 @@ def get_state_2Dmf_from_3Dmf(problem_type, mf_3d):
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Build 2D strain/stress related tensor (matricial form)
     mf_2d = torch.zeros(len(mf_3d.shape)*(len(comp_order_2d),),
-                        dtype=torch.float)
+                        dtype=torch.float, device=device)
     if len(mf_3d.shape) == 1:
         for i in range(len(comp_order_2d)):
             comp = comp_order_2d[i]
