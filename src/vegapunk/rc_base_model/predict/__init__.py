@@ -1,5 +1,4 @@
 #
 #                                                                       Modules
 # =============================================================================
-#from simulators import links
-from simulators import fetorch
+from rc_base_model.predict import prediction
