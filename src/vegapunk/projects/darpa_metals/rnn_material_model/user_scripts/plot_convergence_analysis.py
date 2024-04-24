@@ -96,10 +96,10 @@ def generate_convergence_plots(training_dirs, testing_dirs, predictions_dirs,
 if __name__ == "__main__":
     # Set convergence analysis base directory
     base_dir = ('/home/bernardoferreira/Documents/brown/projects/'
-                'darpa_project/2_local_rnn_training/von_mises/'
+                'darpa_project/2_local_rnn_training/drucker_prager/'
                 'training_dataset_convergence/')
     # Set training data set sizes
-    training_sizes = (2560,)
+    training_sizes = (10, 20, 40, 80, 160, 320, 640, 1280, 2560)
     # Set convergence analyses models base directories
     models_base_dirs = [os.path.join(os.path.normpath(base_dir), f'n{x}')
                         for x in training_sizes]
