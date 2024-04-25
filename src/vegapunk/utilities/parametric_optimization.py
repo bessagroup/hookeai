@@ -37,7 +37,7 @@ class PyTorchModel(torch.nn.Module):
     def __init__(self):
         super(PyTorchModel, self).__init__()
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        self._parameter_option = 'saved_as_attr'
+        self._parameter_option = 'saved_in_dict'
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         if self._parameter_option == 'saved_as_attr':
             self.a = torch.nn.Parameter(torch.zeros(1, requires_grad=True))
@@ -67,7 +67,7 @@ class PyTorchModel(torch.nn.Module):
         return model_parameters_str
 # =============================================================================
 # Set model type
-model_type = 'standard_parametric'
+model_type = 'torch_module'
 # Initialize model
 if model_type == 'standard_parametric':
     # Initialize model
@@ -87,6 +87,8 @@ optimizer = torch.optim.Adam(model_parameters, lr=1e-2)
 # =============================================================================
 # Set number of epochs
 n_epochs = 100
+# Initialize number of training steps
+step = 0
 # Loop over epochs
 for epoch in range(n_epochs):
     # Loop over samples
@@ -103,10 +105,21 @@ for epoch in range(n_epochs):
         loss.backward()
         # Perform optimization step
         optimizer.step()
+        # Increment training step counter
+        step += 1
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Display iteration results
+        if True:
+            print(f'\nTraining step: {step}')
+            for name, param in model.named_parameters():
+                print(f'\n  > Parameter ({name}): {param.data}')
+                print(f'  > Gradient (wtr to {name}) ', param.grad)
+            print('\n' + 80*'-')
 # =============================================================================
 # Display results
-print(f'Ground-truth = ({2.0}, {1.0})')
-print(f'Optimization = ' + model.get_model_parameters_str())
+print('\nFinal results:')
+print(f'\n  > Ground-truth = ({2.0}, {1.0})')
+print(f'  > Optimization = ' + model.get_model_parameters_str())
 # =============================================================================
 # Collect training dataset inputs, targets and predictions
 inputs = [sample[0] for sample in dataset]
