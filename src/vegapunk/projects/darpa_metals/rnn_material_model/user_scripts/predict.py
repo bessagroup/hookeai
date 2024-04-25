@@ -206,7 +206,7 @@ def generate_prediction_plots(dataset_file_path, predict_subdir):
                     is_stdout_display=False, is_latex=True)
 # =============================================================================
 def set_default_prediction_options():
-    """Set default GNN-based model prediction options.
+    """Set default model prediction options.
     
     Returns
     -------
