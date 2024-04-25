@@ -48,6 +48,10 @@ class PyTorchModel(torch.nn.Module):
                 torch.nn.Parameter(torch.zeros(1, requires_grad=True))
             self._model_parameters['b'] = \
                 torch.nn.Parameter(torch.zeros(1, requires_grad=True))
+            self._model_parameters['nested_dict'] = torch.nn.ParameterDict({})
+            self._model_parameters['nested_dict']['c'] =  \
+                torch.nn.Parameter(torch.zeros(1, requires_grad=True))
+            self._model_parameters['nested_dict']['d'] =  0.0
     # -------------------------------------------------------------------------
     def forward(self, input):
         if self._parameter_option == 'saved_as_attr':
