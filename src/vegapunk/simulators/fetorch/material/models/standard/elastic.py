@@ -409,18 +409,23 @@ class Elastic(ConstitutiveModel):
             # Get required elastic moduli
             required_moduli = elastic_symmetries[elastic_symmetry]
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            # Conversion from technical constants to elastic moduli
+            # Initialize elastic moduli
+            elastic_moduli = {}
+            # Collect elastic moduli
             if elastic_symmetry == 'isotropic' and \
                     {'E', 'v'}.issubset(set(elastic_properties.keys())):
                 # Get Young modulus and Poisson coefficient
                 E = elastic_properties['E']
                 v = elastic_properties['v']
-                # Compute elastic moduli
-                elastic_properties['E1111'] = \
+                # Compute elastic moduli from technical constants
+                elastic_moduli['E1111'] = \
                     (E*(1.0 - v))/((1.0 + v)*(1.0 - 2.0*v))
-                elastic_properties['E1122'] = (E*v)/((1.0 + v)*(1.0 - 2.0*v))
-                # Save additional properties
-                additional_properties = ('E1111', 'E1122')
+                elastic_moduli['E1122'] = (E*v)/((1.0 + v)*(1.0 - 2.0*v))
+            else:
+                # Extract elastic moduli from elastic properties
+                for param in elastic_properties.keys():
+                    if param in elastic_symmetries['triclinic']:
+                        elastic_moduli[param] = elastic_properties[param]
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Initialize independent elastic moduli
             ind_moduli = {str(modulus): 0.0 for modulus in
@@ -430,17 +435,13 @@ class Elastic(ConstitutiveModel):
                 # Set symmetric modulus
                 sym_modulus = modulus[3:5] + modulus[1:3]
                 # Check if requires elastic modulus has been provided
-                if modulus in elastic_properties.keys():
-                    ind_moduli[modulus] = elastic_properties[modulus]
-                elif sym_modulus in elastic_properties.keys():
-                    ind_moduli[modulus] = elastic_properties[sym_modulus]
+                if modulus in elastic_moduli.keys():
+                    ind_moduli[modulus] = elastic_moduli[modulus]
+                elif sym_modulus in elastic_moduli.keys():
+                    ind_moduli[modulus] = elastic_moduli[sym_modulus]
                 else:
                     raise RuntimeError('Missing elastic moduli for '
-                                       + elastic_symmetry + ' material.')
-            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            # Delete additional properties (preserve input data)
-            for property in additional_properties:
-                elastic_properties.pop(property)       
+                                       + elastic_symmetry + ' material.')      
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Set all (non-symmetric) elastic moduli according to elastic symmetry
         all_moduli = {str(modulus): 0.0 for modulus in ind_moduli.keys()}
