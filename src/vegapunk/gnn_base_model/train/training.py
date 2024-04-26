@@ -1105,7 +1105,7 @@ def write_training_summary_file(
     loss_type, loss_kwargs, opt_algorithm, lr_init, lr_scheduler_type,
     lr_scheduler_kwargs, n_epochs, dataset_file_path, dataset, best_loss,
     best_training_epoch, total_time_sec, avg_time_epoch,
-    torchinfo_summary=None):
+    best_model_parameters=None, torchinfo_summary=None):
     """Write summary data file for model training process.
     
     Parameters
@@ -1162,6 +1162,8 @@ def write_training_summary_file(
         Total training time in seconds.
     avg_time_epoch : float
         Average training time per epoch.
+    best_model_parameters : dict
+        Model parameters corresponding to best model state.
     torchinfo_summary : str, default=None
         Torchinfo model architecture summary.
     """
@@ -1197,6 +1199,8 @@ def write_training_summary_file(
         str(datetime.timedelta(seconds=int(avg_time_epoch)))
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set summary optional data
+    if best_model_parameters is not None:
+        summary_data['Model parameters (best state)'] = best_model_parameters
     if torchinfo_summary is not None:
         summary_data['torchinfo summary'] = torchinfo_summary
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
