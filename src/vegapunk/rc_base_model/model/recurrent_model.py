@@ -60,8 +60,11 @@ class RecurrentConstitutiveModel(torch.nn.Module):
         Number of input features.
     _n_features_out : int
         Number of output features.
-    _learnable_parameters : tuple[str]
-        Learnable material constitutive model parameters.
+    _learnable_parameters : dict
+        Learnable material constitutive model parameters. For each parameter
+        (key, str), stores a dictionary with the parameter initial value
+        (key, 'initial_value', item, float) and the parameter bounds
+        (key, 'bounds', item, tuple(lower_bound, upper_bound)).
     _strain_formulation: {'infinitesimal', 'finite'}
         Strain formulation.
     _problem_type : int
@@ -77,10 +80,24 @@ class RecurrentConstitutiveModel(torch.nn.Module):
         is additionally predicted in the output features besides the stress
         path history. State variables are sorted as output features
         according with the insertion order.
+    _model_parameters : torch.nn.ParameterDict
+        Model parameters.
+    _model_parameters_bounds : dict
+        Model learnable parameters bounds. For each parameter (key, str),
+        the corresponding bounds are stored as a
+        tuple(lower_bound, upper_bound) (item, tuple).
+    _model_parameters_norm_bounds : dict
+        Model learnable parameters normalized bounds. For each parameter
+        (key, str), the corresponding bounds are stored as a
+        tuple(lower_bound, upper_bound) (item, tuple).
     _device_type : {'cpu', 'cuda'}
         Type of device on which torch.Tensor is allocated.
     _device : torch.device
         Device on which torch.Tensor is allocated.
+    is_normalized_parameters : bool
+        If True, then learnable parameters are normalized for optimization,
+        False otherwise. The initial values and bounds of each parameter
+        are normalized accordingly.
     is_data_normalization : bool
         If True, then input and output features are normalized for training
         False otherwise. Data scalers need to be fitted with fit_data_scalers()
@@ -91,11 +108,27 @@ class RecurrentConstitutiveModel(torch.nn.Module):
 
     Methods
     -------
+    init_model_from_file(model_directory)
+        Initialize model from initialization file.
     set_device(self, device_type)
         Set device on which torch.Tensor is allocated.
     get_device(self)
         Get device on which torch.Tensor is allocated.
-    forward(self)
+    _set_model_parameters(self, learnable_parameters)
+        Set recurrent constitutive model learnable parameters.
+    _sync_material_model_parameters(self)
+        Synchronize material model parameters with learnable parameters.
+    _transform_parameter(self, name, value, mode='normalize')
+        Transform model parameter by means of min-max scaling.
+    get_model_parameters(self)
+        Get model parameters.
+    get_model_parameters_bounds(self)
+        Get model parameters bounds.
+    get_model_parameters_norm_bounds(self)
+        Get model parameters normalized bounds.
+    get_detached_model_parameters(self, is_normalized=False)
+        Get model parameters detached of gradients.
+    forward(self, features_in, is_normalized=False)
         Forward propagation.
     _recurrent_constitutive_model(self, strain_paths)
         Compute material response.
@@ -137,7 +170,8 @@ class RecurrentConstitutiveModel(torch.nn.Module):
                  strain_formulation, problem_type, material_model_name,
                  material_model_parameters, model_directory, model_name,
                  state_features_out={}, is_data_normalization=False,
-                 is_save_model_init_file=True, device_type='cpu'):
+                 is_normalized_parameters=False, is_save_model_init_file=True,
+                 device_type='cpu'):
         """Constructor.
         
         Parameters
@@ -146,8 +180,11 @@ class RecurrentConstitutiveModel(torch.nn.Module):
             Number of input features.
         n_features_out : int
             Number of output features.
-        learnable_parameters : tuple[str]
-            Learnable material constitutive model parameters.
+        learnable_parameters : dict
+            Learnable material constitutive model parameters. For each
+            parameter (key, str), stores a dictionary with the parameter
+            initial value (key, 'initial_value', item, float) and the parameter
+            bounds (key, 'bounds', item, tuple(lower_bound, upper_bound)).
         strain_formulation: {'infinitesimal', 'finite'}
             Strain formulation.
         problem_type : int
@@ -167,6 +204,10 @@ class RecurrentConstitutiveModel(torch.nn.Module):
             is additionally predicted in the output features besides the stress
             path history. State variables are sorted as output features
             according with the insertion order.
+        is_normalized_parameters : bool, default=False
+            If True, then learnable parameters are normalized for optimization,
+            False otherwise. The initial values and bounds of each parameter
+            are normalized accordingly.
         is_data_normalization : bool, default=False
             If True, then input and output features are normalized for
             training, False otherwise. Data scalers need to be fitted with
@@ -191,12 +232,15 @@ class RecurrentConstitutiveModel(torch.nn.Module):
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Set material constitutive model name
         self._material_model_name = material_model_name
+        # Set material constitutive model parameters
+        self._material_model_parameters = material_model_parameters
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Set learnable parameters
         self._learnable_parameters = learnable_parameters
-        # Setup constitutive model learnable parameters
-        self._material_model_parameters = self._setup_learnable_parameters(
-            learnable_parameters, material_model_name,
-            material_model_parameters)        
+        # Set model parameters normalization flag
+        self.is_normalized_parameters = is_normalized_parameters
+        # Set model parameters
+        self._set_model_parameters(learnable_parameters)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Set problem strain formulation and type
         self._strain_formulation = strain_formulation
@@ -241,7 +285,7 @@ class RecurrentConstitutiveModel(torch.nn.Module):
         self._data_scalers = None
         if self.is_data_normalization:
             self._init_data_scalers()
-        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~        
         # Save model initialization file
         if is_save_model_init_file:
             self.save_model_init_file()
@@ -321,118 +365,217 @@ class RecurrentConstitutiveModel(torch.nn.Module):
         """
         return self.device_type, self.device
     # -------------------------------------------------------------------------
-    def _setup_learnable_parameters(self, learnable_parameters,
-                                    material_model_name,
-                                    material_model_parameters):
-        """Setup constitutive model learnable parameters requiring gradients.
+    def _set_model_parameters(self, learnable_parameters):
+        """Set recurrent constitutive model learnable parameters.
         
         Parameters
         ----------
-        learnable_parameters : tuple[str]
-            Learnable material constitutive model parameters.
-        material_model_name : str
-            Material constitutive model name.
-        material_model_parameters : dict
-            Material constitutive model parameters.
+        learnable_parameters : dict
+            Learnable material constitutive model parameters. For each
+            parameter (key, str), stores a dictionary with the parameter
+            initial value (key, 'initial_value', item, float) and the parameter
+            bounds (key, 'bounds', item, tuple(lower_bound, upper_bound)).
+        """
+        # Initialize model parameters
+        self._model_parameters = torch.nn.ParameterDict({})
+        # Initialize model parameters bounds
+        self._model_parameters_bounds = {}
+        # Initialize model parameters normalized bounds
+        self._model_parameters_norm_bounds = {}
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Loop over learnable parameters
+        for param, param_dict in learnable_parameters.items():
+            # Get initial value
+            init_val = param_dict['initial_value']
+            # Get lower and upper bounds
+            if param_dict['bounds'][1] < param_dict['bounds'][0]:
+                raise RuntimeError(f'Invalid bounds were provided for '
+                                   f'parameter "{param}". Upper bound '
+                                   f'{param_dict["bounds"][1]} is lower than '
+                                   f'lower bound ({param_dict["bounds"][0]}).')
+            else:
+                self._model_parameters_bounds[param] = param_dict['bounds']
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Set normalization bounds
+            if self.is_normalized_parameters:
+                # Set lower and upper bounds
+                self._model_parameters_norm_bounds[param] = (-1.0, 1.0)
+                # Normalize initial value
+                init_val = self._transform_parameter(param, init_val,
+                                                     mode='normalize')
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Set model parameter
+            self._model_parameters[param] = torch.nn.Parameter(
+                torch.tensor(init_val, requires_grad=True))
+    # -------------------------------------------------------------------------
+    def _sync_material_model_parameters(self):
+        """Synchronize material model parameters with learnable parameters."""
+        # Get material constitutive model
+        material_model_name = self._material_model_name
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Loop over learnable parameters
+        for param, value in self._model_parameters.items():
+            # Get updated material constitutive model parameter
+            if self.is_normalized_parameters:
+                sync_val = self._transform_parameter(param, value,
+                                                     mode='denormalize')
+            else:
+                sync_val = 1.0*value
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Synchronize material constitutive model parameter
+            if self._material_model_name == 'von_mises':
+                # Set valid learnable parameters
+                valid_learnable_parameters = ('E', 'v', 's0', 'a', 'b')
+                # Check learnable parameter
+                if param not in valid_learnable_parameters:
+                    raise RuntimeError(f'Parameter "{param}" is not a valid '
+                                       f'learnable parameter for model '
+                                       f'"{material_model_name}.')
+                # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                # Synchronize parameter
+                if param in ('s0', 'a', 'b'):
+                    self._constitutive_model._model_parameters\
+                        ['hardening_parameters'][param] = sync_val
+                else:
+                    self._constitutive_model._model_parameters[param] = \
+                        sync_val
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            elif self._material_model_name == 'drucker_prager':
+                # Set valid learnable parameters
+                valid_learnable_parameters = ('E', 'v', 's0', 'a', 'b',
+                                              'yield_cohesion_parameter',
+                                              'yield_pressure_parameter',
+                                              'flow_pressure_parameter')
+                # Check learnable parameter
+                if param not in valid_learnable_parameters:
+                    raise RuntimeError(f'Parameter "{param}" is not a valid '
+                                       f'learnable parameter for model '
+                                       f'"{material_model_name}.')
+                # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                # Synchronize parameter
+                if param in ('s0', 'a', 'b'):
+                    self._constitutive_model._model_parameters\
+                        ['hardening_parameters'][param] = sync_val
+                else:
+                    self._constitutive_model._model_parameters[param] = \
+                        sync_val
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            elif self._material_model_name == 'elastic':
+                # Set valid learnable parameters
+                valid_learnable_parameters = ('E', 'v')
+                # Check learnable parameter
+                if param not in valid_learnable_parameters:
+                    raise RuntimeError(f'Parameter "{param}" is not a valid '
+                                       f'learnable parameter for model '
+                                       f'"{material_model_name}.')
+                # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                # Synchronize parameter
+                self._constitutive_model._model_parameters[param] = sync_val
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            else:
+                raise RuntimeError('Unknown material constitutive model.')
+    # -------------------------------------------------------------------------
+    def _transform_parameter(self, name, value, mode='normalize'):
+        """Transform model parameter by means of min-max scaling.
+        
+        Parameters
+        ----------
+        name : str
+            Parameter name.
+        value : float
+            Parameter value.
+        mode : {'normalize', 'denormalize'}, default='normalize'
+            Transformation type.
+
+        Returns
+        -------
+        transformed_value : float
+            Transformed parameter value.
+        """
+        # Set parameter original and transformed bounds according with the
+        # transformation type
+        if mode == 'normalize':
+            omin, omax = self._model_parameters_bounds[name]
+            tmin, tmax = self._model_parameters_norm_bounds[name]
+        elif mode == 'denormalize':
+            omin, omax = self._model_parameters_norm_bounds[name]
+            tmin, tmax = self._model_parameters_bounds[name]
+        else:
+            raise RuntimeError('Invalid transformation type.')
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Transform parameter
+        transformed_value = tmin + ((tmax - tmin)/(omax - omin))*(value - omin)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        return transformed_value
+    # -------------------------------------------------------------------------
+    def get_model_parameters(self):
+        """Get model parameters.
         
         Returns
         -------
-        material_model_parameters_grad : torch.nn.ParameterDict
-            Material constitutive model parameters with learnable parameters.
+        model_parameters : torch.nn.ParameterDict
+            Model parameters.
         """
-        # Initialize material constitutive model parameters
-        material_model_parameters_grad = \
-            torch.nn.ParameterDict(material_model_parameters)
+        return self._model_parameters
+    # -------------------------------------------------------------------------
+    def get_model_parameters_bounds(self):
+        """Get model parameters bounds.
+        
+        Returns
+        -------
+        model_parameters_bounds : dict
+            Model learnable parameters bounds. For each parameter (key, str),
+            the corresponding bounds are stored as a
+            tuple(lower_bound, upper_bound) (item, tuple).
+        """
+        return copy.deepcopy(self._model_parameters_bounds)
+    # -------------------------------------------------------------------------
+    def get_model_parameters_norm_bounds(self):
+        """Get model parameters normalized bounds.
+        
+        Returns
+        -------
+        model_parameters_norm_bounds : dict
+            Model learnable parameters normalized bounds. For each parameter
+            (key, str), the corresponding bounds are stored as a
+            tuple(lower_bound, upper_bound) (item, tuple).
+        """
+        return copy.deepcopy(self._model_parameters_norm_bounds)
+    # -------------------------------------------------------------------------
+    def get_detached_model_parameters(self, is_normalized=False):
+        """Get model parameters detached of gradients.
+        
+        Parameters
+        ----------
+        is_normalized : bool, default=False
+            If True, then model parameters are normalized.
+
+        Returns
+        -------
+        model_parameters : dict
+            Model parameters.
+        """
+        # Get detached model parameters
+        base_model_parameters = {param: float(value.data) for param, value
+                                 in self._model_parameters.items()}
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        # Setup constitutive model learnable parameters
-        if material_model_name == 'von_mises':
-            # Set valid learnable parameters
-            valid_learnable_parameters = ('E', 'v', 's0', 'a', 'b')
-            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            # Make hardening parameters accessible as learnable parameters
-            material_model_parameters_grad['hardening'] = \
-                torch.nn.ParameterDict(
-                    material_model_parameters_grad['hardening'])
-            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            # Activate computation graphs for learnable parameters
-            for param in learnable_parameters:
-                # Check learnable parameter
-                if param not in valid_learnable_parameters:
-                    raise RuntimeError(f'Parameter "{param}" is not a valid '
-                                       f'learnable parameter for model '
-                                       f'"{material_model_name}.')
-                # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-                # Set learnable parameter                
-                if param in ('s0', 'a', 'b'):
-                    # Pick initialization value
-                    init_value = float(material_model_parameters \
-                        ['hardening_parameters'][param])
-                    # Set learnable parameter
-                    material_model_parameters['hardening_parameters'][param] =\
-                        torch.nn.Parameter(
-                            torch.tensor(init_value, requires_grad=True))
-                else:
-                    # Pick initialization value
-                    init_value = float(material_model_parameters[param])
-                    # Set learnable parameter
-                    material_model_parameters_grad[param] = torch.nn.Parameter(
-                        torch.tensor(init_value, requires_grad=True))
+        # Initialize model parameters
+        model_parameters = copy.deepcopy(base_model_parameters)
+        # Normalize/Denormalize model parameters
+        if self.is_normalized_parameters:
+            # Denormalize model parameters
+            if not is_normalized:
+                for param, value in base_model_parameters.items():
+                    model_parameters[param] = self._transform_parameter(
+                        param, value, mode='denormalize')
+        else:
+            # Normalize model parameters
+            if is_normalized:
+                for param, value in base_model_parameters.items():
+                    model_parameters[param] = self._transform_parameter(
+                        param, value, mode='normalize')
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        elif material_model_name == 'drucker_prager':
-            # Set valid learnable parameters
-            valid_learnable_parameters = ('E', 'v', 's0', 'a', 'b',
-                                          'yield_cohesion_parameter',
-                                          'yield_pressure_parameter',
-                                          'flow_pressure_parameter')
-            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            # Make hardening parameters accessible as learnable parameters
-            material_model_parameters_grad['hardening'] = \
-                torch.nn.ParameterDict(
-                    material_model_parameters_grad['hardening'])
-            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            # Activate computation graphs for learnable parameters
-            for param in learnable_parameters:
-                # Check learnable parameter
-                if param not in valid_learnable_parameters:
-                    raise RuntimeError(f'Parameter "{param}" is not a valid '
-                                       f'learnable parameter for model '
-                                       f'"{material_model_name}.')
-                # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-                # Set learnable parameter                
-                if param in ('s0', 'a', 'b'):
-                    # Pick initialization value
-                    init_value = material_model_parameters \
-                        ['hardening_parameters'][param]
-                    # Set learnable parameter
-                    material_model_parameters['hardening_parameters'][param] =\
-                        torch.nn.Parameter(
-                            torch.tensor(init_value, requires_grad=True))
-                else:
-                    # Get initialization value
-                    init_value = float(material_model_parameters[param])
-                    # Set learnable parameter
-                    material_model_parameters_grad[param] = torch.nn.Parameter(
-                        torch.tensor(init_value, requires_grad=True))
-        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        elif material_model_name == 'elastic':
-            # Set valid learnable parameters
-            valid_learnable_parameters = ('E', 'v')
-            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            # Activate computation graphs for learnable parameters
-            for param in learnable_parameters:
-                # Check learnable parameter
-                if param not in valid_learnable_parameters:
-                    raise RuntimeError(f'Parameter "{param}" is not a valid '
-                                       f'learnable parameter for model '
-                                       f'"{material_model_name}.')
-                # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~              
-                # Pick initialization value
-                init_value = float(material_model_parameters[param])
-                # Set learnable parameter
-                material_model_parameters_grad[param] = torch.nn.Parameter(
-                    torch.tensor(init_value, requires_grad=True))
-        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        return material_model_parameters_grad
+        return model_parameters
     # -------------------------------------------------------------------------
     def forward(self, features_in, is_normalized=False):
         """Forward propagation.
@@ -469,6 +612,9 @@ class RecurrentConstitutiveModel(torch.nn.Module):
                 self.data_scaler_transform(tensor=features_in,
                                            features_type='features_in',
                                            mode='normalize')
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Synchronize material model parameters with learnable parameters
+        self._sync_material_model_parameters()
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~        
         # Forward propagation: Material constitutive model
         features_out = self._recurrent_constitutive_model(features_in)
@@ -799,6 +945,8 @@ class RecurrentConstitutiveModel(torch.nn.Module):
         model_init_args['model_directory'] = self.model_directory
         model_init_args['model_name'] = self.model_name
         model_init_args['state_features_out'] = self._state_features_out
+        model_init_args['is_normalized_parameters'] = \
+            self.is_normalized_parameters
         model_init_args['is_data_normalization'] = self.is_data_normalization
         model_init_args['device_type'] = self._device_type
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

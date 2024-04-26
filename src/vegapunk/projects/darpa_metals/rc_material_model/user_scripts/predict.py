@@ -95,7 +95,7 @@ def perform_model_prediction(predict_directory, dataset_file_path,
         predict(dataset, model_directory, predict_directory=predict_directory,
                 load_model_state='best', loss_nature=loss_nature,
                 loss_type=loss_type, loss_kwargs=loss_kwargs,
-                is_normalized_loss=True, dataset_file_path=dataset_file_path,
+                is_normalized_loss=False, dataset_file_path=dataset_file_path,
                 device_type=device_type, seed=None, is_verbose=is_verbose)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Generate plots of model predictions
@@ -120,7 +120,7 @@ def generate_prediction_plots(dataset_file_path, predict_subdir):
     prediction_types = {}
     prediction_types['stress_comps'] = ('stress_11', 'stress_22', 'stress_33',
                                         'stress_12', 'stress_23', 'stress_13')
-    prediction_types['acc_p_strain'] = ('acc_p_strain',)
+    #prediction_types['acc_p_strain'] = ('acc_p_strain',)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Plot model predictions against ground-truth
     for prediction_type, prediction_comp in prediction_types.items():

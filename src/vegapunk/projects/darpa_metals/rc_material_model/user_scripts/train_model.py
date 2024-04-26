@@ -83,7 +83,7 @@ def perform_model_standard_training(train_dataset_file_path, model_directory,
                                       'a': 700,
                                       'b': 0.5,
                                       'ep0': 1e-5}}
-        # Set learnable parameters
+        # Set learnable parameters (NEEDS UPDATE)
         learnable_parameters = ('s0',)
         # Set material constitutive state variables (prediction)
         state_features_out = {'acc_p_strain': 1,}
@@ -101,7 +101,7 @@ def perform_model_standard_training(train_dataset_file_path, model_directory,
              'yield_cohesion_parameter': 0.0,
              'yield_pressure_parameter': 0.0,
              'flow_pressure_parameter': 0.0}
-        # Set learnable parameters
+        # Set learnable parameters (NEEDS UPDATE)
         learnable_parameters = ('s0',)
         # Set material constitutive state variables (prediction)
         state_features_out = {'acc_p_strain': 1,}
@@ -112,7 +112,11 @@ def perform_model_standard_training(train_dataset_file_path, model_directory,
              'E': 110e3, 'v': 0.33,
              'euler_angles': (0.0, 0.0, 0.0)}
         # Set learnable parameters
-        learnable_parameters = ('E', 'v')
+        learnable_parameters = {}
+        learnable_parameters['E'] = {'initial_value': 100e3,
+                                     'bounds': (100e3, 120e3)}
+        learnable_parameters['v'] = {'initial_value': 0.3,
+                                     'bounds': (0.3, 0.36)}
         # Set constitutive state variables to include in data set
         state_features_out = {}
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -158,10 +162,10 @@ def perform_model_standard_training(train_dataset_file_path, model_directory,
     # Set batch size
     batch_size = 32
     # Set learning rate
-    lr_init = 1.0e-03
+    lr_init = 1.0e+01
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Compute exponential decay (learning rate scheduler)
-    lr_end = 1.0e-5
+    lr_end = 1.0e-3
     gamma = (lr_end/lr_init)**(1/n_max_epochs)
     # Set learning rate scheduler
     lr_scheduler_type = 'explr'
@@ -287,7 +291,11 @@ def set_default_model_parameters(model_directory, device_type='cpu'):
     # Set number of output features
     n_features_out = 6
     # Set learnable parameters
-    learnable_parameters = ('E', 'v')
+    learnable_parameters = {}
+    learnable_parameters['E'] = {'initial_value': 100e3,
+                                 'bounds': (100e3, 120e3)}
+    learnable_parameters['v'] = {'initial_value': 0.3,
+                                 'bounds': (0.3, 0.36)}
     # Set strain formulation
     strain_formulation = 'infinitesimal'
     # Set problem type
@@ -300,8 +308,10 @@ def set_default_model_parameters(model_directory, device_type='cpu'):
                                  'euler_angles': (0.0, 0.0, 0.0)}
     # Set material constitutive state variables (prediction)
     state_features_out = {}
+    # Set parameters normalization
+    is_normalized_parameters = True
     # Set data normalization
-    is_data_normalization = True
+    is_data_normalization = False
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Build model initialization parameters
     model_init_args = {'n_features_in': n_features_in,
@@ -314,6 +324,7 @@ def set_default_model_parameters(model_directory, device_type='cpu'):
                        'state_features_out': state_features_out,
                        'model_directory': model_directory,
                        'model_name': model_name,
+                       'is_normalized_parameters': is_normalized_parameters,
                        'is_data_normalization': is_data_normalization,
                        'device_type': device_type}
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

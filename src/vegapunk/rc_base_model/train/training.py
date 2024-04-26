@@ -306,10 +306,7 @@ def train_model(n_max_epochs, dataset, model_init_args, lr_init,
                 # Get output features
                 features_out = model(batch['features_in'],
                                      is_normalized=is_data_normalization)
-                # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-                print(features_out.get_device())
-                print(features_targets.get_device())
-                
+                # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~                
                 # Compute loss
                 loss = loss_function(features_out, features_targets)
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -333,6 +330,18 @@ def train_model(n_max_epochs, dataset, model_init_args, lr_init,
             # Perform optimization step. Gradients are stored in the .grad
             # attribute of model parameters
             optimizer.step()
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Enforce bounds on model parameters
+            for param, value in model.get_model_parameters().items():
+                # Get parameter bounds
+                if model.is_normalized_parameters:
+                    lower_bound, upper_bound = \
+                        model.get_model_parameters_norm_bounds()[param]
+                else:
+                    lower_bound, upper_bound = \
+                        model.get_model_parameters_bounds()[param]
+                # Enforce bounds
+                value.data.clamp_(lower_bound, upper_bound)
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             if is_verbose:
                 total_time_sec = time.time() - start_time_sec
@@ -374,6 +383,9 @@ def train_model(n_max_epochs, dataset, model_init_args, lr_init,
         if epoch_avg_loss <= min(loss_history_epochs):
             save_training_state(model=model, optimizer=optimizer,
                                 epoch=epoch, is_best_state=True)
+            # Save model parameters
+            best_model_parameters = \
+                model.get_detached_model_parameters(is_normalized=False)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Check early stopping criterion
         if is_early_stopping:
@@ -392,6 +404,9 @@ def train_model(n_max_epochs, dataset, model_init_args, lr_init,
                 # Save model and optimizer best performance states
                 save_training_state(model, optimizer, epoch=best_epoch,
                                     is_best_state=True)
+                # Save model parameters
+                best_model_parameters = \
+                    model.get_detached_model_parameters(is_normalized=False)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Check training process flow
         if epoch >= n_max_epochs:
@@ -455,7 +470,8 @@ def train_model(n_max_epochs, dataset, model_init_args, lr_init,
         loss_nature, loss_type, loss_kwargs, opt_algorithm, lr_init,
         lr_scheduler_type, lr_scheduler_kwargs, epoch, dataset_file_path,
         dataset, best_loss, best_training_epoch, total_time_sec,
-        avg_time_epoch, torchinfo_summary=str(model_statistics))
+        avg_time_epoch, best_model_parameters=best_model_parameters,
+        torchinfo_summary=str(model_statistics))
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     return model, best_loss, best_training_epoch
 # =============================================================================
