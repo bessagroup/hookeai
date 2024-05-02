@@ -490,5 +490,4 @@ class VonMises(ConstitutiveModel):
                 self._problem_type, consistent_tangent_mf, device=self._device)
         #
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        # Return
         return state_variables, consistent_tangent_mf
