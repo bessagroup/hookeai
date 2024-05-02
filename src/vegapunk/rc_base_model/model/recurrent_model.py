@@ -272,11 +272,13 @@ class RecurrentConstitutiveModel(torch.nn.Module):
         elif material_model_name == 'von_mises':
             self._constitutive_model = \
                 VonMises(self._strain_formulation, self._problem_type,
-                         self._material_model_parameters)
+                         self._material_model_parameters,
+                         device_type=self._device_type)
         elif material_model_name == 'drucker_prager':
             self._constitutive_model = \
                 DruckerPrager(self._strain_formulation, self._problem_type,
-                              self._material_model_parameters)
+                              self._material_model_parameters,
+                              device_type=self._device_type)
         else:
             raise RuntimeError(f'Unknown material constitutive model '
                                f'\'{material_model_name}\'.')
