@@ -353,9 +353,9 @@ class VonMises(ConstitutiveModel):
                                          device=self._device)
         else:
             flow_vector_mf = np.sqrt(3.0/2.0)*(
-                dev_trial_stress_mf/np.linalg.norm(dev_trial_stress_mf))
+                dev_trial_stress_mf/torch.norm(dev_trial_stress_mf))
         # Compute von Mises equivalent trial stress
-        vm_trial_stress = np.sqrt(3.0/2.0)*np.linalg.norm(dev_trial_stress_mf)
+        vm_trial_stress = np.sqrt(3.0/2.0)*torch.norm(dev_trial_stress_mf)
         # Compute trial accumulated plastic strain
         acc_p_trial_strain = acc_p_strain_old
         # Compute trial yield stress
