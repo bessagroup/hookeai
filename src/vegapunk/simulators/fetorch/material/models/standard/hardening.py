@@ -28,6 +28,7 @@ get_hardening_law
 from abc import ABC, abstractmethod
 # Third-party
 import numpy as np
+import torch
 #
 #                                                          Authorship & Credits
 # =============================================================================
@@ -149,6 +150,8 @@ class IsotropicHardeningLaw(ABC):
         ----------
         hardening_parameters : dict
             Hardening law parameters.
+        acc_p_strain : float
+            Accumulated plastic strain.
 
         Returns
         -------
@@ -175,6 +178,8 @@ class PiecewiseLinearIHL(IsotropicHardeningLaw):
         ----------
         hardening_parameters : dict
             Hardening law parameters.
+        acc_p_strain : float
+            Accumulated plastic strain.
 
         Returns
         -------
@@ -208,7 +213,7 @@ class PiecewiseLinearIHL(IsotropicHardeningLaw):
         # yield stress associated with the first or last provided points,
         # respectively. Otherwise, perform linear interpolation to compute
         # the yield stress
-        yield_stress = np.interp(acc_p_strain, a, b, b[0], b[-1])
+        yield_stress = np.interp(acc_p_strain, a, b, b[0], b[-1])              # Requires torch-based implementation!
         # Get hardening slope
         if acc_p_strain < a[0] or acc_p_strain >= a[-1]:
             hard_slope = 0
@@ -239,6 +244,8 @@ class LinearIHL(IsotropicHardeningLaw):
         ----------
         hardening_parameters : dict
             Hardening law parameters.
+        acc_p_strain : float
+            Accumulated plastic strain.
 
         Returns
         -------
@@ -272,6 +279,8 @@ class NadaiLudwikIHL(IsotropicHardeningLaw):
         ----------
         hardening_parameters : dict
             Hardening law parameters.
+        acc_p_strain : float
+            Accumulated plastic strain.
 
         Returns
         -------
@@ -286,8 +295,11 @@ class NadaiLudwikIHL(IsotropicHardeningLaw):
         b = float(hardening_parameters['b'])
         ep0 = float(hardening_parameters['ep0'])
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        # Consider minimum non-negative accumulated plastic strain
-        acc_p_strain = np.maximum(0.0, acc_p_strain)
+        # Check non-negative accumulated plastic strain
+        if acc_p_strain < 0.0:
+            raise RuntimeError(f'Expecting non-negative accumulated plastic '
+                               f'strain but got {acc_p_strain}.')
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Compute yield stress
         yield_stress = yield_stress_init + a*((acc_p_strain + ep0)**b)
         # Compute hardening slope
