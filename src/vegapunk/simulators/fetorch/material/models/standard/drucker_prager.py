@@ -44,6 +44,8 @@ class DruckerPrager(ConstitutiveModel):
         formulation ('infinitesimal'), finite strain formulation ('finite') or
         finite strain formulation through kinematic extension
         ('finite-kinext').
+    _model_parameters : dict
+        Material constitutive model parameters.
     _n_dim : int
         Problem number of spatial dimensions.
     _comp_order_sym : list
@@ -60,7 +62,7 @@ class DruckerPrager(ConstitutiveModel):
     state_update(self, inc_strain, state_variables_old)
         Perform material constitutive model state update.
     """
-    def __init__(self, strain_formulation, problem_type, material_properties,
+    def __init__(self, strain_formulation, problem_type, model_parameters,
                  device_type='cpu'):
         """Constitutive model constructor.
 
@@ -71,9 +73,8 @@ class DruckerPrager(ConstitutiveModel):
         problem_type : int
             Problem type: 2D plane strain (1), 2D plane stress (2),
             2D axisymmetric (3) and 3D (4).
-        material_properties : dict
-            Constitutive model material properties (key, str) values
-            (item, {int, float, bool}).
+        model_parameters : dict
+            Material constitutive model parameters.
         device_type : {'cpu', 'cuda'}, default='cpu'
             Type of device on which torch.Tensor is allocated.
         """
@@ -85,7 +86,7 @@ class DruckerPrager(ConstitutiveModel):
         # Set initialization parameters
         self._strain_formulation = strain_formulation
         self._problem_type = problem_type
-        self._material_properties = material_properties
+        self._model_parameters = model_parameters
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Set device
         self.set_device(device_type)
@@ -95,7 +96,7 @@ class DruckerPrager(ConstitutiveModel):
             get_problem_type_parameters(problem_type)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Get elastic symmetry
-        elastic_symmetry = material_properties['elastic_symmetry']
+        elastic_symmetry = model_parameters['elastic_symmetry']
         # Check finite strains formulation
         if self._strain_formulation == 'finite' and \
                 elastic_symmetry != 'isotropic':
@@ -106,9 +107,9 @@ class DruckerPrager(ConstitutiveModel):
         if elastic_symmetry == 'isotropic':
             # Compute technical constants of elasticity
             technical_constants = Elastic.get_technical_from_elastic_moduli(
-                elastic_symmetry, material_properties)
+                elastic_symmetry, model_parameters)
             # Assemble technical constants of elasticity
-            self._material_properties.update(technical_constants)
+            self._model_parameters.update(technical_constants)
         else:
             raise RuntimeError('The Drucker-Prager constitutive model is '
                                'currently only available for the elastic '
@@ -274,15 +275,14 @@ class DruckerPrager(ConstitutiveModel):
                                       device=self._device)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Get material properties
-        E = self._material_properties['E']
-        v = self._material_properties['v']
-        xi = self._material_properties['yield_cohesion_parameter']
-        etay = self._material_properties['yield_pressure_parameter']
-        etaf = self._material_properties['flow_pressure_parameter']
+        E = self._model_parameters['E']
+        v = self._model_parameters['v']
+        xi = self._model_parameters['yield_cohesion_parameter']
+        etay = self._model_parameters['yield_pressure_parameter']
+        etaf = self._model_parameters['flow_pressure_parameter']
         # Get material isotropic strain hardening law
-        hardening_law = self._material_properties['hardening_law']
-        hardening_parameters = \
-            self._material_properties['hardening_parameters']
+        hardening_law = self._model_parameters['hardening_law']
+        hardening_parameters = self._model_parameters['hardening_parameters']
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Compute bulk and shear modulus
         K = E/(3.0*(1.0 - 2.0*v))
