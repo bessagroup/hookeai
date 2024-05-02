@@ -255,8 +255,8 @@ class LinearIHL(IsotropicHardeningLaw):
             Material hardening slope.
         """
         # Get initial yield stress and hardening slope
-        yield_stress_init = float(hardening_parameters['s0'])
-        hard_slope = float(hardening_parameters['a'])
+        yield_stress_init = hardening_parameters['s0']
+        hard_slope = hardening_parameters['a']
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Compute yield stress
         yield_stress = yield_stress_init + hard_slope*acc_p_strain
@@ -290,10 +290,10 @@ class NadaiLudwikIHL(IsotropicHardeningLaw):
             Material hardening slope.
         """
         # Get initial yield stress and parameters
-        yield_stress_init = float(hardening_parameters['s0'])
-        a = float(hardening_parameters['a'])
-        b = float(hardening_parameters['b'])
-        ep0 = float(hardening_parameters['ep0'])
+        yield_stress_init = hardening_parameters['s0']
+        a = hardening_parameters['a']
+        b = hardening_parameters['b']
+        ep0 = hardening_parameters['ep0']
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Check non-negative accumulated plastic strain
         if acc_p_strain < 0.0:
