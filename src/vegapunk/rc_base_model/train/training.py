@@ -461,6 +461,14 @@ def train_model(n_max_epochs, dataset, model_init_args, lr_init,
               f'Avg. training time per epoch: '
               f'{str(datetime.timedelta(seconds=int(avg_time_epoch)))}\n')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Display best performance state model parameters
+    if is_verbose:
+        print('\nBest performance state model parameters'
+              '\n---------------------------------------')
+        # Loop over model parameters
+        for key, val in best_model_parameters.items():
+            print(f'> Parameter: {key} = {val}')
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Get summary of PyTorch model
     model_statistics = get_model_summary(model, device_type=device_type)
     # Write summary data file for model training process
