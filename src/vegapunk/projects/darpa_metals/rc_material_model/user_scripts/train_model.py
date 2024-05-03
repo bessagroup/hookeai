@@ -222,6 +222,8 @@ def perform_model_standard_training(train_dataset_file_path, model_directory,
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Generate plots of model training process
     generate_standard_training_plots(model_directory)
+    # Generate plots of model learnable parameters
+    generate_model_parameters_plots(model_directory)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Display summary of PyTorch model
     _ = get_model_summary(model, device_type=device_type,
@@ -233,7 +235,7 @@ def generate_standard_training_plots(model_directory):
     Parameters
     ----------
     model_directory : str
-        Directory where material patch model is stored.
+        Directory where model is stored.
     """
     # Set loss history record file path
     loss_record_path = os.path.join(model_directory, 'loss_history_record.pkl')
@@ -266,6 +268,33 @@ def generate_standard_training_plots(model_directory):
                                       lr_type=lr_scheduler_type,
                                       save_dir=plot_dir, is_save_fig=True,
                                       is_stdout_display=False, is_latex=True)
+# =============================================================================
+def generate_model_parameters_plots(model_directory):
+    """Generate plots of model learnable parameters.
+    
+    Parameters
+    ----------
+    model_directory : str
+        Directory where model is stored.
+    """
+    # Set model parameters record file path
+    parameters_record_path = os.path.join(model_directory,
+                                          'parameters_history_record' + '.pkl')
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Read model learnable parameters history
+    model_parameters_history, model_parameters_bounds = \
+        read_parameters_history_from_file(parameters_record_path)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Create plot directory
+    plot_dir = os.path.join(os.path.normpath(model_directory), 'plots')
+    if not os.path.isdir(plot_dir):
+        make_directory(plot_dir)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Plot model learnable parameters history
+    plot_model_parameters_history(model_parameters_history,
+                                  model_parameters_bounds, save_dir=plot_dir,
+                                  is_save_fig=True, is_stdout_display=False,
+                                  is_latex=True)
 # =============================================================================
 def set_default_model_parameters(model_directory, device_type='cpu'):
     """Set default model initialization parameters.

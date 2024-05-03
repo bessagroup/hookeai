@@ -9,6 +9,10 @@ Functions
 ---------
 train_model
     Training of recurrent constitutive model.
+save_parameters_history
+    Save model learnable parameters history record.
+read_parameters_history_from_file
+    Read model learnable parameters history from parameters record file.
 """
 #
 #                                                                       Modules
@@ -19,6 +23,7 @@ import random
 import time
 import datetime
 import copy
+import pickle
 # Third-party
 import torch
 import numpy as np
@@ -204,6 +209,14 @@ def train_model(n_max_epochs, dataset, model_init_args, lr_init,
     loss_history_steps = []
     lr_history_steps = []
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Initialize model parameters history (per epoch)
+    model_init_parameters = \
+        model.get_detached_model_parameters(is_normalized=False)
+    model_parameters_history_epochs = \
+        {key: [val,] for key, val in model_init_parameters.items()}
+    # Set model parameters history flag
+    is_save_model_parameters = True
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Initialize training flag
     is_keep_training = True
     # Initialize number of training epochs
@@ -235,6 +248,9 @@ def train_model(n_max_epochs, dataset, model_init_args, lr_init,
                                                 epoch=loaded_epoch)
         # Load learning rate history
         lr_history_epochs = load_lr_history(model, epoch=loaded_epoch)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set model parameters history flag (not available)
+        is_save_model_parameters = False
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Update training epoch counter
         epoch = int(loaded_epoch)
@@ -358,6 +374,12 @@ def train_model(n_max_epochs, dataset, model_init_args, lr_init,
             else:
                 lr_history_steps.append(lr_init)
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Save model parameters
+            model_parameters_epoch = \
+                model.get_detached_model_parameters(is_normalized=False)
+            for key, val in model_parameters_epoch.items():
+                model_parameters_history_epochs[key].append(val)
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Increment training step counter
             step += 1
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -441,6 +463,11 @@ def train_model(n_max_epochs, dataset, model_init_args, lr_init,
                       lr_history_epochs=lr_history_epochs,
                       validation_loss_history=validation_loss_history)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Save model parameters history
+    if is_save_model_parameters:
+        save_parameters_history(model, model_parameters_history_epochs,
+                                model.get_model_parameters_bounds())
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Get best loss and corresponding training epoch
     best_loss = float(min(loss_history_epochs))
     best_training_epoch = loss_history_epochs.index(best_loss)
@@ -482,6 +509,80 @@ def train_model(n_max_epochs, dataset, model_init_args, lr_init,
         torchinfo_summary=str(model_statistics))
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     return model, best_loss, best_training_epoch
+# =============================================================================
+def save_parameters_history(model, model_parameters_history,
+                            model_parameters_bounds):
+    """Save model learnable parameters history record.
+    
+    Model parameters record file is stored in model_directory under the name
+    parameters_history_record.pkl.
+
+    Overwrites existing model parameters record file.
+    
+    Parameters
+    ----------
+    model : torch.nn.Module
+        Model.
+    model_parameters_history : dict
+        Model learnable parameters history. For each model parameter
+        (key, str), store the corresponding training history (item, list).
+    model_parameters_bounds : dict
+        Model learnable parameters bounds. For each parameter (key, str),
+        the corresponding bounds are stored as a
+        tuple(lower_bound, upper_bound) (item, tuple).
+    """
+    # Set model parameters record file path
+    parameters_record_path = os.path.join(model.model_directory,
+                                          'parameters_history_record' + '.pkl')
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Build model parameters history record
+    parameters_history_record = {}
+    parameters_history_record['model_parameters_history'] = \
+        model_parameters_history
+    parameters_history_record['model_parameters_bounds'] = \
+        model_parameters_bounds
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Save model parameters history record
+    with open(parameters_record_path, 'wb') as parameters_record_file:
+        pickle.dump(parameters_history_record, parameters_record_file) 
+# =============================================================================
+def read_parameters_history_from_file(parameters_record_path):
+    """Read model learnable parameters history from parameters record file.
+    
+    Model parameters record file is stored in model_directory under the name
+    parameters_history_record.pkl.
+    
+    Parameters
+    ----------
+    parameters_record_path : str
+        Model parameters history record file path.
+
+    Returns
+    -------
+    model_parameters_history : dict
+        Model learnable parameters history. For each model parameter
+        (key, str), store the corresponding training history (item, list).
+    model_parameters_bounds : dict
+        Model learnable parameters bounds. For each parameter (key, str),
+        the corresponding bounds are stored as a
+        tuple(lower_bound, upper_bound) (item, tuple).
+    """
+    # Check model parameters history record file
+    if not os.path.isfile(parameters_record_path):
+        raise RuntimeError('Model parameters history record file has not been '
+                           'found:\n\n' + parameters_record_path)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Load model parameters history record
+    with open(parameters_record_path, 'rb') as parameters_record_file:
+        parameters_history_record = pickle.load(parameters_record_file)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Get model parameters history
+    model_parameters_history = \
+        parameters_history_record['model_parameters_history']
+    model_parameters_bounds = \
+        parameters_history_record['model_parameters_bounds']
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    return model_parameters_history, model_parameters_bounds
 # =============================================================================
 class EarlyStopper:
     """Early stopping procedure (implicit regularizaton).
