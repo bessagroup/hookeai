@@ -225,10 +225,10 @@ def build_time_series_predictions_data(dataset_file_path, predictions_dir,
     prediction_files_ids = []
     for filename in directory_list:
         # Check if file is sample results file
-        id = re.search(r'^prediction_sample_([0-9]+).pkl$', filename)
+        file_id = re.search(r'^prediction_sample_([0-9]+).pkl$', filename)
         # Assemble sample ID
-        if id is not None:
-            prediction_files_ids.append(int(id.groups()[0]))
+        if file_id is not None:
+            prediction_files_ids.append(int(file_id.groups()[0]))
     # Check prediction files
     if not prediction_files_ids:
         raise RuntimeError('No sample results files have been found in '
@@ -252,7 +252,7 @@ def build_time_series_predictions_data(dataset_file_path, predictions_dir,
         raise RuntimeError('Unknown prediction data array type.')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Initialize prediction components data
-    prediction_data_arrays = n_pred_comps*[{},]
+    prediction_data_arrays = [{} for _ in range(n_pred_comps)]
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Loop over samples
     for sample_id in samples_ids:
@@ -274,13 +274,15 @@ def build_time_series_predictions_data(dataset_file_path, predictions_dir,
         sample_results = load_sample_predictions(sample_prediction_path)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Loop over prediction components
-        for i in range(n_pred_comps):
+        for i in range(n_pred_comps):            
             # Build sample data array
             if prediction_type == 'stress_comps':
                 # Get stress component predictions
-                stress_path = sample_results['features_out']
+                stress_path = \
+                    sample_results['features_out'][:, :n_stress_comps]
                 # Get stress components ground-truth
-                stress_path_target = sample_results['targets']
+                stress_path_target = \
+                    sample_results['targets'][:, :n_stress_comps]
                 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                 # Check availability of ground-truth
                 if stress_path_target is None:
