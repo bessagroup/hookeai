@@ -17,6 +17,8 @@ root_dir = str(pathlib.Path(__file__).parents[4])
 if root_dir not in sys.path:
     sys.path.insert(0, root_dir)
 import os
+# Third-party
+import numpy as np
 # Local
 from projects.darpa_metals.rnn_material_model.rnn_model_tools. \
     convergence_plots import plot_prediction_loss_convergence, \
@@ -75,7 +77,7 @@ def generate_convergence_plots(training_dirs, testing_dirs, predictions_dirs,
     plot_time_series_convergence(training_dirs, testing_dirs,
                                  predictions_dirs, prediction_types,
                                  plot_type='time_series_scatter',
-                                 samples_ids=[0,],
+                                 samples_ids=list(np.arange(5, dtype=int)),
                                  filename='time_series_convergence',
                                  save_dir=save_dir,
                                  is_save_fig=is_save_fig,
@@ -86,7 +88,7 @@ def generate_convergence_plots(training_dirs, testing_dirs, predictions_dirs,
     plot_time_series_convergence(training_dirs, testing_dirs,
                                  predictions_dirs, prediction_types,
                                  plot_type='time_series_path',
-                                 samples_ids=[0,],
+                                 samples_ids=list(np.arange(5, dtype=int)),
                                  filename='time_series_convergence',
                                  save_dir=save_dir,
                                  is_save_fig=is_save_fig,

@@ -282,7 +282,7 @@ if __name__ == "__main__":
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set model predictions directory
     prediction_directory = os.path.join(os.path.normpath(case_study_dir),
-                                        '6_prediction')
+                                        '7_prediction')
     # Create model predictions directory
     if not os.path.isdir(prediction_directory):
         make_directory(prediction_directory)
