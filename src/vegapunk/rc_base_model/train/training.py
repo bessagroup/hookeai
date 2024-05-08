@@ -13,6 +13,10 @@ save_parameters_history
     Save model learnable parameters history record.
 read_parameters_history_from_file
     Read model learnable parameters history from parameters record file.
+save_best_parameters
+    Save best performance state model parameters.
+read_best_parameters_from_file
+    Read best performance state model parameters from file.
 """
 #
 #                                                                       Modules
@@ -467,6 +471,8 @@ def train_model(n_max_epochs, dataset, model_init_args, lr_init,
     if is_save_model_parameters:
         save_parameters_history(model, model_parameters_history_epochs,
                                 model.get_model_parameters_bounds())
+        save_best_parameters(model, best_model_parameters,
+                             model.get_model_parameters_bounds())
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Get best loss and corresponding training epoch
     best_loss = float(min(loss_history_epochs))
@@ -583,6 +589,76 @@ def read_parameters_history_from_file(parameters_record_path):
         parameters_history_record['model_parameters_bounds']
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     return model_parameters_history, model_parameters_bounds
+# =============================================================================
+def save_best_parameters(model, best_model_parameters,
+                         model_parameters_bounds):
+    """Save best performance state model parameters.
+    
+    Best performance state model parameters file is stored in model_directory
+    under the name parameters_best.pkl.
+
+    Overwrites existing model parameters file.
+    
+    Parameters
+    ----------
+    model : torch.nn.Module
+        Model.
+    best_model_parameters : dict
+        Model best performance state learnable parameters. For each model
+        parameter (key, str), store the corresponding value (item, float).
+    model_parameters_bounds : dict
+        Model learnable parameters bounds. For each parameter (key, str),
+        the corresponding bounds are stored as a
+        tuple(lower_bound, upper_bound) (item, tuple).
+    """
+    # Set model best parameters file path
+    parameters_file_path = os.path.join(model.model_directory,
+                                        'parameters_best' + '.pkl')
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Build model best parameters record
+    parameters_record = {}
+    parameters_record['best_model_parameters'] = best_model_parameters
+    parameters_record['model_parameters_bounds'] = model_parameters_bounds
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Save model best parameters
+    with open(parameters_file_path, 'wb') as parameters_file:
+        pickle.dump(parameters_record, parameters_file)
+# =============================================================================
+def read_best_parameters_from_file(parameters_file_path):
+    """Read best performance state model parameters from file.
+    
+    Best performance state model parameters file is stored in model_directory
+    under the name parameters_best.pkl.
+    
+    Parameters
+    ----------
+    parameters_file_path : str
+        Model parameters file path.
+
+    Returns
+    -------
+    best_model_parameters : dict
+        Model best performance state learnable parameters. For each model
+        parameter (key, str), store the corresponding value (item, float).
+    model_parameters_bounds : dict
+        Model learnable parameters bounds. For each parameter (key, str),
+        the corresponding bounds are stored as a
+        tuple(lower_bound, upper_bound) (item, tuple).
+    """
+    # Check model best parameters file path
+    if not os.path.isfile(parameters_file_path):
+        raise RuntimeError('Model best parameters file has not been '
+                           'found:\n\n' + parameters_file_path)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Load model best parameters
+    with open(parameters_file_path, 'rb') as parameters_file:
+        parameters_record = pickle.load(parameters_file)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Get model parameters history
+    best_model_parameters = parameters_record['best_model_parameters']
+    model_parameters_bounds = parameters_record['model_parameters_bounds']
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    return best_model_parameters, model_parameters_bounds
 # =============================================================================
 class EarlyStopper:
     """Early stopping procedure (implicit regularizaton).
