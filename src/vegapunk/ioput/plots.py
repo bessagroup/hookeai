@@ -1824,7 +1824,8 @@ def plot_histogram_2d(data, bins=10, bins_range=None,
     # Return figure and axes handlers
     return figure, axes
 # =============================================================================
-def save_figure(figure, filename, format='pdf', save_dir=None):
+def save_figure(figure, filename, format='pdf', save_dir=None,
+                is_tight_layout=False):
     """Save Matplotlib figure.
     
     Parameters
@@ -1838,6 +1839,8 @@ def save_figure(figure, filename, format='pdf', save_dir=None):
     save_dir : str, default=None
         Directory where figure is saved. If None, then figure is saved in
         current working directory.
+    is_tight_layout : bool, default=False
+        Automatically adjust subplots to avoid overlaps.
     """
     # Set figure directory
     if save_dir is None:
@@ -1850,9 +1853,18 @@ def save_figure(figure, filename, format='pdf', save_dir=None):
     # Set figure path
     filepath = os.path.join(save_dir, f'{str(filename)}.{format}')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Get figure display size
+    fig_width, fig_height = figure.get_size_inches()
+    # Get figure display size ratio
+    size_ratio = fig_width/fig_height
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~    
     # Set figure size (inches)
     figure.set_figheight(3.6, forward=False)
-    figure.set_figwidth(3.6, forward=False)
+    figure.set_figwidth(3.6*size_ratio, forward=False)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~    
+    # Adjust subplots to avoid overlaps
+    if is_tight_layout:
+        figure.tight_layout()
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Save figure
     figure.savefig(filepath, transparent=False, dpi=300, bbox_inches='tight')
