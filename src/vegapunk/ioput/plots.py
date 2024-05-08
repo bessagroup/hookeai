@@ -414,11 +414,12 @@ def plot_xy2_data(data_xy1, data_xy2, x_lims=(None, None),
     # Return figure and axes handlers
     return figure, axes
 # =============================================================================
-def plot_xny_data(data_xy_list, range_type='min-max', data_labels=None,
-                  x_lims=(None, None), y_lims=(None, None), title=None,
-                  x_label=None, y_label=None, x_scale='linear',
-                  y_scale='linear', x_tick_format=None, y_tick_format=None,
-                  is_latex=False):
+def plot_xny_data(data_xy_list, range_type='min-max', is_error_bar=False,
+                  is_error_shading=True, data_labels=None,
+                  is_reference_data=False, x_lims=(None, None),
+                  y_lims=(None, None), title=None, x_label=None, y_label=None,
+                  x_scale='linear', y_scale='linear', x_tick_format=None,
+                  y_tick_format=None, is_latex=False):
     """Plot data in xy axes with given range of y-values for each x-value.
 
     Parameters
@@ -426,13 +427,21 @@ def plot_xny_data(data_xy_list, range_type='min-max', data_labels=None,
     data_xy_list : list[np.ndarray(2d)]
         List of data arrays. Each data array contains plot data stored
         columnwise such that data_array[:, 0] holds the x-axis data and
-        data_array[:, 1:] holds the y-axis data. For each x-value, the mean and
-        variance of the y-values are plotted.
-    range_type : {'min-max', 'mean-std'}, default='min-max'
-        Type of range of y-values to be plotted for each x-value.
+        data_array[:, 1:] holds the y-axis data.
+    range_type : {'min-max', 'mean-std', None}, default='min-max'
+        Type of range of y-values to be plotted for each x-value around the
+        mean. If None, only the mean is plotted.
+    is_error_bar : bool, default=True
+        If True, then plot error bar according with range type.
+    is_error_shading : bool, default=False,
+        If True, then shade error according with range type.
     data_labels : list, default=None
         Labels of data arrays provided in data_xy_list and sorted accordingly.
         If None, then no labels are displayed.
+    is_reference_data : bool, default=False
+        If True, then the first data set is assumed to be the reference and is
+        formatted independently (black, dashed, on top). Reference data is
+        ignored for the range computation.
     x_lims : tuple, default=(None, None)
         x-axis limits in data coordinates.
     y_lims : tuple, default=(None, None)
@@ -567,25 +576,56 @@ def plot_xny_data(data_xy_list, range_type='min-max', data_labels=None,
         # Get data array
         data_xy = data_xy_list[i]
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        # Get x-values
-        x = data_xy[:, 0]
-        # Get y-values range
-        if range_type == 'min-max':
-           y_mean = np.mean(data_xy[:, 1:], axis=1)
-           y_err = np.concatenate(
-               (np.min(data_xy[:, 1:], axis=1).reshape(1, -1),
-                np.max(data_xy[:, 1:], axis=1).reshape(1, -1)), axis=0)
-        elif range_type == 'mean-std':
-           y_mean = np.mean(data_xy[:, 1:], axis=1)
-           y_err = np.concatenate(
-               (1.96*np.std(data_xy[:, 1:], axis=1).reshape(1, -1),
-                1.96*np.std(data_xy[:, 1:], axis=1).reshape(1, -1)), axis=0)
+        # Plot data
+        if is_reference_data and i == 0:
+            # Plot reference data set
+            axes.plot(data_xy[:, 2*i], data_xy[:, 2*i + 1],
+                      label=tex_str(data_labels[i], is_latex),
+                      color='k', linestyle='--', zorder=20)
         else:
-            raise RuntimeError('Unknown type of range.')
-        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        # Plot data set
-        axes.errorbar(x, y_mean, yerr=y_err, capsize=3,
-                      label=tex_str(data_labels[i], is_latex))
+            # Get x-values
+            x = data_xy[:, 0]
+            # Get y-values mean
+            y_mean = np.mean(data_xy[:, 1:], axis=1)
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Get y-values range
+            if range_type == 'min-max':
+                # Set lower and upper errors: [|mean - min|, |mean - max|]
+                y_err = np.concatenate(
+                    (np.absolute(y_mean - np.min(data_xy[:, 1:],
+                                        axis=1)).reshape(1, -1),
+                     np.absolute(y_mean - np.max(data_xy[:, 1:],
+                                        axis=1).reshape(1, -1))),
+                    axis=0)
+            elif range_type == 'mean-std':
+                # Set lower and upper errors: [1.96*std, 1.96*std]
+                y_err = np.concatenate(
+                    (1.96*np.std(data_xy[:, 1:].astype(float),
+                                 axis=1).reshape(1, -1),
+                     1.96*np.std(data_xy[:, 1:].astype(float),
+                                 axis=1).reshape(1, -1)), axis=0)
+            else:
+                # Skip range computation
+                y_err = None
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Set plot formatting
+            if is_error_bar and y_err is not None:
+                fmt = '-o'
+                yerr = y_err
+            else:
+                fmt = '-'
+                yerr = None
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Plot data mean and error bar
+            axes.errorbar(x, y_mean, yerr=yerr, fmt=fmt, markersize=1.5,
+                          capsize=2, label=tex_str(data_labels[i], is_latex))
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Plot data error shaded area
+            if is_error_shading and y_err is not None:
+                axes.fill_between(x.astype(float),
+                                  (y_mean - y_err[0, :]).astype(float),
+                                  (y_mean + y_err[1, :]).astype(float),
+                                  alpha=0.5)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set legend
     if not all([x is None for x in data_labels]):
