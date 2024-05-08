@@ -24,12 +24,15 @@ if root_dir not in sys.path:
     sys.path.insert(0, root_dir)
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 import os
+import random
 # Third-party
 import torch
 # Local
 from rnn_base_model.data.time_dataset import load_dataset, \
     concatenate_dataset_features
-from rc_base_model.train.training import train_model
+from rc_base_model.train.training import train_model, \
+    read_parameters_history_from_file
+from rc_base_model.train.training_plots import plot_model_parameters_history
 from gnn_base_model.train.training import \
     read_loss_history_from_file, read_lr_history_from_file
 from gnn_base_model.model.model_summary import get_model_summary
@@ -70,7 +73,7 @@ def perform_model_standard_training(train_dataset_file_path, model_directory,
                                                    device_type)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set constitutive model for training
-    material_model_name = 'elastic'
+    material_model_name = 'von_mises'
     # Set constitutive model parameters
     if material_model_name == 'von_mises':
         # Set material constitutive model parameters
@@ -83,8 +86,14 @@ def perform_model_standard_training(train_dataset_file_path, model_directory,
                                       'a': 700,
                                       'b': 0.5,
                                       'ep0': 1e-5}}
-        # Set learnable parameters (NEEDS UPDATE)
-        learnable_parameters = ('s0',)
+        # Set learnable parameters
+        learnable_parameters = {}
+        learnable_parameters['E'] = \
+            {'initial_value': random.uniform(100e3, 120e3),
+             'bounds': (100e3, 120e3)}
+        learnable_parameters['v'] = \
+            {'initial_value': random.uniform(0.3, 0.4),
+             'bounds': (0.3, 0.4)}
         # Set material constitutive state variables (prediction)
         state_features_out = {'acc_p_strain': 1,}
     elif material_model_name == 'drucker_prager':
@@ -101,8 +110,14 @@ def perform_model_standard_training(train_dataset_file_path, model_directory,
              'yield_cohesion_parameter': 0.0,
              'yield_pressure_parameter': 0.0,
              'flow_pressure_parameter': 0.0}
-        # Set learnable parameters (NEEDS UPDATE)
-        learnable_parameters = ('s0',)
+        # Set learnable parameters
+        learnable_parameters = {}
+        learnable_parameters['E'] = \
+            {'initial_value': random.uniform(100e3, 120e3),
+             'bounds': (100e3, 120e3)}
+        learnable_parameters['v'] = \
+            {'initial_value': random.uniform(0.3, 0.4),
+             'bounds': (0.3, 0.4)}
         # Set material constitutive state variables (prediction)
         state_features_out = {'acc_p_strain': 1,}
     else:
@@ -113,10 +128,12 @@ def perform_model_standard_training(train_dataset_file_path, model_directory,
              'euler_angles': (0.0, 0.0, 0.0)}
         # Set learnable parameters
         learnable_parameters = {}
-        learnable_parameters['E'] = {'initial_value': 100e3,
-                                     'bounds': (100e3, 120e3)}
-        learnable_parameters['v'] = {'initial_value': 0.3,
-                                     'bounds': (0.3, 0.36)}
+        learnable_parameters['E'] = \
+            {'initial_value': random.uniform(100e3, 120e3),
+             'bounds': (100e3, 120e3)}
+        learnable_parameters['v'] = \
+            {'initial_value': random.uniform(0.3, 0.4),
+             'bounds': (0.3, 0.4)}
         # Set constitutive state variables to include in data set
         state_features_out = {}
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -134,7 +151,7 @@ def perform_model_standard_training(train_dataset_file_path, model_directory,
                 set_default_training_options()
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set data features for training
-    features_option = 'stress'
+    features_option = 'stress_acc_p_strain'
     if features_option == 'stress_acc_p_strain':
         # Set input features
         new_label_in = 'features_in'
@@ -160,19 +177,19 @@ def perform_model_standard_training(train_dataset_file_path, model_directory,
     # Set number of epochs
     n_max_epochs = 200
     # Set batch size
-    batch_size = 32
+    batch_size = 4
     # Set learning rate
     lr_init = 1.0e+01
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Compute exponential decay (learning rate scheduler)
-    lr_end = 1.0e-3
+    lr_end = 1.0e-1
     gamma = (lr_end/lr_init)**(1/n_max_epochs)
     # Set learning rate scheduler
     lr_scheduler_type = 'explr'
     lr_scheduler_kwargs = {'gamma': gamma}
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set early stopping
-    is_early_stopping = False
+    is_early_stopping = True
     # Set early stopping parameters
     if is_early_stopping:
         # Check validation data set file path
@@ -427,9 +444,9 @@ if __name__ == "__main__":
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set case studies base directory
     base_dir = ('/home/bernardoferreira/Documents/brown/projects/'
-                'darpa_project/3_local_rc_training/elastic/')
+                'darpa_project/3_local_rc_training/von_mises/')
     # Set case study directory
-    case_study_name = 'elastic_proportional_paths'
+    case_study_name = 'convergence_analyses/elastic_properties/n1'
     case_study_dir = os.path.join(os.path.normpath(base_dir),
                                   f'{case_study_name}')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -460,16 +477,18 @@ if __name__ == "__main__":
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set validation data set directory
     val_dataset_directory = os.path.join(os.path.normpath(case_study_dir),
-                                        '2_validation_dataset')
+                                         '2_validation_dataset')
     # Get validation data set file path
-    regex = (r'^ss_paths_dataset_n[0-9]+.pkl$',)
-    is_file_found, val_dataset_file_path = \
-        find_unique_file_with_regex(val_dataset_directory, regex)
-    # Check data set file
-    if not is_file_found:
-        raise RuntimeError(f'Validation data set file has not been found  '
-                           f'in data set directory:\n\n'
-                           f'{val_dataset_directory}')
+    val_dataset_file_path = None
+    if os.path.isdir(val_dataset_directory):
+        regex = (r'^ss_paths_dataset_n[0-9]+.pkl$',)
+        is_file_found, val_dataset_file_path = \
+            find_unique_file_with_regex(val_dataset_directory, regex)
+        # Check data set file
+        if not is_file_found:
+            raise RuntimeError(f'Validation data set file has not been found  '
+                               f'in data set directory:\n\n'
+                               f'{val_dataset_directory}')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set device type
     if torch.cuda.is_available():
