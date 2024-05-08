@@ -61,12 +61,17 @@ def perform_model_prediction(predict_directory, dataset_file_path,
         Type of device on which torch.Tensor is allocated.
     is_verbose : bool, default=False
         If True, enable verbose output.
+        
+    Returns
+    -------
+    predict_subdir : str
+        Subdirectory where samples predictions results files are stored.
     """
     # Set default model prediction options
     loss_nature, loss_type, loss_kwargs = set_default_prediction_options()
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set data features for prediction
-    features_option = 'default'
+    features_option = 'stress_acc_p_strain'
     if features_option == 'stress_acc_p_strain':
         # Set input features
         new_label_in = 'features_in'
@@ -100,6 +105,8 @@ def perform_model_prediction(predict_directory, dataset_file_path,
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Generate plots of model predictions
     generate_prediction_plots(dataset_file_path, predict_subdir)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    return predict_subdir
 # =============================================================================
 def generate_prediction_plots(dataset_file_path, predict_subdir):
     """Generate plots of model predictions.
@@ -120,7 +127,7 @@ def generate_prediction_plots(dataset_file_path, predict_subdir):
     prediction_types = {}
     prediction_types['stress_comps'] = ('stress_11', 'stress_22', 'stress_33',
                                         'stress_12', 'stress_23', 'stress_13')
-    #prediction_types['acc_p_strain'] = ('acc_p_strain',)
+    prediction_types['acc_p_strain'] = ('acc_p_strain',)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Plot model predictions against ground-truth
     for prediction_type, prediction_comp in prediction_types.items():
@@ -156,7 +163,7 @@ def generate_prediction_plots(dataset_file_path, predict_subdir):
         # Build times series predictions data arrays
         prediction_data_dicts = build_time_series_predictions_data(
             dataset_file_path, predict_subdir, prediction_type=prediction_type,
-            samples_ids=list(np.arange(5, dtype=int)))
+            samples_ids=list(np.arange(1, dtype=int)))
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~   
         # Loop over times series predictions components
         for i, data_dict in enumerate(prediction_data_dicts):
@@ -211,13 +218,13 @@ def set_default_prediction_options():
 if __name__ == "__main__":
     # Set testing type
     testing_type = ('training', 'validation', 'in_distribution',
-                    'out_distribution')[0]
+                    'out_distribution')[2]
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set case studies base directory
     base_dir = ('/home/bernardoferreira/Documents/brown/projects/'
-                'darpa_project/3_local_rc_training/elastic/')
+                'darpa_project/3_local_rc_training/von_mises/')
     # Set case study directory
-    case_study_name = 'elastic_proportional_paths'
+    case_study_name = 'convergence_analyses/elastic_properties/n1'
     case_study_dir = os.path.join(os.path.normpath(base_dir),
                                   f'{case_study_name}')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -261,7 +268,7 @@ if __name__ == "__main__":
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set model predictions directory
     prediction_directory = os.path.join(os.path.normpath(case_study_dir),
-                                        '6_prediction')
+                                        '7_prediction')
     # Create model predictions directory
     if not os.path.isdir(prediction_directory):
         make_directory(prediction_directory)
