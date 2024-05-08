@@ -1308,7 +1308,8 @@ def grouped_bar_chart(groups_labels, groups_data, bar_width=None,
 # =============================================================================
 def plot_boxplots(data_boxplots, data_labels=None, is_mean_line=False,
                   y_lims=(None, None), title=None, x_label=None, y_label=None,
-                  y_scale='linear', y_tick_format=None, is_latex=False):
+                  y_scale='linear', y_tick_format=None,
+                  is_multiple_subplots=False, is_latex=False):
     """Plot set of box plots.
 
     Parameters
@@ -1383,84 +1384,113 @@ def plot_boxplots(data_boxplots, data_labels=None, is_mean_line=False,
         plt.rc('font', **{'family': 'serif',
                           'serif': ['Computer Modern Roman']})
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Set number of subplots
+    is_multiple_subplots = True
+    if is_multiple_subplots:
+        n_subplots = n_boxplots
+    else:
+        n_subplots = 1
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Create figure
     figure = plt.figure()
     # Set figure size (inches) - stdout print purpose
     figure.set_figheight(6, forward=True)
-    figure.set_figwidth(6, forward=True)
+    if n_subplots > 1:
+        figure.set_figwidth((6 + n_subplots - 1), forward=True)
+    else:
+        figure.set_figwidth(6, forward=True)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Create axes
-    axes = figure.add_subplot(1, 1, 1)
-    # Set title
-    axes.set_title(tex_str(title, is_latex), fontsize=12, pad=10)
-    # Set axes labels
-    axes.set_xlabel(tex_str(x_label, is_latex), fontsize=12, labelpad=10)
-    axes.set_ylabel(tex_str(y_label, is_latex), fontsize=12, labelpad=10)
-    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Set axes scales
-    if y_scale in ('linear', 'log', 'symlog'):
-        axes.set_yscale(y_scale)
-    # Set tick formatting functions
-    def intTickFormat(x, pos):
-        frmt = tex_str('{:2d}', is_latex)
-        return frmt.format(int(x))
-    def floatTickFormat(x, pos):
-        frmt = tex_str('{:3.1f}', is_latex)
-        return frmt.format(x)
-    def expTickFormat(x, pos):
-        frmt = tex_str('{:7.2e}', is_latex)
-        return frmt.format(x)
-    tick_formats = {'int': intTickFormat, 'float': floatTickFormat,
-                    'exp': expTickFormat}
-    # Set axes tick formats
-    if y_scale != 'log' and y_tick_format in ('int', 'float', 'exp'):
-        axes.yaxis.set_major_formatter(
-            ticker.FuncFormatter(tick_formats[y_tick_format]))
-    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Configure grid major lines
-    axes.grid(which='major', axis='both', linestyle='-', linewidth=0.5,
-              color='0.5', zorder=0)     
-    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Set median line properties
-    medianprops = dict(linestyle='-', linewidth=1, color='k')
-    # Set outliers properties
-    flierprops = dict(marker='o', markersize=5)
-    # Set mean line properties
-    meanlineprops = None
-    if is_mean_line:
-        meanlineprops = dict(linestyle='-', linewidth=1.5, color='#d62728')
-    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Plot set of box plots
-    bp = axes.boxplot(data_boxplots, labels=data_labels,
-                      flierprops=flierprops, medianprops=medianprops,
-                      showmeans=is_mean_line, meanline=is_mean_line,
-                      meanprops=meanlineprops, patch_artist=True,
-                      zorder=10)
-    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Set box plots face color
-    for patch in bp['boxes']:
-        patch.set(facecolor='#4477AA')
-    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Plot mean line annotation
-    for i, line in enumerate(bp['means']):
-        # Get mean line coordinates
-        x0, _ = line.get_xydata()[0, :]
-        x1, y1 = line.get_xydata()[1, :]
-        # Set annotation text coordinates
-        x_text = x1 + 0.1*(x1 - x0)
-        y_text = y1
-        # Set annotation text
-        if is_latex:
-            text = '$\mu$'
+    # Loop over subplots
+    for k in range(n_subplots):
+        # Create axes
+        axes = figure.add_subplot(1, n_subplots, k + 1)
+        # Set title
+        axes.set_title(tex_str(title, is_latex), fontsize=12, pad=10)
+        # Set axes labels
+        if n_subplots == 1:
+            axes.set_xlabel(tex_str(x_label, is_latex), fontsize=12,
+                            labelpad=10)
+            axes.set_ylabel(tex_str(y_label, is_latex), fontsize=12,
+                            labelpad=10)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set axes scales
+        if y_scale in ('linear', 'log', 'symlog'):
+            axes.set_yscale(y_scale)
+        # Set tick formatting functions
+        def intTickFormat(x, pos):
+            frmt = tex_str('{:2d}', is_latex)
+            return frmt.format(int(x))
+        def floatTickFormat(x, pos):
+            frmt = tex_str('{:3.1f}', is_latex)
+            return frmt.format(x)
+        def expTickFormat(x, pos):
+            frmt = tex_str('{:7.2e}', is_latex)
+            return frmt.format(x)
+        tick_formats = {'int': intTickFormat, 'float': floatTickFormat,
+                        'exp': expTickFormat}
+        # Set axes tick formats
+        if y_scale != 'log' and y_tick_format in ('int', 'float', 'exp'):
+            axes.yaxis.set_major_formatter(
+                ticker.FuncFormatter(tick_formats[y_tick_format]))
+        # Set axes tick parameters
+        if n_subplots > 1:
+            axes.tick_params(which='both', axis='y', labelsize=8)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Configure grid major lines
+        axes.grid(which='major', axis='both', linestyle='-', linewidth=0.5,
+                color='0.5', zorder=0)     
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set median line properties
+        medianprops = dict(linestyle='-', linewidth=1, color='k')
+        # Set outliers properties
+        flierprops = dict(marker='o', markersize=5)
+        # Set mean line properties
+        meanlineprops = None
+        if is_mean_line:
+            meanlineprops = dict(linestyle='-', linewidth=1.5, color='#d62728')
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Plot set of box plots
+        if is_multiple_subplots:
+            bp = axes.boxplot(data_boxplots[:, k].reshape(-1, 1),
+                              labels=(data_labels[k],), flierprops=flierprops,
+                              medianprops=medianprops, showmeans=is_mean_line,
+                              meanline=is_mean_line, meanprops=meanlineprops,
+                              patch_artist=True, zorder=10)
         else:
-            text = 'μ'
+            bp = axes.boxplot(data_boxplots, labels=data_labels,
+                              flierprops=flierprops, medianprops=medianprops,
+                              showmeans=is_mean_line, meanline=is_mean_line,
+                              meanprops=meanlineprops, patch_artist=True,
+                              zorder=10)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set box plots face color
+        for patch in bp['boxes']:
+            patch.set(facecolor='#4477AA')
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Plot mean line annotation
-        axes.annotate(text, xy=(x_text, y_text), color='#d62728', va='center',
-                      size=12)
+        for i, line in enumerate(bp['means']):
+            # Get mean line coordinates
+            x0, _ = line.get_xydata()[0, :]
+            x1, y1 = line.get_xydata()[1, :]
+            # Set annotation text coordinates
+            x_text = x1 + 0.1*(x1 - x0)
+            y_text = y1
+            # Set annotation text
+            if is_latex:
+                text = '$\mu$'
+            else:
+                text = 'μ'
+            # Plot mean line annotation
+            axes.annotate(text, xy=(x_text, y_text), color='#d62728',
+                          va='center', size=12)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set axes limits
+        if y_lims != (None, None):
+            axes.set_ylim(y_lims)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Set axes limits
-    if y_lims != (None, None):
-        axes.set_ylim(y_lims)
+    # Adjust spacing to avoid overlaps between multiple subplots
+    if n_subplots > 1:
+        figure.tight_layout()
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Return figure and axes handlers
     return figure, axes
