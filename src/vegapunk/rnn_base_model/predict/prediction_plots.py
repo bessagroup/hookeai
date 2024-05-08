@@ -12,7 +12,7 @@ plot_time_series_prediction
 import numpy as np
 import matplotlib.pyplot as plt
 # Local
-from ioput.plots import plot_xy_data, save_figure
+from ioput.plots import plot_xy_data, plot_xny_data, save_figure
 #
 #                                                          Authorship & Credits
 # =============================================================================
@@ -25,6 +25,7 @@ __status__ = 'Planning'
 def plot_time_series_prediction(prediction_sets, is_reference_data=False,
                                 x_label='Time', y_label='Value',
                                 is_normalize_data=False,
+                                is_uncertainty_quantification=False,
                                 filename='time_series_prediction',
                                 save_dir=None, is_save_fig=False,
                                 is_stdout_display=False, is_latex=False):
@@ -46,6 +47,11 @@ def plot_time_series_prediction(prediction_sets, is_reference_data=False,
         y-axis label.
     is_normalize_data : bool, default=False
         Normalize time and predictions data to the range [0, 1].
+    is_uncertainty_quantification: bool, default=False
+        If True, then plot the prediction processes range of time series
+        predictions for each time. Assumes the same time sequence length and
+        concatenates all the different prediction processes. Data labels are
+        suppressed.
     filename : str, default='time_series_prediction'
         Figure name.
     save_dir : str, default=None
@@ -92,7 +98,7 @@ def plot_time_series_prediction(prediction_sets, is_reference_data=False,
         data_xy[:n_time, 2*i] = val[:, 0]
         data_xy[:n_time, 2*i + 1] = val[:, 1]
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        # Assebmle prediction process label
+        # Assemble prediction process label
         data_labels.append(key)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Normalize prediction data
@@ -110,6 +116,34 @@ def plot_time_series_prediction(prediction_sets, is_reference_data=False,
             data_xy[:n_time, 2*i+1] = \
                 (data_xy[:, 2*i+1] - min_pred)/(max_pred - min_pred)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Restructure prediction data (uncertainty quantification)
+    if is_uncertainty_quantification:
+        # Check if all processes share the same sequence length
+        if len(set([x.shape[0] for x in prediction_sets.values()])) != 1:
+            raise RuntimeError('All prediction processes must share the same '
+                               'sequence length for uncertainy quantification '
+                               'plot.')
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Initialize prediction data list
+        data_xy_list = []
+        # Get time sequence from the first prediction process
+        x_data = data_xy[:, 0].reshape(-1, 1)
+        # Assemble reference data
+        if is_reference_data:
+            # Get reference prediction data
+            y_data = data_xy[:, 1].reshape(-1, 1)
+            # Assemble reference prediction data
+            data_xy_list.append(np.concatenate((x_data, y_data), axis=1))
+        # Concatenate all prediction processes time series predictions
+        if is_reference_data:
+            y_data = np.delete(data_xy[:, 2:], np.s_[0::2], axis=1)
+        else:
+            y_data = np.delete(data_xy[:, 0:], np.s_[0::2], axis=1)
+        # Assemble prediction data
+        data_xy_list.append(np.concatenate((x_data, y_data), axis=1))
+        # Suppress data labels
+        data_labels = None
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set axes limits
     if is_normalize_data:
         x_lims = (0, 1)
@@ -124,10 +158,20 @@ def plot_time_series_prediction(prediction_sets, is_reference_data=False,
         y_label += ' (Normalized)'
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Plot time series predictions
-    figure, _ = plot_xy_data(data_xy, data_labels=data_labels,
-                             is_reference_data=is_reference_data,
-                             x_lims=x_lims, y_lims=y_lims, x_label=x_label,
-                             y_label=y_label, is_latex=is_latex)
+    if is_uncertainty_quantification:
+        figure, _ = plot_xny_data(data_xy_list, range_type='mean-std',
+                                  is_error_bar=False,
+                                  is_error_shading=True,
+                                  data_labels=data_labels,
+                                  is_reference_data=is_reference_data,
+                                  x_lims=x_lims, y_lims=y_lims,
+                                  x_label=x_label, y_label=y_label,
+                                  is_latex=is_latex)
+    else:
+        figure, _ = plot_xy_data(data_xy, data_labels=data_labels,
+                                 is_reference_data=is_reference_data,
+                                 x_lims=x_lims, y_lims=y_lims, x_label=x_label,
+                                 y_label=y_label, is_latex=is_latex)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Display figure
     if is_stdout_display:
