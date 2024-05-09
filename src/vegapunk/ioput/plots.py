@@ -849,6 +849,7 @@ def plot_xyz_data(data_xyz, data_labels=None, x_lims=(None, None),
 def scatter_xy_data(data_xy, data_labels=None, is_identity_line=False,
                     identity_error=None, is_r2_coefficient=False,
                     is_direct_loss_estimator=False, is_marginal_dists=False,
+                    is_error_bar=False, range_type='min-max',
                     x_lims=(None, None), y_lims=(None, None), title=None,
                     x_label=None, y_label=None, x_scale='linear',
                     y_scale='linear', x_tick_format=None, y_tick_format=None,
@@ -879,6 +880,14 @@ def scatter_xy_data(data_xy, data_labels=None, is_identity_line=False,
     is_marginal_dists : bool, default=False
         Plot marginal distributions along both dimensions. Multiple data sets
         are concatenated along each dimension.
+    is_error_bar : bool, default=False
+        If True, then plot error bar according with range type. Multiple data
+        sets are concatenated and the x values are assumed common between all
+        data sets. Data labels are suppressed.
+    range_type : {'min-max', 'mean-std', None}, default='min-max'
+        Type of range of y-values to be plotted for each x-value around the
+        mean. If None, only the mean is plotted. Only effective if is_error_bar
+        is set to True.
     x_lims : tuple, default=(None, None)
         x-axis limits in data coordinates.
     y_lims : tuple, default=(None, None)
@@ -1024,13 +1033,47 @@ def scatter_xy_data(data_xy, data_labels=None, is_identity_line=False,
         axes.grid(which='minor', axis=axis_option[xy_scale], linestyle='-',
                   linewidth=0.5, color='0.5', zorder=-20)        
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Loop over data sets
-    for i in range(n_datasets):
-        # Plot dataset
-        axes.scatter(data_xy[:, 2*i], data_xy[:, 2*i + 1],
-                     s=10, edgecolor='k', linewidth=0.5,
-                     label=tex_str(data_labels[i], is_latex),
-                     zorder=10)
+    # Plot data
+    if is_error_bar:
+        # Get x-values
+        x = data_xy[:, 0]
+        # Get y-values mean
+        y_mean = np.mean(data_xy[:, 1::2], axis=1)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Get y-values range
+        if range_type == 'min-max':
+            # Set lower and upper errors: [|mean - min|, |mean - max|]
+            y_err = np.concatenate(
+                (np.absolute(y_mean - np.min(data_xy[:, 1::2],
+                                             axis=1)).reshape(1, -1),
+                 np.absolute(y_mean - np.max(data_xy[:, 1::2],
+                                             axis=1).reshape(1, -1))), axis=0)
+        elif range_type == 'mean-std':
+            # Set lower and upper errors: [1.96*std, 1.96*std]
+            y_err = np.concatenate(
+                (1.96*np.std(data_xy[:, 1:].astype(float),
+                             axis=1).reshape(1, -1),
+                 1.96*np.std(data_xy[:, 1:].astype(float),
+                             axis=1).reshape(1, -1)), axis=0)
+        else:
+            # Skip range computation
+            y_err = None
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Plot data (concatenating data from all data sets)
+        axes.errorbar(x, y_mean, yerr=y_err, fmt='o', markersize=3,
+                      markeredgecolor='k', markeredgewidth=0.5, ecolor='k',
+                      elinewidth=1.0, capsize=2)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Suppress data labels
+        data_labels = n_datasets*[None,]
+    else:
+        # Loop over data sets
+        for i in range(n_datasets):
+            # Plot data set
+            axes.scatter(data_xy[:, 2*i], data_xy[:, 2*i + 1],
+                         s=10, edgecolor='k', linewidth=0.5,
+                         label=tex_str(data_labels[i], is_latex),
+                         zorder=10)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set axes limits
     axes.set_xlim(x_lims)
@@ -1385,7 +1428,6 @@ def plot_boxplots(data_boxplots, data_labels=None, is_mean_line=False,
                           'serif': ['Computer Modern Roman']})
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set number of subplots
-    is_multiple_subplots = True
     if is_multiple_subplots:
         n_subplots = n_boxplots
     else:
