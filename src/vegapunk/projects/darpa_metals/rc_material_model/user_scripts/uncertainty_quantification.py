@@ -1,4 +1,4 @@
-"""DARPA METALS PROJECT: UQ of recurrent constitutive model.
+"""DARPA METALS PROJECT: Uncertainty quantification of RCM.
 
 Functions
 ---------
@@ -24,6 +24,7 @@ if root_dir not in sys.path:
 import os
 import shutil
 import re
+import pickle
 # Third-party
 import torch
 import numpy as np
@@ -129,6 +130,9 @@ def perform_model_uq(uq_directory, n_model_sample, train_dataset_file_path,
             if not os.path.isdir(sample_prediction_dir):
                 make_directory(sample_prediction_dir)
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Create model prediction subdirectory (overwrite)
+            make_directory(predict_directory, is_overwrite=True)
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Perform model prediction
             predict_subdir = perform_model_prediction(
                 predict_directory, test_dataset_file_path, sample_model_dir,
@@ -181,6 +185,11 @@ def gen_model_uq_plots(uq_directory, testing_dataset_dir, testing_type,
     # Create uncertainty quantification plots directory
     if not os.path.isdir(plots_dir):
         make_directory(plots_dir)
+    # Create uncertainty quantification plots data subdirectory
+    data_dir = os.path.join(os.path.normpath(plots_dir), 'data')
+    # Create uncertainty quantification data directory
+    if not os.path.isdir(data_dir):
+        make_directory(data_dir)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Initialize model samples directories
     model_sample_dirs = []
@@ -235,6 +244,17 @@ def gen_model_uq_plots(uq_directory, testing_dataset_dir, testing_type,
         for j, val in enumerate(samples_best_model_parameters[i].values()):
             # Assemble model sample parameters
             samples_parameters_data[i, j] = val
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Set model samples parameters data file path
+    parameters_file_path = \
+        os.path.join(data_dir, filename + '_best_parameters_data' + '.pkl')
+    # Build model samples parameters data record
+    parameters_record = {}
+    parameters_record['model_parameters_names'] = model_parameters_names
+    parameters_record['samples_parameters_data'] = samples_parameters_data
+    # Save model samples best parameters data
+    with open(parameters_file_path, 'wb') as parameters_file:
+        pickle.dump(parameters_record, parameters_file)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Plot model parameters box plot
     figure, _ = plot_boxplots(samples_parameters_data, model_parameters_names,
