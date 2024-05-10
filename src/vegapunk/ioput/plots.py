@@ -593,9 +593,9 @@ def plot_xny_data(data_xy_list, range_type='min-max', is_error_bar=False,
                 # Set lower and upper errors: [|mean - min|, |mean - max|]
                 y_err = np.concatenate(
                     (np.absolute(y_mean - np.min(data_xy[:, 1:],
-                                        axis=1)).reshape(1, -1),
+                                                 axis=1)).reshape(1, -1),
                      np.absolute(y_mean - np.max(data_xy[:, 1:],
-                                        axis=1).reshape(1, -1))),
+                                                 axis=1).reshape(1, -1))),
                     axis=0)
             elif range_type == 'mean-std':
                 # Set lower and upper errors: [1.96*std, 1.96*std]
@@ -603,10 +603,11 @@ def plot_xny_data(data_xy_list, range_type='min-max', is_error_bar=False,
                     (1.96*np.std(data_xy[:, 1:].astype(float),
                                  axis=1).reshape(1, -1),
                      1.96*np.std(data_xy[:, 1:].astype(float),
-                                 axis=1).reshape(1, -1)), axis=0)
+                                 axis=1).reshape(1, -1)),
+                    axis=0)
             else:
                 # Skip range computation
-                y_err = None
+                y_err = None                
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Set plot formatting
             if is_error_bar and y_err is not None:
@@ -637,9 +638,10 @@ def plot_xny_data(data_xy_list, range_type='min-max', is_error_bar=False,
             loc = 'upper left'
             ncols = 1
         # Plot legend
-        axes.legend(loc=loc, ncols=ncols, frameon=True, fancybox=True,
-                    facecolor='inherit', edgecolor='inherit', fontsize=8,
-                    framealpha=1.0)
+        legend = axes.legend(loc=loc, ncols=ncols, frameon=True, fancybox=True,
+                             facecolor='inherit', edgecolor='inherit',
+                             fontsize=8, framealpha=1.0)
+        legend.set_zorder(50)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set axes limits
     if x_lims != (None, None):
@@ -1051,13 +1053,14 @@ def scatter_xy_data(data_xy, data_labels=None, is_identity_line=False,
         elif range_type == 'mean-std':
             # Set lower and upper errors: [1.96*std, 1.96*std]
             y_err = np.concatenate(
-                (1.96*np.std(data_xy[:, 1:].astype(float),
+                (1.96*np.std(data_xy[:, 1::2].astype(float),
                              axis=1).reshape(1, -1),
-                 1.96*np.std(data_xy[:, 1:].astype(float),
-                             axis=1).reshape(1, -1)), axis=0)
+                 1.96*np.std(data_xy[:, 1::2].astype(float),
+                             axis=1).reshape(1, -1)),
+                axis=0)
         else:
             # Skip range computation
-            y_err = None
+            y_err = None            
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Plot data (concatenating data from all data sets)
         axes.errorbar(x, y_mean, yerr=y_err, fmt='o', markersize=3,
@@ -1181,9 +1184,10 @@ def scatter_xy_data(data_xy, data_labels=None, is_identity_line=False,
             loc = 'upper left'
             ncols = 1
         # Plot legend
-        axes.legend(loc=loc, ncols=ncols, frameon=True, fancybox=True,
-                    facecolor='inherit', edgecolor='inherit', fontsize=8,
-                    framealpha=1.0).set_zorder(30)
+        legend = axes.legend(loc=loc, ncols=ncols, frameon=True, fancybox=True,
+                             facecolor='inherit', edgecolor='inherit',
+                             fontsize=8, framealpha=1.0)
+        legend.set_zorder(50)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Return figure and axes handlers
     return figure, axes
