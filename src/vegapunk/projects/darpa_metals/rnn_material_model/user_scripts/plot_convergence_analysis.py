@@ -33,13 +33,16 @@ __status__ = 'Planning'
 # =============================================================================
 #
 # =============================================================================
-def generate_convergence_plots(training_dirs, testing_dirs, predictions_dirs,
-                               save_dir=None, is_save_fig=False,
-                               is_stdout_display=False, is_latex=True):
+def generate_convergence_plots(models_base_dirs, training_dirs, testing_dirs,
+                               predictions_dirs, save_dir=None,
+                               is_save_fig=False, is_stdout_display=False,
+                               is_latex=True):
     """Generate plots of convergence analysis.
     
     Parameters
     ----------
+    models_base_dirs : tuple[str]
+        Base directory where each model is stored.
     training_dirs : tuple[str]
         Directory where each model training data set is stored.
     testing_dirs : tuple[str]
@@ -60,7 +63,8 @@ def generate_convergence_plots(training_dirs, testing_dirs, predictions_dirs,
         processed to remove $(...)$ enclosure.
     """
     # Plot average prediction loss versus training data set size
-    plot_prediction_loss_convergence(training_dirs, predictions_dirs,
+    plot_prediction_loss_convergence(models_base_dirs, training_dirs,
+                                     predictions_dirs,
                                      filename='testing_loss_convergence',
                                      save_dir=save_dir,
                                      is_save_fig=is_save_fig,
@@ -74,7 +78,7 @@ def generate_convergence_plots(training_dirs, testing_dirs, predictions_dirs,
     prediction_types['acc_p_strain'] = ('acc_p_strain',)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Plot models time series predictions versus ground-truth (scatter)
-    plot_time_series_convergence(training_dirs, testing_dirs,
+    plot_time_series_convergence(models_base_dirs, training_dirs, testing_dirs,
                                  predictions_dirs, prediction_types,
                                  plot_type='time_series_scatter',
                                  samples_ids=list(np.arange(5, dtype=int)),
@@ -85,7 +89,7 @@ def generate_convergence_plots(training_dirs, testing_dirs, predictions_dirs,
                                  is_latex=is_latex)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Plot models time series predictions versus ground-truth (path)
-    plot_time_series_convergence(training_dirs, testing_dirs,
+    plot_time_series_convergence(models_base_dirs, training_dirs, testing_dirs,
                                  predictions_dirs, prediction_types,
                                  plot_type='time_series_path',
                                  samples_ids=list(np.arange(5, dtype=int)),
@@ -150,6 +154,7 @@ if __name__ == "__main__":
         make_directory(plots_dir)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Generate plots of convergence analysis
-    generate_convergence_plots(training_dirs, testing_dirs, predictions_dirs,
-                               save_dir=plots_dir, is_save_fig=True,
-                               is_stdout_display=False, is_latex=True)
+    generate_convergence_plots(models_base_dirs, training_dirs, testing_dirs,
+                               predictions_dirs, save_dir=plots_dir,
+                               is_save_fig=True, is_stdout_display=False,
+                               is_latex=True)
