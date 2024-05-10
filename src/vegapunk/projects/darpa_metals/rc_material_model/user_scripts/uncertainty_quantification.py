@@ -391,20 +391,33 @@ def plot_time_series_uq(model_sample_dirs, testing_dirs, predictions_dirs,
                 prediction_sets = {}
                 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                 # Assemble discrete time path and ground-truth path by
-                # probing the first model data                    
+                # probing the first model sample data                    
                 prediction_sets['Ground-Truth'] = \
                     models_prediction_data[0][j][str(sample_id)][:, [0, 1]]
+                # Get time series and corresponding sequence length
+                time_hist = prediction_sets['Ground-Truth'][:, 0]
+                n_time = len(time_hist)
                 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-                # Loop over models
+                # Initialize model samples prediction data
+                prediction_sets['Models'] = \
+                    np.zeros((n_time, 1 + n_model_sample))
+                # Assemble time series time (shared)
+                prediction_sets['Models'][:, 0] = time_hist
+                # Loop over model samples
                 for i in range(n_model_sample):
-                    # Get model time series predictions data
+                    # Get model sample time series predictions data
                     model_prediction_data = models_prediction_data[i]
-                    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-                    # Set prediction label
-                    label = f'sample {i}'
-                    # Assemble sample prediction data
-                    prediction_sets[label] = model_prediction_data[j] \
-                        [str(sample_id)][:, [0, 2]]
+                    # Check model sample time series time
+                    sample_time_hist = \
+                        model_prediction_data[j][str(sample_id)][:, 0]
+                    if not np.allclose(sample_time_hist, time_hist):
+                        raise RuntimeWarning(f'Model sample {i} predictions '
+                                             'does not share the same time '
+                                             'series time as the '
+                                             'ground-truth.')
+                    # Assemble model sample predictions data
+                    prediction_sets['Models'][:, i + 1] = \
+                        model_prediction_data[j][str(sample_id)][:, 2]
                 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                 # Set prediction type label
                 if prediction_type == 'stress_comps':
@@ -418,6 +431,7 @@ def plot_time_series_uq(model_sample_dirs, testing_dirs, predictions_dirs,
                     x_label='Time', y_label=y_label,
                     is_normalize_data=False,
                     is_uncertainty_quantification=True,
+                    range_type='min-max',
                     filename=(filename + f'_{prediction_comp}'
                               + f'_path_sample_{sample_id}'),
                     save_dir=save_dir, is_save_fig=is_save_fig,
@@ -432,7 +446,9 @@ def plot_time_series_uq(model_sample_dirs, testing_dirs, predictions_dirs,
 # =============================================================================
 if __name__ == "__main__":
     # Set number of model samples for uncertainty quantification
-    n_model_sample = 2
+    n_model_sample = 3
+    # Set computation processes
+    is_model_training = True
     # Set testing type
     testing_type = ('training', 'validation', 'in_distribution',
                     'out_distribution')[0]
@@ -540,7 +556,8 @@ if __name__ == "__main__":
     # Perform model uncertainty quantification
     perform_model_uq(uq_directory, n_model_sample, train_dataset_file_path,
                      model_directory, prediction_subdir,
-                     test_dataset_file_path, is_model_training=False,
+                     test_dataset_file_path,
+                     is_model_training=is_model_training,
                      val_dataset_file_path=val_dataset_file_path,
                      device_type=device_type, is_verbose=True)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
