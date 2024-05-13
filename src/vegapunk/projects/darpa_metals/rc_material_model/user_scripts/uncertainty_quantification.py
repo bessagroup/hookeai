@@ -208,6 +208,12 @@ def gen_model_uq_plots(uq_directory, testing_dataset_dir, testing_type,
             model_sample_dirs.append(
                 os.path.join(os.path.normpath(uq_directory), dirname))
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Check model samples directories
+    if len(model_sample_dirs) < 1:
+        raise RuntimeError('Model samples have not been found in the '
+                           'uncertainty quantification directory:'
+                           '\n\n' + uq_directory)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Sort model samples directories
     model_sample_dirs = sorted(model_sample_dirs)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
