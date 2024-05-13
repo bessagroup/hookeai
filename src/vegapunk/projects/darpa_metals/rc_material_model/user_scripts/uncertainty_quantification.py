@@ -337,36 +337,6 @@ def plot_best_parameters_uq(model_sample_dirs, plot_data_dir,
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Close plot
     plt.close('all')
-    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Set prediction types and components
-    prediction_types = {}
-    prediction_types['stress_comps'] = ('stress_11', 'stress_22', 'stress_33',
-                                        'stress_12', 'stress_23', 'stress_13')
-    prediction_types['acc_p_strain'] = ('acc_p_strain',)
-    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Initialize model samples testing and predictions directories
-    sample_testing_dirs = []
-    sample_prediction_dirs = []
-    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Loop over model samples
-    for i in range(n_model_sample):
-        # Get model sample directory
-        sample_dir = model_sample_dirs[i]
-        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        # Append model sample testing directory (shared)
-        sample_testing_dirs.append(testing_dataset_dir)
-        # Append model sample prediction directory
-        sample_prediction_dirs.append(os.path.join(
-            os.path.normpath(sample_dir), f'7_prediction/{testing_type}'))
-    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Plot time series model uncertainty quantification
-    plot_time_series_uq(model_sample_dirs, sample_testing_dirs,
-                        sample_prediction_dirs, prediction_types,
-                        samples_ids=list(np.arange(1, dtype=int)),
-                        filename=filename + '_prediction',
-                        save_dir=plots_dir, is_save_fig=is_save_fig,
-                        is_stdout_display=is_stdout_display,
-                        is_latex=is_latex)
 # =============================================================================
 def plot_time_series_uq(model_sample_dirs, testing_dirs, predictions_dirs,
                         prediction_types, samples_ids='all',
