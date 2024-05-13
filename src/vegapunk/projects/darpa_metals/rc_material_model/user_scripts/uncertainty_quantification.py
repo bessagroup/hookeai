@@ -6,6 +6,8 @@ perform_model_uq
     Perform model uncertainty quantification.
 gen_model_uq_plots
     Generate plots of model uncertainty quantification.
+plot_best_parameters_uq
+    Plot model best parameters uncertainty quantification.
 plot_time_series_uq
     Plot time series model uncertainty quantification.
 """
@@ -186,10 +188,10 @@ def gen_model_uq_plots(uq_directory, testing_dataset_dir, testing_type,
     if not os.path.isdir(plots_dir):
         make_directory(plots_dir)
     # Create uncertainty quantification plots data subdirectory
-    data_dir = os.path.join(os.path.normpath(plots_dir), 'data')
+    plot_data_dir = os.path.join(os.path.normpath(plots_dir), 'data')
     # Create uncertainty quantification data directory
-    if not os.path.isdir(data_dir):
-        make_directory(data_dir)
+    if not os.path.isdir(plot_data_dir):
+        make_directory(plot_data_dir)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Initialize model samples directories
     model_sample_dirs = []
@@ -209,6 +211,69 @@ def gen_model_uq_plots(uq_directory, testing_dataset_dir, testing_type,
     # Sort model samples directories
     model_sample_dirs = sorted(model_sample_dirs)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Plot model best parameters uncertainty quantification
+    plot_best_parameters_uq(model_sample_dirs, plot_data_dir=plot_data_dir,
+                            filename=filename + '_best_parameters',
+                            save_dir=plots_dir, is_save_fig=is_save_fig,
+                            is_stdout_display=is_stdout_display,
+                            is_latex=is_latex)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Set prediction types and components
+    prediction_types = {}
+    prediction_types['stress_comps'] = ('stress_11', 'stress_22', 'stress_33',
+                                        'stress_12', 'stress_23', 'stress_13')
+    prediction_types['acc_p_strain'] = ('acc_p_strain',)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Initialize model samples testing and predictions directories
+    sample_testing_dirs = []
+    sample_prediction_dirs = []
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Loop over model samples
+    for i in range(n_model_sample):
+        # Get model sample directory
+        sample_dir = model_sample_dirs[i]
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Append model sample testing directory (shared)
+        sample_testing_dirs.append(testing_dataset_dir)
+        # Append model sample prediction directory
+        sample_prediction_dirs.append(os.path.join(
+            os.path.normpath(sample_dir), f'7_prediction/{testing_type}'))
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Plot time series model uncertainty quantification
+    plot_time_series_uq(model_sample_dirs, sample_testing_dirs,
+                        sample_prediction_dirs, prediction_types,
+                        samples_ids=list(np.arange(1, dtype=int)),
+                        filename=filename + '_prediction',
+                        save_dir=plots_dir, is_save_fig=is_save_fig,
+                        is_stdout_display=is_stdout_display,
+                        is_latex=is_latex)
+# =============================================================================
+def plot_best_parameters_uq(model_sample_dirs, plot_data_dir,
+                            filename='best_parameters_uq',
+                            save_dir=None, is_save_fig=False,
+                            is_stdout_display=False, is_latex=True):
+    """Plot model best parameters uncertainty quantification.
+    
+    Parameters
+    ----------
+    model_sample_dirs : tuple[str]
+        Directory of each model sample.
+    plot_data_dir : str
+        Plot data directory.
+    filename : str, default='best_parameters_uq'
+        Figure name.
+    save_dir : str, default=None
+        Directory where figure is saved. If None, then figure is saved in
+        current working directory.
+    is_save_fig : bool, default=False
+        Save figure.
+    is_stdout_display : bool, default=False
+        True if displaying figure to standard output device, False otherwise.
+    is_latex : bool, default=False
+        If True, then render all strings in LaTeX. If LaTex is not available,
+        then this option is silently set to False and all input strings are
+        processed to remove $(...)$ enclosure.
+    """
     # Initialize model samples best state parameters
     samples_best_model_parameters = []
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -246,8 +311,8 @@ def gen_model_uq_plots(uq_directory, testing_dataset_dir, testing_type,
             samples_parameters_data[i, j] = val
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set model samples parameters data file path
-    parameters_file_path = \
-        os.path.join(data_dir, filename + '_best_parameters_data' + '.pkl')
+    parameters_file_path = os.path.join(
+        plot_data_dir, filename + '_data' + '.pkl')
     # Build model samples parameters data record
     parameters_record = {}
     parameters_record['model_parameters_names'] = model_parameters_names
@@ -258,7 +323,8 @@ def gen_model_uq_plots(uq_directory, testing_dataset_dir, testing_type,
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Plot model parameters box plot
     figure, _ = plot_boxplots(samples_parameters_data, model_parameters_names,
-                              is_multiple_subplots=True, is_latex=True)
+                              is_mean_line=True,
+                              is_multiple_subplots=True, is_latex=is_latex)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Display figure
     if is_stdout_display:
@@ -266,8 +332,8 @@ def gen_model_uq_plots(uq_directory, testing_dataset_dir, testing_type,
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Save figure
     if is_save_fig:
-        save_figure(figure, filename + '_best_parameters', format='pdf',
-                    save_dir=plots_dir, is_tight_layout=True)
+        save_figure(figure, filename, format='pdf', save_dir=save_dir,
+                    is_tight_layout=True)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Close plot
     plt.close('all')
@@ -333,7 +399,7 @@ def plot_time_series_uq(model_sample_dirs, testing_dirs, predictions_dirs,
         If True, then render all strings in LaTeX. If LaTex is not available,
         then this option is silently set to False and all input strings are
         processed to remove $(...)$ enclosure.
-    """    
+    """
     # Get number of model samples
     n_model_sample = len(model_sample_dirs)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
