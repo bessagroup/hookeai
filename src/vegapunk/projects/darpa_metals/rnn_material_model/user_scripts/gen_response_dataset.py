@@ -1001,8 +1001,25 @@ class MaterialResponseDatasetGenerator():
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Plot stress triaxiality and Lode parameter space
             if is_plot_stress_triax_lode_space:
+                # Set concatenation option
+                is_concatenate_paths = True
+                # Set scatter plot data
+                if is_concatenate_paths:
+                    stress_triax_lode_data_xy = stress_triax_lode_data[:, ::-1]
+                else:
+                    # Initialize data array
+                    stress_triax_lode_data_xy = \
+                        np.zeros((n_time_max, 2*n_path))
+                    # Loop over stress paths
+                    for k in range(n_path):
+                        # Assemble stress path data
+                        stress_triax_lode_data_xy[:, 2*k] = \
+                            stress_paths_lode[k].reshape(-1)
+                        stress_triax_lode_data_xy[:, 2*k+1] = \
+                            stress_paths_triax[k].reshape(-1)
+                # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                 figure, _ = scatter_xy_data(
-                    data_xy=stress_triax_lode_data[:,::-1],
+                    data_xy=stress_triax_lode_data_xy,
                     x_label=data_labels[1],
                     y_label=data_labels[0],
                     is_marginal_dists = True,
