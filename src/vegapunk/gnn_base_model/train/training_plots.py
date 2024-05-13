@@ -115,7 +115,7 @@ def plot_training_loss_history(loss_history, loss_type=None, is_log_loss=False,
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Plot loss history
     figure, _ = plot_xy_data(data_xy, data_labels=data_labels, x_lims=x_lims,
-                             y_lims=y_lims, title=title, x_label=x_label,
+                             y_lims=y_lims, x_label=x_label,
                              y_label=y_label, y_scale=y_scale,
                              x_tick_format='int', is_latex=is_latex)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -216,7 +216,7 @@ def plot_training_loss_and_lr_history(loss_history, lr_history, loss_type=None,
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Plot loss and learning rate history
     figure, _ = plot_xy2_data(data_xy1, data_xy2, x_lims=x_lims,
-                              y1_lims=y1_lims, y2_lims=y2_lims, title=title,
+                              y1_lims=y1_lims, y2_lims=y2_lims,
                               x_label=x_label, y1_label=y1_label,
                               y2_label=y2_label, y1_scale=y1_scale,
                               x_tick_format='int', is_latex=is_latex)

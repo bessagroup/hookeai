@@ -435,10 +435,10 @@ def plot_time_series_uq(model_sample_dirs, testing_dirs, predictions_dirs,
                 n_time = len(time_hist)
                 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                 # Initialize model samples prediction data
-                prediction_sets['Models'] = \
+                prediction_sets['Realizations'] = \
                     np.zeros((n_time, 1 + n_model_sample))
                 # Assemble time series time (shared)
-                prediction_sets['Models'][:, 0] = time_hist
+                prediction_sets['Realizations'][:, 0] = time_hist
                 # Loop over model samples
                 for i in range(n_model_sample):
                     # Get model sample time series predictions data
@@ -452,7 +452,7 @@ def plot_time_series_uq(model_sample_dirs, testing_dirs, predictions_dirs,
                                              'series time as the '
                                              'ground-truth.')
                     # Assemble model sample predictions data
-                    prediction_sets['Models'][:, i + 1] = \
+                    prediction_sets['Realizations'][:, i + 1] = \
                         model_prediction_data[j][str(sample_id)][:, 2]
                 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                 # Set prediction type label
