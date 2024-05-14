@@ -218,6 +218,9 @@ def train_model(n_max_epochs, dataset, model_init_args, lr_init,
         model.get_detached_model_parameters(is_normalized=False)
     model_parameters_history_epochs = \
         {key: [val,] for key, val in model_init_parameters.items()}
+    # Initialize model parameters history (per training step)
+    model_parameters_history_steps = \
+        {key: [val,] for key, val in model_init_parameters.items()}
     # Set model parameters history flag
     is_save_model_parameters = True
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -379,10 +382,10 @@ def train_model(n_max_epochs, dataset, model_init_args, lr_init,
                 lr_history_steps.append(lr_init)
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Save model parameters
-            model_parameters_epoch = \
+            model_parameters_step = \
                 model.get_detached_model_parameters(is_normalized=False)
-            for key, val in model_parameters_epoch.items():
-                model_parameters_history_epochs[key].append(val)
+            for key, val in model_parameters_step.items():
+                model_parameters_history_steps[key].append(val)
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Increment training step counter
             step += 1
@@ -399,6 +402,11 @@ def train_model(n_max_epochs, dataset, model_init_args, lr_init,
             lr_history_epochs.append(lr_scheduler.get_last_lr())
         else:
             lr_history_epochs.append(lr_init)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Save model parameters (epoch average parameter value)
+        for key in model_init_parameters.keys():
+            model_parameters_history_epochs[key].append(np.mean(
+                model_parameters_history_steps[key][epoch_init_step:]))
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Save model and optimizer current states
         if save_every is not None and epoch % save_every == 0:
