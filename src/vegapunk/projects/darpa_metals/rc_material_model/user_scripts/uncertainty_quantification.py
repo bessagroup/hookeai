@@ -703,3 +703,10 @@ if __name__ == "__main__":
     gen_model_uq_plots(uq_directory, testing_dataset_dir, testing_type,
                        is_save_fig=True, is_stdout_display=False,
                        is_latex=True)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Remove model directory
+    if os.path.isdir(model_directory):
+        shutil.rmtree(model_directory)
+    # Remove model predictions directory
+    if os.path.isdir(prediction_directory):
+        shutil.rmtree(prediction_directory)
