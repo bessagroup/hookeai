@@ -115,7 +115,7 @@ def generate_convergence_plots(models_base_dirs, training_dirs, testing_dirs,
         plot_time_series_convergence_uq(
             models_base_dirs, training_dirs, testing_dirs, predictions_dirs,
             prediction_types, plot_type='time_series_path',
-            samples_ids=list(np.arange(1, dtype=int)),
+            samples_ids=list(np.arange(3, dtype=int)),
             filename='time_series_convergence_uq',
             save_dir=save_dir, is_save_fig=is_save_fig,
             is_stdout_display=is_stdout_display, is_latex=is_latex)
@@ -124,7 +124,7 @@ def generate_convergence_plots(models_base_dirs, training_dirs, testing_dirs,
         plot_time_series_convergence(
             models_base_dirs, training_dirs, testing_dirs, predictions_dirs,
             prediction_types, plot_type='time_series_scatter',
-            samples_ids=list(np.arange(1, dtype=int)),
+            samples_ids=list(np.arange(3, dtype=int)),
             filename='time_series_convergence', save_dir=save_dir,
             is_save_fig=is_save_fig, is_stdout_display=is_stdout_display,
             is_latex=is_latex)
@@ -133,7 +133,7 @@ def generate_convergence_plots(models_base_dirs, training_dirs, testing_dirs,
         plot_time_series_convergence(
             models_base_dirs, training_dirs, testing_dirs, predictions_dirs,
             prediction_types, plot_type='time_series_path',
-            samples_ids=list(np.arange(1, dtype=int)),
+            samples_ids=list(np.arange(3, dtype=int)),
             filename='time_series_convergence', save_dir=save_dir,
             is_save_fig=is_save_fig, is_stdout_display=is_stdout_display,
             is_latex=is_latex)
