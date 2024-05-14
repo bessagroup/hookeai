@@ -6,6 +6,8 @@ perform_model_uq
     Perform model uncertainty quantification.
 gen_model_uq_plots
     Generate plots of model uncertainty quantification.
+plot_prediction_loss_uq
+    Plot model average prediction loss uncertainty quantification.
 plot_best_parameters_uq
     Plot model best parameters uncertainty quantification.
 plot_time_series_uq
@@ -245,14 +247,108 @@ def gen_model_uq_plots(uq_directory, testing_dataset_dir, testing_type,
         sample_prediction_dirs.append(os.path.join(
             os.path.normpath(sample_dir), f'7_prediction/{testing_type}'))
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Plot model average prediction loss uncertainty quantification
+    plot_prediction_loss_uq(model_sample_dirs, sample_prediction_dirs,
+                            filename=filename + '_testing_loss',
+                            save_dir=plots_dir, is_save_fig=is_save_fig,
+                            is_stdout_display=is_stdout_display,
+                            is_latex=is_latex)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Plot time series model uncertainty quantification
     plot_time_series_uq(model_sample_dirs, sample_testing_dirs,
                         sample_prediction_dirs, prediction_types,
-                        samples_ids=list(np.arange(1, dtype=int)),
+                        samples_ids=list(np.arange(3, dtype=int)),
                         filename=filename + '_prediction',
                         save_dir=plots_dir, is_save_fig=is_save_fig,
                         is_stdout_display=is_stdout_display,
                         is_latex=is_latex)
+# =============================================================================
+def plot_prediction_loss_uq(model_sample_dirs, predictions_dirs,
+                            filename='testing_loss_uq',
+                            save_dir=None, is_save_fig=False,
+                            is_stdout_display=False, is_latex=True):
+    """Plot model average prediction loss uncertainty quantification.
+    
+    Parameters
+    ----------
+    model_sample_dirs : tuple[str]
+        Directory of each model sample.
+    predictions_dirs : tuple[str]
+        Directory where each model sample predictions results files are
+        stored.
+    filename : str, default='testing_loss_uq'
+        Figure name.
+    save_dir : str, default=None
+        Directory where figure is saved. If None, then figure is saved in
+        current working directory.
+    is_save_fig : bool, default=False
+        Save figure.
+    is_stdout_display : bool, default=False
+        True if displaying figure to standard output device, False otherwise.
+    is_latex : bool, default=False
+        If True, then render all strings in LaTeX. If LaTex is not available,
+        then this option is silently set to False and all input strings are
+        processed to remove $(...)$ enclosure.
+    """
+    # Initialize model samples average prediction loss
+    samples_avg_prediction_loss = []
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Get number of model samples
+    n_model_sample = len(model_sample_dirs)
+    # Loop over model samples
+    for j in range(n_model_sample):
+        # Get model sample prediction directory
+        sample_pred_dir = predictions_dirs[j]
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Get prediction summary file
+        regex = (r'^summary.dat$',)
+        is_file_found, summary_file_path = \
+            find_unique_file_with_regex(sample_pred_dir, regex) 
+        # Check prediction summary file
+        if not is_file_found:
+            raise RuntimeError(f'Prediction summary file has not been '
+                               f'found in directory:\n\n{sample_pred_dir}')
+        # Open prediction summary file
+        summary_file = open(summary_file_path, 'r')
+        summary_file.seek(0)
+        # Look for average prediction loss
+        avg_predict_loss = None
+        line_number = 0
+        for line in summary_file:
+            line_number = line_number + 1
+            if 'Avg. prediction loss per sample' in line:
+                avg_predict_loss = float(line.split()[-1])
+                break
+        # Store average prediction loss
+        if avg_predict_loss is None:
+            raise RuntimeError('Average prediction loss has not been '
+                               'found in prediction summary file:\n\n'
+                               f'{summary_file_path}')
+        else:
+            samples_avg_prediction_loss.append(avg_predict_loss)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Build model samples average prediction loss data
+    samples_loss_data = np.array(samples_avg_prediction_loss).reshape(-1, 1)
+    # Set data labels
+    data_labels = (f'Number of realizations: {n_model_sample}',)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Plot model samples average prediction loss box plot
+    figure, _ = plot_boxplots(samples_loss_data,
+                              data_labels=data_labels,
+                              y_label='Avg. prediction loss',
+                              is_mean_line=True, is_latex=is_latex)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Display figure
+    if is_stdout_display:
+        plt.show()
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Save figure
+    if is_save_fig:
+        save_figure(figure, filename, format='pdf', save_dir=save_dir,
+                    is_tight_layout=True)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Close plot
+    plt.close('all')
 # =============================================================================
 def plot_best_parameters_uq(model_sample_dirs, plot_data_dir,
                             filename='best_parameters_uq',
@@ -358,7 +454,7 @@ def plot_time_series_uq(model_sample_dirs, testing_dirs, predictions_dirs,
     testing_dirs : tuple[str]
         Directory where each model testing data set is stored.
     predictions_dirs : tuple[str]
-        Directory where each model samples predictions results files are
+        Directory where each model sample predictions results files are
         stored.
     samples_ids : {'all', list[int]}, default='all'
         Samples IDs whose prediction data is plotted.
