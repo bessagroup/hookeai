@@ -372,8 +372,7 @@ class DruckerPrager(ConstitutiveModel):
                           - xi*trial_cohesion)
         # Check plastic consistency
         if torch.is_nonzero(torch.tensor([trial_cohesion])):
-            plastic_consistency = \
-                yield_function/torch.abs(torch.tensor([trial_cohesion]))
+            plastic_consistency = yield_function/abs(trial_cohesion)
         else:
             plastic_consistency = yield_function
         # If the trial stress state lies inside the Druger-Prager yield
