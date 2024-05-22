@@ -185,7 +185,7 @@ def perform_model_standard_training(train_dataset_file_path, model_directory,
     # Set default model training options
     opt_algorithm, lr_init, lr_scheduler_type, lr_scheduler_kwargs, \
         loss_nature, loss_type, loss_kwargs, is_sampler_shuffle, \
-            is_early_stopping, early_stopping_kwargs = \
+            is_early_stopping, early_stopping_kwargs, is_loss_normalization = \
                 set_default_training_options()
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set data features for training
@@ -248,7 +248,8 @@ def perform_model_standard_training(train_dataset_file_path, model_directory,
         early_stopping_kwargs = {'validation_dataset': val_dataset,
                                  'validation_frequency': 1,
                                  'trigger_tolerance': 20,
-                                 'improvement_tolerance':1e-2}
+                                 'improvement_tolerance': 1e-2,
+                                 'is_normalized_loss': True}
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Load training data set
     train_dataset = load_dataset(train_dataset_file_path)
@@ -266,7 +267,9 @@ def perform_model_standard_training(train_dataset_file_path, model_directory,
                               lr_scheduler_type=lr_scheduler_type,
                               lr_scheduler_kwargs=lr_scheduler_kwargs,
                               loss_nature=loss_nature, loss_type=loss_type,
-                              loss_kwargs=loss_kwargs, batch_size=batch_size,
+                              loss_kwargs=loss_kwargs,
+                              is_loss_normalization=is_loss_normalization,
+                              batch_size=batch_size,
                               is_sampler_shuffle=is_sampler_shuffle,
                               is_early_stopping=is_early_stopping,
                               early_stopping_kwargs=early_stopping_kwargs,
@@ -450,6 +453,11 @@ def set_default_training_options():
         
     loss_kwargs : dict
         Arguments of torch.nn._Loss initializer.
+    is_loss_normalization : bool
+        If True, then output features are normalized for loss computation,
+        False otherwise. Ignored if model is_data_normalization is set to True.
+        The model data scalers are fitted and employed to normalize the
+        output features.
     is_sampler_shuffle : bool
         If True, shuffles data set samples at every epoch.
     is_early_stopping : bool
@@ -465,16 +473,18 @@ def set_default_training_options():
     loss_nature = 'features_out'
     loss_type = 'mse'
     loss_kwargs = {}
+    is_loss_normalization = True
     is_sampler_shuffle = False
     is_early_stopping = True
     early_stopping_kwargs = {'validation_dataset': None,
                              'validation_frequency': 1,
                              'trigger_tolerance': 20,
-                             'improvement_tolerance':1e-2}
+                             'improvement_tolerance': 1e-2,
+                             'is_normalized_loss': is_loss_normalization}
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     return opt_algorithm, lr_init, lr_scheduler_type, lr_scheduler_kwargs, \
         loss_nature, loss_type, loss_kwargs, is_sampler_shuffle, \
-        is_early_stopping, early_stopping_kwargs
+        is_early_stopping, early_stopping_kwargs, is_loss_normalization
 # =============================================================================
 if __name__ == "__main__":
     # Set computation processes

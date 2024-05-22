@@ -53,7 +53,7 @@ __status__ = 'Planning'
 def train_model(n_max_epochs, dataset, model_init_args, lr_init,
                 opt_algorithm='adam', lr_scheduler_type=None,
                 lr_scheduler_kwargs={}, loss_nature='features_out',
-                loss_type='mse', loss_kwargs={},
+                loss_type='mse', loss_kwargs={}, is_loss_normalization=True,
                 batch_size=1, is_sampler_shuffle=False,
                 is_early_stopping=False, early_stopping_kwargs={},
                 load_model_state=None, save_every=None, dataset_file_path=None,
@@ -102,6 +102,11 @@ def train_model(n_max_epochs, dataset, model_init_args, lr_init,
         
     loss_kwargs : dict, default={}
         Arguments of torch.nn._Loss initializer.
+    is_loss_normalization : bool, default=True
+        If True, then output features are normalized for loss computation,
+        False otherwise. Ignored if model is_data_normalization is set to True.
+        The model data scalers are fitted and employed to normalize the
+        output features.
     batch_size : int, default=1
         Number of samples loaded per batch.
     is_sampler_shuffle : bool, default=False
@@ -179,6 +184,8 @@ def train_model(n_max_epochs, dataset, model_init_args, lr_init,
     is_data_normalization = model.is_data_normalization
     # Fit model data scalers  
     if is_data_normalization and load_model_state is None:
+        model.fit_data_scalers(dataset)
+    elif is_loss_normalization:
         model.fit_data_scalers(dataset)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Initialize learning rate
@@ -306,7 +313,7 @@ def train_model(n_max_epochs, dataset, model_init_args, lr_init,
                 batch[key] = batch[key].to(device)
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Get output features ground-truth
-            if is_data_normalization:
+            if is_data_normalization or is_loss_normalization:
                 # Normalize features ground-truth
                 features_targets = \
                     model.data_scaler_transform(tensor=batch['features_out'],
@@ -329,6 +336,12 @@ def train_model(n_max_epochs, dataset, model_init_args, lr_init,
                 # Get output features
                 features_out = model(batch['features_in'],
                                      is_normalized=is_data_normalization)
+                # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                # Normalize output features (loss computation)
+                if not model.is_data_normalization and is_loss_normalization:
+                    features_out = model.data_scaler_transform(
+                        tensor=features_out, features_type='features_out',
+                        mode='normalize')
                 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~                
                 # Compute loss
                 loss = loss_function(features_out, features_targets)
@@ -687,6 +700,11 @@ class EarlyStopper:
     _improvement_tolerance : float
         Minimum relative improvement required to count as a performance
         improvement.
+    is_loss_normalization : bool, default=True
+        If True, then output features are normalized for loss computation,
+        False otherwise. Ignored if model is_data_normalization is set to
+        True. The model data scalers are fitted and employed to normalize
+        the output features.
     _validation_steps_history : list
         Validation steps history.
     _validation_loss_history : list
@@ -720,7 +738,8 @@ class EarlyStopper:
         Load minimum validation loss model and optimizer states.
     """
     def __init__(self, validation_dataset, validation_frequency=1,
-                 trigger_tolerance=1, improvement_tolerance=1e-2):
+                 trigger_tolerance=1, improvement_tolerance=1e-2,
+                 is_loss_normalization=True):
         """Constructor.
         
         Parameters
@@ -739,6 +758,11 @@ class EarlyStopper:
         improvement_tolerance : float, default=1e-2
             Minimum relative improvement required to count as a performance
             improvement.
+        is_loss_normalization : bool, default=True
+            If True, then output features are normalized for loss computation,
+            False otherwise. Ignored if model is_data_normalization is set to
+            True. The model data scalers are fitted and employed to normalize
+            the output features.
         """
         # Set validation data set
         self._validation_dataset = validation_dataset
@@ -748,6 +772,8 @@ class EarlyStopper:
         self._trigger_tolerance = trigger_tolerance
         # Set minimum relative improvement tolerance
         self._improvement_tolerance = improvement_tolerance
+        # Set loss normalization
+        self._is_loss_normalization = is_loss_normalization
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Initialize validation training steps history
         self._validation_steps_history = []
@@ -928,7 +954,8 @@ class EarlyStopper:
             predict_directory=None, load_model_state=epoch,
             loss_nature=loss_nature, loss_type=loss_type,
             loss_kwargs=loss_kwargs,
-            is_normalized_loss=model.is_data_normalization,
+            is_normalized_loss=(model.is_data_normalization
+                                or self._is_normalized_loss),
             device_type=device_type, seed=None, is_verbose=False)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Update validation epochs history

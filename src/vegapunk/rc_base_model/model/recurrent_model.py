@@ -1256,8 +1256,6 @@ class RecurrentConstitutiveModel(torch.nn.Module):
         Data scalers are set a standard scalers where features are normalized
         by removing the mean and scaling to unit variance.
         
-        Calling this method turns on model data normalization.
-        
         Parameters
         ----------
         dataset : torch.utils.data.Dataset
@@ -1271,8 +1269,6 @@ class RecurrentConstitutiveModel(torch.nn.Module):
             print('\nFitting model data scalers'
                   '\n--------------------------\n')
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        # Set model data normalization
-        self.is_data_normalization = True
         # Initialize data scalers
         self._init_data_scalers()
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -1411,8 +1407,8 @@ class RecurrentConstitutiveModel(torch.nn.Module):
         self._data_scalers = model_data_scalers
     # -------------------------------------------------------------------------
     def check_normalized_return(self):
-        """Check if model data normalization is available."""
-        if not self.is_data_normalization or self._data_scalers is None:
+        """Check if model data scalers available."""
+        if self._data_scalers is None:
             raise RuntimeError('Data scalers for model features have not '
                                'been fitted. Fit data scalers by calling '
                                'method fit_data_scalers() before training '
