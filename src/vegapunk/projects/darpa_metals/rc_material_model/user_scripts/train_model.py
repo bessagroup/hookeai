@@ -27,6 +27,7 @@ import os
 import random
 # Third-party
 import torch
+import numpy as np
 # Local
 from rnn_base_model.data.time_dataset import load_dataset, \
     concatenate_dataset_features
@@ -94,22 +95,46 @@ def perform_model_standard_training(train_dataset_file_path, model_directory,
         learnable_parameters['v'] = \
             {'initial_value': random.uniform(0.3, 0.4),
              'bounds': (0.3, 0.4)}
+        learnable_parameters['s0'] = \
+            {'initial_value': random.uniform(800, 1000),
+             'bounds': (800, 1000)}
+        learnable_parameters['a'] = \
+            {'initial_value': random.uniform(500, 900),
+             'bounds': (500, 900)}
+        learnable_parameters['b'] = \
+            {'initial_value': random.uniform(0.3, 0.7),
+             'bounds': (0.3, 0.7)}
         # Set material constitutive state variables (prediction)
         state_features_out = {'acc_p_strain': 1,}
     elif material_model_name == 'drucker_prager':
+        # Set frictional angle
+        friction_angle = np.deg2rad(10)
+        # Set dilatancy angle
+        dilatancy_angle = friction_angle
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Compute angle-related material parameters
+        # (matching with Mohr-Coulomb under uniaxial tension and compression)
+        # Set yield surface cohesion parameter
+        yield_cohesion_parameter = (2.0/np.sqrt(3))*np.cos(friction_angle)
+        # Set yield pressure parameter
+        yield_pressure_parameter = (3.0/np.sqrt(3))*np.sin(friction_angle)
+        # Set plastic flow pressure parameter
+        flow_pressure_parameter = (3.0/np.sqrt(3))*np.sin(dilatancy_angle)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Set material constitutive model parameters
         material_model_parameters = \
             {'elastic_symmetry': 'isotropic',
              'E': 110e3, 'v': 0.33,
              'euler_angles': (0.0, 0.0, 0.0),
              'hardening_law': get_hardening_law('nadai_ludwik'),
-             'hardening_parameters': {'s0': 900,
-                                      'a': 700,
+             'hardening_parameters': {'s0': 900/yield_cohesion_parameter,
+                                      'a': 700/yield_cohesion_parameter,
                                       'b': 0.5,
                                       'ep0': 1e-5},
-             'yield_cohesion_parameter': 0.0,
-             'yield_pressure_parameter': 0.0,
-             'flow_pressure_parameter': 0.0}
+             'yield_cohesion_parameter': yield_cohesion_parameter,
+             'yield_pressure_parameter': yield_pressure_parameter,
+             'flow_pressure_parameter': flow_pressure_parameter}
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Set learnable parameters
         learnable_parameters = {}
         learnable_parameters['E'] = \
@@ -118,6 +143,19 @@ def perform_model_standard_training(train_dataset_file_path, model_directory,
         learnable_parameters['v'] = \
             {'initial_value': random.uniform(0.3, 0.4),
              'bounds': (0.3, 0.4)}
+        learnable_parameters['s0'] = \
+            {'initial_value': random.uniform(800/yield_cohesion_parameter,
+                                             1000/yield_cohesion_parameter),
+             'bounds': (800/yield_cohesion_parameter,
+                        1000/yield_cohesion_parameter)}
+        learnable_parameters['a'] = \
+            {'initial_value': random.uniform(500/yield_cohesion_parameter,
+                                             900/yield_cohesion_parameter),
+             'bounds': (500/yield_cohesion_parameter,
+                        900/yield_cohesion_parameter)}
+        learnable_parameters['b'] = \
+            {'initial_value': random.uniform(0.3, 0.7),
+             'bounds': (0.3, 0.7)}
         # Set material constitutive state variables (prediction)
         state_features_out = {'acc_p_strain': 1,}
     else:
@@ -189,7 +227,7 @@ def perform_model_standard_training(train_dataset_file_path, model_directory,
     lr_scheduler_kwargs = {'gamma': gamma}
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set early stopping
-    is_early_stopping = True
+    is_early_stopping = False
     # Set early stopping parameters
     if is_early_stopping:
         # Check validation data set file path
