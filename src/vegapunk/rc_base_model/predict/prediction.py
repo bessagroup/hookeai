@@ -53,8 +53,7 @@ def predict(dataset, model_directory, predict_directory=None,
         Directory where model predictions results are stored. If None, then
         all output files are supressed.
     load_model_state : {'best', 'last', int, None}, default=None
-        Load available Graph Neural Network model state from the model
-        directory. Options:
+        Load available model state from the model directory. Options:
         
         'best' : Model state corresponding to best performance available
         
@@ -111,8 +110,8 @@ def predict(dataset, model_directory, predict_directory=None,
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     start_time_sec = time.time()
     if is_verbose:
-        print('\nRecurrent Neural Network model prediction'
-              '\n-----------------------------------------')
+        print('\nRecurrent Constitutive model prediction'
+              '\n---------------------------------------')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Check model directory
     if not os.path.exists(model_directory):
@@ -124,7 +123,7 @@ def predict(dataset, model_directory, predict_directory=None,
                            'found:\n\n' + predict_directory)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     if is_verbose:
-        print('\n> Loading Graph Neural Network model...')
+        print('\n> Loading Recurrent Constitutive model...')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Initialize recurrent constitutive model
     model = RecurrentConstitutiveModel.init_model_from_file(model_directory)
