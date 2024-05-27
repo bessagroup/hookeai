@@ -27,8 +27,8 @@ from simulators.fetorch.structure.structure_state import StructureMaterialState
 from simulators.fetorch.material.models.standard.hardening import \
     get_hardening_law
 from simulators.fetorch.math.matrixops import get_problem_type_parameters
-from projects.darpa_metals.specimen_data import SpecimenNumericalData
-from projects.darpa_metals.material_discovery import MaterialModelFinder
+from material_model_finder.data.specimen_data import SpecimenNumericalData
+from material_model_finder.model.material_discovery import MaterialModelFinder
 #
 #                                                          Authorship & Credits
 # =============================================================================
