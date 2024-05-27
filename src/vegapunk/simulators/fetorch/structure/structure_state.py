@@ -148,7 +148,7 @@ class StructureMaterialState:
             raise RuntimeError(f'Unknown material constitutive model '
                                f'\'{model_name}\'.')
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        # Set constitutive model state recurrency structure
+        # Set constitutive model recurrency structure
         if model_name in ('elastic', 'von_mises', 'drucker_prager'):
             is_recurrent_model = False
         else:
@@ -157,7 +157,8 @@ class StructureMaterialState:
         # Initialize elements Gauss integration points state variables
         self._elements_state = {}
         self._elements_state_old = {}
-        self._elements_is_internal_state = {}
+        # Initialize elements model recurrency structure
+        self._elements_is_recurrent_material = {}
         # Loop over elements
         for element_id in element_ids:
             # Assign constitutive model
