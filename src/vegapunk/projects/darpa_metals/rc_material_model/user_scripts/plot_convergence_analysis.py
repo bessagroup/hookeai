@@ -186,7 +186,7 @@ if __name__ == "__main__":
                                       '7_prediction/training/'
                                       'prediction_set_0')
         # Store prediction directory
-        if os.path.isdir(prediction_dir):
+        if os.path.isdir(prediction_dir) or is_uncertainty_quantification:
             predictions_dirs.append(prediction_dir)
         else:
             raise RuntimeError('The prediction directory has not been '

@@ -249,7 +249,7 @@ def perform_model_standard_training(train_dataset_file_path, model_directory,
                                  'validation_frequency': 1,
                                  'trigger_tolerance': 20,
                                  'improvement_tolerance': 1e-2,
-                                 'is_normalized_loss': True}
+                                 'is_normalized_loss': is_loss_normalization}
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Load training data set
     train_dataset = load_dataset(train_dataset_file_path)

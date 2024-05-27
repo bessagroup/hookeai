@@ -584,12 +584,12 @@ def plot_time_series_uq(model_sample_dirs, testing_dirs, predictions_dirs,
 # =============================================================================
 if __name__ == "__main__":
     # Set number of model samples for uncertainty quantification
-    n_model_sample = 3
+    n_model_sample = 5
     # Set computation processes
     is_model_training = True
     # Set testing type
     testing_type = ('training', 'validation', 'in_distribution',
-                    'out_distribution')[0]
+                    'out_distribution')[2]
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set case studies base directory
     base_dir = ('/home/bernardoferreira/Documents/brown/projects/'
