@@ -54,10 +54,10 @@ class StructureMaterialState:
         dictionary with the last converged material constitutive model state
         variables (item, dict) for each Gauss integration point
         (key, str[int]).
-    _elements_is_state : dict
+    _elements_is_recurrent_material : dict
         For each finite element mesh element (key, str[int]), stores a bool
-        that defines if the material constitutive model state variables are
-        available. When False, element state variables are set to None.
+        that defines if the material constitutive model follows the recurrent
+        structure.
 
     Methods
     -------
@@ -98,10 +98,11 @@ class StructureMaterialState:
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Initialize elements material model
         self._elements_material = {str(i): None for i in range(1, n_elem + 1)}
+        # Initialize elements material model recurrency
+        self._elements_is_recurrent_material = None
         # Initialize elements material constitutive state variables
         self._elements_state = None
         self._elements_state_old = None
-        self._elements_is_state = None
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Get problem type parameters
         self._n_dim, self._comp_order_sym, self._comp_order_nsym = \
@@ -147,23 +148,29 @@ class StructureMaterialState:
             raise RuntimeError(f'Unknown material constitutive model '
                                f'\'{model_name}\'.')
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        # Set constitutive model state variables availability
+        # Set constitutive model state recurrency structure
         if model_name in ('elastic', 'von_mises', 'drucker_prager'):
-            is_state_available = True
+            is_recurrent_model = False
         else:
-            is_state_available = False
+            is_recurrent_model = True
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Initialize elements Gauss integration points state variables
         self._elements_state = {}
         self._elements_state_old = {}
-        self._elements_is_state = {}
+        self._elements_is_internal_state = {}
         # Loop over elements
         for element_id in element_ids:
             # Assign constitutive model
             self._elements_material[str(element_id)] = constitutive_model
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Initialize constitutive model state variables
-            if is_state_available:
+            if is_recurrent_model:
+                # Set element material model recurrency
+                self._elements_is_recurrent_material[str(element_id)] = True
+                # Initialize constitutive model state variables
+                self._elements_state[str(element_id)] = None
+                self._elements_state_old[str(element_id)] = None
+            else:
                 # Initialize constitutive model state variables
                 state_variables = constitutive_model.state_init()
                 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -179,13 +186,8 @@ class StructureMaterialState:
                 self._elements_state_old[str(element_id)] = \
                     copy.deepcopy(self._elements_state[str(element_id)])
                 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-                # Set element state variables availability
-                self._elements_is_state[str(element_id)] = True
-            else:
-                # Set undefined state variables
-                self._elements_state[str(element_id)] = None
-                self._elements_state_old[str(element_id)] = None
-                self._elements_is_state[str(element_id)] = False
+                # Set element material model recurrency
+                self._elements_is_recurrent_material[str(element_id)] = False
     # -------------------------------------------------------------------------
     def get_strain_formulation(self):
         """Get problem strain formulation.
@@ -279,8 +281,8 @@ class StructureMaterialState:
         """Update elements last converged material state variables."""
         self._elements_state_old = copy.deepcopy(self._elements_state)
     # -------------------------------------------------------------------------
-    def get_element_state_availability(self, element_id):
-        """Get element constitutive model state variables availability.
+    def get_element_model_recurrency(self, element_id):
+        """Get element constitutive model recurrency.
         
         Parameters
         ----------
@@ -290,12 +292,13 @@ class StructureMaterialState:
 
         Returns
         -------
-        is_state_available : bool
-            True if material constitutive model state variables are available,
-            False otherwise.
+        is_recurrent_model : bool
+            True if the material constitutive model follows the recurrent
+            structure, False otherwise.
         """
-        # Check element state variables availability
-        is_state_available = self._elements_is_state[str(element_id)]
+        # Check element constitutive model recurrency
+        is_recurrent_model = \
+            self._elements_is_recurrent_material[str(element_id)]
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        return is_state_available
+        return is_recurrent_model
         
