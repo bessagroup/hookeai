@@ -100,7 +100,8 @@ def validate_force_equilibrium_loss(specimen_name, strain_formulation,
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Compute force equilibrium history loss
         force_equilibrium_hist_loss = material_finder(
-            sequential_mode, specimen_data, specimen_material_state)
+            specimen_data, specimen_material_state,
+            sequential_mode=sequential_mode)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Display results
         print('')

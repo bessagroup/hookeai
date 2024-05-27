@@ -58,7 +58,8 @@ class MaterialModelFinder(torch.nn.Module):
         Set device on which torch.Tensor is allocated.
     get_device(self)
         Get device on which torch.Tensor is allocated.
-    forward(self, sequential_mode, specimen_data, specimen_material_state)
+    forward(self, specimen_data, specimen_material_state, \
+            sequential_mode='sequential_element')
         Forward propagation.
     forward_sequential_time(self, specimen_data, specimen_material_state)
         Forward propagation (sequential time).
@@ -114,21 +115,23 @@ class MaterialModelFinder(torch.nn.Module):
         """
         return self.device_type, self.device
     # -------------------------------------------------------------------------
-    def forward(self, sequential_mode, specimen_data, specimen_material_state):
+    def forward(self, specimen_data, specimen_material_state,
+                sequential_mode='sequential_element'):
         """Forward propagation.
         
         Parameters
         ----------
-        sequential_mode : {'sequential_time', 'sequential_element'}
+        specimen_data : SpecimenNumericalData
+            Specimen numerical data translated from experimental results.
+        specimen_material_state : StructureMaterialState
+            FETorch structure material state.
+        sequential_mode : {'sequential_time', 'sequential_element'}, \
+                          default='sequential_element'
             If 'sequential_time', then internal forces are computed in the
             standard way, processing each time step sequentially.
             If 'sequential_element', then internal forces are computed such
             that each element is processed sequentially, taking into account
             the corresponding deformation history.
-        specimen_data : SpecimenNumericalData
-            Specimen numerical data translated from experimental results.
-        specimen_material_state : StructureMaterialState
-            FETorch structure material state.
 
         Returns
         -------
