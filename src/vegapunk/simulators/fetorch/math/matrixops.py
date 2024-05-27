@@ -477,14 +477,14 @@ def get_state_2Dmf_from_3Dmf(problem_type, mf_3d, device=None):
     problem_type : int
         Problem type: 2D plane strain (1), 2D plane stress (2),
         2D axisymmetric (3) and 3D (4).
-    mf_3d : numpy.ndarray (1d or 2d)
+    mf_3d : torch.Tensor (1d or 2d)
         Matricial form of 3D strain/stress related tensor.
     device : torch.device, default=None
         Device on which torch.Tensor is allocated.
 
     Returns
     -------
-    mf_2d : numpy.ndarray (1d or 2d)
+    mf_2d : torch.Tensor (1d or 2d)
         Matricial form of 2D strain/stress related tensor.
     """
     # Get 2D strain/stress components order in symmetric and nonsymmetric cases
