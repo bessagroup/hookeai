@@ -14,6 +14,8 @@ import copy
 from simulators.fetorch.math.matrixops import get_problem_type_parameters
 from simulators.fetorch.material.models.standard.elastic import Elastic
 from simulators.fetorch.material.models.standard.von_mises import VonMises
+from simulators.fetorch.material.models.standard.drucker_prager import \
+    DruckerPrager
 #
 #                                                          Authorship & Credits
 # =============================================================================
@@ -52,6 +54,10 @@ class StructureMaterialState:
         dictionary with the last converged material constitutive model state
         variables (item, dict) for each Gauss integration point
         (key, str[int]).
+    _elements_is_state : dict
+        For each finite element mesh element (key, str[int]), stores a bool
+        that defines if the material constitutive model state variables are
+        available. When False, element state variables are set to None.
 
     Methods
     -------
@@ -93,6 +99,7 @@ class StructureMaterialState:
         # Initialize elements material constitutive state variables
         self._elements_state = None
         self._elements_state_old = None
+        self._elements_is_state = None
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Get problem type parameters
         self._n_dim, self._comp_order_sym, self._comp_order_nsym = \
@@ -123,37 +130,60 @@ class StructureMaterialState:
         """
         # Initialize constitutive model
         if model_name == 'elastic':
-            constitutive_model = Elastic(
-                self._strain_formulation, self._problem_type, model_parameters)
+            constitutive_model = Elastic(self._strain_formulation,
+                                         self._problem_type,
+                                         model_parameters)
         elif model_name == 'von_mises':
-            constitutive_model = VonMises(
-                self._strain_formulation, self._problem_type, model_parameters)
+            constitutive_model = VonMises(self._strain_formulation,
+                                          self._problem_type,
+                                          model_parameters)
+        elif model_name == 'drucker_prager':
+            constitutive_model = DruckerPrager(self._strain_formulation,
+                                               self._problem_type,
+                                               model_parameters)
         else:
             raise RuntimeError(f'Unknown material constitutive model '
                                f'\'{model_name}\'.')
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set constitutive model state variables availability
+        if model_name in ('elastic', 'von_mises', 'drucker_prager'):
+            is_state_available = True
+        else:
+            is_state_available = False
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Initialize elements Gauss integration points state variables
         self._elements_state = {}
         self._elements_state_old = {}
+        self._elements_is_state = {}
         # Loop over elements
         for element_id in element_ids:
             # Assign constitutive model
             self._elements_material[str(element_id)] = constitutive_model
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Initialize constitutive model state variables
-            state_variables = constitutive_model.state_init()
-            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            # Get element type
-            element_type = elements_type[str(element_id)]
-            # Get element number of Gauss quadrature integration points
-            n_gauss = element_type.get_n_gauss()
-            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            # Initialize element Gauss integration points state variables
-            self._elements_state[str(element_id)] = \
-                {str(i): copy.deepcopy(state_variables)
-                 for i in range(1, n_gauss + 1)}
-            self._elements_state_old[str(element_id)] = \
-                copy.deepcopy(self._elements_state[str(element_id)])
+            if is_state_available:
+                # Initialize constitutive model state variables
+                state_variables = constitutive_model.state_init()
+                # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                # Get element type
+                element_type = elements_type[str(element_id)]
+                # Get element number of Gauss quadrature integration points
+                n_gauss = element_type.get_n_gauss()
+                # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                # Initialize element Gauss integration points state variables
+                self._elements_state[str(element_id)] = \
+                    {str(i): copy.deepcopy(state_variables)
+                    for i in range(1, n_gauss + 1)}
+                self._elements_state_old[str(element_id)] = \
+                    copy.deepcopy(self._elements_state[str(element_id)])
+                # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                # Set element state variables availability
+                self._elements_is_state[str(element_id)] = True
+            else:
+                # Set undefined state variables
+                self._elements_state[str(element_id)] = None
+                self._elements_state_old[str(element_id)] = None
+                self._elements_is_state[str(element_id)] = False
     # -------------------------------------------------------------------------
     def get_strain_formulation(self):
         """Get problem strain formulation.
