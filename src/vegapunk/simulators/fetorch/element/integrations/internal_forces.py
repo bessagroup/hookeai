@@ -4,6 +4,10 @@ Functions
 ---------
 compute_element_internal_forces
     Compute finite element internal forces.
+compute_infinitesimal_inc_strain
+    Compute incremental infinitesimal strain tensor.
+compute_infinitesimal_strain
+    Compute infinitesimal strain tensor.
 """
 #
 #                                                                       Modules
@@ -164,3 +168,27 @@ def compute_infinitesimal_inc_strain(grad_operator_sym, nodes_inc_disps):
     inc_strain_vmf = torch.matmul(grad_operator_sym, nodes_inc_disps.flatten())
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     return inc_strain_vmf
+# =============================================================================
+def compute_infinitesimal_strain(grad_operator_sym, nodes_disps):
+    """Compute infinitesimal strain tensor.
+    
+    Strain components order is set by discrete symmetric gradient operator.
+    
+    Parameters
+    ----------
+    grad_operator_sym : torch.Tensor(2d)
+        Discrete symmetric gradient operator evaluated at given local
+        coordinates.
+    nodes_disps : torch.Tensor(2d)
+        Nodes displacements stored as torch.Tensor(2d) of shape
+        (n_node, n_dof_node).
+        
+    Returns
+    -------
+    strain_vmf : torch.Tensor(1d)
+        Infinitesimal strain tensor (Voigt matricial form).
+    """
+    # Compute infinitesimal strain tensor (Voigt matricial form)
+    strain_vmf = torch.matmul(grad_operator_sym, nodes_disps.flatten())
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    return strain_vmf
