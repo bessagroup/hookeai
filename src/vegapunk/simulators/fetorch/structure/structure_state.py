@@ -76,6 +76,8 @@ class StructureMaterialState:
         Get element material constitutive state variables.
     update_converged_elements_state(self)
         Update elements last converged material state variables.
+    get_element_state_availability(self, element_id)
+        Get element constitutive model state variables availability.
     """
     def __init__(self, strain_formulation, problem_type, n_elem):
         """Constructor.
@@ -276,3 +278,24 @@ class StructureMaterialState:
     def update_converged_elements_state(self):
         """Update elements last converged material state variables."""
         self._elements_state_old = copy.deepcopy(self._elements_state)
+    # -------------------------------------------------------------------------
+    def get_element_state_availability(self, element_id):
+        """Get element constitutive model state variables availability.
+        
+        Parameters
+        ----------
+        element_id : int
+            Element label. Elements labels must be within the range of
+            1 to n_elem (included).
+
+        Returns
+        -------
+        is_state_available : bool
+            True if material constitutive model state variables are available,
+            False otherwise.
+        """
+        # Check element state variables availability
+        is_state_available = self._elements_is_state[str(element_id)]
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        return is_state_available
+        
