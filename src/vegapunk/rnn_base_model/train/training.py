@@ -103,8 +103,8 @@ def train_model(n_max_epochs, dataset, model_init_args, lr_init,
     early_stopping_kwargs : dict, default={}
         Early stopping criterion parameters (key, str, item, value).
     load_model_state : {'best', 'last', int, None}, default=None
-        Load available GNN-based model state from the model
-        directory. Data scalers are also loaded from model initialization file.
+        Load available model state from the model directory. Data scalers are
+        also loaded from model initialization file.
         Options:
         
         'best'      : Model state corresponding to best performance available

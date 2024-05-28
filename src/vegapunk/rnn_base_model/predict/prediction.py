@@ -53,8 +53,7 @@ def predict(dataset, model_directory, predict_directory=None,
         Directory where model predictions results are stored. If None, then
         all output files are supressed.
     load_model_state : {'best', 'last', int, None}, default=None
-        Load available Graph Neural Network model state from the model
-        directory. Options:
+        Load available model state from the model directory. Options:
         
         'best' : Model state corresponding to best performance available
         
