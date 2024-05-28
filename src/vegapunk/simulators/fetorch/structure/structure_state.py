@@ -10,12 +10,14 @@ StructureMaterialState
 # =============================================================================
 # Standard
 import copy
+import re
 # Local
 from simulators.fetorch.math.matrixops import get_problem_type_parameters
 from simulators.fetorch.material.models.standard.elastic import Elastic
 from simulators.fetorch.material.models.standard.von_mises import VonMises
 from simulators.fetorch.material.models.standard.drucker_prager import \
     DruckerPrager
+from rc_base_model.model.recurrent_model import RecurrentConstitutiveModel
 #
 #                                                          Authorship & Credits
 # =============================================================================
@@ -56,8 +58,8 @@ class StructureMaterialState:
         (key, str[int]).
     _elements_is_recurrent_material : dict
         For each finite element mesh element (key, str[int]), stores a bool
-        that defines if the material constitutive model follows the recurrent
-        structure.
+        that defines if the material constitutive model has a recurrent
+        structure (processes full deformation path when called).
 
     Methods
     -------
@@ -109,7 +111,7 @@ class StructureMaterialState:
             get_problem_type_parameters(problem_type)
     # -------------------------------------------------------------------------
     def init_elements_model(self, model_name, model_parameters, element_ids,
-                            elements_type):
+                            elements_type, model_kwargs={}):
         """Initialize constitutive model assigned to given set of elements.
         
         While the constitutive model object is shared between all the elements
@@ -130,6 +132,8 @@ class StructureMaterialState:
             FETorch element type (item, ElementType) of each finite element
             mesh element (str[int]). Elements labels must be within the range
             of 1 to n_elem (included).
+        model_kwargs : dict, default={}
+            Other parameters required to initialize constitutive model.
         """
         # Initialize constitutive model
         if model_name == 'elastic':
@@ -144,6 +148,49 @@ class StructureMaterialState:
             constitutive_model = DruckerPrager(self._strain_formulation,
                                                self._problem_type,
                                                model_parameters)
+        elif bool(re.search(r'^rc_.*$', model_name)):
+            # Get number of input and output features
+            n_features_in = model_kwargs['n_features_in']
+            n_features_out = model_kwargs['n_features_out']
+            # Get learnable parameters
+            learnable_parameters = model_kwargs['learnable_parameters']
+            # Set strain formulation
+            strain_formulation = self._strain_formulation
+            # Set problem type
+            problem_type = self._problem_type
+            # Set material constitutive model name
+            material_model_name = model_kwargs['material_model_name']
+            # Set material constitutive model parameters
+            material_model_parameters = model_parameters
+            # Get material constitutive state variables (prediction)
+            state_features_out = model_kwargs['state_features_out']
+            # Get model directory
+            model_directory = model_kwargs['model_directory']
+            # Get parameters normalization
+            is_normalized_parameters = model_kwargs['is_normalized_parameters']
+            # Get data normalization
+            is_data_normalization = model_kwargs['is_data_normalization']
+            # Get device type
+            device_type = model_kwargs['device_type']
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Build model initialization parameters
+            model_init_args = {
+                'n_features_in': n_features_in,
+                'n_features_out': n_features_out,
+                'learnable_parameters': learnable_parameters,
+                'strain_formulation': strain_formulation,
+                'problem_type': problem_type,
+                'material_model_name': material_model_name,
+                'material_model_parameters': material_model_parameters,
+                'state_features_out': state_features_out,
+                'model_directory': model_directory,
+                'model_name': model_name,
+                'is_normalized_parameters': is_normalized_parameters,
+                'is_data_normalization': is_data_normalization,
+                'device_type': device_type}
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Initialize recurrent constitutive model
+            constitutive_model = RecurrentConstitutiveModel(**model_init_args) 
         else:
             raise RuntimeError(f'Unknown material constitutive model '
                                f'\'{model_name}\'.')
@@ -283,7 +330,7 @@ class StructureMaterialState:
         self._elements_state_old = copy.deepcopy(self._elements_state)
     # -------------------------------------------------------------------------
     def get_element_model_recurrency(self, element_id):
-        """Get element constitutive model recurrency.
+        """Get element constitutive model recurrent structure.
         
         Parameters
         ----------
@@ -294,10 +341,10 @@ class StructureMaterialState:
         Returns
         -------
         is_recurrent_model : bool
-            True if the material constitutive model follows the recurrent
-            structure, False otherwise.
+            True if the material constitutive model has a recurrent structure
+            (processes full deformation path when called), False otherwise.
         """
-        # Check element constitutive model recurrency
+        # Check element constitutive model recurrent structure
         is_recurrent_model = \
             self._elements_is_recurrent_material[str(element_id)]
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
