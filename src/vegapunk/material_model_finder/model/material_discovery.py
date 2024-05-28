@@ -14,12 +14,13 @@ import copy
 import torch
 # Local
 from simulators.fetorch.element.integrations.internal_forces import \
-    compute_element_internal_forces, compute_infinitesimal_inc_strain
+    compute_element_internal_forces, compute_infinitesimal_inc_strain, \
+    compute_infinitesimal_strain
 from simulators.fetorch.element.derivatives.gradients import \
     eval_shapefun_deriv, build_discrete_sym_gradient
 from simulators.fetorch.material.material_su import material_state_update
 from simulators.fetorch.math.matrixops import get_problem_type_parameters, \
-    get_tensor_from_mf
+    get_tensor_from_mf, get_tensor_mf
 from simulators.fetorch.math.voigt_notation import get_strain_from_vfm, \
     get_stress_vfm
 #
@@ -65,9 +66,24 @@ class MaterialModelFinder(torch.nn.Module):
         Forward propagation (sequential time).
     forward_sequential_element(self, specimen_data, specimen_material_state)
         Forward propagation (sequential element).
+    compute_element_internal_forces_hist(self, strain_formulation, \
+                                         problem_type, element_type, \
+                                         element_material, element_state_old, \
+                                         nodes_coords_hist, nodes_disps_hist, \
+                                         nodes_inc_disps_hist, time_hist, \
+                                         is_recurrent_model)
+        Compute history of finite element internal forces.
+    recurrent_material_state_update(self, strain_formulation, problem_type, \
+                                    constitutive_model, strain_hist, time_hist)
+        Material state update for any given recurrent constitutive model.
     force_equilibrium_loss(internal_forces_mesh, external_forces_mesh, \
                            reaction_forces_mesh, dirichlet_bool_mesh)
         Compute force equilibrium loss for given discrete time.
+    build_tensor_from_comps(cls, n_dim, comps, comps_array, is_symmetric=False,
+                            device=None)
+        Build strain/stress tensor from given components.
+    store_tensor_comps(cls, comps, tensor, device=None)
+        Store strain/stress tensor components in array.
     """
     def __init__(self, device_type='cpu'):
         """Constructor.
@@ -320,8 +336,10 @@ class MaterialModelFinder(torch.nn.Module):
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Get element material model
             element_material = elements_material[str(elem_id)]
-            # Get element last converged material constitutive state
-            # variables
+            # Get element material model recurrent structure
+            is_recurrent_model = \
+                specimen_material_state.get_element_model_recurrency(elem_id)
+            # Get element initial material constitutive state variables
             element_state_old = \
                 specimen_material_state.get_element_state(elem_id, time='last')
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -358,7 +376,8 @@ class MaterialModelFinder(torch.nn.Module):
                 self.compute_element_internal_forces_hist(
                     strain_formulation, problem_type, element_type,
                     element_material, element_state_old, nodes_coords_hist,
-                    nodes_disps_hist, nodes_inc_disps_hist, time_hist)
+                    nodes_disps_hist, nodes_inc_disps_hist, time_hist,
+                    is_recurrent_model)
             # Update element material constitutive state variables
             specimen_material_state.update_element_state(
                 elem_id, element_state_hist[-1], time='current')
@@ -399,7 +418,7 @@ class MaterialModelFinder(torch.nn.Module):
     def compute_element_internal_forces_hist(
         self, strain_formulation, problem_type, element_type, element_material,
         element_state_old, nodes_coords_hist, nodes_disps_hist,
-        nodes_inc_disps_hist, time_hist):
+        nodes_inc_disps_hist, time_hist, is_recurrent_model):
         """Compute history of finite element internal forces.
         
         Parameters
@@ -427,6 +446,9 @@ class MaterialModelFinder(torch.nn.Module):
             torch.Tensor(3d) of shape (n_node, n_dim, n_time).
         time_hist : torch.Tensor(1d)
             Discrete time history.
+        is_recurrent_model : bool
+            True if the material constitutive model has a recurrent structure
+            (processes full deformation path when called), False otherwise.
 
         Returns
         -------
@@ -470,13 +492,18 @@ class MaterialModelFinder(torch.nn.Module):
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Initialize Gauss integration point last converged material
             # constitutive model state variables
-            state_variables_old = copy.deepcopy(element_state_old[str(i + 1)])
+            if not is_recurrent_model:
+                state_variables_old = \
+                    copy.deepcopy(element_state_old[str(i + 1)])
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            # Initialize Gauss integration point incremental strain tensor
-            # history
+            # Initialize Gauss integration point strain tensor history
             if strain_formulation == 'infinitesimal':
-                inc_strain_hist = \
-                    torch.zeros((n_dim, n_dim, n_time), dtype=torch.float)
+                if is_recurrent_model:
+                    strain_hist = \
+                        torch.zeros((n_dim, n_dim, n_time), dtype=torch.float)
+                else:
+                    inc_strain_hist = \
+                        torch.zeros((n_dim, n_dim, n_time), dtype=torch.float)
             else:
                 raise RuntimeError('Not implemented.')
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -490,22 +517,41 @@ class MaterialModelFinder(torch.nn.Module):
                 grad_operator_sym = build_discrete_sym_gradient(
                     shape_fun_deriv, comp_order_sym)
                 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-                # Compute incremental strain tensor
+                # Compute strain tensor
                 if strain_formulation == 'infinitesimal':
-                    # Compute incremental infinitesimal strain tensor (Voigt
-                    # matricial form)
-                    inc_strain_vmf = compute_infinitesimal_inc_strain(
-                        grad_operator_sym,
-                        nodes_inc_disps_hist[:, :, time_idx])
-                    # Get incremental strain tensor
-                    inc_strain_hist[:, :, time_idx] = get_strain_from_vfm(
-                        inc_strain_vmf, n_dim, comp_order_sym)
+                    if is_recurrent_model:
+                        # Compute infinitesimal strain tensor (Voigt matricial
+                        # form)
+                        strain_vmf = compute_infinitesimal_strain(
+                            grad_operator_sym,
+                            nodes_disps_hist[:, :, time_idx])
+                        # Get strain tensor
+                        strain_hist[:, :, time_idx] = get_strain_from_vfm(
+                            strain_vmf, n_dim, comp_order_sym)
+                    else:
+                        # Compute incremental infinitesimal strain tensor
+                        # (Voigt matricial form)
+                        inc_strain_vmf = compute_infinitesimal_inc_strain(
+                            grad_operator_sym,
+                            nodes_inc_disps_hist[:, :, time_idx])
+                        # Get incremental strain tensor
+                        inc_strain_hist[:, :, time_idx] = get_strain_from_vfm(
+                            inc_strain_vmf, n_dim, comp_order_sym)
                 else:
                     raise RuntimeError('Not implemented.')
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            if False:
-                raise RuntimeError('Missing implementation of recurrent '
-                                   'data-driven constitutive model.')
+            # Compute Gauss integration point stress history
+            if is_recurrent_model:
+                # Material state update
+                state_variables_hist = self.recurrent_material_state_update(
+                    strain_formulation, problem_type, element_material,
+                    strain_hist, time_hist)
+                # Loop over discrete time
+                for time_idx in range(n_time):
+                    # Store Gaussian integration point material constitutive
+                    # model state variables
+                    element_state_hist[time_idx][str(i + 1)] = \
+                        state_variables_hist[time_idx]
             else:
                 # Loop over discrete time
                 for time_idx in range(n_time):
@@ -549,6 +595,78 @@ class MaterialModelFinder(torch.nn.Module):
                     jacobian_det)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         return element_internal_forces_hist, element_state_hist
+    # -------------------------------------------------------------------------
+    def recurrent_material_state_update(self, strain_formulation, problem_type,
+                                        constitutive_model, strain_hist,
+                                        time_hist):
+        """Material state update for any given recurrent constitutive model.
+
+        Parameters
+        ----------
+        strain_formulation: {'infinitesimal', 'finite'}
+            Problem strain formulation.
+        problem_type : int
+            Problem type: 2D plane strain (1), 2D plane stress (2),
+            2D axisymmetric (3) and 3D (4).
+        constitutive_model : ConstitutiveModel
+            Recurrent material constitutive model.
+        strain_hist : torch.Tensor(3d)
+            Strain tensor history stored as torch.Tensor(3d) of shape
+            (n_dim, n_dim, n_time).
+        time_hist : torch.Tensor(1d)
+            Discrete time history.
+
+        Returns
+        -------
+        state_variables_hist : list[dict]
+            Material constitutive model state variables history.
+        """
+        # Get problem type parameters
+        n_dim, comp_order_sym, _ = \
+            get_problem_type_parameters(problem_type)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Get time history length
+        n_time = time_hist.shape[0]
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Initialize material constitutive model state variables history
+        state_variables_hist = [{} for _ in range(n_time)]
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Initialize tensor of input features
+        if strain_formulation == 'infinitesimal':
+            features_in = torch.zeros((n_time, len(comp_order_sym)))
+        else:
+            raise RuntimeError('Not implemented.')
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Build tensor of input features
+        for time_idx in range(n_time):
+            # Store strain tensor
+            if strain_formulation == 'infinitesimal':
+                features_in[time_idx, :] = self.store_tensor_comps(
+                    comp_order_sym, strain_hist[:, :, time_idx],
+                    device=self._device)
+            else:
+                raise RuntimeError('Not implemented.')
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Compute output features
+        features_out = constitutive_model(features_in, is_normalized=False)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Loop over discrete time
+        for time_idx in range(n_time):
+            # Build and store stress tensor
+            if strain_formulation == 'infinitesimal':
+                # Build stress tensor
+                stress = self.build_tensor_from_comps(
+                    n_dim, comp_order_sym,
+                    features_out[time_idx, :len(comp_order_sym)],
+                    is_symmetric=True, device=self._device)
+                # Store stress tensor
+                state_variables_hist[time_idx]['stress_mf'] = \
+                    get_tensor_mf(stress, n_dim, comp_order_sym,
+                                  device=self._device)
+            else:
+                raise RuntimeError('Not implemented.')
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        return state_variables_hist
     # -------------------------------------------------------------------------
     @staticmethod
     def force_equilibrium_loss(internal_forces_mesh, external_forces_mesh,
@@ -603,3 +721,72 @@ class MaterialModelFinder(torch.nn.Module):
                                                - external_forces_mesh[i, j])**2
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         return force_equilibrium_loss
+    # -------------------------------------------------------------------------
+    @classmethod
+    def build_tensor_from_comps(cls, n_dim, comps, comps_array,
+                                is_symmetric=False, device=None):
+        """Build strain/stress tensor from given components.
+        
+        Parameters
+        ----------
+        n_dim : int
+            Problem number of spatial dimensions.
+        comps : tuple[str]
+            Strain/Stress components order.
+        comps_array : torch.Tensor(1d)
+            Strain/Stress components array.
+        is_symmetric : bool, default=False
+            If True, then assembles off-diagonal strain components from
+            symmetric component.
+        device : torch.device, default=None
+            Device on which torch.Tensor is allocated.
+        
+        Returns
+        -------
+        tensor : torch.Tensor(2d)
+            Strain/Stress tensor.
+        """
+        # Initialize tensor
+        tensor = torch.zeros((n_dim, n_dim), dtype=torch.float, device=device)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Loop over components
+        for k, comp in enumerate(comps):
+            # Get component indexes
+            i, j = [int(x) - 1 for x in comp]
+            # Assemble tensor component
+            tensor[i, j] = comps_array[k]
+            # Assemble symmetric tensor component
+            if is_symmetric and i != j:
+                tensor[j, i] = comps_array[k]
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        return tensor
+    # -------------------------------------------------------------------------
+    @classmethod
+    def store_tensor_comps(cls, comps, tensor, device=None):
+        """Store strain/stress tensor components in array.
+        
+        Parameters
+        ----------
+        comps : tuple[str]
+            Strain/Stress components order.
+        tensor : torch.Tensor(2d)
+            Strain/Stress tensor.
+        device : torch.device, default=None
+            Device on which torch.Tensor is allocated.
+        
+        Returns
+        -------
+        comps_array : torch.Tensor(1d)
+            Strain/Stress components array.
+        """
+        # Initialize tensor components array
+        comps_array = torch.zeros(len(comps), dtype=torch.float, device=device)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Loop over components
+        for k, comp in enumerate(comps):
+            # Get component indexes
+            i, j = [int(x) - 1 for x in comp]
+            # Assemble tensor component
+            comps_array[k] = tensor[i, j]
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        return comps_array
