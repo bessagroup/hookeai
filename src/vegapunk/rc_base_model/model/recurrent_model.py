@@ -54,7 +54,7 @@ class RecurrentConstitutiveModel(torch.nn.Module):
     ----------
     model_directory : str
         Directory where model is stored.
-    model_name : str, default='gru_rnn_model'
+    model_name : str
         Name of model.
     _n_features_in : int
         Number of input features.
@@ -168,10 +168,10 @@ class RecurrentConstitutiveModel(torch.nn.Module):
     """
     def __init__(self, n_features_in, n_features_out, learnable_parameters,
                  strain_formulation, problem_type, material_model_name,
-                 material_model_parameters, model_directory, model_name,
-                 state_features_out={}, is_data_normalization=False,
-                 is_normalized_parameters=False, is_save_model_init_file=True,
-                 device_type='cpu'):
+                 material_model_parameters, model_directory,
+                 model_name='wrapper_recurrent_model', state_features_out={},
+                 is_data_normalization=False, is_normalized_parameters=False,
+                 is_save_model_init_file=True, device_type='cpu'):
         """Constructor.
         
         Parameters
