@@ -41,7 +41,8 @@ __status__ = 'Planning'
 def validate_force_equilibrium_loss(specimen_name, strain_formulation,
                                     problem_type, model_name, model_parameters,
                                     mesh_type, nodes_disps_mesh_hist,
-                                    reaction_forces_mesh_hist, time_hist):
+                                    reaction_forces_mesh_hist, time_hist,
+                                    model_kwargs={}):
     """Validate computation of force equilibrium history loss.
     
     Parameters
@@ -68,6 +69,8 @@ def validate_force_equilibrium_loss(specimen_name, strain_formulation,
         (n_node_mesh, n_dim, n_time).
     time_hist : torch.Tensor(1d)
         Discrete time history.
+    model_kwargs : dict, default={}
+        Other parameters required to initialize constitutive model.
     """
     # Initialize specimen numerical data
     specimen_data = SpecimenNumericalData()
@@ -90,14 +93,20 @@ def validate_force_equilibrium_loss(specimen_name, strain_formulation,
     specimen_material_state = StructureMaterialState(
         strain_formulation, problem_type, n_elem)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Set available sequential modes
+    if bool(re.search(r'^rc_.*$', model_name)):
+        available_sequential_modes = ('sequential_element',)
+    else:
+        available_sequential_modes = ('sequential_time', 'sequential_element')
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Initialize material model finder
     material_finder = MaterialModelFinder()
     # Loop over sequential modes
-    for sequential_mode in ('sequential_time', 'sequential_element'):
+    for sequential_mode in available_sequential_modes:
         # Initialize elements constitutive model
         specimen_material_state.init_elements_model(
-            model_name, model_parameters, elements_ids, elements_type)
-        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            model_name, model_parameters, elements_ids, elements_type,
+            model_kwargs)
         # Compute force equilibrium history loss
         force_equilibrium_hist_loss = material_finder(
             specimen_data, specimen_material_state,
@@ -114,7 +123,7 @@ def validate_force_equilibrium_loss(specimen_name, strain_formulation,
         print(f'Material model:     {model_name}')
         print(f'Strain formulation: {strain_formulation}')
         print(f'\nForce equilibrium history loss: '
-            f'{force_equilibrium_hist_loss:.4e}')
+              f'{force_equilibrium_hist_loss:.4e}')
         print('-------------------------------------------------------------')
         print('')
 # =============================================================================
@@ -522,14 +531,21 @@ if __name__ == '__main__':
     strain_formulation = 'infinitesimal'
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set constitutive model name and parameters
-    model_name = 'von_mises'
+    model_name = 'rc_von_mises'
     # Set constitutive model parameters
     if model_name == 'elastic':
+        # Set constitutive model parameters
         model_parameters = {
             'elastic_symmetry': 'isotropic',
             'E': 100, 'v': 0.3,
             'euler_angles': (0.0, 0.0, 0.0)}
+        # Set other parameters required to initialize constitutive model
+        model_kwargs = {}
+        # Set model validation data directory name
+        model_data_name = 'elastic'
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     elif model_name == 'von_mises':
+        # Set constitutive model parameters
         model_parameters = {
             'elastic_symmetry': 'isotropic',
             'E': 100, 'v': 0.3,
@@ -538,6 +554,82 @@ if __name__ == '__main__':
             'hardening_parameters':
                 {'hardening_points': torch.tensor([[0.0, 2.0],
                                                    [1.0, 4.0]])}}
+        # Set other parameters required to initialize constitutive model
+        model_kwargs = {}
+        # Set model validation data directory name
+        model_data_name = 'von_mises'
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    elif bool(re.search(r'^rc_.*$', model_name)):
+        # Set constitutive model specific parameters
+        if model_name == 'rc_elastic':
+            # Set constitutive model parameters
+            model_parameters = {
+                'elastic_symmetry': 'isotropic',
+                'E': 100, 'v': 0.3,
+                'euler_angles': (0.0, 0.0, 0.0)}
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Set learnable parameters
+            learnable_parameters = {}
+            # Set material constitutive model name
+            material_model_name = 'elastic'
+            # Set material constitutive state variables (prediction)
+            state_features_out = {}
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Set model validation data directory name
+            model_data_name = 'elastic'
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        elif model_name == 'rc_von_mises':
+            # Set constitutive model parameters
+            model_parameters = {
+                'elastic_symmetry': 'isotropic',
+                'E': 100, 'v': 0.3,
+                'euler_angles': (0.0, 0.0, 0.0),
+                'hardening_law': get_hardening_law('piecewise_linear'),
+                'hardening_parameters':
+                    {'hardening_points': torch.tensor([[0.0, 2.0],
+                                                       [1.0, 4.0]])}}
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Set learnable parameters
+            learnable_parameters = {}
+            # Set material constitutive model name
+            material_model_name = 'von_mises'
+            # Set material constitutive state variables (prediction)
+            state_features_out = {}
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Set model validation data directory name
+            model_data_name = 'von_mises'
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        else:
+            raise RuntimeError('Unknown recurrent constitutive model.')
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set model directory
+        model_directory = ('/home/bernardoferreira/Documents/brown/projects/'
+                           'darpa_project/1_pipeline_validation/'
+                           'toy_uniaxial_specimen/temp')
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set parameters normalization
+        is_normalized_parameters = True
+        # Set data normalization
+        is_data_normalization = False
+        # Set device type
+        device_type = 'cpu'
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set other parameters required to initialize constitutive model
+        model_kwargs = {
+            'n_features_in': None,
+            'n_features_out': None,
+            'learnable_parameters': learnable_parameters,
+            'strain_formulation': strain_formulation,
+            'problem_type': None,
+            'material_model_name': material_model_name,
+            'material_model_parameters': model_parameters,
+            'state_features_out': state_features_out,
+            'model_directory': model_directory,
+            'model_name': model_name,
+            'is_normalized_parameters': is_normalized_parameters,
+            'is_data_normalization': is_data_normalization,
+            'device_type': device_type}
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     else:
         raise RuntimeError('Unknown constitutive model.')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -552,13 +644,22 @@ if __name__ == '__main__':
         else:
             problem_type = 4
         # Get problem type parameters
-        n_dim, _, _ = get_problem_type_parameters(problem_type)
+        n_dim, comp_order_sym, _ = \
+            get_problem_type_parameters(problem_type)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set constitutive model parameters according with problem dimensions
+        if model_kwargs:
+            # Set number of input and output features
+            model_kwargs['n_features_in'] = len(comp_order_sym)
+            model_kwargs['n_features_out'] = len(comp_order_sym)
+            # Set problem type
+            model_kwargs['problem_type'] = problem_type
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Set Links simulation output directory
         links_output_directory = \
             (f'/home/bernardoferreira/Documents/brown/projects/darpa_project/'
              f'1_pipeline_validation/toy_uniaxial_specimen/'
-             f'{model_name}/{n_dim}D_toy_uniaxial_specimen_{mesh_type}')
+             f'{model_data_name}/{n_dim}D_toy_uniaxial_specimen_{mesh_type}')
         # Get specimen name
         specimen_name = os.path.basename(links_output_directory)
         # Read specimen numerical data from Links simulation directory
@@ -570,4 +671,5 @@ if __name__ == '__main__':
                                         problem_type, model_name,
                                         model_parameters, mesh_type,
                                         nodes_disps_mesh_hist,
-                                        reaction_forces_mesh_hist, time_hist)
+                                        reaction_forces_mesh_hist, time_hist,
+                                        model_kwargs)
