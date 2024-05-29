@@ -380,7 +380,7 @@ class MaterialModelFinder(torch.nn.Module):
                     is_recurrent_model)
             # Update element material constitutive state variables
             specimen_material_state.update_element_state(
-                elem_id, element_state_hist[-1], time='current')
+                elem_id, element_state_hist[-1], time='current', is_copy=False)
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Loop over discrete time
             for time_idx in range(n_time):
@@ -392,7 +392,7 @@ class MaterialModelFinder(torch.nn.Module):
                     internal_forces_mesh.reshape(-1, n_dim)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Update elements last converged material constitutive state variables
-        specimen_material_state.update_converged_elements_state()
+        specimen_material_state.update_converged_elements_state(is_copy=False)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Initialize force equilibrium history loss
         force_equilibrium_hist_loss = 0

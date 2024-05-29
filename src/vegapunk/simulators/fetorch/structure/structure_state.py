@@ -72,11 +72,12 @@ class StructureMaterialState:
         Get problem type.
     get_elements_material(self)
         Get elements material constitutive models.
-    update_element_state(self, element_id, state_variables, time='current')
+    update_element_state(self, element_id, state_variables, time='current', \
+                         is_copy=True)
         Update element material constitutive state variables.
     get_element_state(self, element_id, element_state, time='current')
         Get element material constitutive state variables.
-    update_converged_elements_state(self)
+    update_converged_elements_state(self, is_copy=True)
         Update elements last converged material state variables.
     get_element_state_availability(self, element_id)
         Get element constitutive model state variables availability.
@@ -270,7 +271,8 @@ class StructureMaterialState:
         """
         return self._elements_material
     # -------------------------------------------------------------------------
-    def update_element_state(self, element_id, element_state, time='current'):
+    def update_element_state(self, element_id, element_state, time='current',
+                             is_copy=True):
         """Update element material constitutive state variables.
         
         Parameters
@@ -285,14 +287,20 @@ class StructureMaterialState:
             Time where update of element state variables is performed: last
             converged state variables ('last') or current state variables
             ('current').
+        is_copy : bool, default=True
+            If True, then update is performed by copying the state variables.
+            If False, then update is performed by direct assignment (without
+            copy).
         """
+        # Copy element material constitutive state variables
+        if is_copy:
+            element_state = copy.deepcopy(element_state)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Update element material constitutive state variables
         if time == 'last':
-            self._elements_state_old[str(element_id)] = \
-                copy.deepcopy(element_state)
+           self._elements_state_old[str(element_id)] = element_state
         elif time == 'current':
-            self._elements_state[str(element_id)] = \
-                copy.deepcopy(element_state)
+            self._elements_state[str(element_id)] = element_state
         else:
             raise RuntimeError('Unknown time option.')
     # -------------------------------------------------------------------------
@@ -325,9 +333,20 @@ class StructureMaterialState:
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         return copy.deepcopy(element_state)
     # -------------------------------------------------------------------------
-    def update_converged_elements_state(self):
-        """Update elements last converged material state variables."""
-        self._elements_state_old = copy.deepcopy(self._elements_state)
+    def update_converged_elements_state(self, is_copy=True):
+        """Update elements last converged material state variables.
+        
+        Parameters
+        ----------
+        is_copy : bool, default=True
+            If True, then update is performed by copying the state variables.
+            If False, then update is performed by direct assignment (without
+            copy).
+        """
+        if is_copy:
+            self._elements_state_old = copy.deepcopy(self._elements_state)
+        else:
+            self._elements_state_old = self._elements_state
     # -------------------------------------------------------------------------
     def get_element_model_recurrency(self, element_id):
         """Get element constitutive model recurrent structure.
