@@ -570,6 +570,10 @@ if __name__ == '__main__':
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Set learnable parameters
             learnable_parameters = {}
+            learnable_parameters['E'] = {'initial_value': 100.0,
+                                         'bounds': (80, 120)}
+            learnable_parameters['v'] = {'initial_value': 0.3,
+                                         'bounds': (0.2, 0.4)}
             # Set material constitutive model name
             material_model_name = 'elastic'
             # Set material constitutive state variables (prediction)
@@ -591,6 +595,10 @@ if __name__ == '__main__':
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Set learnable parameters
             learnable_parameters = {}
+            learnable_parameters['E'] = {'initial_value': 100.0,
+                                         'bounds': (80, 120)}
+            learnable_parameters['v'] = {'initial_value': 0.3,
+                                         'bounds': (0.2, 0.4)}
             # Set material constitutive model name
             material_model_name = 'von_mises'
             # Set material constitutive state variables (prediction)
