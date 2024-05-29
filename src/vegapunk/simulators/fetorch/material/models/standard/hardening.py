@@ -20,6 +20,8 @@ get_available_hardening_types
     Get available isotropic hardening laws.
 get_hardening_law
     Get hardening law to compute yield stress and hardening slope.
+torch_interp
+    1D linear interpolation for monotonically increasing data points.
 """
 #
 #                                                                       Modules
@@ -307,3 +309,64 @@ class NadaiLudwikIHL(IsotropicHardeningLaw):
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Return
         return yield_stress, hard_slope
+# =============================================================================
+def torch_interp(x, xp, fp, left=None, right=None):
+    """1D linear interpolation for monotonically increasing data points.
+    
+    Returns the one-dimensional piecewise linear interpolant to a function with
+    given discrete data points (xp, fp), evaluated at x.
+    
+    This function is essentially a torch-based implementation of numpy.interp.
+
+    Parameters
+    ----------
+    x : torch.Tensor(1d)
+        The x-coordinates at which to evaluate the interpolated values, sorted
+        by increasing order.
+    xp : torch.Tensor(1d)
+        The x-coordinates of the discrete data points, sorted by increasing
+        order.
+    fp : torch.Tensor(1d)
+        The y-coordinates of the discrete data points.
+    left : float, default=None
+        Value to return for x < xp[0]. Defaults to fp[0].
+    right : float, default=None
+        Value to return for x > xp[-1]. Defaults to fp[-1].
+
+    Returns
+    -------
+    y : torch.Tensor(1d)
+        The y-coordinates of the interpolated data points.
+    """
+    # Check if data points are sorted
+    if not torch.all(x == torch.sort(x)[0]):
+        raise RuntimeError('The interpolated data points x-coordinates must '
+                           'be sorted in ascending order.')
+    if not torch.all(xp == torch.sort(xp)[0]):
+        raise RuntimeError('The discrete data points x-coordinates must be '
+                           'sorted in ascending order.')
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Compute linear interpolation parameters
+    m = (fp[1:] - fp[:-1])/(xp[1:] - xp[:-1])
+    b = fp[:-1] - m*xp[:-1]
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Compute data points interpolation brackets
+    idxs = torch.sum(torch.ge(x.reshape(-1, 1), xp.reshape(1, -1)), 1) - 1
+    # Assign out-of-bounds data points to limits interpolation brackets
+    idxs = torch.clamp(idxs, min=0, max=len(m) - 1)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Compute interpolated data points
+    y = m[idxs]*x + b[idxs]
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Enforce out-of-bounds left value
+    if left is not None:
+        y[x < xp[0]] = left
+    else:
+        y[x < xp[0]] = fp[0]
+    # Enforce out-of-bounds right value
+    if right is not None:
+        y[x > xp[-1]] = right
+    else:
+        y[x > xp[-1]] = fp[-1]
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    return y
