@@ -238,9 +238,9 @@ def train_model(n_max_epochs, dataset, model_init_args, lr_init,
     # Initialize number of training steps
     step = 0
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Load recurrent neural network model state
+    # Load recurrent constitutive model state
     if load_model_state is not None:
-        # Initialize recurrent neural network model
+        # Initialize recurrent constitutive model
         # (includes loading of data scalers)
         model = RecurrentConstitutiveModel.init_model_from_file(
             model_init_args['model_directory'])
@@ -253,7 +253,7 @@ def train_model(n_max_epochs, dataset, model_init_args, lr_init,
         if is_verbose:
             print('\n> Loading model state...')
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        # Load recurrent neural network model state
+        # Load recurrent constitutive model state
         loaded_epoch = load_training_state(model, opt_algorithm, optimizer,
                                            load_model_state)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
