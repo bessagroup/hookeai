@@ -195,36 +195,38 @@ class PiecewiseLinearIHL(IsotropicHardeningLaw):
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Build lists with the accumulated plastic strain points and
         # associated yield stress values
-        a = list(hardening_points[:, 0])
-        b = list(hardening_points[:, 1])
+        a = hardening_points[:, 0]
+        b = hardening_points[:, 1]
         # Check if the accumulated plastic strain list is correctly sorted
         # in ascending order
         if not np.all(np.diff(a) > 0):
             raise RuntimeError('Points of piecewise linear isotropic '
-                                'hardening law must be specified in '
-                                'ascending order of accumulated '
-                                'plastic strain.')
+                               'hardening law must be specified in '
+                               'ascending order of accumulated '
+                               'plastic strain.')
         elif not np.all([i >= 0 for i in a]):
             raise RuntimeError('Points of piecewise linear isotropic '
-                                'hardening law must be associated with '
-                                'non-negative accumulated plastic strain '
-                                'values.')
+                               'hardening law must be associated with '
+                               'non-negative accumulated plastic strain '
+                               'values.')
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # If the value of the accumulated plastic strain is either below or
         # above the provided hardening curve points, then simply assume the
         # yield stress associated with the first or last provided points,
         # respectively. Otherwise, perform linear interpolation to compute
-        # the yield stress
-        yield_stress = np.interp(acc_p_strain, a, b, b[0], b[-1])              # Requires torch-based implementation!
+        # the yield stress        
+        yield_stress = torch_interp(acc_p_strain, a, b, left=b[0], right=b[-1])        
         # Get hardening slope
         if acc_p_strain < a[0] or acc_p_strain >= a[-1]:
             hard_slope = 0
         else:
-            # Get hardening curve interval
-            x0 = list(filter(lambda i: i <= acc_p_strain, a[::-1]))[0]
-            y0 = b[a.index(x0)]
-            x1 = list(filter(lambda i: i > acc_p_strain, a))[0]
-            y1 = b[a.index(x1)]
+            # Get hardening curve bracket index
+            idx = torch.sum(torch.ge(acc_p_strain, a)) - 1
+            # Get hardening curve bracket points
+            x0 = a[idx]
+            y0 = b[idx]
+            x1 = a[idx + 1]
+            y1 = b[idx + 1]
             # Compute hardening slope
             hard_slope = (y1 - y0)/(x1 - x0)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

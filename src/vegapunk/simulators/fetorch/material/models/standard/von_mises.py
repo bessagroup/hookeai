@@ -234,7 +234,8 @@ class VonMises(ConstitutiveModel):
                             dtype=torch.float, device=self._device),
                             self._n_dim, self._comp_order_nsym)
         # Initialize internal variables
-        state_variables_init['acc_p_strain'] = 0.0
+        state_variables_init['acc_p_strain'] = \
+            torch.tensor(0.0, dtype=torch.float, device=self._device)
         # Initialize state flags
         state_variables_init['is_plast'] = False
         state_variables_init['is_su_fail'] = False
