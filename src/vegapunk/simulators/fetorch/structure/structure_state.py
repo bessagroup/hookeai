@@ -46,8 +46,8 @@ class StructureMaterialState:
     _n_mat_model : int
         Number of FETorch material constitutive models.
     _material_models : dict
-        FETorch material constitutive models. Models are labeled from 1 to
-        n_mat_model.
+        FETorch material constitutive models (key, str[int], item,
+        ConstitutiveModel). Models are labeled from 1 to n_mat_model.
     _elements_material : dict
         FETorch material constitutive model (item, ConstitutiveModel) of each
         finite element mesh element (str[int]). Elements are labeled from
@@ -61,6 +61,9 @@ class StructureMaterialState:
         dictionary with the last converged material constitutive model state
         variables (item, dict) for each Gauss integration point
         (key, str[int]).
+    _material_models_is_exparam : dict
+        For each material model (key, str), stores a bool that defines if the
+        material constitutive model parameters are explicit.
     _elements_is_recurrent_material : dict
         For each finite element mesh element (key, str[int]), stores a bool
         that defines if the material constitutive model has a recurrent
@@ -86,8 +89,10 @@ class StructureMaterialState:
         Get element material constitutive state variables.
     update_converged_elements_state(self, is_copy=True)
         Update elements last converged material state variables.
-    get_element_state_availability(self, element_id)
-        Get element constitutive model state variables availability.
+    get_material_model_param_nature(self, model_id)
+        Get material model parameters nature.
+    get_element_model_recurrency(self, element_id)
+        Get element constitutive model recurrent structure.
     """
     def __init__(self, strain_formulation, problem_type, n_elem):
         """Constructor.
@@ -110,6 +115,8 @@ class StructureMaterialState:
         self._n_mat_model = 0
         # Initialize material models
         self._material_models = {}
+        # Initialize material models parameters nature
+        self._material_models_is_exparam = {}
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Initialize elements material model
         self._elements_material = {str(i): None for i in range(1, n_elem + 1)}
@@ -152,19 +159,34 @@ class StructureMaterialState:
         model_kwargs : dict, default={}
             Other parameters required to initialize constitutive model.
         """
-        # Initialize constitutive model
+        # Initialize constitutive model and set related parameters
         if model_name == 'elastic':
+            # Initialize constitutive model
             constitutive_model = Elastic(self._strain_formulation,
                                          self._problem_type,
                                          model_parameters)
+            # Set parameters nature
+            is_explicit_parameters = True
+            # Set recurrency structure
+            is_recurrent_model = False
         elif model_name == 'von_mises':
+            # Initialize constitutive model
             constitutive_model = VonMises(self._strain_formulation,
                                           self._problem_type,
                                           model_parameters)
+            # Set parameters nature
+            is_explicit_parameters = True
+            # Set recurrency structure
+            is_recurrent_model = False
         elif model_name == 'drucker_prager':
+            # Initialize constitutive model
             constitutive_model = DruckerPrager(self._strain_formulation,
                                                self._problem_type,
                                                model_parameters)
+            # Set parameters nature
+            is_explicit_parameters = True
+            # Set recurrency structure
+            is_recurrent_model = False
         elif bool(re.search(r'^rc_.*$', model_name)):
             # Get number of input and output features
             n_features_in = model_kwargs['n_features_in']
@@ -206,24 +228,24 @@ class StructureMaterialState:
                 'is_data_normalization': is_data_normalization,
                 'device_type': device_type}
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            # Initialize recurrent constitutive model
-            constitutive_model = RecurrentConstitutiveModel(**model_init_args) 
+            # Initialize constitutive model
+            constitutive_model = RecurrentConstitutiveModel(**model_init_args)
+            # Set parameters nature
+            is_explicit_parameters = True
+            # Set recurrency structure
+            is_recurrent_model = True
         else:
             raise RuntimeError(f'Unknown material constitutive model '
                                f'\'{model_name}\'.')
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        # Set constitutive model recurrency structure
-        if model_name in ('elastic', 'von_mises', 'drucker_prager'):
-            is_recurrent_model = False
-        else:
-            is_recurrent_model = True
-        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Update number of material constitutive models
         self._n_mat_model += 1
         # Set new material constitutive model label
-        model_label = str(self._n_mat_model)
+        model_id = str(self._n_mat_model)
         # Store constitutive model
-        self._material_models[model_label] = constitutive_model
+        self._material_models[model_id] = constitutive_model
+        # Store constitutive model parameters nature
+        self._material_models_is_exparam[model_id] = is_explicit_parameters
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Loop over elements
         for element_id in element_ids:
@@ -282,9 +304,9 @@ class StructureMaterialState:
         
         Returns
         -------
-        _material_models : dict
-            FETorch material constitutive models. Models are labeled from 1 to
-            n_mat_model.
+        material_models : dict
+            FETorch material constitutive models (key, str[int], item,
+            ConstitutiveModel). Models are labeled from 1 to n_mat_model.
         """
         return self._material_models
     # -------------------------------------------------------------------------
@@ -376,6 +398,26 @@ class StructureMaterialState:
             self._elements_state_old = copy.deepcopy(self._elements_state)
         else:
             self._elements_state_old = self._elements_state
+    # -------------------------------------------------------------------------
+    def get_material_model_param_nature(self, model_id):
+        """Get material model parameters nature.
+        
+        Parameters
+        ----------
+        model_id : int
+            Material model label. Models labels must be within the range of
+            1 to n_mat_model (included).
+            
+        Returns
+        -------
+        is_explicit_parameters : bool
+            True if model parameters are explicit, False otherwise.
+        """
+        # Check model parameters nature
+        is_explicit_parameters = \
+            self._material_models_is_exparam[str(model_id)]
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        return is_explicit_parameters
     # -------------------------------------------------------------------------
     def get_element_model_recurrency(self, element_id):
         """Get element constitutive model recurrent structure.
