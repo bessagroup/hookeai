@@ -63,7 +63,7 @@ class StructureMaterialState:
         (key, str[int]).
     _material_models_is_exparam : dict
         For each material model (key, str), stores a bool that defines if the
-        material constitutive model parameters are explicit.
+        material constitutive model learnable parameters are explicit.
     _elements_is_recurrent_material : dict
         For each finite element mesh element (key, str[int]), stores a bool
         that defines if the material constitutive model has a recurrent
@@ -90,7 +90,7 @@ class StructureMaterialState:
     update_converged_elements_state(self, is_copy=True)
         Update elements last converged material state variables.
     get_material_model_param_nature(self, model_id)
-        Get material model parameters nature.
+        Get material model learnable parameters nature.
     get_element_model_recurrency(self, element_id)
         Get element constitutive model recurrent structure.
     """
@@ -115,7 +115,7 @@ class StructureMaterialState:
         self._n_mat_model = 0
         # Initialize material models
         self._material_models = {}
-        # Initialize material models parameters nature
+        # Initialize material models learnable parameters nature
         self._material_models_is_exparam = {}
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Initialize elements material model
@@ -165,8 +165,8 @@ class StructureMaterialState:
             constitutive_model = Elastic(self._strain_formulation,
                                          self._problem_type,
                                          model_parameters)
-            # Set parameters nature
-            is_explicit_parameters = True
+            # Set learnable parameters nature
+            is_explicit_parameters = False
             # Set recurrency structure
             is_recurrent_model = False
         elif model_name == 'von_mises':
@@ -174,8 +174,8 @@ class StructureMaterialState:
             constitutive_model = VonMises(self._strain_formulation,
                                           self._problem_type,
                                           model_parameters)
-            # Set parameters nature
-            is_explicit_parameters = True
+            # Set learnable parameters nature
+            is_explicit_parameters = False
             # Set recurrency structure
             is_recurrent_model = False
         elif model_name == 'drucker_prager':
@@ -183,8 +183,8 @@ class StructureMaterialState:
             constitutive_model = DruckerPrager(self._strain_formulation,
                                                self._problem_type,
                                                model_parameters)
-            # Set parameters nature
-            is_explicit_parameters = True
+            # Set learnable parameters nature
+            is_explicit_parameters = False
             # Set recurrency structure
             is_recurrent_model = False
         elif bool(re.search(r'^rc_.*$', model_name)):
@@ -230,7 +230,7 @@ class StructureMaterialState:
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Initialize constitutive model
             constitutive_model = RecurrentConstitutiveModel(**model_init_args)
-            # Set parameters nature
+            # Set learnable parameters nature
             is_explicit_parameters = True
             # Set recurrency structure
             is_recurrent_model = True
@@ -244,7 +244,7 @@ class StructureMaterialState:
         model_id = str(self._n_mat_model)
         # Store constitutive model
         self._material_models[model_id] = constitutive_model
-        # Store constitutive model parameters nature
+        # Store constitutive model learnable parameters nature
         self._material_models_is_exparam[model_id] = is_explicit_parameters
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Loop over elements
@@ -400,7 +400,7 @@ class StructureMaterialState:
             self._elements_state_old = self._elements_state
     # -------------------------------------------------------------------------
     def get_material_model_param_nature(self, model_id):
-        """Get material model parameters nature.
+        """Get material model learnable parameters nature.
         
         Parameters
         ----------
@@ -411,9 +411,9 @@ class StructureMaterialState:
         Returns
         -------
         is_explicit_parameters : bool
-            True if model parameters are explicit, False otherwise.
+            True if model learnable parameters are explicit, False otherwise.
         """
-        # Check model parameters nature
+        # Check model learnable parameters nature
         is_explicit_parameters = \
             self._material_models_is_exparam[str(model_id)]
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
