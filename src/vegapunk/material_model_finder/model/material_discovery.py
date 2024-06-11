@@ -48,6 +48,10 @@ class MaterialModelFinder(torch.nn.Module):
     
     Attributes
     ----------
+    _specimen_data : SpecimenNumericalData
+        Specimen numerical data translated from experimental results.
+    _specimen_material_state : StructureMaterialState
+        FETorch specimen material state.
     _device_type : {'cpu', 'cuda'}, default='cpu'
         Type of device on which torch.Tensor is allocated.
     _device : torch.device
@@ -55,16 +59,21 @@ class MaterialModelFinder(torch.nn.Module):
 
     Methods
     -------
+    set_specimen_data(self, specimen_data, specimen_material_state)
+        Set specimen data and material state.
+    _set_model_parameters(self)
+        Set model parameters (collect material models parameters).
+    get_model_parameters(self)
+        Get model parameters (material models parameters).
     set_device(self, device_type)
         Set device on which torch.Tensor is allocated.
     get_device(self)
         Get device on which torch.Tensor is allocated.
-    forward(self, specimen_data, specimen_material_state, \
-            sequential_mode='sequential_element')
+    forward(self, sequential_mode='sequential_element')
         Forward propagation.
-    forward_sequential_time(self, specimen_data, specimen_material_state)
+    forward_sequential_time(self)
         Forward propagation (sequential time).
-    forward_sequential_element(self, specimen_data, specimen_material_state)
+    forward_sequential_element(self)
         Forward propagation (sequential element).
     compute_element_internal_forces_hist(self, strain_formulation, \
                                          problem_type, element_type, \
@@ -96,8 +105,100 @@ class MaterialModelFinder(torch.nn.Module):
         # Initialize from base class
         super(MaterialModelFinder, self).__init__()
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Initialize specimen numerical data
+        self._specimen_data = None
+        # Initialize specimen material state
+        self._specimen_material_state = None
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Initialize parameters
+        self._model_parameters = None
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Set device
         self.set_device(device_type)
+    # -------------------------------------------------------------------------
+    def set_specimen_data(self, specimen_data, specimen_material_state):
+        """Set specimen data and material state.
+        
+        Parameters
+        ----------
+        specimen_data : SpecimenNumericalData
+            Specimen numerical data translated from experimental results.
+        specimen_material_state : StructureMaterialState
+            FETorch specimen material state.
+        """
+        # Set specimen numerical data
+        self._specimen_data = specimen_data
+        # Set specimen material state
+        self._specimen_material_state = specimen_material_state
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Collect specimen underlying material models parameters
+        self._set_model_parameters()
+    # -------------------------------------------------------------------------
+    def _set_model_parameters(self):
+        """Set model parameters (collect material models parameters)."""
+        # Initialize parameters
+        self._model_parameters = torch.nn.ParameterDict({})
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Get material models
+        material_models = self._specimen_material_state.get_material_models()
+        # Loop over material models
+        for model_key, model in material_models.items():
+            # Assemble material model parameters
+            if hasattr(model, 'get_model_parameters'):
+                self._model_parameters[model_key] = \
+                    model.get_model_parameters()
+    # -------------------------------------------------------------------------
+    def get_model_parameters(self):
+        """Get model parameters (material models parameters).
+        
+        Returns
+        -------
+        model_parameters : torch.nn.ParameterDict
+            Model parameters.
+        """
+        return self._model_parameters
+    # -------------------------------------------------------------------------
+    def get_detached_model_parameters(self):
+        """Get model parameters (material models) detached of gradients.
+        
+        Only collects parameters from material models with explicit learnable
+        parameters.
+        
+        Parameters names are prefixed by corresponding model label.
+
+        Returns
+        -------
+        model_parameters : dict
+            Model parameters.
+        """
+        # Initialize model parameters
+        model_parameters = {}
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Get material models
+        material_models = self._specimen_material_state.get_material_models()
+        # Get model selection procedure
+        is_collect_model_parameters = \
+            self._specimen_material_state.get_material_model_param_nature
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Loop over material models
+        for model_key, model in material_models.items():
+            # Check if model parameters are collected
+            is_collect_params = is_collect_model_parameters(int(model_key))
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Skip model parameters
+            if not is_collect_params:
+                continue
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Get detached model parameters
+            detached_parameters = \
+                model.get_detached_model_parameters(is_normalized=False)
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Collect parameters (prefix with model label)
+            for param, value in detached_parameters.items():
+                # Store parameter
+                model_parameters[f'model{model_key}_{param}'] = value
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        return model_parameters
     # -------------------------------------------------------------------------
     def set_device(self, device_type):
         """Set device on which torch.Tensor is allocated.
@@ -131,8 +232,7 @@ class MaterialModelFinder(torch.nn.Module):
         """
         return self.device_type, self.device
     # -------------------------------------------------------------------------
-    def forward(self, specimen_data, specimen_material_state,
-                sequential_mode='sequential_element'):
+    def forward(self, sequential_mode='sequential_element'):
         """Forward propagation.
         
         Parameters
@@ -155,17 +255,15 @@ class MaterialModelFinder(torch.nn.Module):
             Force equilibrium history loss.
         """
         if sequential_mode == 'sequential_time':
-            force_equilibrium_hist_loss = self.forward_sequential_time(
-                specimen_data, specimen_material_state)
+            force_equilibrium_hist_loss = self.forward_sequential_time()
         elif sequential_mode == 'sequential_element':
-            force_equilibrium_hist_loss = self.forward_sequential_element(
-                specimen_data, specimen_material_state)
+            force_equilibrium_hist_loss = self.forward_sequential_element()
         else:
             raise RuntimeError('Unknown sequential mode.')
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         return force_equilibrium_hist_loss
     # -------------------------------------------------------------------------
-    def forward_sequential_time(self, specimen_data, specimen_material_state):
+    def forward_sequential_time(self):
         """Forward propagation (sequential time).
         
         Parameters
@@ -180,6 +278,11 @@ class MaterialModelFinder(torch.nn.Module):
         force_equilibrium_hist_loss : float
             Force equilibrium history loss.
         """
+        # Get specimen numerical data
+        specimen_data = self._specimen_data
+        # Get specimen material state
+        specimen_material_state = self._specimen_material_state
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Get specimen finite element mesh
         specimen_mesh = specimen_data.specimen_mesh
         # Get number of elements of finite element mesh
@@ -278,8 +381,7 @@ class MaterialModelFinder(torch.nn.Module):
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         return force_equilibrium_hist_loss
     # -------------------------------------------------------------------------
-    def forward_sequential_element(self, specimen_data,
-                                   specimen_material_state):
+    def forward_sequential_element(self):
         """Forward propagation (sequential element).
         
         Parameters
@@ -294,6 +396,11 @@ class MaterialModelFinder(torch.nn.Module):
         force_equilibrium_hist_loss : float
             Force equilibrium history loss.
         """
+        # Get specimen numerical data
+        specimen_data = self._specimen_data
+        # Get specimen material state
+        specimen_material_state = self._specimen_material_state
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Get specimen finite element mesh
         specimen_mesh = specimen_data.specimen_mesh
         # Get number of nodes of finite element mesh
