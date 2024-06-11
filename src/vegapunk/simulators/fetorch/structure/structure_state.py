@@ -43,6 +43,11 @@ class StructureMaterialState:
         Strain/Stress components symmetric order.
     _comp_order_nsym : list[str]
         Strain/Stress components nonsymmetric order.
+    _n_mat_model : int
+        Number of FETorch material constitutive models.
+    _material_models : dict
+        FETorch material constitutive models. Models are labeled from 1 to
+        n_mat_model.
     _elements_material : dict
         FETorch material constitutive model (item, ConstitutiveModel) of each
         finite element mesh element (str[int]). Elements are labeled from
@@ -70,6 +75,8 @@ class StructureMaterialState:
         Get problem strain formulation.
     get_problem_type(self)
         Get problem type.
+    get_material_models(self)
+        Get material constitutive models.
     get_elements_material(self)
         Get elements material constitutive models.
     update_element_state(self, element_id, state_variables, time='current', \
@@ -99,13 +106,18 @@ class StructureMaterialState:
         self._strain_formulation = strain_formulation
         self._problem_type = problem_type
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Initialize number of material models
+        self._n_mat_model = 0
+        # Initialize material models
+        self._material_models = {}
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Initialize elements material model
         self._elements_material = {str(i): None for i in range(1, n_elem + 1)}
         # Initialize elements material model recurrency
-        self._elements_is_recurrent_material = None
+        self._elements_is_recurrent_material = {}
         # Initialize elements material constitutive state variables
-        self._elements_state = None
-        self._elements_state_old = None
+        self._elements_state = {}
+        self._elements_state_old = {}
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Get problem type parameters
         self._n_dim, self._comp_order_sym, self._comp_order_nsym = \
@@ -119,6 +131,10 @@ class StructureMaterialState:
         in the provided set, the corresponding state variables are initialized
         independently for each element (and corresponding Gauss integration
         points) in the provided set.
+        
+        Constitutive models are automatically labeled from 1 to n_mat_model,
+        following the assignment order. A unique constitutive model is created
+        whenever this method is called for a given set of elements.
         
         Parameters
         ----------
@@ -202,11 +218,13 @@ class StructureMaterialState:
         else:
             is_recurrent_model = True
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        # Initialize elements Gauss integration points state variables
-        self._elements_state = {}
-        self._elements_state_old = {}
-        # Initialize elements model recurrency structure
-        self._elements_is_recurrent_material = {}
+        # Update number of material constitutive models
+        self._n_mat_model += 1
+        # Set new material constitutive model label
+        model_label = str(self._n_mat_model)
+        # Store constitutive model
+        self._material_models[model_label] = constitutive_model
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Loop over elements
         for element_id in element_ids:
             # Assign constitutive model
@@ -258,6 +276,17 @@ class StructureMaterialState:
             2D axisymmetric (3) and 3D (4).
         """
         return self._problem_type
+    # -------------------------------------------------------------------------
+    def get_material_models(self):
+        """Get material constitutive models.
+        
+        Returns
+        -------
+        _material_models : dict
+            FETorch material constitutive models. Models are labeled from 1 to
+            n_mat_model.
+        """
+        return self._material_models
     # -------------------------------------------------------------------------
     def get_elements_material(self):
         """Get elements material constitutive models.
