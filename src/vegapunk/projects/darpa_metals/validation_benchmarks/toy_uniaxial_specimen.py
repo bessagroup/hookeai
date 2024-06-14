@@ -100,8 +100,11 @@ def validate_force_equilibrium_loss(specimen_name, strain_formulation,
     else:
         available_sequential_modes = ('sequential_time', 'sequential_element')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Set material model finder directory
+    model_directory = os.path.dirname(os.path.abspath(__file__))
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Initialize material model finder
-    material_finder = MaterialModelFinder()
+    material_finder = MaterialModelFinder(model_directory)
     # Loop over sequential modes
     for sequential_mode in available_sequential_modes:
         # Initialize elements constitutive model
