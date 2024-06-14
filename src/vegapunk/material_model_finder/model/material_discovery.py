@@ -9,6 +9,7 @@ MaterialModelFinder(torch.nn.Module)
 #                                                                       Modules
 # =============================================================================
 # Standard
+import os
 import copy
 # Third-party
 import torch
@@ -94,16 +95,24 @@ class MaterialModelFinder(torch.nn.Module):
     store_tensor_comps(cls, comps, tensor, device=None)
         Store strain/stress tensor components in array.
     """
-    def __init__(self, device_type='cpu'):
+    def __init__(self, model_directory, device_type='cpu'):
         """Constructor.
         
         Parameters
         ----------
+        model_directory : str
+            Directory where model is stored.
         device_type : {'cpu', 'cuda'}, default='cpu'
             Type of device on which torch.Tensor is allocated.
         """
         # Initialize from base class
         super(MaterialModelFinder, self).__init__()
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set model directory
+        if os.path.isdir(model_directory):
+            self.model_directory = str(model_directory)
+        else:
+            raise RuntimeError('The model directory has not been found.')
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Initialize specimen numerical data
         self._specimen_data = None
@@ -199,6 +208,89 @@ class MaterialModelFinder(torch.nn.Module):
                 model_parameters[f'model{model_key}_{param}'] = value
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         return model_parameters
+    # -------------------------------------------------------------------------
+    def get_model_parameters_bounds(self):
+        """Get model parameters (material models) bounds.
+        
+        Only collects parameters bounds from material models with explicit
+        learnable parameters.
+        
+        Parameters names are prefixed by corresponding model label.
+
+        Returns
+        -------
+        model_parameters_bounds : dict
+            Model learnable parameters bounds. For each parameter (key, str),
+            the corresponding bounds are stored as a
+            tuple(lower_bound, upper_bound) (item, tuple).
+        """
+        # Initialize model parameters
+        model_parameters_bounds = {}
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Get material models
+        material_models = self._specimen_material_state.get_material_models()
+        # Get model selection procedure
+        is_collect_model_parameters = \
+            self._specimen_material_state.get_material_model_param_nature
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Loop over material models
+        for model_key, model in material_models.items():
+            # Check if model parameters are collected
+            is_collect_params = is_collect_model_parameters(int(model_key))
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Skip model parameters
+            if not is_collect_params:
+                continue
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Get model parameters bounds
+            parameters_bounds = model.get_model_parameters_bounds()
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Collect parameters bounds (prefix with model label)
+            for param, bounds in parameters_bounds.items():
+                # Store parameter
+                model_parameters_bounds[f'model{model_key}_{param}'] = bounds
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        return model_parameters_bounds
+    # -------------------------------------------------------------------------
+    def enforce_parameters_bounds(self):
+        """Enforce bounds in model parameters (material models).
+        
+        Only enforces bounds in parameters from material models with explicit
+        learnable parameters.
+        
+        """
+        # Get material models
+        material_models = self._specimen_material_state.get_material_models()
+        # Get model selection procedure
+        is_collect_model_parameters = \
+            self._specimen_material_state.get_material_model_param_nature
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Loop over parameters
+        for model_key, param_dict in self.get_model_parameters().items():
+            # Check if model parameters are collected
+            is_collect_params = is_collect_model_parameters(int(model_key))
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Skip model parameters
+            if not is_collect_params:
+                continue
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Get material model
+            model = material_models[model_key]
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Loop over material model parameters
+            for param in model.get_model_parameters().keys():
+                # Get parameter bounds
+                if model.is_normalized_parameters:
+                    lower_bound, upper_bound = \
+                        model.get_model_parameters_norm_bounds()[param]
+                else:
+                    lower_bound, upper_bound = \
+                        model.get_model_parameters_bounds()[param]
+                # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                # Get learnable parameter
+                value = param_dict[param]
+                # Enforce bounds
+                value.data.clamp_(lower_bound, upper_bound)
     # -------------------------------------------------------------------------
     def set_device(self, device_type):
         """Set device on which torch.Tensor is allocated.
