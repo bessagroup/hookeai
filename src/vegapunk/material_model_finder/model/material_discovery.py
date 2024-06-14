@@ -66,6 +66,12 @@ class MaterialModelFinder(torch.nn.Module):
         Set model parameters (collect material models parameters).
     get_model_parameters(self)
         Get model parameters (material models parameters).
+    get_detached_model_parameters(self)
+        Get model parameters (material models) detached of gradients.
+    get_model_parameters_bounds(self)
+        Get model parameters (material models) bounds.
+    enforce_parameters_bounds(self)
+        Enforce bounds in model parameters (material models).
     set_device(self, device_type)
         Set device on which torch.Tensor is allocated.
     get_device(self)
