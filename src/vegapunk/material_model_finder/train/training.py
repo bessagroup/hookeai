@@ -122,7 +122,9 @@ def train_model(n_max_epochs, specimen_data, specimen_material_state,
               '\n----------------------------------------')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Initialize material model finder
-    model = MaterialModelFinder(**model_init_args)    
+    model = MaterialModelFinder(**model_init_args)
+    # Set specimen data and material state
+    model.set_specimen_data(specimen_data, specimen_material_state)
     # Set model device
     model.set_device(device_type)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~  
@@ -161,10 +163,10 @@ def train_model(n_max_epochs, specimen_data, specimen_material_state,
     lr_history_steps = []
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Initialize storage of model parameters history
+    # (only explicit learnable parameters)
     if is_explicit_model_parameters:
         # Initialize model parameters history (per epoch)
-        model_init_parameters = \
-            model.get_detached_model_parameters(is_normalized=False)
+        model_init_parameters = model.get_detached_model_parameters()
         model_parameters_history_epochs = \
             {key: [val,] for key, val in model_init_parameters.items()}
         # Initialize model parameters history (per training step)
@@ -187,8 +189,7 @@ def train_model(n_max_epochs, specimen_data, specimen_material_state,
         epoch_init_step = step
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Compute force equilibrium history loss
-        loss = model(specimen_data, specimen_material_state,
-                     sequential_mode='sequential_element')
+        loss = model(sequential_mode='sequential_element')
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Initialize gradients (set to zero)
         optimizer.zero_grad()
@@ -200,18 +201,9 @@ def train_model(n_max_epochs, specimen_data, specimen_material_state,
         optimizer.step()
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Enforce bounds on model parameters
+        # (only explicit learnable parameters)
         if is_explicit_model_parameters:
-            # Loop over parameters
-            for param, value in model.get_model_parameters().items():          # Requires model method
-                # Get parameter bounds
-                if model.is_normalized_parameters:
-                    lower_bound, upper_bound = \
-                        model.get_model_parameters_norm_bounds()[param]
-                else:
-                    lower_bound, upper_bound = \
-                        model.get_model_parameters_bounds()[param]
-                # Enforce bounds
-                value.data.clamp_(lower_bound, upper_bound)
+            model.enforce_parameters_bounds()
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         if is_verbose:
             total_time_sec = time.time() - start_time_sec
@@ -228,11 +220,10 @@ def train_model(n_max_epochs, specimen_data, specimen_material_state,
         else:
             lr_history_steps.append(lr_init)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        # Save model parameters
+        # Save model parameters (only explicit learnable parameters)
         if is_explicit_model_parameters:
             # Get current model parameters
-            model_parameters_step = \
-                model.get_detached_model_parameters(is_normalized=False)       # Requires model method
+            model_parameters_step = model.get_detached_model_parameters()
             # Loop over model parameters
             for key, val in model_parameters_step.items():
                 model_parameters_history_steps[key].append(val)
@@ -269,10 +260,9 @@ def train_model(n_max_epochs, specimen_data, specimen_material_state,
         if epoch_avg_loss <= min(loss_history_epochs):
             save_training_state(model=model, optimizer=optimizer,
                                 epoch=epoch, is_best_state=True)
-            # Save model parameters
+            # Save model parameters (only explicit learnable parameters)
             if is_explicit_model_parameters:
-                best_model_parameters = \
-                    model.get_detached_model_parameters(is_normalized=False)   # Requires model method
+                best_model_parameters = model.get_detached_model_parameters()
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Check training process flow
         if epoch >= n_max_epochs:
@@ -294,12 +284,12 @@ def train_model(n_max_epochs, specimen_data, specimen_material_state,
                       lr_scheduler_type=lr_scheduler_type,
                       lr_history_epochs=lr_history_epochs)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Save model parameters history
+    # Save model parameters history (only explicit learnable parameters)
     if is_explicit_model_parameters:
         save_parameters_history(model, model_parameters_history_epochs,
-                                model.get_model_parameters_bounds())           # Requires model method
+                                model.get_model_parameters_bounds())
         save_best_parameters(model, best_model_parameters,
-                             model.get_model_parameters_bounds())              # Requires model method
+                             model.get_model_parameters_bounds())
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Get best loss and corresponding training epoch
     best_loss = float(min(loss_history_epochs))
@@ -333,7 +323,7 @@ def train_model(n_max_epochs, specimen_data, specimen_material_state,
     model_statistics = get_model_summary(model, device_type=device_type)
     # Write summary data file for model training process
     write_training_summary_file(
-        device_type, seed, model.model_directory, n_max_epochs,                # Requires model attribute
+        device_type, seed, model.model_directory, n_max_epochs,
         opt_algorithm, lr_init, lr_scheduler_type, lr_scheduler_kwargs, epoch,
         best_loss, best_training_epoch, total_time_sec, avg_time_epoch,
         best_model_parameters=best_model_parameters,
@@ -452,7 +442,7 @@ def save_best_parameters(model, best_model_parameters,
 def read_best_parameters_from_file(parameters_file_path):
     """Read best performance state model parameters from file.
     
-    Best performance state model parameters file is stored in model_directory    write_training_summary_file
+    Best performance state model parameters file is stored in model_directory
     under the name parameters_best.pkl.
     
     Parameters
