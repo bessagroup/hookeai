@@ -24,6 +24,7 @@ from simulators.fetorch.math.matrixops import get_problem_type_parameters, \
     get_tensor_from_mf, get_tensor_mf
 from simulators.fetorch.math.voigt_notation import get_strain_from_vfm, \
     get_stress_vfm
+from ioput.iostandard import make_directory
 #
 #                                                          Authorship & Credits
 # =============================================================================
@@ -53,6 +54,17 @@ class MaterialModelFinder(torch.nn.Module):
         Specimen numerical data translated from experimental results.
     _specimen_material_state : StructureMaterialState
         FETorch specimen material state.
+    model_directory : str
+        Directory where model is stored.
+    model_name : str
+        Name of model.
+    _material_models_dir : str
+        Model subdirectory where material models are stored.
+    _internal_data_normalization_dir : str
+        Model subdirectory where the internal data normalization parameters
+        are stored.
+    _temp_dir : str
+        Model subdirectory where temporary data is stored.
     _device_type : {'cpu', 'cuda'}, default='cpu'
         Type of device on which torch.Tensor is allocated.
     _device : torch.device
@@ -101,24 +113,33 @@ class MaterialModelFinder(torch.nn.Module):
     store_tensor_comps(cls, comps, tensor, device=None)
         Store strain/stress tensor components in array.
     """
-    def __init__(self, model_directory, device_type='cpu'):
+    def __init__(self, model_directory, model_name='material_model_finder',
+                 device_type='cpu'):
         """Constructor.
         
         Parameters
         ----------
         model_directory : str
             Directory where model is stored.
+        model_name : str, default='material_model_finder'
+            Name of model.
         device_type : {'cpu', 'cuda'}, default='cpu'
             Type of device on which torch.Tensor is allocated.
         """
         # Initialize from base class
         super(MaterialModelFinder, self).__init__()
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        # Set model directory
+        # Set model directory and name
         if os.path.isdir(model_directory):
             self.model_directory = str(model_directory)
         else:
             raise RuntimeError('The model directory has not been found.')
+        if not isinstance(model_name, str):
+            raise RuntimeError('The model name must be a string.')
+        else:
+            self.model_name = model_name
+        # Set model subdirectories
+        self._set_model_subdirs()
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Initialize specimen numerical data
         self._specimen_data = None
@@ -130,6 +151,29 @@ class MaterialModelFinder(torch.nn.Module):
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Set device
         self.set_device(device_type)
+    # -------------------------------------------------------------------------
+    def _set_model_subdirs(self):
+        """Set model subdirectories."""
+        # Set material models subdirectory
+        self._material_models_dir = os.path.join(
+            os.path.normpath(self.model_directory), 'material_models')
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set material models subdirectory
+        self._internal_data_normalization_dir = os.path.join(
+            os.path.normpath(self.model_directory),
+            'internal_data_normalization')
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set temporary data subdirectory
+        self._temp_dir = os.path.join(
+            os.path.normpath(self.model_directory), 'temp')
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Collect model subdirectories
+        subdirs = (self._material_models_dir,
+                   self._internal_data_normalization_dir,
+                   self._temp_dir)
+        # Create model subdirectories
+        for subdir in subdirs:
+            make_directory(subdir, is_overwrite=True)
     # -------------------------------------------------------------------------
     def set_specimen_data(self, specimen_data, specimen_material_state):
         """Set specimen data and material state.
