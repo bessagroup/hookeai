@@ -17,6 +17,7 @@ import random
 # Third-party
 import torch
 import numpy as np
+import pandas
 # Local
 from simulators.fetorch.element.type.tri3 import FETri3
 from simulators.fetorch.element.type.tri6 import FETri6
@@ -532,6 +533,67 @@ def get_specimen_numerical_data(links_output_directory, n_dim):
     time_hist = node_data[0, 2, :]
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     return nodes_disps_mesh_hist, reaction_forces_mesh_hist, time_hist
+# =============================================================================
+def gen_specimen_history_csv_files(specimen_history_dir, specimen_name,
+                                   nodes_coords_mesh_init,
+                                   nodes_disps_mesh_hist,
+                                   reaction_forces_mesh_hist):
+    """Generate specimen history data files (.csv).
+    
+    Irrespective of the strain formulation, specimen nodes coordinates history
+    is computed from the initial coordinates and the nodes displacements
+    history.
+
+    Parameters
+    ----------
+    specimen_history_dir : str
+        Specimen history data directory.
+    specimen_name : str
+        Specimen code name.
+    nodes_coords_mesh_init : torch.Tensor(2d)
+        Initial coordinates of finite element mesh nodes stored as
+        torch.Tensor(2d) of shape (n_node_mesh, n_dim).
+    nodes_disps_mesh_hist : torch.Tensor(3d)
+        Displacements history of finite element mesh nodes stored as
+        torch.Tensor(3d) of shape (n_node_mesh, n_dim, n_time).
+    reaction_forces_mesh_hist : torch.Tensor(3d)
+        Reaction forces (Dirichlet boundary conditions) history of finite
+        element mesh nodes stored as torch.Tensor(3d) of shape
+        (n_node_mesh, n_dim, n_time).
+    """
+    # Get number of nodes
+    n_node_mesh = nodes_coords_mesh_init.shape[0]
+    # Get number of spatial dimensions
+    n_dim = nodes_coords_mesh_init.shape[1]
+    # Get number of time steps
+    n_time = nodes_disps_mesh_hist.shape[2]
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Loop over time steps
+    for t in range(n_time):
+        # Initialize dataframe
+        df = pandas.DataFrame(torch.zeros((n_node_mesh, 10)),
+                              columns=['NODE', 'X1', 'X2', 'X3',
+                                       'U1', 'U2', 'U3', 'RF1', 'RF2', 'RF3'])
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Assemble nodes labels
+        df['NODE'] = torch.arange(1, n_node_mesh + 1)
+        # Assemble nodes coordinates, displacements and reaction forces
+        if n_dim == 2:
+            df[['X1', 'X2']] = (nodes_coords_mesh_init[:, :]
+                                + nodes_disps_mesh_hist[:, :, t])
+            df[['U1', 'U2']] = nodes_disps_mesh_hist[:, :, t]
+            df[['RF1', 'RF2']] = reaction_forces_mesh_hist[:, :, t]
+        else:
+            df[['X1', 'X2', 'X3']] = (nodes_coords_mesh_init[:, :]
+                                      + nodes_disps_mesh_hist[:, :, t])
+            df[['U1', 'U2', 'U3']] = nodes_disps_mesh_hist[:, :, t]
+            df[['RF1', 'RF2', 'RF3']] = reaction_forces_mesh_hist[:, :, t]
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set time step '.csv' file path
+        csv_file_path = os.path.join(os.path.normpath(specimen_history_dir),
+                                     f'{specimen_name}_tstep_{t}.csv')
+        # Store data into '.csv' file format
+        df.to_csv(csv_file_path, encoding='utf-8', index=False)
 # =============================================================================
 if __name__ == '__main__':
     # Set strain formulation
