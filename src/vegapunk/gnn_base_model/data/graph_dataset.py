@@ -83,7 +83,7 @@ def get_dataset_sample_files_from_dir(dataset_directory, sample_file_basename):
         if is_sample_file:
             dataset_sample_files.append(filename)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Sort Graph Neural Network graph data set samples
+    # Sort Graph Neural Network graph data set samples                         # BUG: Not sorting as expected (must set key function)
     dataset_sample_files = sorted(dataset_sample_files)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     return dataset_sample_files
