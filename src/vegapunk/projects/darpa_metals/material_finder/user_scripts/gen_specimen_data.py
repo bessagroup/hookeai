@@ -1,0 +1,523 @@
+"""DARPA METALS PROJECT: Generate specimen data and material state files.
+
+Functions
+---------
+get_specimen_dataset
+    Generate specimen data and material state files (training data set).
+get_specimen_mesh_from_inp_file
+    Get specimen finite element mesh data from mesh input file (.inp).
+elem_type_abaqus_to_fetorch
+    Convert ABAQUS element type to FETorch element type object.
+get_specimen_numerical_data
+    Get specimen numerical data from history data files (.csv).
+"""
+#
+#                                                                       Modules
+# =============================================================================
+# Standard
+import sys
+import pathlib
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# Add project root directory to sys.path
+root_dir = str(pathlib.Path(__file__).parents[4])
+if root_dir not in sys.path:
+    sys.path.insert(0, root_dir)
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+import os
+import re
+# Third-party
+import torch
+import pandas
+# Local
+from simulators.fetorch.element.type.tri3 import FETri3
+from simulators.fetorch.element.type.quad4 import FEQuad4
+from simulators.fetorch.element.type.tetra4 import FETetra4
+from simulators.fetorch.element.type.hexa8 import FEHexa8
+from simulators.fetorch.structure.structure_state import StructureMaterialState
+from simulators.fetorch.math.matrixops import get_problem_type_parameters
+from material_model_finder.data.specimen_data import SpecimenNumericalData
+from ioput.iostandard import make_directory
+#
+#                                                          Authorship & Credits
+# =============================================================================
+__author__ = 'Bernardo Ferreira (bernardo_ferreira@brown.edu)'
+__credits__ = ['Bernardo Ferreira', ]
+__status__ = 'Planning'
+# =============================================================================
+#
+# =============================================================================
+def get_specimen_dataset(specimen_name, specimen_raw_dir, specimen_inp_path,
+                         specimen_history_paths, strain_formulation,
+                         problem_type, n_dim, model_name, model_parameters,
+                         model_kwargs, training_dataset_dir,
+                         is_save_specimen_data=True,
+                         is_save_specimen_material_state=True):
+    """Generate specimen data and material state files (training data set).
+    
+    Parameters
+    ----------
+    specimen_name : str
+        Specimen name.
+    specimen_raw_dir : str
+        Specimen raw data directory.
+    specimen_inp_path : str
+        Specimen mesh input file path (.inp).
+    specimen_history_paths : tuple
+        Specimen history time step files paths (.csv). Files paths must be
+        sorted according to history time.
+    strain_formulation: {'infinitesimal', 'finite'}
+        Problem strain formulation.
+    problem_type : int
+        Problem type: 2D plane strain (1), 2D plane stress (2),
+        2D axisymmetric (3) and 3D (4).
+    n_dim : int
+        Number of spatial dimensions.
+    model_name : str
+        Material constitutive model name.
+    model_parameters : dict
+        Material constitutive model parameters.
+    model_kwargs : dict, default={}
+        Other parameters required to initialize constitutive model.
+    training_dataset_dir : str
+        Specimen training data set directory.
+    is_save_specimen_data : bool, default=True
+        If True, then save the specimen data file.
+    is_save_specimen_material_state : bool, default=True
+        If True, then save the specimen material state file.
+    """
+    # Initialize specimen numerical data
+    specimen_data = SpecimenNumericalData()
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Get specimen finite element mesh data
+    nodes_coords_mesh_init, elements_type, connectivities, \
+        dirichlet_bool_mesh = \
+            get_specimen_mesh_from_inp_file(specimen_inp_path, n_dim)
+    # Set specimen finite element mesh
+    specimen_data.set_specimen_mesh(nodes_coords_mesh_init, elements_type,
+                                    connectivities, dirichlet_bool_mesh)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Get finite element mesh
+    specimen_mesh = specimen_data.specimen_mesh
+    # Get number of nodes and elements
+    n_node_mesh = specimen_mesh.get_n_node_mesh()
+    n_elem = specimen_mesh.get_n_elem()
+    # Get type of elements of finite element mesh
+    elements_type = specimen_mesh.get_elements_type()
+    # Get elements labels
+    elements_ids = tuple([elem_id for elem_id in range(1, n_elem + 1)])
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Get specimen numerical data
+    nodes_disps_mesh_hist, reaction_forces_mesh_hist, time_hist = \
+        get_specimen_numerical_data(specimen_history_paths, n_dim, n_node_mesh)
+    # Set specimen numerical data
+    specimen_data.set_specimen_data(nodes_disps_mesh_hist,
+                                    reaction_forces_mesh_hist, time_hist)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Save specimen data
+    if is_save_specimen_data:
+        # Set specimen numerical data file path
+        specimen_data_path = os.path.join(
+            os.path.normpath(training_dataset_dir), 'specimen_data.pt')
+        # Save specimen data
+        torch.save(specimen_data, specimen_data_path)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Initialize specimen material state
+    if is_save_specimen_material_state:
+        # Initialize specimen material state
+        specimen_material_state = StructureMaterialState(
+            strain_formulation, problem_type, n_elem)
+        # Initialize elements constitutive model
+        specimen_material_state.init_elements_model(
+            model_name, model_parameters, elements_ids, elements_type,
+            model_kwargs)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set specimen material state file path
+        specimen_material_state_path = \
+            os.path.join(os.path.normpath(training_dataset_dir),
+                         'specimen_material_state.pt')
+        # Save specimen material state
+        torch.save(specimen_material_state, specimen_material_state_path)
+# =============================================================================
+def get_specimen_mesh_from_inp_file(specimen_inp_path, n_dim):
+    """Get specimen finite element mesh data from mesh input file (.inp).
+    
+    Parameters
+    ----------
+    specimen_inp_path : str
+        Specimen mesh input file path (.inp).
+    n_dim : int
+        Number of spatial dimensions.
+        
+    Returns
+    -------
+    nodes_coords_mesh_init : torch.Tensor(2d)
+        Initial coordinates of finite element mesh nodes stored as
+        torch.Tensor(2d) of shape (n_node_mesh, n_dim).
+    elements_type : dict
+        FETorch element type (item, ElementType) of each finite element
+        mesh element (str[int]). Elements labels must be within the range
+        of 1 to n_elem (included).
+    connectivities : dict
+        Nodes (item, tuple[int]) of each finite element mesh element
+        (key, str[int]). Nodes must be within the range of 1 to n_node_mesh
+        (included). Elements labels must be within the range of 1 to n_elem
+        (included).
+    dirichlet_bool_mesh : torch.Tensor(2d)
+        Degrees of freedom of finite element mesh subject to Dirichlet
+        boundary conditions. Stored as torch.Tensor(2d) of shape
+        (n_node_mesh, n_dim) where constrained degrees of freedom are
+        labeled 1, otherwise 0.
+    """
+    # Open specimen mesh input file
+    input_file = open(specimen_inp_path, 'r')
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Initialize nodes coordinates
+    nodes_coords = []
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Reset file position
+    input_file.seek(0)
+    # Initialize search flags
+    is_keyword_found = False
+    # Search for NODE keyword and collect nodes coordinates
+    for line in input_file:
+        if bool(re.search(r'\*node\b', line, re.IGNORECASE)):
+            # Start processing NODE section
+            is_keyword_found = True
+        elif is_keyword_found and (bool(re.search(r'^' + r'[*][A-Z]+', line))
+                                   or line.strip() == ''):
+            # Finished processing NODE section
+            break
+        elif is_keyword_found:
+            # Get node coordinates
+            nodes_coords.append(
+                [float(x) for x in line.split(sep=',')[1:1+n_dim]])
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Build mesh nodes initial coordinates
+    if len(nodes_coords) == 0:
+        raise RuntimeError('The *NODE keyword has not been found in the '
+                           'specimen mesh input file (.inp).')
+    else:
+        nodes_coords_mesh_init = torch.tensor(nodes_coords, dtype=torch.float)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Get number of nodes
+    n_node_mesh = nodes_coords_mesh_init.shape[0]
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Initialize elements types
+    elements_type = {}
+    # Initialize elements connectivities
+    connectivities = {}
+    # Initialize connectivities nodes
+    connect_nodes = []
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Reset file position
+    input_file.seek(0)
+    # Initialize search flags
+    is_keyword_found = False
+    # Search for ELEMENT keyword and collect nodes connectivities
+    for line in input_file:
+        #if '*ELEMENT, TYPE' in line or '*Element, type' in line:
+        if bool(re.search(r'\*element, type\b', line, re.IGNORECASE)):
+            # Start processing ELEMENT section
+            is_keyword_found = True
+            # Get ABAQUS element type
+            elem_abaqus_type = \
+                re.search(r'type=([A-Z0-9]+)', line, re.IGNORECASE).groups()[0]
+            # Get FETorch element type
+            if elem_abaqus_type is None:
+                raise RuntimeError('The *ELEMENT keyword TYPE parameter has '
+                                   'not been found in the specimen mesh input '
+                                   'file (.inp).')
+            else:
+                elem_type = elem_type_abaqus_to_fetorch(elem_abaqus_type)
+        elif is_keyword_found and (bool(re.search(r'^' + r'[*][A-Z]+', line))
+                                   or line.strip() == ''):
+            # Finished processing ELEMENT section
+            is_keyword_found = False
+        elif is_keyword_found:
+            # Get element label and nodes
+            elem_id = int(line.split(sep=',')[0])
+            elem_nodes = tuple([int(x) for x in line.split(sep=',')[1:]])
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Store element type
+            elements_type[str(elem_id)] = elem_type
+            # Check element nodes
+            for node in elem_nodes:
+                if node not in range(1, n_node_mesh + 1):
+                    raise RuntimeError(f'Invalid node in element {elem_id} '
+                                       f'connectivities. Node labels must be '
+                                       f'within the range 1 to {n_node_mesh} '
+                                       f'for the provided mesh.')
+            # Store element nodes
+            connectivities[str(elem_id)] = elem_nodes
+            connect_nodes += list(elem_nodes)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Check nodes connectivities
+    if set(range(1, n_node_mesh + 1)) != set(connect_nodes):
+        raise RuntimeError(f'Invalid mesh connectivities. Mesh has '
+                           f'{(n_node_mesh)} nodes, but only '
+                           f'{len(set(connect_nodes))} nodes are part of the '
+                           f'elements connectivities.')
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Initialize Dirichlet bounds conditions
+    dirichlet_bool_mesh = torch.zeros((n_node_mesh, n_dim))
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Reset file position
+    input_file.seek(0)
+    # Initialize search flags
+    is_keyword_found = False
+    # Search for BOUNDARY keyword and collect nodes constraints
+    for line in input_file:
+        if bool(re.search(r'\*boundary\b', line, re.IGNORECASE)):
+            # Start processing BOUNDARY section
+            is_keyword_found = True
+        elif is_keyword_found and (bool(re.search(r'^' + r'[*][A-Z]+', line))
+                                   or line.strip() == ''):
+            # Finished processing BOUNDARY section
+            is_keyword_found = False
+        elif is_keyword_found:
+            # Get node label and constraints
+            node_id = int(line.split(sep=',')[0])
+            node_dofs = tuple([int(x) for x in line.split(sep=',')[1:3]])
+            # Store node constrained degrees of freedom
+            for dim in range(node_dofs[0] - 1, node_dofs[1]):
+                if dim in range(n_dim):
+                    dirichlet_bool_mesh[node_id - 1, dim] = 1
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    return nodes_coords_mesh_init, elements_type, connectivities, \
+        dirichlet_bool_mesh
+# =============================================================================
+def elem_type_abaqus_to_fetorch(elem_abaqus_type):
+    """Convert ABAQUS element type to FETorch element type object.
+    
+    Parameters
+    ----------
+    elem_abaqus_type : str
+        ABAQUS element type.
+        
+    Returns
+    -------
+    elem_fetorch_type : ElementType
+        FETorch element type.
+    """
+    if elem_abaqus_type in ('CPE3',):
+        elem_fetorch_type = FETri3(n_gauss=1)
+    elif elem_abaqus_type in ('CPE4',):
+        elem_fetorch_type = FEQuad4(n_gauss=4)
+    elif elem_abaqus_type in ('C3D4',):
+        elem_fetorch_type = FETetra4(n_gauss=4)
+    elif elem_abaqus_type in ('C3D8',):
+        elem_fetorch_type = FEHexa8(n_gauss=8)
+    else:
+        raise RuntimeError(f'The ABAQUS element type {elem_fetorch_type} '
+                           f'is unknown or cannot be converted to a FETorch '
+                           f'element type.')
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    return elem_fetorch_type
+# =============================================================================
+def get_specimen_numerical_data(specimen_history_paths, n_dim, n_node_mesh):
+    """Get specimen numerical data from history data files (.csv).
+    
+    Parameters
+    ----------
+    specimen_history_paths : tuple
+        Specimen history time step files paths (.csv). Files paths must be
+        sorted according to history time.
+    n_dim : int
+        Number of spatial dimensions.
+    n_node_mesh : int
+        Number of nodes of finite element mesh.
+        
+    Returns
+    -------
+    nodes_disps_mesh_hist : torch.Tensor(3d)
+        Displacements history of finite element mesh nodes stored as
+        torch.Tensor(3d) of shape (n_node_mesh, n_dim, n_time).
+    reaction_forces_mesh_hist : torch.Tensor(3d)
+        Reaction forces (Dirichlet boundary conditions) history of finite
+        element mesh nodes stored as torch.Tensor(3d) of shape
+        (n_node_mesh, n_dim, n_time).
+    time_hist : torch.Tensor(1d)
+        Discrete time history.
+    """
+    # Get number of time steps
+    n_time = len(specimen_history_paths)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Initialize node data
+    node_data = torch.zeros((n_node_mesh, 10, n_time))
+    # Loop over time step files
+    for i, data_file_path in enumerate(specimen_history_paths):
+        # Load data
+        df = pandas.read_csv(data_file_path)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Check data
+        if df.shape[0] != n_node_mesh:
+            raise RuntimeError(f'Mismatch between expected number of nodes '
+                               f'({n_node_mesh}) and number of nodes in the '
+                               f'time step data file ({df.shape[0]}).')
+        if df.shape[1] != 10:
+            raise RuntimeError(f'Expecting data frame to have 10 columns, but '
+                               f'{df.shape[1]} were found. \n\n'
+                               f'Expected columns: NODE | X1 X2 X3 | '
+                               f'U1 U2 U3 | U1 U2 U3 | RF1 RF2 RF3')
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Store time step data
+        node_data[:, :, i] = torch.tensor(df.values)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Extract displacements history
+    nodes_disps_mesh_hist = node_data[:, 4:4+n_dim, :]
+    # Extract reaction forces history
+    reaction_forces_mesh_hist = node_data[:, 7:7+n_dim, :]
+    # Build time discrete history
+    time_hist = torch.linspace(0, n_time - 1, steps=n_time)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    return nodes_disps_mesh_hist, reaction_forces_mesh_hist, time_hist
+# =============================================================================
+if __name__ == "__main__":
+    # Set computation processes
+    is_save_specimen_data = True
+    is_save_specimen_material_state = True
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Set case study base directory
+    base_dir = ('/home/bernardoferreira/Documents/brown/projects/'
+                'darpa_project/4_global_toy_uniaxial_rc_training/')
+    # Set case study directory
+    case_study_name = 'material_finder'
+    case_study_dir = os.path.join(os.path.normpath(base_dir),
+                                  f'{case_study_name}')
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Set specimen name
+    specimen_name = '2D_toy_uniaxial_specimen_tri3'
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Set strain formulation
+    strain_formulation = 'infinitesimal'
+    # Set problem type
+    problem_type = 1
+    # Get problem type parameters
+    n_dim, comp_order_sym, _ = get_problem_type_parameters(problem_type)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Set constitutive model name and parameters
+    model_name = 'rc_elastic'
+    if bool(re.search(r'^rc_.*$', model_name)):
+        # Set constitutive model specific parameters
+        if model_name == 'rc_elastic':
+            # Set constitutive model parameters
+            model_parameters = {
+                'elastic_symmetry': 'isotropic',
+                'E': 100, 'v': 0.3,
+                'euler_angles': (0.0, 0.0, 0.0)}
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Set learnable parameters
+            learnable_parameters = {}
+            learnable_parameters['E'] = {'initial_value': 100.0,
+                                         'bounds': (80, 120)}
+            learnable_parameters['v'] = {'initial_value': 0.3,
+                                         'bounds': (0.2, 0.4)}
+            # Set material constitutive model name
+            material_model_name = 'elastic'
+            # Set material constitutive state variables (prediction)
+            state_features_out = {}
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set parameters normalization
+        is_normalized_parameters = True
+        # Set data normalization
+        is_data_normalization = False
+        # Set device type
+        device_type = 'cpu'
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set other parameters required to initialize constitutive model
+        model_kwargs = {
+            'n_features_in': len(comp_order_sym),
+            'n_features_out': len(comp_order_sym),
+            'learnable_parameters': learnable_parameters,
+            'strain_formulation': strain_formulation,
+            'problem_type': problem_type,
+            'material_model_name': material_model_name,
+            'material_model_parameters': model_parameters,
+            'state_features_out': state_features_out,
+            'model_directory': None,
+            'model_name': model_name,
+            'is_normalized_parameters': is_normalized_parameters,
+            'is_data_normalization': is_data_normalization,
+            'device_type': device_type}
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Check case study directory
+    if not os.path.isdir(case_study_dir):
+        raise RuntimeError('The case study directory has not been found:\n\n'
+                           + case_study_dir)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Set specimen raw data directory
+    specimen_raw_dir = os.path.join(os.path.normpath(case_study_dir),
+                                    '0_simulation')
+    # Check specimen raw data directory
+    if not os.path.isdir(specimen_raw_dir):
+        raise RuntimeError('The specimen raw data directory has not been '
+                           'found:\n\n' + specimen_raw_dir)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Set specimen mesh input file path (.inp file)
+    specimen_inp_path = os.path.join(os.path.normpath(specimen_raw_dir),
+                                    f'{specimen_name}.inp')
+    # Check specimen mesh input file path
+    if not os.path.isfile(specimen_inp_path):
+        raise RuntimeError(f'The specimen mesh input file '
+                           f'({specimen_name}.inp) has not been found in '
+                           f'specimen raw data directory:\n\n'
+                           f'{specimen_raw_dir}')
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Set specimen history data directory
+    specimen_history_dir = os.path.join(os.path.normpath(specimen_raw_dir),
+                                        'specimen_history_data')
+    # Check specimen history data directory
+    if not os.path.isdir(specimen_history_dir):
+        raise RuntimeError('The specimen history data directory has not been '
+                           'found:\n\n' + specimen_history_dir)
+    # Initialize specimen history data file paths (.csv files)
+    specimen_history_paths = []
+    # Get files in specimen history data directory
+    directory_list = os.listdir(specimen_history_dir)
+    # Loop over files
+    for filename in directory_list:
+        # Check if file is specimen history time step file
+        is_time_step_file = bool(
+            re.search(r'^' + specimen_name + r'_tstep_[0-9]+' + r'\.csv',
+                      filename))
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Append specimen history time step file
+        if is_time_step_file:
+            specimen_history_paths.append(
+                os.path.join(os.path.normpath(specimen_history_dir), filename))
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Sort specimen history time step files
+    specimen_history_paths = tuple(
+        sorted(specimen_history_paths,
+               key=lambda x: int(re.search(r'(\d+)\D*$', x).groups()[-1])))
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Set training data set directory
+    training_dataset_dir = os.path.join(os.path.normpath(case_study_dir),
+                                        '1_training_dataset')
+    # Create training data set directory
+    if not os.path.isdir(training_dataset_dir):
+        make_directory(training_dataset_dir)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Create material models initialization subdirectory
+    if is_save_specimen_material_state:
+        # Set material models initialization subdirectory
+        material_models_dir = os.path.join(
+            os.path.normpath(training_dataset_dir), 'material_models_init')
+        # Create material models initialization subdirectory
+        make_directory(material_models_dir, is_overwrite=True)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set material model directory
+        material_model_dir = os.path.join(
+            os.path.normpath(material_models_dir), 'model_1')
+        # Create material model directory
+        make_directory(material_model_dir, is_overwrite=True)
+        # Assign material model directory
+        model_kwargs['model_directory'] = material_model_dir
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Generate specimen data and material state files (training data set)
+    get_specimen_dataset(specimen_name, specimen_raw_dir, specimen_inp_path,
+                         specimen_history_paths, strain_formulation,
+                         problem_type, n_dim, model_name, model_parameters,
+                         model_kwargs, training_dataset_dir,
+                         is_save_specimen_data,
+                         is_save_specimen_material_state)
