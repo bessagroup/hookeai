@@ -526,7 +526,9 @@ def plot_prediction_loss_convergence_uq(models_base_dirs, training_dirs,
                     os.path.join(os.path.normpath(uq_directory), dirname))
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Sort model samples directories
-        model_sample_dirs = sorted(model_sample_dirs)
+        model_sample_dirs = \
+            sorted(model_sample_dirs,
+                   key=lambda x: int(re.search(r'(\d+)\D*$', x).groups()[-1]))
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Initialize model samples average prediction loss
         samples_avg_prediction_loss = []

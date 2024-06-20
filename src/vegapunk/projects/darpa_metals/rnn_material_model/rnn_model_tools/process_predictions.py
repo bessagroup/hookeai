@@ -231,7 +231,9 @@ def build_time_series_predictions_data(dataset_file_path, predictions_dir,
                     os.path.join(os.path.normpath(uq_directory), dirname))
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Sort model samples directories
-        model_sample_dirs = sorted(model_sample_dirs)
+        model_sample_dirs = \
+            sorted(model_sample_dirs,
+                   key=lambda x: int(re.search(r'(\d+)\D*$', x).groups()[-1]))
         # Get number of model samples
         n_model_sample = len(model_sample_dirs)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

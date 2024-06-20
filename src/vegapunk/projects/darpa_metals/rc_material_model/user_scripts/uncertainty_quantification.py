@@ -217,7 +217,9 @@ def gen_model_uq_plots(uq_directory, testing_dataset_dir, testing_type,
                            '\n\n' + uq_directory)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Sort model samples directories
-    model_sample_dirs = sorted(model_sample_dirs)
+    model_sample_dirs = \
+        sorted(model_sample_dirs,
+               key=lambda x: int(re.search(r'(\d+)\D*$', x).groups()[-1]))
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Plot model best parameters uncertainty quantification
     plot_best_parameters_uq(model_sample_dirs, plot_data_dir=plot_data_dir,
