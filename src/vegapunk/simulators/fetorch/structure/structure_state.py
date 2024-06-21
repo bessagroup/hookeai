@@ -85,7 +85,8 @@ class StructureMaterialState:
     update_element_state(self, element_id, state_variables, time='current', \
                          is_copy=True)
         Update element material constitutive state variables.
-    get_element_state(self, element_id, element_state, time='current')
+    get_element_state(self, element_id, element_state, time='current', \
+                      is_copy=True)
         Get element material constitutive state variables.
     update_converged_elements_state(self, is_copy=True)
         Update elements last converged material state variables.
@@ -355,7 +356,7 @@ class StructureMaterialState:
         else:
             raise RuntimeError('Unknown time option.')
     # -------------------------------------------------------------------------
-    def get_element_state(self, element_id, time='current'):
+    def get_element_state(self, element_id, time='current', is_copy=True):
         """Get element material constitutive state variables.
         
         Parameters
@@ -367,6 +368,10 @@ class StructureMaterialState:
             Time where update of element state variables is performed: last
             converged state variables ('last') or current state variables
             ('current').
+        is_copy : bool, default=True
+            If True, then return copy of the element state variables. If False,
+            then return the element state variables by direct assignment
+            (without copy).
 
         Returns
         -------
@@ -382,7 +387,11 @@ class StructureMaterialState:
         else:
             raise RuntimeError('Unknown time option.')
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        return copy.deepcopy(element_state)
+        # Copy element material constitutive state variables
+        if is_copy:
+            element_state = copy.deepcopy(element_state)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        return element_state
     # -------------------------------------------------------------------------
     def update_converged_elements_state(self, is_copy=True):
         """Update elements last converged material state variables.
