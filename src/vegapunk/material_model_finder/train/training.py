@@ -168,10 +168,10 @@ def train_model(n_max_epochs, specimen_data, specimen_material_state,
         # Initialize model parameters history (per epoch)
         model_init_parameters = model.get_detached_model_parameters()
         model_parameters_history_epochs = \
-            {key: [val,] for key, val in model_init_parameters.items()}
+            {key: [] for key, _ in model_init_parameters.items()}
         # Initialize model parameters history (per training step)
         model_parameters_history_steps = \
-            {key: [val,] for key, val in model_init_parameters.items()}
+            {key: [] for key, _ in model_init_parameters.items()}
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Initialize training flag
     is_keep_training = True
