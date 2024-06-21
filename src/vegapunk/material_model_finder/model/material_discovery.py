@@ -11,6 +11,7 @@ MaterialModelFinder(torch.nn.Module)
 # Standard
 import os
 import copy
+import re
 # Third-party
 import torch
 # Local
@@ -72,6 +73,10 @@ class MaterialModelFinder(torch.nn.Module):
 
     Methods
     -------
+    _set_model_subdirs(self)
+        Set model subdirectories.
+    _set_material_models_dirs(self)
+        Set material models directories.
     set_specimen_data(self, specimen_data, specimen_material_state)
         Set specimen data and material state.
     _set_model_parameters(self)
@@ -112,6 +117,19 @@ class MaterialModelFinder(torch.nn.Module):
         Build strain/stress tensor from given components.
     store_tensor_comps(cls, comps, tensor, device=None)
         Store strain/stress tensor components in array.
+    save_model_state(self, epoch=None, is_best_state=False, \
+                     is_remove_posterior=True)
+        Save model state to file.
+    load_model_state(self, load_model_state=None, is_remove_posterior=True)
+        Load model state from file.
+    _check_state_file(self, filename)
+        Check if file is model training epoch state file.
+    _check_best_state_file(self, filename)
+        Check if file is model training epoch best state file.
+    _remove_posterior_state_files(self, epoch)
+        Delete model training epoch state files posterior to given epoch.
+    _remove_best_state_files(self)
+        Delete existent model best state files.
     """
     def __init__(self, model_directory, model_name='material_model_finder',
                  device_type='cpu'):
@@ -175,6 +193,23 @@ class MaterialModelFinder(torch.nn.Module):
         for subdir in subdirs:
             make_directory(subdir, is_overwrite=True)
     # -------------------------------------------------------------------------
+    def _set_material_models_dirs(self):
+        """Set material models directories."""
+        # Get material models
+        material_models = self._specimen_material_state.get_material_models()
+        # Loop over material models
+        for model_key, model in material_models.items():
+            # Set material model directory
+            model_dir = \
+                os.path.join(os.path.normpath(self._material_models_dir),
+                             f'model_{model_key}')
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Create material model directory
+            make_directory(model_dir, is_overwrite=True)
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Update material model directory
+            model.model_directory = model_dir
+    # -------------------------------------------------------------------------
     def set_specimen_data(self, specimen_data, specimen_material_state):
         """Set specimen data and material state.
         
@@ -189,6 +224,9 @@ class MaterialModelFinder(torch.nn.Module):
         self._specimen_data = specimen_data
         # Set specimen material state
         self._specimen_material_state = specimen_material_state
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set material models directories
+        self._set_material_models_dirs()
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Collect specimen underlying material models parameters
         self._set_model_parameters()
@@ -255,7 +293,7 @@ class MaterialModelFinder(torch.nn.Module):
             # Collect parameters (prefix with model label)
             for param, value in detached_parameters.items():
                 # Store parameter
-                model_parameters[f'model{model_key}_{param}'] = value
+                model_parameters[f'model_{model_key}_{param}'] = value
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         return model_parameters
     # -------------------------------------------------------------------------
@@ -298,7 +336,7 @@ class MaterialModelFinder(torch.nn.Module):
             # Collect parameters bounds (prefix with model label)
             for param, bounds in parameters_bounds.items():
                 # Store parameter
-                model_parameters_bounds[f'model{model_key}_{param}'] = bounds
+                model_parameters_bounds[f'model_{model_key}_{param}'] = bounds
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         return model_parameters_bounds
     # -------------------------------------------------------------------------
@@ -590,7 +628,8 @@ class MaterialModelFinder(torch.nn.Module):
                 specimen_material_state.get_element_model_recurrency(elem_id)
             # Get element initial material constitutive state variables
             element_state_old = \
-                specimen_material_state.get_element_state(elem_id, time='last')
+                specimen_material_state.get_element_state(elem_id, time='last',
+                                                          is_copy=False)
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Initialize element nodes coordinates, displacements and
             # incremental displacements histories
@@ -1039,3 +1078,283 @@ class MaterialModelFinder(torch.nn.Module):
             comps_array[k] = tensor[i, j]
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         return comps_array
+    # -------------------------------------------------------------------------
+    def save_model_state(self, epoch=None, is_best_state=False,
+                         is_remove_posterior=True):
+        """Save model state to file.
+        
+        Model state file is stored in model_directory under the name
+        < model_name >.pt or < model_name >-< epoch >.pt if epoch is known.
+        
+        Model state file corresponding to the best performance is stored in
+        model_directory under the name < model_name >-best.pt or
+        < model_name >-< epoch >-best.pt if epoch is known.
+        
+        Parameters
+        ----------
+        epoch : int, default=None
+            Training epoch corresponding to current model state.
+        is_best_state : bool, default=False
+            If True, save model state file corresponding to the best
+            performance instead of regular state file.
+        is_remove_posterior : bool, default=True
+            Remove model and optimizer state files corresponding to training
+            epochs posterior to the saved state file. Effective only if saved
+            training epoch is known.
+        """
+        # Check model directory
+        if not os.path.isdir(self.model_directory):
+            raise RuntimeError('The model directory has not been found:\n\n'
+                               + self.model_directory)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set model state filename
+        model_state_file = self.model_name
+        # Append epoch
+        if isinstance(epoch, int):
+            model_state_file += '-' + str(epoch)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set model state corresponding to the best performance
+        if is_best_state:
+            # Append best performance
+            model_state_file += '-' + 'best'
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Remove any existent best model state file
+            self._remove_best_state_files()
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set model state file path
+        model_path = os.path.join(self.model_directory,
+                                  model_state_file + '.pt')
+        # Save model state
+        torch.save(self.state_dict(), model_path)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Delete model epoch state files posterior to saved epoch
+        if isinstance(epoch, int) and is_remove_posterior:
+            self._remove_posterior_state_files(epoch)
+    # -------------------------------------------------------------------------
+    def load_model_state(self, load_model_state=None,
+                         is_remove_posterior=True):
+        """Load model state from file.
+        
+        Model state file is stored in model_directory under the name
+        < model_name >.pt or < model_name >-< epoch >.pt if epoch is known.
+        
+        Model state file corresponding to the best performance is stored in
+        model_directory under the name < model_name >-best.pt or
+        < model_name >-< epoch >-best.pt if epoch if known.
+        
+        Parameters
+        ----------
+        load_model_state : {'best', 'last', int, None}, default=None
+            Load available model state from the model directory.
+            Options:
+            
+            'best'      : Model state corresponding to best performance
+            
+            'last'      : Model state corresponding to highest training epoch
+            
+            int         : Model state corresponding to given training epoch
+            
+            None        : Model default state file
+        
+        is_remove_posterior : bool, default=True
+            Remove model state files corresponding to training epochs posterior
+            to the loaded state file. Effective only if loaded training epoch
+            is known.
+            
+        Returns
+        -------
+        epoch : int
+            Loaded model state training epoch. Defaults to None if training
+            epoch is unknown.
+        """
+        # Check model directory
+        if not os.path.isdir(self.model_directory):
+            raise RuntimeError('The model directory has not been found:\n\n'
+                               + self.model_directory)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        if load_model_state == 'best':
+            # Get state files in model directory
+            directory_list = os.listdir(self.model_directory)
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Initialize model best state files epochs
+            best_state_epochs = []
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Loop over files in model directory
+            for filename in directory_list:
+                # Check if file is model epoch best state file
+                is_best_state_file, best_state_epoch = \
+                    self._check_best_state_file(filename)
+                # Store model best state file training epoch
+                if is_best_state_file:
+                    best_state_epochs.append(best_state_epoch)
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Set model best state file
+            if not best_state_epochs:
+                raise RuntimeError('Model best state file has not been found '
+                                   'in directory:\n\n' + self.model_directory)
+            elif len(best_state_epochs) > 1:
+                raise RuntimeError('Two or more model best state files have '
+                                   'been found in directory:'
+                                   '\n\n' + self.model_directory)
+            else:
+                # Set best state epoch
+                epoch = best_state_epochs[0]
+                # Set model best state file
+                model_state_file = self.model_name
+                if isinstance(epoch, int):
+                    model_state_file += '-' + str(epoch)      
+                model_state_file += '-' + 'best'
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Delete model epoch state files posterior to loaded epoch
+            if isinstance(epoch, int) and is_remove_posterior:
+                self._remove_posterior_state_files(epoch)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        elif load_model_state == 'last':
+            # Get state files in model directory
+            directory_list = os.listdir(self.model_directory)
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Initialize model state files training epochs
+            epochs = []
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Loop over files in model directory
+            for filename in directory_list:
+                # Check if file is model epoch state file
+                is_state_file, epoch = self._check_state_file(filename)
+                # Store model state file training epoch
+                if is_state_file:
+                    epochs.append(epoch)
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Set highest epoch model state file
+            if epochs:
+                # Set highest epoch
+                epoch = max(epochs)
+                # Set highest epoch model state file
+                model_state_file = self.model_name + '-' + str(epoch)
+            else:
+                raise RuntimeError('Model state files corresponding to epochs '
+                                   'have not been found in directory:\n\n'
+                                   + self.model_directory)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set model state filename
+        elif isinstance(load_model_state, int):
+            # Get epoch
+            epoch = load_model_state
+            # Set model state filename with epoch
+            model_state_file = self.model_name + '-' + str(int(epoch))
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Delete model epoch state files posterior to loaded epoch
+            if is_remove_posterior:
+                self._remove_posterior_state_files(epoch)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        else:
+            # Set model state filename
+            model_state_file = self.model_name
+            # Set epoch as unknown
+            epoch = None
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set model state file path
+        model_path = os.path.join(self.model_directory,
+                                  model_state_file + '.pt')
+        # Check model state file
+        if not os.path.isfile(model_path):
+            raise RuntimeError('Model state file has not been found:\n\n'
+                               + model_path)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Load model state
+        self.load_state_dict(torch.load(model_path,
+                                        map_location=torch.device('cpu')))
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        return epoch
+    # -------------------------------------------------------------------------
+    def _check_state_file(self, filename):
+        """Check if file is model training epoch state file.
+        
+        Model training epoch state file is stored in model_directory under the
+        name < model_name >-< epoch >.pt.
+        
+        Parameters
+        ----------
+        filename : str
+            File name.
+        
+        Returns
+        -------
+        is_state_file : bool
+            True if model training epoch state file, False otherwise.
+        epoch : {None, int}
+            Training epoch corresponding to model state file if
+            is_state_file=True, None otherwise.
+        """
+        # Check if file is model epoch state file
+        is_state_file = bool(re.search(r'^' + self.model_name + r'-[0-9]+'
+                                       + r'\.pt', filename))
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        epoch = None
+        if is_state_file:
+            # Get model state epoch
+            epoch = int(os.path.splitext(filename)[0].split('-')[-1])
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        return is_state_file, epoch
+    # -------------------------------------------------------------------------
+    def _check_best_state_file(self, filename):
+        """Check if file is model best state file.
+        
+        Model state file corresponding to the best performance is stored in
+        model_directory under the name < model_name >-best.pt. or
+        < model_name >-< epoch >-best.pt if the training epoch is known.
+        
+        Parameters
+        ----------
+        filename : str
+            File name.
+        
+        Returns
+        -------
+        is_best_state_file : bool
+            True if model training epoch state file, False otherwise.
+        epoch : {None, int}
+            Training epoch corresponding to model state file if
+            is_best_state_file=True and training epoch is known, None
+            otherwise.
+        """
+        # Check if file is model epoch best state file
+        is_best_state_file = bool(re.search(r'^' + self.model_name
+                                            + r'-?[0-9]*' + r'-best' + r'\.pt',
+                                            filename))
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        epoch = None
+        if is_best_state_file:
+            # Get model state epoch
+            epoch = int(os.path.splitext(filename)[0].split('-')[-2])
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        return is_best_state_file, epoch
+    # -------------------------------------------------------------------------
+    def _remove_posterior_state_files(self, epoch):
+        """Delete model training epoch state files posterior to given epoch.
+        
+        Parameters
+        ----------
+        epoch : int
+            Training epoch.
+        """
+        # Get files in model directory
+        directory_list = os.listdir(self.model_directory)
+        # Loop over files in model directory
+        for filename in directory_list:
+            # Check if file is model epoch state file
+            is_state_file, file_epoch = self._check_state_file(filename)
+            # Delete model epoch state file posterior to given epoch
+            if is_state_file and file_epoch > epoch:
+                os.remove(os.path.join(self.model_directory, filename))
+    # -------------------------------------------------------------------------
+    def _remove_best_state_files(self):
+        """Delete existent model best state files."""
+        # Get files in model directory
+        directory_list = os.listdir(self.model_directory)
+        # Loop over files in model directory
+        for filename in directory_list:
+            # Check if file is model best state file
+            is_best_state_file, _ = self._check_best_state_file(filename)
+            # Delete state file
+            if is_best_state_file:
+                os.remove(os.path.join(self.model_directory, filename))
