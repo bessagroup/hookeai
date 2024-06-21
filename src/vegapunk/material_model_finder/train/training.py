@@ -263,6 +263,9 @@ def train_model(n_max_epochs, specimen_data, specimen_material_state,
             # Save model parameters (only explicit learnable parameters)
             if is_explicit_model_parameters:
                 best_model_parameters = model.get_detached_model_parameters()
+            # Save material models state
+            save_material_models_state(model=model, epoch=epoch,
+                                       is_best_state=True)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Check training process flow
         if epoch >= n_max_epochs:
@@ -278,6 +281,8 @@ def train_model(n_max_epochs, specimen_data, specimen_material_state,
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Save model and optimizer final states
     save_training_state(model=model, optimizer=optimizer, epoch=epoch)
+    # Save material models final states
+    save_material_models_state(model=model, epoch=epoch)
     # Save loss and learning rate histories
     save_loss_history(model, n_max_epochs, 'Force equilibrium history',
                       'None', loss_history_epochs,
@@ -330,6 +335,36 @@ def train_model(n_max_epochs, specimen_data, specimen_material_state,
         torchinfo_summary=str(model_statistics))
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     return model, best_loss, best_training_epoch
+# =============================================================================
+def save_material_models_state(model, epoch=None, is_best_state=None):
+    """Save material models states at given training epoch.
+    
+    Material model state file is stored in the corresponding model_directory
+    under the name < model_name >.pt or < model_name >-< epoch >.pt if epoch is
+    known.
+    
+    Material model state file corresponding to the best performance
+    is stored in the corresponding model_directory under the name
+    < model_name >-best.pt or < model_name >-< epoch >-best.pt if epoch is
+    known.
+    
+    Parameters
+    ----------
+    model : torch.nn.Module
+        Model.
+    epoch : int, default=None
+        Training epoch.
+    is_best_state : bool, default=False
+        If True, save material model state file corresponding to the best
+        performance instead of regular state file.
+    """
+    # Get material models
+    material_models = model.get_material_models()
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Loop over material models
+    for _, model in material_models.items():
+        # Save model state
+        model.save_model_state(epoch=epoch, is_best_state=is_best_state)
 # =============================================================================
 def save_parameters_history(model, model_parameters_history,
                             model_parameters_bounds):

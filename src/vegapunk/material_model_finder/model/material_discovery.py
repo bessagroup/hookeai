@@ -231,6 +231,17 @@ class MaterialModelFinder(torch.nn.Module):
         # Collect specimen underlying material models parameters
         self._set_model_parameters()
     # -------------------------------------------------------------------------
+    def get_material_models(self):
+        """Get material models.
+        
+        Returns
+        -------
+        material_models : dict
+            FETorch material constitutive models (key, str[int], item,
+            ConstitutiveModel). Models are labeled from 1 to n_mat_model.
+        """
+        return self._specimen_material_state.get_material_models()
+    # -------------------------------------------------------------------------
     def _set_model_parameters(self):
         """Set model parameters (collect material models parameters)."""
         # Initialize parameters
