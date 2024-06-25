@@ -31,7 +31,7 @@ from simulators.fetorch.math.matrixops import get_problem_type_parameters, \
     get_tensor_from_mf
 from simulators.fetorch.material.material_su import material_state_update
 from rnn_base_model.data.time_dataset import get_time_series_data_loader
-from gnn_base_model.model.gnn_model import TorchStandardScaler
+from utilities.data_scalers import TorchMinMaxScaler, TorchStandardScaler
 #
 #                                                          Authorship & Credits
 # =============================================================================
@@ -155,6 +155,8 @@ class RecurrentConstitutiveModel(torch.nn.Module):
         Delete existent model best state files.
     _init_data_scalers(self)
         Initialize model data scalers.
+    set_fitted_data_scalers(self, scaling_type, scaling_parameters)
+        Set fitted model data scalers.
     fit_data_scalers(self, dataset, is_verbose=False)
         Fit model data scalers.
     get_fitted_data_scaler(self, features_type)
@@ -1250,11 +1252,65 @@ class RecurrentConstitutiveModel(torch.nn.Module):
         self._data_scalers['features_in'] = None
         self._data_scalers['features_out'] = None
     # -------------------------------------------------------------------------
+    def set_fitted_data_scalers(self, scaling_type, scaling_parameters):
+        """Set fitted model data scalers.
+        
+        Parameters
+        ----------
+        scaling_type : {'min-max', 'mean-std'}
+            Type of data scaling. Min-Max scaling ('min-max') or
+            standardization ('mean-std').
+        scaling_parameters : dict
+            Data scaling parameters (item, tuple[2]) for each features type
+            (key, str). Each data scaling parameter is set as a
+            torch.Tensor(1d) according to the corresponding number of features.
+            For 'min-max' data scaling, the parameters are the 'minimum'[0] and
+            'maximum'[1] tensors, while for 'mean-std' data scaling the
+            parameters are the 'mean'[0] and 'std'[1] tensors.
+        """
+        # Initialize data scalers
+        self._init_data_scalers()
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Instantiate data scalers
+        if scaling_type == 'min-max':
+            scaler_features_in = TorchMinMaxScaler(
+                self._n_features_in,
+                minimum=scaling_parameters['features_in'][0],
+                maximum=scaling_parameters['features_in'][1],
+                device_type=self._device_type)
+            scaler_features_out = TorchMinMaxScaler(
+                self._n_features_out,
+                minimum=scaling_parameters['features_out'][0],
+                maximum=scaling_parameters['features_out'][1],
+                device_type=self._device_type)
+        elif scaling_type == 'mean-std':
+            scaler_features_in = TorchStandardScaler(
+                self._n_features_in,
+                mean=scaling_parameters['features_in'][0],
+                std=scaling_parameters['features_in'][1],
+                device_type=self._device_type)
+            scaler_features_out = TorchStandardScaler(
+                self._n_features_out,
+                mean=scaling_parameters['features_out'][0],
+                std=scaling_parameters['features_out'][1],
+                device_type=self._device_type)
+        else:
+            raise RuntimeError('Unknown type of data scaling.')
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set fitted data scalers
+        self._data_scalers['features_in'] = scaler_features_in
+        self._data_scalers['features_out'] = scaler_features_out
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Update model initialization file with fitted data scalers
+        self.save_model_init_file()
+    # -------------------------------------------------------------------------
     def fit_data_scalers(self, dataset, is_verbose=False):
         """Fit model data scalers.
         
-        Data scalers are set a standard scalers where features are normalized
-        by removing the mean and scaling to unit variance.
+        Data scalers are set as standard scalers, standardizing features to
+        zero mean and unit variance. The data scaling parameters (mean and
+        variance) are automatically fitted from the provided time series data
+        set. 
         
         Parameters
         ----------
@@ -1319,9 +1375,7 @@ class RecurrentConstitutiveModel(torch.nn.Module):
             raise RuntimeError(f'Unknown data scaler for {features_type}.')
         elif self._data_scalers[features_type] is None:
             raise RuntimeError(f'Data scaler for {features_type} has not '
-                               'been fitted. Fit data scalers by calling '
-                               'method fit_data_scalers() before training '
-                               'or predicting with the model.')
+                               'been fitted.')
         else:
             data_scaler = self._data_scalers[features_type]
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -1410,14 +1464,10 @@ class RecurrentConstitutiveModel(torch.nn.Module):
         """Check if model data scalers available."""
         if self._data_scalers is None:
             raise RuntimeError('Data scalers for model features have not '
-                               'been fitted. Fit data scalers by calling '
-                               'method fit_data_scalers() before training '
-                               'or predicting with the model.')
+                               'been fitted.')
         if all([x is None for x in self._data_scalers.values()]):
             raise RuntimeError('Data scalers for model features have not '
-                               'been fitted. Fit data scalers by calling '
-                               'method fit_data_scalers() before training '
-                               'or predicting with the model.')
+                               'been fitted.')
 # =============================================================================
 def standard_partial_fit(dataset, features_type, n_features, is_verbose=False):
     """Perform batch fitting of standardization data scalers.
