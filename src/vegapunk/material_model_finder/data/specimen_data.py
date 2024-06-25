@@ -51,6 +51,8 @@ class SpecimenNumericalData:
         Set specimen numerical data translated from experimental results.
     update_specimen_mesh_configuration(self, time_idx, is_update_coords=True)
         Update the specimen mesh configuration for given discrete time.
+    get_n_dim(self)
+        Get number of spatial dimensions.
     """
     def __init__(self):
         """Constructor."""
@@ -193,3 +195,17 @@ class SpecimenNumericalData:
         self.specimen_mesh.update_mesh_configuration(
             self.nodes_disps_mesh_hist[:, :, time_idx], time='current',
             is_update_coords=is_update_coords)
+    # -------------------------------------------------------------------------
+    def get_n_dim(self):
+        """Get number of spatial dimensions.
+        
+        Returns
+        -------
+        n_dim : int
+            Number of spatial dimensions.
+        """
+        # Get number of spatial dimensions
+        n_dim = self.specimen_mesh.get_n_dim()
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        return n_dim
+        
