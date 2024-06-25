@@ -130,6 +130,8 @@ class MaterialModelFinder(torch.nn.Module):
         Get fitted model data scalers.
     data_scaler_transform(self, tensor, features_type, mode='normalize')
         Perform data scaling operation on features PyTorch tensor.
+    set_material_models_fitted_data_scalers(self, models_scaling_type, \
+                                            models_scaling_parameters)
     save_model_state(self, epoch=None, is_best_state=False, \
                      is_remove_posterior=True)
         Save model state to file.
@@ -1246,6 +1248,57 @@ class MaterialModelFinder(torch.nn.Module):
                                'the same shape.')
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         return transformed_tensor
+    # -------------------------------------------------------------------------
+    def set_material_models_fitted_data_scalers(self, models_scaling_type,
+                                                models_scaling_parameters):
+        """Set material constitutive models fitted data scalers.
+        
+        Data scalers are only fitted for material models that support data
+        normalization and for which the corresponding data scaling type and
+        parameters are provided.
+        
+        Parameters
+        ----------
+        models_scaling_type : dict
+            Type of data scaling (str, {'min-max', 'mean-std'}) for each
+            material model (key, str[int]). Models are labeled from 1 to
+            n_mat_model. Min-Max scaling ('min-max') or standardization
+            ('mean-std').
+        models_scaling_type : dict
+            Features data scaling parameters (item, dict) for each material
+            model (key, str[int]), stored as data scaling parameters
+            (item, tuple[2]) for each features type (key, str). Models are
+            labeled from 1 to n_mat_model. Each data scaling parameter is set
+            as a torch.Tensor(1d) according to the corresponding number of
+            features. For 'min-max' data scaling, the parameters are the
+            'minimum'[0] and 'maximum'[1] tensors, while for 'mean-std' data
+            scaling the parameters are the 'mean'[0] and 'std'[1] tensors.
+        """
+        # Check specimen material state
+        if self._specimen_data is None:
+            raise RuntimeError('The specimen material data and material state '
+                               'must be set prior to set the material '
+                               'constitutive models fitted data scalers '
+                               '(check method set_specimen_data()).')
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Loop over material models
+        for model_key, model in self.get_material_models().items():
+            # Check if material model supports data normalization
+            if not hasattr(model, 'is_data_normalization'):
+                continue
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Check material model data normalization
+            if not (model.is_data_normalization
+                    and model_key in models_scaling_type.keys()):
+                continue
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Get material model data scaling type
+            scaling_type = models_scaling_type[model_key]
+            # Get material model data scaling parameters
+            scaling_parameters = models_scaling_parameters[model_key]
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Set material model fitted data scalers
+            model.set_fitted_data_scalers(scaling_type, scaling_parameters)
     # -------------------------------------------------------------------------
     def save_model_state(self, epoch=None, is_best_state=False,
                          is_remove_posterior=True):
