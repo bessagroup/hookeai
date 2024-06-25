@@ -139,6 +139,8 @@ class RecurrentConstitutiveModel(torch.nn.Module):
         Build strain/stress tensor from given components.
     store_tensor_comps(cls, comps, tensor)
         Store strain/stress tensor components in array.
+    move_state_tensors_to_device(self, state_variables)
+        Move state variables tensors to model device.
     save_model_init_file(self)
         Save model class initialization attributes.
     save_model_state(self)
@@ -751,7 +753,7 @@ class RecurrentConstitutiveModel(torch.nn.Module):
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Initialize constitutive model state variables
         state_variables = self._constitutive_model.state_init()
-        # Initialize last converged material constitutive state variables      # Warning: Removed copy.deepcopy()
+        # Initialize last converged material constitutive state variables
         state_variables_old = state_variables
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Loop over discrete time
@@ -783,7 +785,7 @@ class RecurrentConstitutiveModel(torch.nn.Module):
             if state_variables['is_su_fail']:
                 raise RuntimeError('Material state update convergence '
                                     'failure.')
-            # Update last converged material constitutive state variables      # Warning: Removed copy.deepcopy()
+            # Update last converged material constitutive state variables
             state_variables_old = state_variables
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Get stress tensor
@@ -896,7 +898,7 @@ class RecurrentConstitutiveModel(torch.nn.Module):
         return comps_array
     # -------------------------------------------------------------------------
     def move_state_tensors_to_device(self, state_variables):
-        """
+        """Move state variables tensors to model device.
         
         Parameters
         ----------
