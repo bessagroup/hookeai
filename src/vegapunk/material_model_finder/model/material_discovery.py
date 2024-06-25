@@ -25,6 +25,7 @@ from simulators.fetorch.math.matrixops import get_problem_type_parameters, \
     get_tensor_from_mf, get_tensor_mf
 from simulators.fetorch.math.voigt_notation import get_strain_from_vfm, \
     get_stress_vfm
+from utilities.data_scalers import TorchMinMaxScaler
 from ioput.iostandard import make_directory
 #
 #                                                          Authorship & Credits
@@ -55,6 +56,9 @@ class MaterialModelFinder(torch.nn.Module):
         Specimen numerical data translated from experimental results.
     _specimen_material_state : StructureMaterialState
         FETorch specimen material state.
+    _is_force_normalization : bool, default=False
+        If True, then normalize forces prior to the computation of the force
+        equilibrium loss.
     model_directory : str
         Directory where model is stored.
     model_name : str
@@ -77,7 +81,8 @@ class MaterialModelFinder(torch.nn.Module):
         Set model subdirectories.
     _set_material_models_dirs(self)
         Set material models directories.
-    set_specimen_data(self, specimen_data, specimen_material_state)
+    set_specimen_data(self, specimen_data, specimen_material_state,
+                      force_minimum=None, force_maximum=None)
         Set specimen data and material state.
     _set_model_parameters(self)
         Set model parameters (collect material models parameters).
@@ -109,7 +114,7 @@ class MaterialModelFinder(torch.nn.Module):
     recurrent_material_state_update(self, strain_formulation, problem_type, \
                                     constitutive_model, strain_hist, time_hist)
         Material state update for any given recurrent constitutive model.
-    force_equilibrium_loss(internal_forces_mesh, external_forces_mesh, \
+    force_equilibrium_loss(self, internal_forces_mesh, external_forces_mesh, \
                            reaction_forces_mesh, dirichlet_bool_mesh)
         Compute force equilibrium loss for given discrete time.
     build_tensor_from_comps(cls, n_dim, comps, comps_array, is_symmetric=False,
@@ -117,6 +122,14 @@ class MaterialModelFinder(torch.nn.Module):
         Build strain/stress tensor from given components.
     store_tensor_comps(cls, comps, tensor, device=None)
         Store strain/stress tensor components in array.
+    _init_data_scalers(self)
+        Initialize model data scalers.
+    set_fitted_force_data_scalers(self, force_minimum, force_maximum)
+        Set fitted forces data scalers.
+    get_fitted_data_scaler(self, features_type)
+        Get fitted model data scalers.
+    data_scaler_transform(self, tensor, features_type, mode='normalize')
+        Perform data scaling operation on features PyTorch tensor.
     save_model_state(self, epoch=None, is_best_state=False, \
                      is_remove_posterior=True)
         Save model state to file.
@@ -132,7 +145,7 @@ class MaterialModelFinder(torch.nn.Module):
         Delete existent model best state files.
     """
     def __init__(self, model_directory, model_name='material_model_finder',
-                 device_type='cpu'):
+                 is_force_normalization=False, device_type='cpu'):
         """Constructor.
         
         Parameters
@@ -141,6 +154,9 @@ class MaterialModelFinder(torch.nn.Module):
             Directory where model is stored.
         model_name : str, default='material_model_finder'
             Name of model.
+        is_force_normalization : bool, default=False
+            If True, then normalize forces prior to the computation of the
+            force equilibrium loss.
         device_type : {'cpu', 'cuda'}, default='cpu'
             Type of device on which torch.Tensor is allocated.
         """
@@ -159,6 +175,11 @@ class MaterialModelFinder(torch.nn.Module):
         # Set model subdirectories
         self._set_model_subdirs()
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set force normalization
+        self._is_force_normalization = is_force_normalization
+        # Set device
+        self.set_device(device_type)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Initialize specimen numerical data
         self._specimen_data = None
         # Initialize specimen material state
@@ -167,8 +188,10 @@ class MaterialModelFinder(torch.nn.Module):
         # Initialize parameters
         self._model_parameters = None
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        # Set device
-        self.set_device(device_type)
+        # Initialize data scalers
+        self._data_scalers = None
+        if self._is_force_normalization:
+            self._init_data_scalers()
     # -------------------------------------------------------------------------
     def _set_model_subdirs(self):
         """Set model subdirectories."""
@@ -210,7 +233,8 @@ class MaterialModelFinder(torch.nn.Module):
             # Update material model directory
             model.model_directory = model_dir
     # -------------------------------------------------------------------------
-    def set_specimen_data(self, specimen_data, specimen_material_state):
+    def set_specimen_data(self, specimen_data, specimen_material_state,
+                          force_minimum=None, force_maximum=None):
         """Set specimen data and material state.
         
         Parameters
@@ -219,6 +243,14 @@ class MaterialModelFinder(torch.nn.Module):
             Specimen numerical data translated from experimental results.
         specimen_material_state : StructureMaterialState
             FETorch specimen material state.
+        force_minimum : torch.Tensor(1d), default=None
+            Forces normalization minimum tensor stored as a torch.Tensor with
+            shape (n_dim,). Only required if force normalization is set to
+            True, otherwise ignored.
+        force_maximum : torch.Tensor(1d)
+            Forces normalization maximum tensor stored as a torch.Tensor with
+            shape (n_dim,). Only required if force normalization is set to
+            True, otherwise ignored.
         """
         # Set specimen numerical data
         self._specimen_data = specimen_data
@@ -230,6 +262,10 @@ class MaterialModelFinder(torch.nn.Module):
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Collect specimen underlying material models parameters
         self._set_model_parameters()
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Fit force data scalers
+        if self._is_force_normalization:
+            self.set_fitted_force_data_scalers(force_minimum, force_maximum)
     # -------------------------------------------------------------------------
     def get_material_models(self):
         """Get material models.
@@ -566,7 +602,7 @@ class MaterialModelFinder(torch.nn.Module):
                 specimen_data.reaction_forces_mesh_hist[:, :, time_idx]
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Add contribution to force equilibrium history loss
-            force_equilibrium_hist_loss += type(self).force_equilibrium_loss(
+            force_equilibrium_hist_loss += self.force_equilibrium_loss(
                 internal_forces_mesh, external_forces_mesh,
                 reaction_forces_mesh, dirichlet_bool_mesh)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -708,7 +744,7 @@ class MaterialModelFinder(torch.nn.Module):
                 specimen_data.reaction_forces_mesh_hist[:, :, time_idx]
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Add contribution to force equilibrium history loss
-            force_equilibrium_hist_loss += type(self).force_equilibrium_loss(
+            force_equilibrium_hist_loss += self.force_equilibrium_loss(
                 internal_forces_mesh, external_forces_mesh,
                 reaction_forces_mesh, dirichlet_bool_mesh)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -967,9 +1003,9 @@ class MaterialModelFinder(torch.nn.Module):
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         return state_variables_hist
     # -------------------------------------------------------------------------
-    @staticmethod
-    def force_equilibrium_loss(internal_forces_mesh, external_forces_mesh,
-                               reaction_forces_mesh, dirichlet_bool_mesh):
+    def force_equilibrium_loss(self, internal_forces_mesh,
+                               external_forces_mesh, reaction_forces_mesh,
+                               dirichlet_bool_mesh):
         """Compute force equilibrium loss for given discrete time.
         
         Parameters
@@ -997,6 +1033,18 @@ class MaterialModelFinder(torch.nn.Module):
         """
         # Initialize force equilibrium loss
         force_equilibrium_loss = 0
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Normalize forces
+        if self._is_force_normalization:
+            # Normalize internal forces
+            internal_forces_mesh = self.data_scaler_transform(
+                internal_forces_mesh, features_type='forces', mode='normalize')
+            # Normalize external forces
+            external_forces_mesh = self.data_scaler_transform(
+                external_forces_mesh, features_type='forces', mode='normalize')
+            # Normalize reaction forces
+            reaction_forces_mesh = self.data_scaler_transform(
+                reaction_forces_mesh, features_type='forces', mode='normalize')
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Get number of nodes of finite element mesh
         n_node_mesh = internal_forces_mesh.shape[0]
@@ -1089,6 +1137,115 @@ class MaterialModelFinder(torch.nn.Module):
             comps_array[k] = tensor[i, j]
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         return comps_array
+    # -------------------------------------------------------------------------
+    def _init_data_scalers(self):
+        """Initialize model data scalers."""
+        self._data_scalers = {}
+        self._data_scalers['forces'] = None
+    # -------------------------------------------------------------------------
+    def set_fitted_force_data_scalers(self, force_minimum, force_maximum):
+        """Set fitted forces data scalers.
+        
+        Parameters
+        ----------
+        force_minimum : torch.Tensor(1d)
+            Forces normalization minimum tensor stored as a torch.Tensor with
+            shape (n_dim,).
+        force_maximum : torch.Tensor(1d)
+            Forces normalization maximum tensor stored as a torch.Tensor with
+            shape (n_dim,).
+        """
+        # Initialize data scalers
+        self._init_data_scalers()
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Get number of spatial dimensions
+        n_dim = self._specimen_data.get_n_dim()
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Instantiate forces data scaler
+        scaler_forces = \
+            TorchMinMaxScaler(n_features=n_dim, device_type=self._device_type)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set data scaler normalization factors
+        scaler_forces.set_minimum_and_maximum(force_minimum, force_maximum)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set fitted data scalers
+        self._data_scalers['forces'] = scaler_forces
+    # -------------------------------------------------------------------------
+    def get_fitted_data_scaler(self, features_type):
+        """Get fitted model data scalers.
+        
+        Parameters
+        ----------
+        features_type : str
+            Features for which data scaler is required:
+            
+            'forces'  : Forces
+
+        Returns
+        -------
+        data_scaler : {TorchMinMaxScaler, TorchStandardScaler}
+            Fitted data scaler.
+        """
+        # Get fitted data scaler
+        if features_type not in self._data_scalers.keys():
+            raise RuntimeError(f'Unknown data scaler for {features_type}.')
+        elif self._data_scalers[features_type] is None:
+            raise RuntimeError(f'Data scaler for {features_type} has not '
+                               f'been fitted.')
+        else:
+            data_scaler = self._data_scalers[features_type]
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        return data_scaler
+    # -------------------------------------------------------------------------
+    def data_scaler_transform(self, tensor, features_type, mode='normalize'):
+        """Perform data scaling operation on features PyTorch tensor.
+        
+        Parameters
+        ----------
+        tensor : torch.Tensor
+            Features PyTorch tensor.
+        features_type : str
+            Features for which data scaler is required:
+            
+            'forces'  : Forces
+
+        mode : {'normalize', 'denormalize'}, default=normalize
+            Data scaling transformation type.
+            
+        Returns
+        -------
+        transformed_tensor : torch.Tensor
+            Transformed features PyTorch tensor.
+        """
+        # Check input features tensor
+        if not isinstance(tensor, torch.Tensor):
+            raise RuntimeError('Input tensor is not torch.Tensor.')
+        # Get input features tensor data type
+        input_dtype = tensor.dtype
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Get fitted data scaler for input features
+        data_scaler = self.get_fitted_data_scaler(features_type)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Perform data scaling normalization/denormalization
+        if mode == 'normalize':
+            transformed_tensor = data_scaler.transform(tensor)
+        elif mode == 'denormalize':
+            transformed_tensor = data_scaler.inverse_transform(tensor)
+        else:
+            raise RuntimeError('Invalid data scaling transformation type.')
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Enforce same data type of input features tensor 
+        transformed_tensor = transformed_tensor.to(input_dtype)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Check transformed features tensor
+        if not isinstance(transformed_tensor, torch.Tensor):
+            raise RuntimeError('Transformed tensor is not torch.Tensor.') 
+        elif not torch.equal(torch.tensor(transformed_tensor.size()),
+                             torch.tensor(tensor.size())):
+            raise RuntimeError('Input and transformed tensors do not have '
+                               'the same shape.')
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        return transformed_tensor
     # -------------------------------------------------------------------------
     def save_model_state(self, epoch=None, is_best_state=False,
                          is_remove_posterior=True):

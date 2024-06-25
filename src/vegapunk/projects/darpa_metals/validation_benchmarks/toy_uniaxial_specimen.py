@@ -84,6 +84,8 @@ def validate_force_equilibrium_loss(specimen_name, strain_formulation,
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Get finite element mesh
     specimen_mesh = specimen_data.specimen_mesh
+    # Get number of spatial dimensions
+    n_dim = specimen_data.get_n_dim()
     # Get number of elements
     n_elem = specimen_mesh.get_n_elem()
     # Get type of elements of finite element mesh
@@ -103,9 +105,15 @@ def validate_force_equilibrium_loss(specimen_name, strain_formulation,
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set material model finder directory
     model_directory = os.path.dirname(os.path.abspath(__file__))
+    # Set force normalization
+    is_force_normalization = True
+    force_minimum = -5*torch.ones(n_dim)
+    force_maximum = 5*torch.ones(n_dim)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Initialize material model finder
-    material_finder = MaterialModelFinder(model_directory)
+    material_finder = MaterialModelFinder(
+        model_directory, model_name='material_model_finder',
+        is_force_normalization=is_force_normalization)
     # Loop over sequential modes
     for sequential_mode in available_sequential_modes:
         # Initialize elements constitutive model
@@ -115,7 +123,9 @@ def validate_force_equilibrium_loss(specimen_name, strain_formulation,
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Set specimen data and material state
         material_finder.set_specimen_data(specimen_data,
-                                          specimen_material_state)
+                                          specimen_material_state,
+                                          force_minimum=force_minimum,
+                                          force_maximum=force_maximum)
         # Compute force equilibrium history loss
         force_equilibrium_hist_loss = \
             material_finder(sequential_mode=sequential_mode)
@@ -132,6 +142,7 @@ def validate_force_equilibrium_loss(specimen_name, strain_formulation,
         print(f'Strain formulation: {strain_formulation}')
         print(f'\nForce equilibrium history loss: '
               f'{force_equilibrium_hist_loss:.4e}')
+        print(f'Force normalization: {str(is_force_normalization):>15s}')
         print('-------------------------------------------------------------')
         print('')
 # =============================================================================
@@ -712,6 +723,7 @@ if __name__ == '__main__':
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set toy uniaxial specimen finite element mesh types
     mesh_types = ('tri3', 'tri6', 'quad4', 'quad8', 'tetra4', 'hexa8')
+    mesh_types = ('tri3',)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Loop over finite element mesh types
     for mesh_type in mesh_types:
