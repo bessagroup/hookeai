@@ -13,7 +13,6 @@ if root_dir not in sys.path:
     sys.path.insert(0, root_dir)
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 import os
-import random
 # Third-party
 import torch
 import numpy as np
@@ -105,15 +104,44 @@ def validate_force_equilibrium_loss(specimen_name, strain_formulation,
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set material model finder directory
     model_directory = os.path.dirname(os.path.abspath(__file__))
+    # Set material model finder name
+    model_finder_name = 'material_model_finder'
     # Set force normalization
     is_force_normalization = True
-    force_minimum = -5*torch.ones(n_dim)
-    force_maximum = 5*torch.ones(n_dim)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Initialize material model finder
     material_finder = MaterialModelFinder(
-        model_directory, model_name='material_model_finder',
+        model_directory, model_name=model_finder_name,
         is_force_normalization=is_force_normalization)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Set number of strain and stress components
+    if strain_formulation == 'infinitesimal':
+        n_strain_comp = int(n_dim*(n_dim + 1)/2)
+        n_stress_comp = int(n_dim*(n_dim + 1)/2)
+    else:
+        raise RuntimeError('Not implemented.')
+    # Set strain minimum and maximum (data normalization)
+    strain_minimum = -10*torch.ones(n_strain_comp)
+    strain_maximum = 10*torch.ones(n_strain_comp)
+    # Set stress minimum and maximum (data normalization)
+    stress_minimum = -10*torch.ones(n_stress_comp)
+    stress_maximum = 10*torch.ones(n_stress_comp)
+    # Set material models data scaling type
+    models_scaling_type = {}
+    models_scaling_type['1'] = 'min-max'
+    # Set material models data scalers parameters
+    models_scaling_parameters = {'1': {}}
+    models_scaling_parameters['1']['features_in'] = \
+        (strain_minimum, strain_maximum)
+    models_scaling_parameters['1']['features_out'] = \
+        (stress_minimum, stress_maximum)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Set number of force components
+    n_force_comp = n_dim
+    # Set force minimum and maximum (data normalization)
+    force_minimum = -5*torch.ones(n_force_comp)
+    force_maximum = 5*torch.ones(n_force_comp)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Loop over sequential modes
     for sequential_mode in available_sequential_modes:
         # Initialize elements constitutive model
@@ -126,6 +154,11 @@ def validate_force_equilibrium_loss(specimen_name, strain_formulation,
                                           specimen_material_state,
                                           force_minimum=force_minimum,
                                           force_maximum=force_maximum)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set constitutive model fitted data scalers
+        material_finder.set_material_models_fitted_data_scalers(
+            models_scaling_type, models_scaling_parameters)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Compute force equilibrium history loss
         force_equilibrium_hist_loss = \
             material_finder(sequential_mode=sequential_mode)
@@ -723,7 +756,6 @@ if __name__ == '__main__':
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set toy uniaxial specimen finite element mesh types
     mesh_types = ('tri3', 'tri6', 'quad4', 'quad8', 'tetra4', 'hexa8')
-    mesh_types = ('tri3',)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Loop over finite element mesh types
     for mesh_type in mesh_types:
