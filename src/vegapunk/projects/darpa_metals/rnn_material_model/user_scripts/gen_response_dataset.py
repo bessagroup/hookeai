@@ -26,9 +26,11 @@ import os
 import copy
 import time
 import datetime
+import re
 # Third-party
 import torch
 import numpy as np
+import pandas
 import tqdm
 import matplotlib.pyplot as plt
 # Local
@@ -91,6 +93,8 @@ class MaterialResponseDatasetGenerator():
         Build strain/stress tensor from given components.
     store_tensor_comps(comps, tensor)
         Store strain/stress tensor components in array.
+    gen_response_dataset_from_csv(self, response_file_paths, save_dir=None, \
+                                  is_save_fig=False, is_verbose=False)
     plot_material_response_path(cls, strain_formulation, n_dim, \
                                 strain_comps_order, strain_path, \
                                 stress_comps_order, stress_path, \
@@ -458,6 +462,127 @@ class MaterialResponseDatasetGenerator():
             comps_array[k] = tensor[i, j]
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         return comps_array
+    # -------------------------------------------------------------------------
+    def gen_response_dataset_from_csv(self, response_file_paths, save_dir=None,
+                                      is_save_fig=False, is_verbose=False):
+        """Generate strain-stress path data set from set of .csv files.
+        
+        Parameters
+        ----------
+        response_file_paths : tuple
+            Strain-stress response paths data files paths (.csv).
+        save_dir : str, default=None
+            Directory where figure is saved. If None, then figure is saved in
+            current working directory.
+        is_save_fig : bool, default=False
+            Save figure.
+        is_verbose : bool, default=False
+            If True, enable verbose output.
+            
+        Returns
+        -------
+        dataset : torch.utils.data.Dataset
+            Time series data set. Each sample is stored as a dictionary where
+            each feature (key, str) data is a torch.Tensor(2d) of shape
+            (sequence_length, n_features).
+        """   
+        start_time_sec = time.time()
+        if is_verbose:
+            print('\nGenerate strain-stress material response path data set'
+                  '\n------------------------------------------------------')
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~     
+        # Get strain and stress components order
+        if self._strain_formulation == 'infinitesimal':
+            strain_comps_order = self._comp_order_sym
+            stress_comps_order = self._comp_order_sym
+        else:
+            raise RuntimeError('Not implemented.')
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Sort response path files
+        response_file_paths = tuple(
+            sorted(response_file_paths,
+                   key=lambda x: int(re.search(r'(\d+)\D*$', x).groups()[-1])))
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Initialize time series data set samples
+        dataset_samples = []
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        if is_verbose:
+            print('\n> Starting strain-stress paths reading process...\n')
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Loop over samples
+        for i, data_file_path in enumerate(tqdm.tqdm(
+                response_file_paths, desc='> Reading strain-stress paths: ',
+                disable=not is_verbose)):
+            # Load data
+            df = pandas.read_csv(data_file_path)
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Check data
+            if df.shape[1] != 13:
+                raise RuntimeError(f'Expecting data frame to have 13 columns, '
+                                   f'but {df.shape[1]} were found. \n\n'
+                                   f'Expected columns: TIME | E11 E22 E33 E12 '
+                                   f'E23 E13 | S11 S22 S33 S12 S23 S13')
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Get response path data
+            response_path_data = df.values
+            # Get discrete time history
+            time_hist = response_path_data[:, 0]
+            # Get strain and stress paths
+            if self._n_dim == 2:
+                strain_path = response_path_data[:, [1, 2, 4]]
+                stress_path = response_path_data[:, [7, 8, 10]]
+            else:
+                strain_path = response_path_data[:, 1:7]
+                stress_path = response_path_data[:, 7:13]
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Initialize material response path data
+            response_path = {}
+            # Assemble strain-stress material response path
+            response_path['strain_comps_order'] = strain_comps_order
+            response_path['strain_path'] = torch.tensor(strain_path,
+                                                        dtype=torch.float)
+            response_path['stress_comps_order'] = stress_comps_order
+            response_path['stress_path'] = torch.tensor(stress_path,
+                                                        dtype=torch.float)
+            # Assemble time path
+            response_path['time_hist'] = \
+                torch.tensor(time_hist, dtype=torch.float).reshape(-1, 1)
+            # Store strain-stress material response path
+            dataset_samples.append(response_path)
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Plot material response path
+            if is_save_fig and os.path.isdir(save_dir):
+                self.plot_material_response_path(
+                    self._strain_formulation, self._n_dim,
+                    strain_comps_order, strain_path,
+                    stress_comps_order, stress_path,
+                    time_hist,
+                    is_plot_strain_stress_paths=True,
+                    is_plot_eq_strain_stress=True,
+                    filename=f'response_path_{i}',
+                    save_dir=save_dir, is_save_fig=is_save_fig,
+                    is_stdout_display=False, is_latex=True)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        if is_verbose:
+            print('\n> Finished strain-stress paths reading process!\n')
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Create strain-stress material response path data set
+        dataset = TimeSeriesDatasetInMemory(dataset_samples)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Get number of strain-stress paths
+        n_path = len(dataset)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Compute total generation time and average generation time per path
+        total_time_sec = time.time() - start_time_sec
+        avg_time_sec = total_time_sec/n_path
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        if is_verbose:
+            print(f'\n> Total generation time: '
+                  f'{str(datetime.timedelta(seconds=int(total_time_sec)))} | '
+                  f'Avg. processing time per path: '
+                  f'{str(datetime.timedelta(seconds=int(avg_time_sec)))}\n')
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        return dataset
     # -------------------------------------------------------------------------
     @classmethod
     def plot_material_response_path(cls, strain_formulation, n_dim,
@@ -1554,4 +1679,3 @@ if __name__ == '__main__':
         generate_dataset_plots(strain_formulation, n_dim, dataset,
                                save_dir=plots_dir, is_save_fig=True,
                                is_stdout_display=False)
-        
