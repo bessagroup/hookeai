@@ -644,7 +644,7 @@ if __name__ == '__main__':
     strain_formulation = 'infinitesimal'
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set constitutive model name and parameters
-    model_name = 'drucker_prager'
+    model_name = 'rc_drucker_prager'
     # Set constitutive model parameters
     if model_name == 'elastic':
         # Set constitutive model parameters
@@ -753,6 +753,51 @@ if __name__ == '__main__':
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Set model validation data directory name
             model_data_name = 'von_mises'
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        elif model_name == 'rc_drucker_prager':
+            # Set frictional angle
+            friction_angle = np.deg2rad(10)
+            # Set dilatancy angle
+            dilatancy_angle = friction_angle
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Compute angle-related material parameters
+            # (matching with Mohr-Coulomb under uniaxial tension and
+            # compression)
+            # Set yield surface cohesion parameter
+            yield_cohesion_parameter = (2.0/np.sqrt(3))*np.cos(friction_angle)
+            # Set yield pressure parameter
+            yield_pressure_parameter = (3.0/np.sqrt(3))*np.sin(friction_angle)
+            # Set plastic flow pressure parameter
+            flow_pressure_parameter = (3.0/np.sqrt(3))*np.sin(dilatancy_angle)
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Set constitutive model parameters
+            model_parameters = {
+                'elastic_symmetry': 'isotropic',
+                'E': 100, 'v': 0.3,
+                'euler_angles': (0.0, 0.0, 0.0),
+                'hardening_law': get_hardening_law('piecewise_linear'),
+                'hardening_parameters':
+                    {'hardening_points':
+                        torch.tensor([[0.0, 2.0/yield_cohesion_parameter],
+                                      [1.0, 4.0/yield_cohesion_parameter]],
+                                     dtype=torch.float)},
+                'yield_cohesion_parameter': yield_cohesion_parameter,
+                'yield_pressure_parameter': yield_pressure_parameter,
+                'flow_pressure_parameter': flow_pressure_parameter}
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Set learnable parameters
+            learnable_parameters = {}
+            learnable_parameters['E'] = {'initial_value': 100.0,
+                                         'bounds': (80, 120)}
+            learnable_parameters['v'] = {'initial_value': 0.3,
+                                         'bounds': (0.2, 0.4)}
+            # Set material constitutive model name
+            material_model_name = 'drucker_prager'
+            # Set material constitutive state variables (prediction)
+            state_features_out = {}
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Set model validation data directory name
+            model_data_name = 'drucker_prager'
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         else:
             raise RuntimeError('Unknown recurrent constitutive model.')
