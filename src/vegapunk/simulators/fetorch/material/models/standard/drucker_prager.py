@@ -393,7 +393,8 @@ class DruckerPrager(ConstitutiveModel):
             is_plast = True
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Set incremental plastic multiplier initial iterative guess
-            inc_p_mult = 0
+            inc_p_mult = torch.tensor(0.0, dtype=torch.float,
+                                      device=self._device)
             # Compute initial hardening modulus
             cohesion, H = hardening_law(hardening_parameters,
                                         acc_p_strain_old + inc_p_mult)
