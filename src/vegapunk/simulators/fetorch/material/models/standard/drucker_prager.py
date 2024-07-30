@@ -529,37 +529,6 @@ class DruckerPrager(ConstitutiveModel):
             e_strain_33 = e_strain_mf[comp_order_sym.index('33')]
             stress_33 = stress_mf[comp_order_sym.index('33')]
         #
-        #                                                    3D > 2D Conversion
-        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        # When the problem type corresponds to a 2D analysis, build the 2D
-        # strain and stress tensors (matricial form) once the state update has
-        # been performed
-        if self._problem_type == 1:
-            # Builds 2D strain and stress tensors (matricial form) from the
-            # associated 3D counterparts
-            e_trial_strain_mf = get_state_2Dmf_from_3Dmf(
-                self._problem_type, e_trial_strain_mf, device=self._device)
-            e_strain_mf = get_state_2Dmf_from_3Dmf(
-                self._problem_type, e_strain_mf, device=self._device)
-            stress_mf = get_state_2Dmf_from_3Dmf(
-                self._problem_type, stress_mf, device=self._device)
-        #
-        #                                                Update state variables
-        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        # Initialize state variables dictionary
-        state_variables = self.state_init()
-        # Store updated state variables
-        state_variables['e_strain_mf'] = e_strain_mf
-        state_variables['acc_p_strain'] = acc_p_strain
-        state_variables['strain_mf'] = e_trial_strain_mf + p_strain_old_mf
-        state_variables['stress_mf'] = stress_mf
-        state_variables['is_su_fail'] = is_su_fail
-        state_variables['is_plast'] = is_plast
-        state_variables['is_apex_return'] = is_apex_return
-        if self._problem_type == 1:
-            state_variables['e_strain_33'] = e_strain_33
-            state_variables['stress_33'] = stress_33
-        #
         #                                            Consistent tangent modulus
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # If the state update was purely elastic, then the consistent tangent
@@ -595,6 +564,37 @@ class DruckerPrager(ConstitutiveModel):
         consistent_tangent_mf = get_tensor_mf(consistent_tangent, n_dim,
                                               comp_order_sym,
                                               device=self._device)
+        #
+        #                                                    3D > 2D Conversion
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # When the problem type corresponds to a 2D analysis, build the 2D
+        # strain and stress tensors (matricial form) once the state update has
+        # been performed
+        if self._problem_type == 1:
+            # Builds 2D strain and stress tensors (matricial form) from the
+            # associated 3D counterparts
+            e_trial_strain_mf = get_state_2Dmf_from_3Dmf(
+                self._problem_type, e_trial_strain_mf, device=self._device)
+            e_strain_mf = get_state_2Dmf_from_3Dmf(
+                self._problem_type, e_strain_mf, device=self._device)
+            stress_mf = get_state_2Dmf_from_3Dmf(
+                self._problem_type, stress_mf, device=self._device)
+        #
+        #                                                Update state variables
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Initialize state variables dictionary
+        state_variables = self.state_init()
+        # Store updated state variables
+        state_variables['e_strain_mf'] = e_strain_mf
+        state_variables['acc_p_strain'] = acc_p_strain
+        state_variables['strain_mf'] = e_trial_strain_mf + p_strain_old_mf
+        state_variables['stress_mf'] = stress_mf
+        state_variables['is_su_fail'] = is_su_fail
+        state_variables['is_plast'] = is_plast
+        state_variables['is_apex_return'] = is_apex_return
+        if self._problem_type == 1:
+            state_variables['e_strain_33'] = e_strain_33
+            state_variables['stress_33'] = stress_33
         #
         #                                                    3D > 2D Conversion
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
