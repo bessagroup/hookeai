@@ -24,7 +24,10 @@ import os
 import torch
 # Local
 from material_model_finder.model.material_discovery import MaterialModelFinder
-from ioput.iostandard import make_directory
+from rnn_base_model.data.time_dataset import load_dataset
+from projects.darpa_metals.rnn_material_model.user_scripts. \
+    gen_response_dataset import generate_dataset_plots
+from ioput.iostandard import make_directory, find_unique_file_with_regex
 #
 #                                                          Authorship & Credits
 # =============================================================================
@@ -53,7 +56,7 @@ def gen_specimen_local_dataset(specimen_data_path,
         Type of device on which torch.Tensor is allocated.
     is_verbose : bool, default=False
         If True, enable verbose output.
-    """    
+    """
     # Load specimen numerical data
     specimen_data = torch.load(specimen_data_path)
     # Load specimen material state
@@ -71,12 +74,22 @@ def gen_specimen_local_dataset(specimen_data_path,
     material_finder.set_specimen_data(specimen_data, specimen_material_state)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Compute force equilibrium history loss
+    # (need to manually set is_store_local_paths=True in material_finder!)
     force_equilibrium_hist_loss = \
         material_finder(sequential_mode='sequential_element')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set data set directory
     dataset_directory = os.path.join(os.path.normpath(model_directory),
                                      'local_response_dataset')
+    # Get data set file path
+    regex = (r'^ss_paths_dataset_n[0-9]+.pkl$',)
+    is_file_found, dataset_file_path = \
+        find_unique_file_with_regex(dataset_directory, regex)
+    # Check data set file
+    if not is_file_found:
+        raise RuntimeError(f'Data set file has not been found in data set '
+                           f'directory:\n\n'
+                           f'{dataset_directory}')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Display results
     if is_verbose:
@@ -90,10 +103,23 @@ def gen_specimen_local_dataset(specimen_data_path,
         print(f'\nForce equilibrium history loss: '
               f'{force_equilibrium_hist_loss:.4e}')
         print(f'Force normalization:  {str(False):>15s}')
-        print(f'\nSpecimen local data set: {dataset_directory}')
+        print(f'\nSpecimen local data set: {dataset_file_path}')
         print('-------------------------------------------------------------'
               '--------------')
         print('')
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Load data set
+    dataset = load_dataset(dataset_file_path)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Set data set plots directory
+    plots_dir = os.path.join(dataset_directory, 'plots')
+    # Create plots directory
+    plots_dir = make_directory(plots_dir)
+    # Generate data set plots
+    generate_dataset_plots(specimen_material_state.get_strain_formulation(),
+                           specimen_data.get_n_dim(), dataset,
+                           save_dir=plots_dir, is_save_fig=True,
+                           is_stdout_display=False)
 # =============================================================================
 def set_default_model_parameters(model_directory, device_type='cpu'):
     """Set default model initialization parameters.
