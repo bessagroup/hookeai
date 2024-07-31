@@ -1397,7 +1397,7 @@ def generate_dataset_plots(strain_formulation, n_dim, dataset,
         stress_paths.append(np.array(path['stress_path'][:, 0, :]))
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Get strain components order
-    strain_comps_order = datasets[0][0]['strain_comps_order']
+    strain_comps_order = dataset[0]['strain_comps_order']
     # Plot strain paths data
     StrainPathGenerator.plot_strain_path(
         strain_formulation, n_dim,
@@ -1442,7 +1442,7 @@ def generate_dataset_plots(strain_formulation, n_dim, dataset,
         is_latex=True)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Get stress components order
-    stress_comps_order = datasets[0][0]['stress_comps_order']
+    stress_comps_order = dataset[0]['stress_comps_order']
     # Plot stress paths data
     if n_dim == 3:
         MaterialResponseDatasetGenerator.plot_stress_space_metrics(
@@ -1489,15 +1489,17 @@ def generate_dataset_plots(strain_formulation, n_dim, dataset,
 # =============================================================================
 if __name__ == '__main__':
     # Set data set type
-    dataset_type = ('training', 'validation', 'testing_id', 'testing_od')[1]
+    dataset_type = ('training', 'validation', 'testing_id', 'testing_od')[3]
     # Set save dataset plots flags
     is_save_dataset_plots = True
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set case studies base directory
     base_dir = ('/home/bernardoferreira/Documents/brown/projects/'
-                'darpa_project/3_local_rc_training/elastic/')
+                'darpa_project/4_global_toy_uniaxial_specimen/'
+                '2d_toy_uniaxial_specimen_tri3_rc_elastic/'
+                '0_elastic_properties_E/')
     # Set case study directory
-    case_study_name = 'elastic_proportional_paths'
+    case_study_name = 'material_model_performance'
     case_study_dir = os.path.join(os.path.normpath(base_dir),
                                   f'{case_study_name}')
     # Set data set file basename
@@ -1529,12 +1531,12 @@ if __name__ == '__main__':
     # Set strain formulation
     strain_formulation = 'infinitesimal'
     # Set problem type
-    problem_type = 4
+    problem_type = 1
     # Set number of spatial dimensions
-    n_dim = 3
+    n_dim = 2
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set number of discrete times
-    n_time = 100
+    n_time = 10
     # Set initial and final time
     time_init = 0.0
     time_end = 1.0
