@@ -1420,11 +1420,11 @@ class MaterialModelFinder(torch.nn.Module):
             response_path = {}
             # Assemble strain-stress material response path
             response_path['strain_comps_order'] = strain_comps_order
-            response_path['strain_path'] = strain_path
+            response_path['strain_path'] = strain_path.detach()
             response_path['stress_comps_order'] = stress_comps_order
-            response_path['stress_path'] = stress_path
+            response_path['stress_path'] = stress_path.detach()
             # Assemble time path
-            response_path['time_hist'] = time_hist.reshape(-1, 1)
+            response_path['time_hist'] = time_hist.detach().reshape(-1, 1)
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Assemble material response path
             element_local_samples.append(response_path)
