@@ -206,19 +206,8 @@ class MaterialModelFinder(torch.nn.Module):
         self._material_models_dir = os.path.join(
             os.path.normpath(self.model_directory), 'material_models')
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        # Set material models subdirectory
-        self._internal_data_normalization_dir = os.path.join(
-            os.path.normpath(self.model_directory),
-            'internal_data_normalization')
-        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        # Set temporary data subdirectory
-        self._temp_dir = os.path.join(
-            os.path.normpath(self.model_directory), 'temp')
-        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Collect model subdirectories
-        subdirs = (self._material_models_dir,
-                   self._internal_data_normalization_dir,
-                   self._temp_dir)
+        subdirs = (self._material_models_dir,)
         # Create model subdirectories
         for subdir in subdirs:
             make_directory(subdir, is_overwrite=True)
