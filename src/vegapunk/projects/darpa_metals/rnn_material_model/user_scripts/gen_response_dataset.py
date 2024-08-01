@@ -507,7 +507,23 @@ class MaterialResponseDatasetGenerator():
         n_path_files = len(response_file_paths)
         # Initialize number of invalid response paths files
         n_path_files_invalid = 0
-        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ v SECTION TO BE REMOVED
+        # Set volume fraction input flag 
+        is_input_volume_fraction = False
+        # Gather volume fraction data
+        if is_input_volume_fraction:
+            # Set volume fraction data file path
+            vf_data_file_path = ('/home/bernardoferreira/Documents/brown/'
+                                 'projects/darpa_project/2_local_rnn_training/'
+                                 'composite_rve/dataset_07_2024/0_yaga_files/'
+                                 'exp_Ti6Al4V_3D_input.csv')
+            # Load volume fraction data
+            df_vf = pandas.read_csv(vf_data_file_path, header=0)
+            # Get volume fraction data
+            volume_fractions_data = df_vf.values
+            # Initialize valid response paths volume fractions
+            vf_path_valid = []
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ^ SECTION TO BE REMOVED
         # Initialize time series data set samples
         dataset_samples = []
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -552,7 +568,17 @@ class MaterialResponseDatasetGenerator():
             # Assemble time path
             response_path['time_hist'] = \
                 torch.tensor(time_hist, dtype=torch.float).reshape(-1, 1)
-            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ v SECTION TO BE REMOVED
+            # Get volume fraction path
+            if is_input_volume_fraction:
+                # Get response path volume fraction
+                vf = volume_fractions_data[i, 1]
+                # Set volume fraction path
+                vf_path = torch.tile(torch.tensor(vf, dtype=torch.float),
+                                     (time_hist.shape[0], 1))
+                # Assemble volume fraction path
+                response_path['vf_path'] = vf_path
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ^ SECTION TO BE REMOVED
             # Initialize response path invalid flag
             is_invalid_path = False
             # Evaluate strain-stress material response path
@@ -566,7 +592,11 @@ class MaterialResponseDatasetGenerator():
                 continue
             else:
                 dataset_samples.append(response_path)
-            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ v SECTION TO BE REMOVED
+            # Store valid response path volume fraction
+            if is_input_volume_fraction:
+                vf_path_valid.append(vf)
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ^ SECTION TO BE REMOVED
             # Plot material response path
             if is_save_fig and os.path.isdir(save_dir):
                 self.plot_material_response_path(
@@ -583,14 +613,16 @@ class MaterialResponseDatasetGenerator():
         if is_verbose:
             print('\n> Finished strain-stress paths reading process!\n')
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Compute valid response file paths
+        n_path_files_valid = n_path_files - n_path_files_invalid
         # Compute ratio of valid and invalid response file paths
-        ratio_valid = (n_path_files - n_path_files_invalid)/n_path_files
-        ratio_invalid = (n_path_files_invalid)/n_path_files
+        ratio_valid = n_path_files_valid/n_path_files
+        ratio_invalid = n_path_files_invalid/n_path_files
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         if is_verbose:
             print(f'\n> Number of response path files: {n_path_files}')
             print(f'\n  > Number of valid response path files: '
-                  f'{n_path_files - n_path_files_invalid:d}/{n_path_files:d} '
+                  f'{n_path_files_valid:d}/{n_path_files:d} '
                   f'({100*ratio_valid:>.1f}%)')
             print(f'\n  > Number of invalid response path files: '
                   f'{n_path_files_invalid:d}/{n_path_files:d} '
@@ -611,7 +643,20 @@ class MaterialResponseDatasetGenerator():
                   f'{str(datetime.timedelta(seconds=int(total_time_sec)))} | '
                   f'Avg. processing time per path: '
                   f'{str(datetime.timedelta(seconds=int(avg_time_sec)))}\n')
-        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ v SECTION TO BE REMOVED      
+        # Plot valid response paths volume fraction
+        if is_input_volume_fraction:
+            # Plot valid response paths volume fraction
+            figure, _ = \
+                plot_histogram((np.array(vf_path_valid),),
+                                bins=20, x_lims=(0.0, 0.5),
+                                x_label='Volume fraction',
+                                y_label='Number of valid response paths',
+                                is_latex=True)
+            # Save figure
+            save_figure(figure, f'ss_paths_valid_vf_hist_{n_path_files_valid}',
+                        format='pdf', save_dir=save_dir)        
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ^ SECTION TO BE REMOVED
         return dataset
     # -------------------------------------------------------------------------
     @classmethod
