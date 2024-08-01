@@ -85,6 +85,16 @@ def perform_model_standard_training(train_dataset_file_path, model_directory,
         # Set number of input and output features
         model_init_args['n_features_in'] = 6
         model_init_args['n_features_out'] = 7
+    elif features_option == 'strain_vf_to_stress':
+        # Set input features
+        new_label_in = 'features_in'
+        cat_features_in = ('strain_path', 'vf_path')
+        # Set output features
+        new_label_out = 'features_out'
+        cat_features_out = ('stress_path',)
+        # Set number of input and output features
+        model_init_args['n_features_in'] = 7
+        model_init_args['n_features_out'] = 6
     else:
         # Set input features
         new_label_in = 'features_in'
