@@ -12,6 +12,7 @@ import os
 import re
 # Local
 from rnn_base_model.data.time_dataset import save_dataset
+from gnn_base_model.data.graph_dataset import split_dataset
 from projects.darpa_metals.rnn_material_model.user_scripts. \
     gen_response_dataset import MaterialResponseDatasetGenerator
 # =============================================================================
@@ -19,8 +20,8 @@ from projects.darpa_metals.rnn_material_model.user_scripts. \
 # =============================================================================
 # Set response paths data directory
 response_path_files_dir = ('/home/bernardoferreira/Documents/brown/projects/'
-                           'darpa_project/2_local_rnn_training/'
-                           'composite_rve/rve_simulations')
+                           'darpa_project/2_local_rnn_training/composite_rve/'
+                           'dataset_07_2024/1_rve_simulations')
 # Set response file basename
 response_file_basename = 'composite_rve_path'
 # Set data set file basename
@@ -71,3 +72,15 @@ dataset = dataset_generator.gen_response_dataset_from_csv(
 # Save data set
 save_dataset(dataset, dataset_basename, dataset_directory,
              is_append_n_sample=True)
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# Set split data set flag
+is_split_dataset = True
+# Split data set
+if is_split_dataset:
+    # Set data set split sizes
+    split_sizes = {'training': 0.8, 'validation': 0.1, 'testing': 0.1}
+    # Split data set
+    dataset_split = \
+        split_dataset(dataset, split_sizes, is_save_subsets=True,
+                      subsets_basename=dataset_basename,
+                      subsets_directory=dataset_directory)

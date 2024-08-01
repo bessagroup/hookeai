@@ -503,6 +503,11 @@ class MaterialResponseDatasetGenerator():
             sorted(response_file_paths,
                    key=lambda x: int(re.search(r'(\d+)\D*$', x).groups()[-1])))
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set total number of response paths files
+        n_path_files = len(response_file_paths)
+        # Initialize number of invalid response paths files
+        n_path_files_invalid = 0
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Initialize time series data set samples
         dataset_samples = []
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -547,8 +552,20 @@ class MaterialResponseDatasetGenerator():
             # Assemble time path
             response_path['time_hist'] = \
                 torch.tensor(time_hist, dtype=torch.float).reshape(-1, 1)
-            # Store strain-stress material response path
-            dataset_samples.append(response_path)
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Initialize response path invalid flag
+            is_invalid_path = False
+            # Evaluate strain-stress material response path
+            if torch.allclose(response_path['stress_path'],
+                              torch.zeros_like(response_path['stress_path'])):
+                n_path_files_invalid += 1
+                is_invalid_path = True
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Store or discard strain-stress material response path
+            if is_invalid_path:
+                continue
+            else:
+                dataset_samples.append(response_path)
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Plot material response path
             if is_save_fig and os.path.isdir(save_dir):
@@ -565,6 +582,19 @@ class MaterialResponseDatasetGenerator():
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         if is_verbose:
             print('\n> Finished strain-stress paths reading process!\n')
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Compute ratio of valid and invalid response file paths
+        ratio_valid = (n_path_files - n_path_files_invalid)/n_path_files
+        ratio_invalid = (n_path_files_invalid)/n_path_files
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        if is_verbose:
+            print(f'\n> Number of response path files: {n_path_files}')
+            print(f'\n  > Number of valid response path files: '
+                  f'{n_path_files - n_path_files_invalid:d}/{n_path_files:d} '
+                  f'({100*ratio_valid:>.1f}%)')
+            print(f'\n  > Number of invalid response path files: '
+                  f'{n_path_files_invalid:d}/{n_path_files:d} '
+                  f'({100*ratio_invalid:>.1f}%)\n')
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Create strain-stress material response path data set
         dataset = TimeSeriesDatasetInMemory(dataset_samples)
@@ -1607,13 +1637,13 @@ if __name__ == '__main__':
     else:
         # Set constitutive model parameters
         model_parameters = {'elastic_symmetry': 'isotropic',
-                            'E': 110e3, 'v': 0.33,
+                            'E': 100, 'v': 0.3,
                             'euler_angles': (0.0, 0.0, 0.0)}
         # Set constitutive state variables to include in data set
         state_features = {}
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set number of strain-stress paths of each type
-    n_path_type = {'proportional': 100, 'random': 0}
+    n_path_type = {'proportional': 0, 'random': 10}
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set strain path generators parameters
     strain_path_kwargs_type = {}
