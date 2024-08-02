@@ -49,6 +49,7 @@ from simulators.fetorch.material.models.standard.elastic import Elastic
 from simulators.fetorch.material.models.standard.von_mises import VonMises
 from simulators.fetorch.material.models.standard.drucker_prager import \
     DruckerPrager
+from simulators.fetorch.material.models.external.bazant_m7 import BazantM7
 from simulators.fetorch.material.models.standard.hardening import \
     get_hardening_law
 from ioput.iostandard import make_directory
@@ -204,6 +205,9 @@ class MaterialResponseDatasetGenerator():
                 self._strain_formulation, self._problem_type, model_parameters)
         elif model_name == 'drucker_prager':
             constitutive_model = DruckerPrager(
+                self._strain_formulation, self._problem_type, model_parameters)
+        elif model_name == 'bazant_m7':
+            constitutive_model = BazantM7(
                 self._strain_formulation, self._problem_type, model_parameters)
         else:
             raise RuntimeError(f'Unknown material constitutive model '
@@ -1570,11 +1574,9 @@ if __name__ == '__main__':
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set case studies base directory
     base_dir = ('/home/bernardoferreira/Documents/brown/projects/'
-                'darpa_project/4_global_toy_uniaxial_specimen/'
-                '2d_toy_uniaxial_specimen_tri3_rc_elastic/'
-                '0_elastic_properties_E/')
+                'colaboration_bazant_m7/')
     # Set case study directory
-    case_study_name = 'material_model_performance'
+    case_study_name = '1_bazant_m7_gru_model'
     case_study_dir = os.path.join(os.path.normpath(base_dir),
                                   f'{case_study_name}')
     # Set data set file basename
@@ -1606,9 +1608,9 @@ if __name__ == '__main__':
     # Set strain formulation
     strain_formulation = 'infinitesimal'
     # Set problem type
-    problem_type = 1
+    problem_type = 4
     # Set number of spatial dimensions
-    n_dim = 2
+    n_dim = 3
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set number of discrete times
     n_time = 10
@@ -1630,7 +1632,7 @@ if __name__ == '__main__':
     is_cyclic_loading = False
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set constitutive model
-    model_name = 'elastic'
+    model_name = 'bazant_m7'
     # Set constitutive model parameters:
     if model_name == 'von_mises':
         # Set constitutive model parameters
@@ -1679,6 +1681,11 @@ if __name__ == '__main__':
         # Set constitutive state variables to be additionally included in the
         # data set
         state_features = {'acc_p_strain': 1}
+    elif model_name == 'bazant_m7':
+        # Set constitutive model parameters
+        model_parameters = {}
+        # Set constitutive state variables to include in data set
+        state_features = {}
     else:
         # Set constitutive model parameters
         model_parameters = {'elastic_symmetry': 'isotropic',
@@ -1688,7 +1695,7 @@ if __name__ == '__main__':
         state_features = {}
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set number of strain-stress paths of each type
-    n_path_type = {'proportional': 0, 'random': 10}
+    n_path_type = {'proportional': 1, 'random': 0}
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set strain path generators parameters
     strain_path_kwargs_type = {}
