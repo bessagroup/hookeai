@@ -15,15 +15,20 @@ import tqdm
 # Local
 from projects.darpa_metals.rnn_material_model.strain_paths.random_path import \
     RandomStrainPathGenerator
+from projects.darpa_metals.rnn_material_model.strain_paths.proportional_path \
+    import ProportionalStrainPathGenerator
 # =============================================================================
 # Summary: Generate and export set of strain deformation paths (.csv files)
 # =============================================================================
 # Set strain paths directory
 strain_paths_dir = ('/home/bernardoferreira/Documents/brown/projects/'
-                    'darpa_project/2_local_rnn_training/'
-                    'composite_rve/rve_simulations')
+                    'colaboration_bazant_m7/2_test_bazant_su_fail/'
+                    'random_strain_paths_dataset')
 # Set strain path basename
-strain_path_basename = 'composite_rve'
+strain_path_basename = 'concrete_loading'
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# Set strain path type
+strain_path_type = ('proportional', 'random')[0]
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Set strain formulation
 strain_formulation = 'infinitesimal'
@@ -33,7 +38,7 @@ problem_type = 4
 n_dim = 3
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Set number of discrete times
-n_time = 200
+n_time = 10000
 # Set initial and final time
 time_init = 0.0
 time_end = 1.0
@@ -43,30 +48,47 @@ if n_dim == 2:
     strain_bounds = {x: (-0.05, 0.05)
                      for x in ('11', '22', '12')}
 else:
-    strain_bounds = {x: (-0.05, 0.05)
+    strain_bounds = {x: (-0.05, 0.01)
                      for x in ('11', '22', '33', '12', '23', '13')}
 # Set incremental strain norm
 inc_strain_norm = None
 # Set strain noise
 strain_noise_std = None
 # Set cyclic loading
-is_cyclic_loading = False    
-# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-# Set strain path generators parameters
-strain_path_kwargs = {'n_control': (4, 7),
-                      'strain_bounds': strain_bounds,
-                      'n_time': n_time,
-                      'generative_type': 'polynomial',
-                      'time_init': time_init,
-                      'time_end': time_end,
-                      'inc_strain_norm': inc_strain_norm,
-                      'strain_noise_std': strain_noise_std,
-                      'is_cyclic_loading': is_cyclic_loading}
+is_cyclic_loading = False
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Initialize strain path generator
-strain_path_generator = RandomStrainPathGenerator(strain_formulation, n_dim)
+if strain_path_type == 'random':
+    strain_path_generator = \
+        RandomStrainPathGenerator(strain_formulation, n_dim)
+elif strain_path_type == 'proportional':
+    strain_path_generator = \
+        ProportionalStrainPathGenerator(strain_formulation, n_dim)
+else:
+    raise RuntimeError('Unknown strain path type.')
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# Set strain path generators parameters
+if strain_path_type == 'random':
+    strain_path_kwargs = {'n_control': (4, 7),
+                        'strain_bounds': strain_bounds,
+                        'n_time': n_time,
+                        'generative_type': 'polynomial',
+                        'time_init': time_init,
+                        'time_end': time_end,
+                        'inc_strain_norm': inc_strain_norm,
+                        'strain_noise_std': strain_noise_std,
+                        'is_cyclic_loading': is_cyclic_loading}
+else:
+    strain_path_kwargs = {'strain_bounds': strain_bounds,
+                          'n_time': n_time,
+                          'time_init': time_init,
+                          'time_end': time_end,
+                          'inc_strain_norm': inc_strain_norm,
+                          'strain_noise_std': strain_noise_std,
+                          'is_cyclic_loading': is_cyclic_loading}
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Set number of strain paths
-n_path = 1
+n_path = 20
 # Initialize strain paths data
 time_hists = []
 strain_paths = []
