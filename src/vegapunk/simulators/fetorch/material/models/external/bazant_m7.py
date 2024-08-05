@@ -749,8 +749,16 @@ class BazantM7(ConstitutiveModel):
             xn[0] = elements[jp][2]
             xn[1] = elements[jp][1]
             xn[2] = elements[jp][0]    
-            np.random.seed(jp+10)  #specific random seed to ensure consistency for qn, qm and ql. Treat qn, qm and ql as material parameters
-            rand_vec = np.random.rand(3)
+            
+
+            # BPF: Avoid messing with the global numpy random seed
+            #np.random.seed(jp+10)  #specific random seed to ensure consistency for qn, qm and ql. Treat qn, qm and ql as material parameters
+            #rand_vec = np.random.rand(3)
+            def generate_random_vector(size, seed):
+                random_state = np.random.RandomState(seed)
+                return random_state.rand(size)
+            rand_vec = generate_random_vector(3, jp+10)
+            
 
             xm = rand_vec - mydot(xn, rand_vec) * xn
             xm /= np.linalg.norm(xm)
