@@ -335,7 +335,9 @@ class MaterialResponseDatasetGenerator():
         state_variables_old = copy.deepcopy(state_variables)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Loop over discrete time
-        for time_idx in range(1, n_time):
+        for time_idx in tqdm.tqdm(
+                range(n_time), leave=False,
+                desc='  > Computing time steps state update: '):    
             # Get previous and current strain tensors
             strain_tensor_old = self.build_tensor_from_comps(
                 self._n_dim, strain_comps_order, strain_path[time_idx - 1, :],
