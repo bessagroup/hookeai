@@ -353,8 +353,11 @@ class BazantM7(ConstitutiveModel):
             jacobian2 /= unit_conv
 
             transposed_array = jacobian2
-                
-            elastic_strain =  np.linalg.solve(jacobian2, stressNew)
+            
+            
+            # BPF: Ignoring elastic strain (not needed for now)
+            #elastic_strain =  np.linalg.solve(jacobian2, stressNew)
+            elastic_strain = np.zeros_like(stressNew)
 
             return stressNew, stateNew, DDSDDE, elastic_strain
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -905,13 +908,14 @@ class BazantM7(ConstitutiveModel):
         consistent_tangent_mf = torch.zeros((6, 6), dtype=torch.float, device=self._device)
         temp_order = np.array([0, 1, 2, 3, 5, 4])
         
-        for i in range(6):
-            for j in range(6):
-                if i >= 3:
-                    DDSDDE[i][j] = DDSDDE[i][j]*np.sqrt(2)
-                if j >= 3:
-                    DDSDDE[i][j] = DDSDDE[i][j]*np.sqrt(2)
-                consistent_tangent_mf[temp_order[i]][temp_order[j]] = DDSDDE[i][j]
+        # BPF: Ignoring consistent tangent modulus (not needed for now)
+        #for i in range(6):
+        #    for j in range(6):
+        #        if i >= 3:
+        #            DDSDDE[i][j] = DDSDDE[i][j]*np.sqrt(2)
+        #        if j >= 3:
+        #            DDSDDE[i][j] = DDSDDE[i][j]*np.sqrt(2)
+        #        consistent_tangent_mf[temp_order[i]][temp_order[j]] = DDSDDE[i][j]
             
 #        print ('----------consistent_tangent_mf----------\n')
 #        transposed_array = consistent_tangent_mf
