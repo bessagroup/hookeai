@@ -95,7 +95,9 @@ def gen_specimen_local_dataset(specimen_data_path,
     if not is_file_found:
         raise RuntimeError(f'Data set file has not been found in data set '
                            f'directory:\n\n'
-                           f'{dataset_directory}')
+                           f'{dataset_directory}\n\n'
+                           f'Make sure that is_store_local_paths=True in '
+                           f'in MaterialModelFinder forward propagation.')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Display results
     if is_verbose:
