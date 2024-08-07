@@ -486,6 +486,12 @@ if __name__ == "__main__":
             specimen_history_paths.append(
                 os.path.join(os.path.normpath(specimen_history_dir), filename))
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Check specimen history time step files
+    if len(specimen_history_paths) == 0:
+        raise RuntimeError('No specimen history time step files (.csv) have '
+                           'been found in the specimen history data '
+                           'directory:\n\n' + specimen_history_dir)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Sort specimen history time step files
     specimen_history_paths = tuple(
         sorted(specimen_history_paths,
