@@ -94,6 +94,8 @@ class StructureMaterialState:
         Get material model learnable parameters nature.
     get_element_model_recurrency(self, element_id)
         Get element constitutive model recurrent structure.
+    update_material_models_device(self, device_type)
+        Update material models Torch device.
     """
     def __init__(self, strain_formulation, problem_type, n_elem):
         """Constructor.
@@ -448,4 +450,31 @@ class StructureMaterialState:
             self._elements_is_recurrent_material[str(element_id)]
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         return is_recurrent_model
+    # -------------------------------------------------------------------------
+    def update_material_models_device(self, device_type):
+        """Update material models Torch device.
         
+        Parameters
+        ----------
+        device_type : {'cpu', 'cuda'}
+            Type of device on which torch.Tensor is allocated.
+        """
+        # Check device type
+        if device_type not in ('cpu', 'cuda'):
+            raise RuntimeError('Invalid device type.')
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Loop over material models
+        for _, model in self._material_models.items():
+            # Check model device
+            if hasattr(model, '_device_type'):
+                print('updated model device!')
+                # Update model device
+                model.set_device(device_type)
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Check model embedded material model
+            if hasattr(model, '_constitutive_model'):
+                print('updated embedded model device!')
+                # Update embedded material model device
+                model._constitutive_model.set_device(device_type)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        return

@@ -90,6 +90,8 @@ def perform_model_standard_training(specimen_data_path,
     specimen_data = torch.load(specimen_data_path)
     # Load specimen material state
     specimen_material_state = torch.load(specimen_material_state_path)
+    # Update material models device
+    specimen_material_state.update_material_models_device(device_type)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~    
     # Training of recurrent constitutive model
     model, _, _ = train_model(n_max_epochs, specimen_data,
