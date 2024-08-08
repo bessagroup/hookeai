@@ -35,6 +35,8 @@ from simulators.fetorch.element.type.tetra4 import FETetra4
 from simulators.fetorch.element.type.hexa8 import FEHexa8
 from simulators.fetorch.structure.structure_state import StructureMaterialState
 from simulators.fetorch.math.matrixops import get_problem_type_parameters
+from simulators.fetorch.material.models.standard.hardening import \
+    get_hardening_law
 from material_model_finder.data.specimen_data import SpecimenNumericalData
 from ioput.iostandard import make_directory
 #
@@ -379,24 +381,26 @@ if __name__ == "__main__":
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set case study base directory
     base_dir = ('/home/bernardoferreira/Documents/brown/projects/'
-                'darpa_project/4_global_toy_uniaxial_rc_training/')
+                'darpa_project/4_global_toy_uniaxial_specimen/'
+                '3d_toy_uniaxial_specimen_hexa8_rc_von_mises/'
+                '4_elastoplastic_E_v_s0_a/')
     # Set case study directory
-    case_study_name = 'material_finder'
+    case_study_name = 'material_model_finder'
     case_study_dir = os.path.join(os.path.normpath(base_dir),
                                   f'{case_study_name}')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set specimen name
-    specimen_name = '2D_toy_uniaxial_specimen_tri3'
+    specimen_name = '3D_toy_uniaxial_specimen_hexa8'
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set strain formulation
     strain_formulation = 'infinitesimal'
     # Set problem type
-    problem_type = 1
+    problem_type = 4
     # Get problem type parameters
     n_dim, comp_order_sym, _ = get_problem_type_parameters(problem_type)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set constitutive model name and parameters
-    model_name = 'rc_elastic'
+    model_name = 'rc_von_mises'
     if bool(re.search(r'^rc_.*$', model_name)):
         # Set constitutive model specific parameters
         if model_name == 'rc_elastic':
@@ -408,14 +412,41 @@ if __name__ == "__main__":
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Set learnable parameters
             learnable_parameters = {}
-            learnable_parameters['E'] = {'initial_value': 100.0,
-                                         'bounds': (80, 120)}
-            learnable_parameters['v'] = {'initial_value': 0.3,
-                                         'bounds': (0.2, 0.4)}
+            learnable_parameters['E'] = {'initial_value': 70.0,
+                                         'bounds': (50, 150)}
+            #learnable_parameters['v'] = {'initial_value': 0.25,
+            #                             'bounds': (0.2, 0.4)}
             # Set material constitutive model name
             material_model_name = 'elastic'
             # Set material constitutive state variables (prediction)
             state_features_out = {}
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        elif model_name == 'rc_von_mises':            
+            # Set constitutive model parameters
+            model_parameters = {
+                'elastic_symmetry': 'isotropic',
+                'E': 100, 'v': 0.3,
+                'euler_angles': (0.0, 0.0, 0.0),
+                'hardening_law': get_hardening_law('linear'),
+                'hardening_parameters': {'s0': 2.0, 'a': 2.0}}
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Set learnable parameters
+            learnable_parameters = {}
+            learnable_parameters['E'] = {'initial_value': 70.0,
+                                         'bounds': (80, 120)}
+            learnable_parameters['v'] = {'initial_value': 0.25,
+                                         'bounds': (0.2, 0.4)}
+            learnable_parameters['s0'] = {'initial_value': 4.0,
+                                          'bounds': (0.5, 5.0)}
+            learnable_parameters['a'] = {'initial_value': 4.0,
+                                         'bounds': (0.0, 5.0)}
+            # Set material constitutive model name
+            material_model_name = 'von_mises'
+            # Set material constitutive state variables (prediction)
+            state_features_out = {}
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        else:
+            raise RuntimeError('Unknown recurrent constitutive model.')
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Set parameters normalization
         is_normalized_parameters = True
