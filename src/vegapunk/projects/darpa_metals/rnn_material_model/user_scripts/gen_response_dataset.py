@@ -213,6 +213,9 @@ class MaterialResponseDatasetGenerator():
             raise RuntimeError(f'Unknown material constitutive model '
                                f'\'{model_name}\'.')
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set maximum number of sample trials
+        max_path_trials = 10
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Initialize time series data set samples
         dataset_samples = []
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -224,15 +227,30 @@ class MaterialResponseDatasetGenerator():
         for i in tqdm.tqdm(range(n_path),
                            desc='> Generating strain-stress paths: ',
                            disable=not is_verbose):
-            # Generate strain path
-            strain_comps_order, time_hist, strain_path = \
-                strain_path_generator.generate_strain_path(
-                    **strain_path_kwargs)
-            # Compute material response
-            stress_comps_order, stress_path, state_path = \
-                self.compute_stress_path(strain_comps_order, time_hist,
-                                         strain_path, constitutive_model,
-                                         state_features=state_features)
+            # Initialize number of sample trials
+            n_path_trials = 0
+            # Initialize stress response path failure flag
+            is_stress_path_fail = True
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Attempt to compute material response
+            while is_stress_path_fail:
+                # Increment number of sample trials
+                n_path_trials =+ 1
+                # Generate strain path
+                strain_comps_order, time_hist, strain_path = \
+                    strain_path_generator.generate_strain_path(
+                        **strain_path_kwargs)
+                # Compute material response
+                stress_comps_order, stress_path, state_path, \
+                    is_stress_path_fail = self.compute_stress_path(
+                        strain_comps_order, time_hist, strain_path,
+                        constitutive_model, state_features=state_features)
+                # Check maximum number of sample trials
+                if n_path_trials > max_path_trials:
+                    raise RuntimeError(f'The maximum of number of trials '
+                                       f'({max_path_trials}) to compute '
+                                       f'a material response path sample was '
+                                       f'reached without success.')
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Initialize material response path data
             response_path = {}
@@ -315,6 +333,8 @@ class MaterialResponseDatasetGenerator():
             Store each requested constitutive model state variable (key, str)
             path history as numpy.ndarray(2d) of shape
             (sequence_length, n_features).
+        is_stress_path_fail : bool
+            Stress response path failure flag.
         """
         # Set stress components order
         stress_comps_order = strain_comps_order
@@ -333,6 +353,9 @@ class MaterialResponseDatasetGenerator():
         state_variables = constitutive_model.state_init()
         # Initialize last converged material constitutive state variables
         state_variables_old = copy.deepcopy(state_variables)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Initialize stress response failure flag
+        is_stress_path_fail = False
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Loop over discrete time
         for time_idx in tqdm.tqdm(
@@ -361,8 +384,11 @@ class MaterialResponseDatasetGenerator():
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Check material state update convergence
             if state_variables['is_su_fail']:
-                raise RuntimeError('Material state update convergence '
-                                   'failure.')
+                is_stress_path_fail = True
+            # Stop computation of material response path
+            if is_stress_path_fail:
+                break
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Update last converged material constitutive state variables
             state_variables_old = copy.deepcopy(state_variables)
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -402,7 +428,7 @@ class MaterialResponseDatasetGenerator():
                     state_path[state_var][time_idx, :] = \
                         state_variables[state_var]
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        return stress_comps_order, stress_path, state_path
+        return stress_comps_order, stress_path, state_path, is_stress_path_fail
     # -------------------------------------------------------------------------
     @classmethod
     def build_tensor_from_comps(cls, n_dim, comps, comps_array,
