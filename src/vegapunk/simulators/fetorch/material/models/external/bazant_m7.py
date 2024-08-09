@@ -538,10 +538,21 @@ class BazantM7(ConstitutiveModel):
 
             sig_o = max(Ct * k_1 * (c_12_p - c_13_p * max(ev_fin, 0.0) / k_1), 0.0)
             
-            fsp = 0.5 * (1 - np.tanh(sN_fin / sT)) * (
-                    ((c_6_p * np.maximum(-sN_fin + sig_o, 0.0)) ** (-1.0) + s_0 ** (-1.0)) ** (-1.0)) + \
-                  0.5 * (1 + np.tanh(sN_fin / sT)) * (
-                          ((c_6_p * np.maximum(sig_o, 0.0)) ** (-1.0) + s_0 ** (-1.0)) ** (-1.0))
+            # Weican original code (raising division by zero warnings)
+            #fsp = 0.5 * (1 - np.tanh(sN_fin / sT)) * (
+            #        ((c_6_p * np.maximum(-sN_fin + sig_o, 0.0)) ** (-1.0) + s_0 ** (-1.0)) ** (-1.0)) + \
+            #      0.5 * (1 + np.tanh(sN_fin / sT)) * (
+            #              ((c_6_p * np.maximum(sig_o, 0.0)) ** (-1.0) + s_0 ** (-1.0)) ** (-1.0))
+            # Weican refactored code
+            fsp = np.zeros(37)
+            for i in range(37):
+                if (-sN_fin[i] + sig_o > 0):
+                    fsp[i] = fsp[i] +  0.5 * (1 - np.tanh(sN_fin[i] / sT)) * (
+                        ((c_6_p *(-sN_fin[i] + sig_o)) ** (-1.0) + s_0 ** (-1.0)) ** (-1.0))
+                if (sig_o > 0):
+                    fsp[i] = fsp[i] +  0.5 * (1 + np.tanh(sN_fin[i] / sT)) * (
+                        ((c_6_p * (sig_o) ) ** (-1.0) + s_0 ** (-1.0)) ** (-1.0))
+
 
             E_T = Ct
 
@@ -900,9 +911,14 @@ class BazantM7(ConstitutiveModel):
         
         # BPF: Converted to torch.Tensor
         state_variables['M7_microstate'] = torch.zeros((38, 5), dtype=torch.float, device=self._device)
-        for i in range(38):
-            for j in range(5):
-                state_variables['M7_microstate'][i][j] = stateNew[i*5+j]
+
+        # BPF: Handle potential state variables overflow
+        if max(stateNew) > np.finfo(np.float32).max:
+            state_variables['is_su_fail'] = True
+        else:
+            for i in range(38):
+                for j in range(5):
+                    state_variables['M7_microstate'][i][j] = stateNew[i*5+j]
 
         # BPF: Converted to torch.Tensor
         consistent_tangent_mf = torch.zeros((6, 6), dtype=torch.float, device=self._device)
