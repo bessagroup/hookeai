@@ -156,7 +156,7 @@ for line in links_input_file:
 # Initialize ABAQUS '.inp' data file content
 write_lines = []
 # Set header
-write_lines += ['ABAQUS input mesh file data required to generate mesh' + '\n']
+write_lines += ['Automatically generated ABAQUS format input file' + '\n']
 # Set node coordinates
 write_lines += ['\n' + '*Node' + '\n']
 write_lines += \
