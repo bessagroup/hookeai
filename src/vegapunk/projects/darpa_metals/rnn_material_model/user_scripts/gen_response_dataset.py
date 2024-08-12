@@ -235,7 +235,7 @@ class MaterialResponseDatasetGenerator():
             # Attempt to compute material response
             while is_stress_path_fail:
                 # Increment number of sample trials
-                n_path_trials =+ 1
+                n_path_trials += 1
                 # Generate strain path
                 strain_comps_order, time_hist, strain_path = \
                     strain_path_generator.generate_strain_path(
