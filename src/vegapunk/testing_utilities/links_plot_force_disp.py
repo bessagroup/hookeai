@@ -18,21 +18,28 @@ from ioput.plots import plot_xy_data, save_figure
 # =============================================================================
 # Summary: Generate force-displacement plot from Links simulation
 # =============================================================================
+# Set displacement multiplier (accounting for model symmetries)
+displacement_multiplier = 2.0
+# Set reaction force multiplier (accounting for model symmetries)
+reaction_multiplier = 4.0*1e-3
 # Set reaction forces node group
-reaction_node_group = 2
+reaction_node_group = 1
 # Set prescribed loading dimension (1-x, 2-y, 3-z)
-load_direction = 1
+load_direction = 2
 # Set displacement reference node label
-ref_node_label = 10
+ref_node_label = 607
 # Set Links simulation output directory
 links_output_directory = ('/home/bernardoferreira/Documents/brown/projects/'
                           'darpa_project/5_global_specimens/'
                           'rowan_specimen_tension_bv/'
-                          '2D_toy_uniaxial_specimen_quad4')
+                          '3D_toy_uniaxial_specimen_hexa8')
 # Set display figure flag
 is_stdout_display = True
 # Set save figure flag
 is_save_fig = True
+# Set displacement and reaction force units
+disp_units = 'mm'
+reac_units = 'kN'
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Check if simulation output directory exists
 if not os.path.exists(links_output_directory):
@@ -124,9 +131,15 @@ data_array = np.zeros((n_time, 2))
 data_array[:, 0] = disp_array_dim
 data_array[:, 1] = reaction_array_dim
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# Apply displacement multiplier
+data_array[:, 0] = data_array[:, 0]*displacement_multiplier
+# Apply reaction force multiplier
+data_array[:, 1] = data_array[:, 1]*reaction_multiplier
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Plot force-displacement data
 figure, axes = plot_xy_data(data_array,
-                            x_label='Displacement', y_label='Reaction force',
+                            x_label=f'Displacement ({disp_units})',
+                            y_label=f'Reaction force ({reac_units})',
                             is_latex=True)
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Display figure
