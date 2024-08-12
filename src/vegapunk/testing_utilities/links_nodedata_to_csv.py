@@ -46,7 +46,7 @@ node_data_paths = tuple(
 n_time = len(node_data_paths)
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Set '.csv' files directory
-csv_dir = os.path.join(node_data_dir, 'csv_files')
+csv_dir = os.path.join(node_data_dir, 'specimen_history_data')
 # Check existing directory
 if os.path.isdir(csv_dir):
     # Remove existing directory
