@@ -31,8 +31,8 @@ ref_node_label = 607
 # Set Links simulation output directory
 links_output_directory = ('/home/bernardoferreira/Documents/brown/projects/'
                           'darpa_project/5_global_specimens/'
-                          'rowan_specimen_tension_bv/'
-                          '3D_toy_uniaxial_specimen_hexa8')
+                          'rowan_specimen_tension_bv_hexa8_rc_von_mises/'
+                          'links_simulation/3D_rowan_specimen_tension_bv')
 # Set display figure flag
 is_stdout_display = True
 # Set save figure flag

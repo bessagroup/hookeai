@@ -10,8 +10,8 @@ import pandas
 # Set Links simulation output directory
 links_output_directory = ('/home/bernardoferreira/Documents/brown/projects/'
                           'darpa_project/5_global_specimens/'
-                          'rowan_specimen_tension_bv/'
-                          '2D_toy_uniaxial_specimen_quad4')
+                          'rowan_specimen_tension_bv_hexa8_rc_von_mises/'
+                          'links_simulation/3D_rowan_specimen_tension_bv')
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Check if simulation output directory exists
 if not os.path.exists(links_output_directory):

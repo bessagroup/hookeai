@@ -158,9 +158,9 @@ def set_default_model_parameters(model_directory, device_type='cpu'):
 if __name__ == "__main__":
     # Set case study base directory
     base_dir = ('/home/bernardoferreira/Documents/brown/projects/'
-                'darpa_project/4_global_toy_uniaxial_specimen/'
-                '2d_toy_uniaxial_specimen_tri3_rc_elastic/'
-                '0_elastic_properties_E/')
+                'darpa_project/5_global_specimens/'
+                'rowan_specimen_tension_bv_hexa8_rc_von_mises/'
+                'specimen_analysis')
     # Set case study directory
     case_study_name = 'material_model_finder'
     case_study_dir = os.path.join(os.path.normpath(base_dir),

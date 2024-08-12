@@ -9,8 +9,8 @@ import numpy as np
 # Set Links simulation input data file
 links_input_file_path = ('/home/bernardoferreira/Documents/brown/projects/'
                          'darpa_project/5_global_specimens/'
-                         'rowan_specimen_tension_bv/'
-                         '2D_toy_uniaxial_specimen_quad4.dat')
+                         'rowan_specimen_tension_bv_hexa8_rc_von_mises/'
+                         'links_simulation/3D_rowan_specimen_tension_bv.dat')
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Check if simulation input data file exists
 if not os.path.isfile(links_input_file_path):

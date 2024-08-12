@@ -381,16 +381,16 @@ if __name__ == "__main__":
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set case study base directory
     base_dir = ('/home/bernardoferreira/Documents/brown/projects/'
-                'darpa_project/4_global_toy_uniaxial_specimen/'
-                '3d_toy_uniaxial_specimen_hexa8_rc_von_mises/'
-                '4_elastoplastic_E_v_s0_a/')
+                'darpa_project/5_global_specimens/'
+                'rowan_specimen_tension_bv_hexa8_rc_von_mises/'
+                'specimen_analysis')
     # Set case study directory
     case_study_name = 'material_model_finder'
     case_study_dir = os.path.join(os.path.normpath(base_dir),
                                   f'{case_study_name}')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set specimen name
-    specimen_name = '3D_toy_uniaxial_specimen_hexa8'
+    specimen_name = '3D_rowan_specimen_tension_bv'
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set strain formulation
     strain_formulation = 'infinitesimal'
@@ -425,21 +425,25 @@ if __name__ == "__main__":
             # Set constitutive model parameters
             model_parameters = {
                 'elastic_symmetry': 'isotropic',
-                'E': 100, 'v': 0.3,
+                'E': 110e3, 'v': 0.33,
                 'euler_angles': (0.0, 0.0, 0.0),
-                'hardening_law': get_hardening_law('linear'),
-                'hardening_parameters': {'s0': 2.0, 'a': 2.0}}
+                'hardening_law': get_hardening_law('nadai_ludwik'),
+                'hardening_parameters':
+                    {'s0': 900,
+                     'a': 700,
+                     'b': 0.5,
+                     'ep0': 1e-5}}
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Set learnable parameters
             learnable_parameters = {}
-            learnable_parameters['E'] = {'initial_value': 70.0,
-                                         'bounds': (80, 120)}
-            learnable_parameters['v'] = {'initial_value': 0.25,
+            learnable_parameters['E'] = {'initial_value': 110e3,
+                                         'bounds': (80e3, 120e3)}
+            learnable_parameters['v'] = {'initial_value': 0.33,
                                          'bounds': (0.2, 0.4)}
-            learnable_parameters['s0'] = {'initial_value': 4.0,
-                                          'bounds': (0.5, 5.0)}
-            learnable_parameters['a'] = {'initial_value': 4.0,
-                                         'bounds': (0.0, 5.0)}
+            learnable_parameters['s0'] = {'initial_value': 900,
+                                          'bounds': (500, 1500)}
+            learnable_parameters['a'] = {'initial_value': 700,
+                                         'bounds': (500, 1000)}
             # Set material constitutive model name
             material_model_name = 'von_mises'
             # Set material constitutive state variables (prediction)
