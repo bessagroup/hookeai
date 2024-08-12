@@ -18,15 +18,15 @@ from ioput.plots import plot_xy_data
 # =============================================================================
 # Set independent variable bounds
 x_lbound = 0.0
-x_ubound = 1.0
+x_ubound = 2.0
 # Set number of discretization points
-n_point = 10
+n_point = 200
 # Set display data flag
-is_stdout_display_data = True
+is_stdout_display_data = False
 # Set display figure flag
 is_stdout_display_fig = True
 # Set save file flag
-is_save_file = False
+is_save_file = True
 # Set save directory
 save_dir = '/home/bernardoferreira/Desktop/test_gid'
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
