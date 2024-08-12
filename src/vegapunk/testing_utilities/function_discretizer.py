@@ -1,0 +1,91 @@
+# Standard
+import sys
+import pathlib
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# Add project root directory to sys.path
+root_dir = str(pathlib.Path(__file__).parents[1])
+if root_dir not in sys.path:
+    sys.path.insert(0, root_dir)
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+import os
+# Third-party
+import numpy as np
+import matplotlib.pyplot as plt
+# Local
+from ioput.plots import plot_xy_data
+# =============================================================================
+# Summary: Discretize scalar-valued scalar function
+# =============================================================================
+# Set independent variable bounds
+x_lbound = 0.0
+x_ubound = 1.0
+# Set number of discretization points
+n_point = 10
+# Set display data flag
+is_stdout_display_data = True
+# Set display figure flag
+is_stdout_display_fig = True
+# Set save file flag
+is_save_file = False
+# Set save directory
+save_dir = '/home/bernardoferreira/Desktop/test_gid'
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# Set function option
+fun_option = ('custom', 'linear_hardening', 'nadai_ludwik_hardening')[2]
+# Set function
+if fun_option == 'linear_hardening':
+    pass
+elif fun_option == 'nadai_ludwik_hardening':
+    # Set parameters
+    s0 = 900
+    a = 700
+    b = 0.5
+    ep0 = 1e-5
+    # Set function
+    def fun(x):
+        return s0 + a*((x + ep0)**b)
+else:
+    pass
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# Initialize discretized data array
+data_array = np.zeros((n_point, 2))
+# Set independent variables discrete points
+x = np.linspace(x_lbound, x_ubound, n_point)
+# Compute function discrete values
+y = fun(x)
+# Assemble discretized data
+data_array[:, 0] = x
+data_array[:, 1] = y
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# Print discretized function to stdout
+if is_stdout_display_data:
+    print('\n' + f'Discretizing function: {fun_option}')
+    print('\n' + 'Number of discretization points: ' + f'{n_point:d}')
+    print('\n' + 'Discrete values:' + '\n')
+    print(f'{"x":^15s} {"y":^15s}' + '\n' + f'{32*"-":32s}')
+    print(''.join(f'{data_array[i, 0]:15.8e} {data_array[i, 1]:15.8e}' + '\n'
+          for i in range(n_point)))
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# Plot discretized function data
+if is_stdout_display_fig:
+    # Plot discretized function
+    figure, axes = plot_xy_data(data_array, title=f'{fun_option}',
+                                x_label='x', y_label='y', is_latex=True)
+    # Display figure
+    plt.show()
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# Save discretized function to file
+if is_save_file:
+    # Set file path
+    file_path = os.path.join(save_dir, 'discretized_function.dat')
+    # Open data file
+    data_file = open(file_path, 'w')
+    # Write data file
+    data_file.writelines(
+        [f'Discretizing function: {fun_option}' + '\n\n',
+         'Number of discretization points: ' + f'{n_point:d}' + '\n\n',
+         'Discrete values:' + '\n'] \
+        + [''.join(f'{data_array[i, 0]:15.8e} {data_array[i, 1]:15.8e}' + '\n'
+           for i in range(n_point))])
+    # Close data file
+    data_file.close()

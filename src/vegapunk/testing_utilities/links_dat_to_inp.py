@@ -1,10 +1,8 @@
 # Standard
 import os
 import re
-import shutil
 # Third-party
 import numpy as np
-import pandas
 # =============================================================================
 # Summary: Convert Links '.dat' file to Abaqus '.inp' file
 # =============================================================================
