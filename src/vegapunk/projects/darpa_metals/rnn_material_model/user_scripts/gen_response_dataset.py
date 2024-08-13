@@ -35,7 +35,7 @@ import tqdm
 import matplotlib.pyplot as plt
 # Local
 from rnn_base_model.data.time_dataset import TimeSeriesDatasetInMemory, \
-    get_time_series_data_loader, save_dataset
+    TimeSeriesDataset, get_time_series_data_loader, save_dataset
 from projects.darpa_metals.rnn_material_model.strain_paths.interface import \
     StrainPathGenerator
 from projects.darpa_metals.rnn_material_model.strain_paths.random_path import \
@@ -83,9 +83,14 @@ class MaterialResponseDatasetGenerator():
     
     Methods
     -------
-    generate_response_dataset(self, n_path, strain_path_type, \
+    generate_response_dataset(self, n_path, strain_path_type,
                               strain_path_kwargs, model_name, \
-                              model_parameters)
+                              model_parameters, state_features={}, \
+                              is_in_memory_dataset=True, \
+                              dataset_directory=None, \
+                              dataset_basename=None, \
+                              save_dir=None, is_save_fig=False, \
+                              is_verbose=False)
         Generate strain-stress material response path data set.
     compute_stress_path(self, strain_comps, time_hist, strain_path, \
                         constitutive_model)
@@ -94,7 +99,8 @@ class MaterialResponseDatasetGenerator():
         Build strain/stress tensor from given components.
     store_tensor_comps(comps, tensor)
         Store strain/stress tensor components in array.
-    gen_response_dataset_from_csv(self, response_file_paths, save_dir=None, \
+    gen_response_dataset_from_csv(self, response_file_paths, \
+                                  is_in_memory_dataset=True, save_dir=None, \
                                   is_save_fig=False, is_verbose=False)
     plot_material_response_path(cls, strain_formulation, n_dim, \
                                 strain_comps_order, strain_path, \
@@ -145,6 +151,9 @@ class MaterialResponseDatasetGenerator():
     def generate_response_dataset(self, n_path, strain_path_type,
                                   strain_path_kwargs, model_name,
                                   model_parameters, state_features={},
+                                  is_in_memory_dataset=True,
+                                  dataset_directory=None,
+                                  dataset_basename=None,
                                   save_dir=None, is_save_fig=False,
                                   is_verbose=False):
         """Generate strain-stress material response path data set.
@@ -166,6 +175,14 @@ class MaterialResponseDatasetGenerator():
             corresponding dimensionality (item, int) for which the path history
             is additionally included in the data set. Unavailable state
             variables are ignored.
+        is_in_memory_dataset : bool, default=True
+            If True, then generate in-memory time series data set, otherwise
+            time series data set samples are stored in local directory.
+        dataset_directory : str, default=None
+            Directory where the time series data set is stored (all data set
+            samples files). Required if is_in_memory_dataset=False.
+        dataset_basename : str, default=None
+            Data set file base name. Required if is_in_memory_dataset=False.
         save_dir : str, default=None
             Directory where figure is saved. If None, then figure is saved in
             current working directory.
@@ -185,6 +202,18 @@ class MaterialResponseDatasetGenerator():
         if is_verbose:
             print('\nGenerate strain-stress material response path data set'
                   '\n------------------------------------------------------')
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Check data set parameters requirements
+        if not is_in_memory_dataset:
+            # Check data set directory
+            if dataset_directory is None:
+                raise RuntimeError('Time series data set directory must be '
+                                   'provided when is_in_memory_dataset=False.')
+            # Check data set file base name
+            if dataset_basename is None:
+                raise RuntimeError('Time series data set file base name must '
+                                   'be provided when '
+                                   'is_in_memory_dataset=False.')
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Initialize strain path generator
         if strain_path_type == 'random':
@@ -217,7 +246,10 @@ class MaterialResponseDatasetGenerator():
         max_path_trials = 10
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Initialize time series data set samples
-        dataset_samples = []
+        if is_in_memory_dataset:
+            dataset_samples = []
+        else:
+            dataset_sample_files = []
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         if is_verbose:
             print(f'\n> Strain paths type: {strain_path_type}\n')
@@ -268,8 +300,19 @@ class MaterialResponseDatasetGenerator():
             for state_var in state_path.keys():
                 response_path[state_var] = torch.tensor(state_path[state_var],
                                                         dtype=torch.float)
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Store strain-stress material response path
-            dataset_samples.append(response_path)
+            if is_in_memory_dataset:
+                # Store material response path (in memory)
+                dataset_samples.append(response_path)
+            else:
+                # Set material response path file path
+                sample_file_path = os.path.join(dataset_directory,
+                                                f'ss_response_path_{i}.pt')
+                # Store material response path (local directory)
+                torch.save(response_path, sample_file_path)
+                # Append material response path file path
+                dataset_sample_files.append(sample_file_path)
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Plot material response path
             if is_save_fig and os.path.isdir(save_dir):
@@ -288,7 +331,12 @@ class MaterialResponseDatasetGenerator():
             print('\n> Finished strain-stress paths generation process!\n')
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Create strain-stress material response path data set
-        dataset = TimeSeriesDatasetInMemory(dataset_samples)
+        if is_in_memory_dataset:
+            dataset = TimeSeriesDatasetInMemory(dataset_samples)
+        else:
+            dataset = TimeSeriesDataset(dataset_directory,
+                                        dataset_sample_files,
+                                        dataset_basename=dataset_basename)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Compute total generation time and average generation time per path
         total_time_sec = time.time() - start_time_sec
@@ -495,7 +543,8 @@ class MaterialResponseDatasetGenerator():
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         return comps_array
     # -------------------------------------------------------------------------
-    def gen_response_dataset_from_csv(self, response_file_paths, save_dir=None,
+    def gen_response_dataset_from_csv(self, response_file_paths,
+                                      is_in_memory_dataset=True, save_dir=None,
                                       is_save_fig=False, is_verbose=False):
         """Generate strain-stress path data set from set of .csv files.
         
@@ -503,6 +552,14 @@ class MaterialResponseDatasetGenerator():
         ----------
         response_file_paths : tuple
             Strain-stress response paths data files paths (.csv).
+        is_in_memory_dataset : bool, default=True
+            If True, then generate in-memory time series data set, otherwise
+            time series data set samples are stored in local directory.
+        dataset_directory : str, default=None
+            Directory where the time series data set is stored (all data set
+            samples files). Required if is_in_memory_dataset=False.
+        dataset_basename : str, default=None
+            Data set file base name. Required if is_in_memory_dataset=False.
         save_dir : str, default=None
             Directory where figure is saved. If None, then figure is saved in
             current working directory.
@@ -522,7 +579,19 @@ class MaterialResponseDatasetGenerator():
         if is_verbose:
             print('\nGenerate strain-stress material response path data set'
                   '\n------------------------------------------------------')
-        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~     
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Check data set parameters requirements
+        if not is_in_memory_dataset:
+            # Check data set directory
+            if dataset_directory is None:
+                raise RuntimeError('Time series data set directory must be '
+                                   'provided when is_in_memory_dataset=False.')
+            # Check data set file base name
+            if dataset_basename is None:
+                raise RuntimeError('Time series data set file base name must '
+                                   'be provided when '
+                                   'is_in_memory_dataset=False.')
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Get strain and stress components order
         if self._strain_formulation == 'infinitesimal':
             strain_comps_order = self._comp_order_sym
@@ -557,7 +626,10 @@ class MaterialResponseDatasetGenerator():
             vf_path_valid = []
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ^ SECTION TO BE REMOVED
         # Initialize time series data set samples
-        dataset_samples = []
+        if is_in_memory_dataset:
+            dataset_samples = []
+        else:
+            dataset_sample_files = []
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         if is_verbose:
             print('\n> Starting strain-stress paths reading process...\n')
@@ -623,7 +695,17 @@ class MaterialResponseDatasetGenerator():
             if is_invalid_path:
                 continue
             else:
-                dataset_samples.append(response_path)
+                if is_in_memory_dataset:
+                    # Store material response path (in memory)
+                    dataset_samples.append(response_path)
+                else:
+                    # Set material response path file path
+                    sample_file_path = os.path.join(dataset_directory,
+                                                    f'ss_response_path_{i}.pt')
+                    # Store material response path (local directory)
+                    torch.save(response_path, sample_file_path)
+                    # Append material response path file path
+                    dataset_sample_files.append(sample_file_path)
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ v SECTION TO BE REMOVED
             # Store valid response path volume fraction
             if is_input_volume_fraction:
@@ -661,7 +743,12 @@ class MaterialResponseDatasetGenerator():
                   f'({100*ratio_invalid:>.1f}%)\n')
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Create strain-stress material response path data set
-        dataset = TimeSeriesDatasetInMemory(dataset_samples)
+        if is_in_memory_dataset:
+            dataset = TimeSeriesDatasetInMemory(dataset_samples)
+        else:
+            dataset = TimeSeriesDataset(dataset_directory,
+                                        dataset_sample_files,
+                                        dataset_basename=dataset_basename)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Get number of strain-stress paths
         n_path = len(dataset)
@@ -1596,7 +1683,9 @@ def generate_dataset_plots(strain_formulation, n_dim, dataset,
 # =============================================================================
 if __name__ == '__main__':
     # Set data set type
-    dataset_type = ('training', 'validation', 'testing_id', 'testing_od')[3]
+    dataset_type = ('training', 'validation', 'testing_id', 'testing_od')[2]
+    # Set data set storage type
+    is_in_memory_dataset = False
     # Set save dataset plots flags
     is_save_dataset_plots = True
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -1766,7 +1855,10 @@ if __name__ == '__main__':
         # Generate data set
         dataset = dataset_generator.generate_response_dataset(
             n_path, strain_path_type, strain_path_kwargs, model_name,
-            model_parameters, state_features=state_features, is_verbose=True)
+            model_parameters, state_features=state_features,
+            is_in_memory_dataset=is_in_memory_dataset,
+            dataset_directory=dataset_directory,
+            dataset_basename=dataset_basename, is_verbose=True)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Store data set
         datasets.append(dataset)

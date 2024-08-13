@@ -4,6 +4,8 @@ Classes
 -------
 TimeSeriesDatasetInMemory(torch.utils.data.Dataset)
     Time series data set (in-memory storage only).
+TimeSeriesDataset(torch.utils.data.Dataset)
+    Time series data set.
 
 Functions
 ---------
@@ -214,8 +216,17 @@ def change_dataset_features_labels(dataset, features_label_map):
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Loop over samples
         for i in range(len(dataset)):
+            # Get sample
+            sample = dataset[i]
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Change feature label
-            dataset[i][new_label] = dataset[i].pop(old_label)
+            sample[new_label] = sample.pop(old_label)
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Update data set sample
+            if isinstance(dataset, TimeSeriesDataset):
+                dataset.update_dataset_sample(i, sample)
+            else:
+                dataset[i] = sample      
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     return dataset
 # =============================================================================
@@ -251,8 +262,17 @@ def add_dataset_feature_init(dataset, feature_label, feature_init):
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Loop over samples
     for i in range(len(dataset)):
-        # Change feature label
-        dataset[i][str(feature_label)] = feature_init
+        # Get sample
+        sample = dataset[i]
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Add new feature
+        sample[str(feature_label)] = feature_init
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Update data set sample
+        if isinstance(dataset, TimeSeriesDataset):
+            dataset.update_dataset_sample(i, sample)
+        else:
+            dataset[i] = sample
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     return dataset
 # =============================================================================
@@ -294,21 +314,36 @@ def concatenate_dataset_features(dataset, new_feature_label,
             raise RuntimeError(f'The feature "{label}" cannot be concatenated '
                                f'because it does not exist in the data set.')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Set data set storage type
+    if isinstance(dataset, TimeSeriesDataset):
+        is_in_memory_dataset = False
+    else:
+        is_in_memory_dataset = True
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Loop over samples
     for i in range(len(dataset)):
+        # Get sample
+        sample = dataset[i]
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Concatenate features
         if len(cat_features_labels) > 1:
-            dataset[i][str(new_feature_label)] = torch.cat(
-                [dataset[i][label] for label in cat_features_labels], dim=1)
+            sample[str(new_feature_label)] = torch.cat(
+                [sample[label] for label in cat_features_labels], dim=1)
         else:
-            dataset[i][str(new_feature_label)] = \
-                dataset[i][cat_features_labels[0]]
+            sample[str(new_feature_label)] = \
+                sample[cat_features_labels[0]]
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        # Remove concatenated features
-        if is_remove_features:
+        # Remove concatenated features (in-memory data set only)
+        if is_remove_features and is_in_memory_dataset:
             # Loop over concatenated features
             for label in cat_features_labels:
-                dataset[i].pop(label)
+                sample.pop(label)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Update data set sample
+        if isinstance(dataset, TimeSeriesDataset):
+            dataset.update_dataset_sample(i, sample)
+        else:
+            dataset[i] = sample
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     return dataset
 # =============================================================================
@@ -341,7 +376,7 @@ def write_time_series_dataset_summary_file(
     summary_data['targets'] = targets
     summary_data['Total generation time'] = \
         str(datetime.timedelta(seconds=int(total_time_sec)))
-    summary_data['Avg. generation time per graph'] = \
+    summary_data['Avg. generation time per path'] = \
         str(datetime.timedelta(seconds=int(avg_time_sample)))
     # Set summary title
     summary_title = 'Summary: Time series data set generation'
@@ -356,7 +391,7 @@ class TimeSeriesDatasetInMemory(torch.utils.data.Dataset):
     
     Attributes
     ----------
-    dataset_samples : list
+    _dataset_samples : list
         Time series data set samples data. Each sample is stored as a
         dictionary where each feature (key, str) data is a torch.Tensor(2d) of
         shape (sequence_length, n_features).
@@ -413,3 +448,260 @@ class TimeSeriesDatasetInMemory(torch.utils.data.Dataset):
         sample_data = self._dataset_samples[index]
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         return sample_data
+# =============================================================================
+class TimeSeriesDataset(torch.utils.data.Dataset):
+    """Time series data set.
+    
+    Attributes
+    ----------
+    _dataset_directory : str
+        Directory where the time series data set is stored (all data set
+        samples files).
+    _dataset_sample_files : list[str]
+        Time series data set samples files paths. Each sample file contains a
+        dictionary where each feature (key, str) data is a torch.Tensor(2d) of
+        shape (sequence_length, n_features).
+    _dataset_basename : str
+        Data set file base name.
+    
+    Methods
+    -------
+    __len__(self)
+        Return size of data set (number of samples).
+    __getitem__(self, index)
+        Return data set sample from corresponding index.
+    update_dataset_sample(self, index, time_series)
+        Update data set sample time series data.
+    get_dataset_directory(self)
+        Get directory where time series data set is stored.
+    get_dataset_sample_files(self)
+        Get time series data set samples files paths.
+    set_dataset_basename(self, dataset_basename)
+        Set data set file base name.
+    get_dataset_basename(self)
+        Get data set file base name.
+    update_dataset_file_internal_directory(dataset_file_path, \
+                                           new_directory, \
+                                           is_reload_data=False)
+        Update internal directory of stored data set in provided file.
+    _update_dataset_directory(self, dataset_directory, is_reload_data=False)
+        Update directory where time series data set is stored.
+    """
+    def __init__(self, dataset_directory, dataset_sample_files,
+                 dataset_basename='time_series_dataset'):
+        """Constructor.
+        
+        Parameters
+        ----------
+        dataset_directory : str
+            Directory where the time series data set is stored (all data set
+            samples files).
+        dataset_sample_files : list[str]
+            Time series data set samples files paths. Each sample file contains
+            a dictionary where each feature (key, str) data is a
+            torch.Tensor(2d) of shape (sequence_length, n_features).
+        dataset_basename : str, default='time_series_dataset'
+            Data set file base name.
+        dataset_samples : list[dict]
+            Time series data set samples data. Each sample is stored as a
+            dictionary where each feature (key, str) data is a torch.Tensor(2d)
+            of shape (sequence_length, n_features).
+        """
+        # Initialize data set from base class
+        super(TimeSeriesDataset, self).__init__()
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set data set directory
+        if not os.path.isdir(dataset_directory):
+            raise RuntimeError('The time series data set directory has not '
+                               'been found:\n\n' + dataset_directory)
+        else:
+            self._dataset_directory = os.path.normpath(dataset_directory)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Check data set sample files
+        for file_path in dataset_sample_files:
+            # Check if sample file exists
+            if not os.path.isfile(file_path):
+                raise RuntimeError('Time series data set sample file has not '
+                                   'been found:\n\n' + file_path)
+            elif os.path.dirname(file_path) \
+                    != os.path.normpath(dataset_directory):
+                raise RuntimeError('Time series data set sample file is not '
+                                   'in dataset directory:\n\n'
+                                   + dataset_directory)
+        # Store data set samples file paths
+        self._dataset_sample_files = dataset_sample_files
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set data set file base name
+        self._dataset_basename = str(dataset_basename)
+    # -------------------------------------------------------------------------
+    def __len__(self):
+        """Return size of data set (number of samples).
+        
+        Returns
+        -------
+        n_sample : int
+            Data set size (number of samples).
+        """
+        return len(self._dataset_sample_files)
+    # -------------------------------------------------------------------------
+    def __getitem__(self, index):
+        """Return data set sample from corresponding index.
+        
+        Parameters
+        ----------
+        index : int
+            Index of returned data set sample (index must be in [0, n_sample]).
+            
+        Returns
+        -------
+        time_series : dict
+            Data set sample defined as a dictionary where each feature
+            (key, str) data is a torch.Tensor(2d) of shape
+            (sequence_length, n_features).
+        """
+        # Get data set sample
+        time_series = torch.load(self._dataset_sample_files[index])
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        return time_series
+    # -------------------------------------------------------------------------
+    def update_dataset_sample(self, index, time_series):
+        """Update data set sample time series data.
+        
+        Parameters
+        ----------
+        index : int
+            Index of returned data set sample (index must be in [0, n_sample]).
+        time_series : dict
+            Data set sample defined as a dictionary where each feature
+            (key, str) data is a torch.Tensor(2d) of shape
+            (sequence_length, n_features).
+        """
+        # Update data set sample time series data
+        torch.save(time_series, self._dataset_sample_files[index])
+    # -------------------------------------------------------------------------
+    def get_dataset_directory(self):
+        """Get directory where time series data set is stored.
+        
+        Returns
+        -------
+        dataset_directory : str
+            Directory where the time series data set is stored (all data set
+            samples files).
+        """
+        return self._dataset_directory
+    # -------------------------------------------------------------------------
+    def get_dataset_sample_files(self):
+        """Get time series data set samples files paths.
+        
+        Returns
+        -------
+        dataset_sample_files : list[str]
+            Time series data set samples files paths. Each sample file contains
+            a dictionary where each feature (key, str) data is a
+            torch.Tensor(2d) of shape (sequence_length, n_features).
+        """
+        return self._dataset_sample_files
+    # -------------------------------------------------------------------------
+    def set_dataset_basename(self, dataset_basename):
+        """Set data set file base name.
+        
+        Parameters
+        ----------
+        dataset_basename : str
+            Data set file base name.
+        """
+        self._dataset_basename = str(dataset_basename)
+    # -------------------------------------------------------------------------
+    def get_dataset_basename(self):
+        """Get data set file base name.
+        
+        Returns
+        -------
+        dataset_basename : str
+            Data set file base name.
+        """
+        return self._dataset_basename
+    # -------------------------------------------------------------------------
+    @staticmethod
+    def update_dataset_file_internal_directory(
+        dataset_file_path, new_directory, is_reload_data=False):
+        """Update internal directory of stored data set in provided file.
+        
+        Update is only performed if the new directory does not match the
+        internal directory of the stored data set.
+        
+        Parameters
+        ----------
+        dataset_file_path : str
+            Data set file path.
+        new_directory : str
+            Data set new directory.
+        is_reload_data : bool, default=False
+            Reload and store data set samples in attribute
+            dataset_samples_data. Only effective if is_store_dataset=True.
+        """
+        # Check new data set directory
+        if not os.path.isdir(new_directory):
+            raise RuntimeError('The new data set directory has not been '
+                               'found:\n\n' + new_directory)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Load PyTorch data set
+        loaded_dataset = load_dataset(dataset_file_path)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Check data set type
+        if isinstance(loaded_dataset, torch.utils.data.Subset):
+            # Get parent data set
+            dataset = loaded_dataset.dataset
+        elif isinstance(loaded_dataset, TimeSeriesDataset):
+            # Get data set
+            dataset = loaded_dataset
+        else:
+            raise RuntimeError('The data set must be either '
+                               'torch.utils.data.Subset (extracted from '
+                               'TimeSeriesDataset data set) or '
+                               'TimeSeriesDataset data set.')
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Get loaded PyTorch data set internal directory
+        stored_directory = dataset.get_dataset_directory()
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Update PyTorch data set file if the new directory does not match the
+        # internal directory of the loaded data set
+        if stored_directory != new_directory:
+            # Update directory of PyTorch data set
+            dataset._update_dataset_directory(
+                new_directory, is_reload_data=is_reload_data)
+            # Save updated PyTorch data set (overwrite existing data set file)
+            with open(dataset_file_path, 'wb') as dataset_file:
+                pickle.dump(loaded_dataset, dataset_file)
+    # -------------------------------------------------------------------------
+    def _update_dataset_directory(self, dataset_directory):
+        """Update directory where time series data set is stored.
+        
+        Stored data set samples files paths directory is updated according
+        with the new directory.
+        
+        Parameters
+        ----------
+        dataset_directory : str
+            Directory where the time series data set is stored (all data set
+            samples files).
+        """
+        # Set new data set directory
+        if not os.path.isdir(dataset_directory):
+            raise RuntimeError('The new time series data set directory has '
+                               'not been found:\n\n' + dataset_directory)
+        else:
+            self._dataset_directory = dataset_directory
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Loop over samples files
+        for i, file_path in enumerate(self._dataset_sample_files):
+            # Set new sample file path (update directory)
+            new_file_path = os.path.join(os.path.normpath(dataset_directory),
+                                         os.path.basename(file_path))
+            # Update sample file path
+            if not os.path.isfile(new_file_path):
+                raise RuntimeError('Time series data set sample file is not '
+                                   'in new dataset directory:\n\n'
+                                   + dataset_directory)
+            else:
+                self._dataset_sample_files[i] = new_file_path
