@@ -26,16 +26,17 @@ dataset_directory = os.path.dirname(im_dataset_file_path)
 # Set TimeSeriesDataset data set file basename
 dataset_basename = 'ss_paths_dataset'
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-# Check TimeSeriesDatasetInMemory data set
-if not isinstance(im_dataset_file_path, TimeSeriesDatasetInMemory):
-    raise RuntimeError('Data set file path does not contain a '
-                       'TimeSeriesDatasetInMemory data set.')
-# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Initialize time series data set samples
 dataset_sample_files = []
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~         
 # Load TimeSeriesDatasetInMemory data set
 im_dataset = load_dataset(im_dataset_file_path)
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# Check TimeSeriesDatasetInMemory data set
+if not isinstance(im_dataset, TimeSeriesDatasetInMemory):
+    raise RuntimeError('Data set file path does not contain a '
+                       'TimeSeriesDatasetInMemory data set.')
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Loop over samples
 for i in range(len(im_dataset)):
     # Get sample
