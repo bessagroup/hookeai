@@ -853,6 +853,9 @@ class MaterialResponseDatasetGenerator():
             strain_path = [strain_path,]
             stress_path = [stress_path,]
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Store file basename
+        basename = filename
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Plot strain-stress path
         if is_plot_strain_stress_paths and n_path == 1:
             # Loop over path types
@@ -868,7 +871,7 @@ class MaterialResponseDatasetGenerator():
                     # Set path
                     path = strain_path
                     # Set filename
-                    filename = filename + '_strain'
+                    filename = basename + '_strain'
                 else:
                     # Set components
                     comps = stress_comps_order
@@ -879,7 +882,7 @@ class MaterialResponseDatasetGenerator():
                     # Set path
                     path = stress_path
                     # Set filename
-                    filename = filename + '_stress'
+                    filename = basename + '_stress'
                 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                 # Initialize data array
                 data_xy = np.zeros((n_time_max, 2*len(comps)))
@@ -949,7 +952,7 @@ class MaterialResponseDatasetGenerator():
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Save figure
             if is_save_fig:
-                save_figure(figure, filename + '_eq_strain_stress',
+                save_figure(figure, basename + '_eq_strain_stress',
                             format='pdf', save_dir=save_dir)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Display figure
