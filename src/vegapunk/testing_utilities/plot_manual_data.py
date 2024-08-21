@@ -17,9 +17,11 @@ from ioput.plots import plot_xy_data, save_figure
 # =============================================================================
 # Set plots directory
 plots_dir = ('/home/bernardoferreira/Documents/brown/projects/'
-             'darpa_project/5_global_specimens/memory_bottleneck')
+             'darpa_project/5_global_specimens/memory_bottleneck/'
+             'naive_vs_nested_vmap/')
 # Set fixed parameters
-n_time = 5
+n_time = 1000
+n_elem = 1
 n_params = 1
 # Set file name
 filename = f'memory_vs_ne_for_nt_{n_time}_np_{n_params}'
@@ -27,11 +29,11 @@ filename = f'memory_vs_ne_for_nt_{n_time}_np_{n_params}'
 # Set data array
 data_array = np.zeros((5, 4))
 data_array[:, 0] = [1, 10, 100, 1000, 10000]
-data_array[:, 1] = [12.8, 16.4, 55.8, 390.3, 4184]
+data_array[:, 1] = [417.45, 971.25, 6522.08, None, None]
 data_array[:, 2] = data_array[:, 0]
-data_array[:, 3] = [12.2, 12.5, 13.0, 19.3, 72.6]
+data_array[:, 3] = [365.85, 367.58, 393.57, 726.88, 4048.98]
 # Set data labels
-data_labels = ('full_graph', 'memory_efficient')
+data_labels = ('Forward', 'Forward VMAP')
 # Set title
 title = (f'$n_e = \Delta$ / $n_t = {n_time}$ / $n_p = {n_params}$')
 # Set axes labels
@@ -42,7 +44,7 @@ x_lims = (None, None)
 y_lims = (None, None)
 # Set axes scale
 x_scale = 'log'
-y_scale = 'log'
+y_scale = 'linear'
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Plot data
 figure, axes = plot_xy_data(data_array, data_labels=data_labels,
