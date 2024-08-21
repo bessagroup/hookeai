@@ -203,6 +203,9 @@ class MaterialModelFinder(torch.nn.Module):
         # WHAT IF I HAVE DIFFERENT MATERIAL MODELS?
         element_material = elements_material['1']
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set element number of Gauss quadrature integration points
+        n_gauss = 8
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # BUILD ELEMENT BATCHED INPUT TENSOR
         # (shape: n_elem x n_time)
         # Initialize tensor of elements displacement history
@@ -217,10 +220,7 @@ class MaterialModelFinder(torch.nn.Module):
         # ELEMENT FUNCTION TO BE VECTORIZED
         # input shape: n_time
         # output shape: n_gp x n_time x n_features
-        def func_elem(element_input_data):
-            # Set element number of Gauss quadrature integration points
-            n_gauss = 8
-            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        def func_elem(element_input_data, n_gauss):
             # Get time history length
             n_time = element_input_data.shape[0]
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -273,11 +273,12 @@ class MaterialModelFinder(torch.nn.Module):
             return element_state_hist_tensor
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # VECTORIZE ELEMENT FUNCTION
-        vfunc_elem = torch.vmap(func_elem)
+        vfunc_elem = torch.vmap(func_elem, in_dims=(0, None))
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # COMPUTE MESH OUTPUT TENSOR
         # (shape: n_elem x n_gp x n_time x n_features)
-        elements_state_hist_tensor = vfunc_elem(elements_input_data_tensor)
+        elements_state_hist_tensor = vfunc_elem(elements_input_data_tensor,
+                                                n_gauss)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Initialize elements state variable history
         elements_state_hist = {}
