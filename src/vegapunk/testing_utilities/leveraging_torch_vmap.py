@@ -137,9 +137,15 @@ class MaterialModelFinder(torch.nn.Module):
             element_state_hist = self.compute_state_variable_hist(
                 element_material, element_disp_hist, time_hist)
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            # Update element material constitutive state variables
-            specimen_material_state.update_element_state(
-                elem_id, element_state_hist[-1])
+            # Observations:
+            # 1. Comment this section for a fair comparison with Forward VMAP!
+            # 2. Turning this on/off for standard Forward allows to graps the
+            #    memory consumption of this storage (which doesn't seem
+            #    significant when compared with the remaining stored data)
+            #
+            # Update element material constitutive state variables             
+            #specimen_material_state.update_element_state(
+            #    elem_id, element_state_hist[-1])
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Store element state variable history
             elements_state_hist[str(elem_id)] = element_state_hist
@@ -286,8 +292,8 @@ class MaterialModelFinder(torch.nn.Module):
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # COMPUTE MESH OUTPUT TENSOR
         # (shape: n_elem x n_gp x n_time x n_features)
-        elements_state_hist_tensor = vfunc_elem(elements_input_data_tensor,
-                                                n_gauss)
+        elements_state_hist_tensor = \
+            vfunc_elem(elements_input_data_tensor, n_gauss)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Compute loss
         loss = torch.sum(elements_state_hist_tensor)
@@ -304,7 +310,7 @@ class MaterialModelFinder(torch.nn.Module):
         print(f'> Loss gradient (model parameter 1): {param.grad:.4e}')
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         """
-        OBSERVATIONS:
+        Observations:
         1. Build elements_state_hist consumes A LOT of memory
         2. Computing the backward() call on the loss computed from
            elements_state_hist takes way more time than naive approach
@@ -356,7 +362,7 @@ class MaterialModelFinder(torch.nn.Module):
         """
 # =============================================================================
 # Set forward propagation mode
-is_forward_vmap = False
+is_forward_vmap = True
 # Set number of elements
 n_elem = 1
 # Set time history length
@@ -429,14 +435,42 @@ Performance analysis:
 np = 1
 ------
 
-nt = 10:
-
-WITHOUT BACKWARD()
+nt = 100:
 
                    Forward                       Forward VMAP
          ---------------------------     ---------------------------
   ne        time(s)      memory(MB)         time(s)      memory(MB)
- 1000     1.8941e+00       926.85         9.0160e-01      706.29
-10000     2.0679e+01      6106.11         9.7314e+00     3880.83
+    1     5.0750e-02       359.88         2.2935e-02      355.95
+   10     4.6220e-01       418.79         2.7511e-02      356.45
+  100     4.8654e+00       986.93         3.1564e-02      359.58
+ 1000     5.3772e+01      6520.77         8.4371e-02      394.00
+10000         SWAP (68608 MB)             2.6702e-01      726.08
+
+
+nt = 1000:
+
+                   Forward                       Forward VMAP
+         ---------------------------     ---------------------------
+  ne        time(s)      memory(MB)         time(s)      memory(MB)
+    1     4.5949e-01       417.45         8.6848e-02       365.85
+   10     5.0716e+00       971.25         1.0031e-01       367.58
+  100     5.1046e+01      6522.08         1.3981e-01       393.57
+ 1000         SWAP (68608 MB)             8.0920e-01       726.88
+10000                                     1.9070e+00      4048.98
+
+
+np = 100
+--------
+
+nt = 100:
+
+                   Forward                       Forward VMAP
+         ---------------------------     ---------------------------
+  ne        time(s)      memory(MB)         time(s)      memory(MB)
+    1     4.4850e-01       416.10         7.5671e-02       363.78
+   10     4.8659e+00       961.74         7.6648e-02       364.08
+  100     5.4055e+01      6423.61         8.8377e-02       365.76
+ 1000         SWAP (68608 MB)             1.7484e-01       395.04
+10000                                     2.5163e-01       730.16
 
 """
