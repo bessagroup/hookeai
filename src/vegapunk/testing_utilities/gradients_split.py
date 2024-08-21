@@ -13,11 +13,21 @@ import time
 # Third-party
 import numpy as np
 import torch
+import matplotlib.pyplot as plt
 # Local
 from simulators.fetorch.structure.structure_mesh import StructureMesh
 from simulators.fetorch.element.type.quad4 import FEQuad4
+from ioput.plots import plot_xy_data, save_figure
 # =============================================================================
-# Summary:
+# Summary: Testing explicit gradient handling to minimize memory costs
+# =============================================================================
+def get_memory_usage():
+    # Get the process ID (PID) of the current process
+    process = psutil.Process(os.getpid())
+    # Get process non-swapped physical memory usage (bytes)
+    memory_usage = process.memory_info().rss
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    return memory_usage
 # =============================================================================
 def generate_quad4_uniform_mesh(n_elem_dim):
     """Generate uniform mesh of 4-node quadrilateral elements.
@@ -133,8 +143,12 @@ def get_dirichlet_nodes(dirichlet_bool_mesh):
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~      
     return dirichlet_nodes
 # =============================================================================
-def compute_element_internal_forces_hist(n_dim, n_node, n_time, param_1):
+def compute_element_internal_forces_hist(n_dim, n_node, n_time, params):
     """Compute history of finite element internal forces.
+    
+    Parameters
+    ----------
+    ...
     
     Returns
     -------
@@ -151,8 +165,12 @@ def compute_element_internal_forces_hist(n_dim, n_node, n_time, param_1):
         for j_dof in range(n_dim):
             # Loop over discrete time
             for k_time in range(n_time):
+                # Compute parameter dependent term
+                param_term = sum(params)
+                # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                 # Compute internal force
-                internal_force = (i_node + 1)*(j_dof + 1)*(k_time + 1)*param_1
+                internal_force = \
+                    (i_node + 1)*(j_dof + 1)*(k_time + 1)*param_term
                 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                 # Assemble internal force
                 element_internal_forces_hist[i_node*n_dim + j_dof, k_time] = \
@@ -213,241 +231,402 @@ def force_equilibrium_loss(internal_forces_mesh, external_forces_mesh,
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     return force_equilibrium_loss
 # =============================================================================
-# Get the process ID (PID) of the current process
-process = psutil.Process(os.getpid())
-# Start timer
-start_time_sec = time.time()
-# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-# Set loss differentiation strategy
-loss_diff_strategy = ('naive', 'memory_efficient')[1]
-# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-# Set number of spatial dimensions
-n_dim = 2
-# Set number of elements per dimension
-n_elem_dim = tuple([5, 3])
-# Set time history length
-n_time = 3
-# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-# Generate uniform mesh of 4-node quadrilateral elements
-nodes_coords_mesh_init, elements_type, connectivities, dirichlet_bool_mesh = \
-    generate_quad4_uniform_mesh(n_elem_dim)
-# Get nodes with Dirichlet boundary conditions
-dirichlet_nodes = get_dirichlet_nodes(dirichlet_bool_mesh)
-# Initialize structure mesh
-specimen_mesh = StructureMesh(nodes_coords_mesh_init, elements_type,
-                              connectivities, dirichlet_bool_mesh)
-# Get number of mesh nodes
-n_node_mesh = specimen_mesh.get_n_node_mesh()
-# Set number of elements
-n_elem = specimen_mesh.get_n_elem()
-# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-# Initialize reaction forces history
-reaction_forces_mesh_hist = torch.zeros(((n_node_mesh, n_dim, n_time)))
-# Set reaction forces history
-for k_time in range(n_time):
-    # Loop over nodes
-    for i_node in range(n_node_mesh):
-        # Loop over dimensions
-        for j_dof in range(n_dim):
-            # Set reaction force
-            if dirichlet_bool_mesh[i_node, j_dof] == 1:
-                reaction_forces_mesh_hist[i_node, j_dof, k_time] = 1.0 + k_time
-# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-# Initialize external forces history
-external_forces_mesh_hist = torch.zeros_like(reaction_forces_mesh_hist)
-# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-# Set material learnable parameter
-param_1 = torch.nn.Parameter(torch.tensor(1.0, requires_grad=True))
-# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-# Initialize internal forces history
-internal_forces_mesh_hist = torch.zeros(((n_node_mesh, n_dim, n_time)))
+def forward_sequential_element(strategy, n_elem_dim, n_time,
+                               n_params):
+    """Forward propagation (sequential element).
+    
+    Parameters
+    ----------
+    ...
 
-
-
-# CODE ENHANCEMENT
-if loss_diff_strategy == 'memory_efficient':
-    # Initialize internal forces gradients history
-    grad_mesh_hist = torch.zeros((n_node_mesh, n_dim, n_time))
-
-
-# Loop over elements
-for i in range(n_elem):
-    # Get element label
-    elem_id = i + 1
+    """
+    # Set number of spatial dimensions
+    n_dim = 2
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Get element type
-    element_type = elements_type[str(elem_id)]
-    # Get element type number of nodes
-    n_node = element_type.get_n_node()
+    # Generate uniform mesh of 4-node quadrilateral elements
+    nodes_coords_mesh_init, elements_type, connectivities, \
+        dirichlet_bool_mesh = generate_quad4_uniform_mesh(n_elem_dim)
+    # Initialize structure mesh
+    specimen_mesh = StructureMesh(nodes_coords_mesh_init, elements_type,
+                                  connectivities, dirichlet_bool_mesh)
+    # Get number of mesh nodes
+    n_node_mesh = specimen_mesh.get_n_node_mesh()
+    # Set number of elements
+    n_elem = specimen_mesh.get_n_elem()
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Compute history of finite element internal forces
-    element_internal_forces_hist = \
-        compute_element_internal_forces_hist(n_dim, n_node, n_time, param_1)
+    # Initialize reaction forces history
+    reaction_forces_mesh_hist = torch.zeros(((n_node_mesh, n_dim, n_time)))
+    # Set reaction forces history
+    for k_time in range(n_time):
+        # Loop over nodes
+        for i_node in range(n_node_mesh):
+            # Loop over dimensions
+            for j_dof in range(n_dim):
+                # Set reaction force
+                if dirichlet_bool_mesh[i_node, j_dof] == 1:
+                    reaction_forces_mesh_hist[i_node, j_dof, k_time] = \
+                        1.0 + k_time
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
+    # Initialize external forces history
+    external_forces_mesh_hist = torch.zeros_like(reaction_forces_mesh_hist)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Set number of parameters
+    n_params = 2
+    # Set material learnable parameters
+    params = [torch.nn.Parameter(torch.rand(1)[0], requires_grad=True)
+              for _ in range(n_params)]
+    params = [torch.nn.Parameter(torch.tensor(p + 1.0), requires_grad=True)
+              for p in range(n_params)]
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Initialize internal forces history
+    internal_forces_mesh_hist = torch.zeros(((n_node_mesh, n_dim, n_time)))
 
 
     # CODE ENHANCEMENT
-    if loss_diff_strategy == 'memory_efficient':
-        # Initialize history of finite element internal forces gradients
-        element_grad_hist = torch.zeros((n_node*n_dim, n_time))
-        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        # Loop over element nodes
-        for j in range(n_node):
-            # Loop over dimensions
-            for k in range(n_dim):
-                # Loop over discrete time
-                for time_idx in range(n_time):
-                    # Get internal force
-                    internal_force = \
-                        element_internal_forces_hist[j*n_dim + k, time_idx]
-                    # Compute gradient
-                    internal_force.backward(retain_graph=True)
-                    # Store gradient
-                    element_grad_hist[j*n_dim + k, time_idx] = param_1.grad
-                    # Reset parameter gradient
-                    param_1.grad = None
-        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        # Release element internal forces history computation graph
-        element_internal_forces_hist.detach_()
+    if strategy == 'memory_efficient':
+        # Initialize internal forces gradients history
+        grad_mesh_hist = torch.zeros((n_node_mesh, n_dim, n_time, n_params))
 
-    
-        
-        
-        
+
+    # Loop over elements
+    for i in range(n_elem):
+        # Get element label
+        elem_id = i + 1
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Get element type
+        element_type = elements_type[str(elem_id)]
+        # Get element type number of nodes
+        n_node = element_type.get_n_node()
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Compute history of finite element internal forces
+        element_internal_forces_hist = \
+            compute_element_internal_forces_hist(n_dim, n_node, n_time, params)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+        # CODE ENHANCEMENT
+        if strategy == 'memory_efficient':
+            # Initialize history of finite element internal forces gradients
+            element_grad_hist = torch.zeros((n_node*n_dim, n_time, n_params))
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Loop over element nodes
+            for j in range(n_node):
+                # Loop over dimensions
+                for k in range(n_dim):
+                    # Loop over discrete time
+                    for time_idx in range(n_time):
+                        # Get internal force
+                        internal_force = \
+                            element_internal_forces_hist[j*n_dim + k, time_idx]
+                        # Compute gradient
+                        internal_force.backward(retain_graph=True)
+                        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                        # Loop over parameters
+                        for p, param in enumerate(params):
+                            # Store gradient
+                            element_grad_hist[j*n_dim + k, time_idx, p] = \
+                                param.grad
+                            # Reset parameter gradient
+                            param.grad = None
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Release element internal forces history computation graph
+            element_internal_forces_hist.detach_()
+
+  
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Loop over discrete time
+        for time_idx in range(n_time):
+            # Reshape element internal forces into mesh format
+            internal_forces_mesh = specimen_mesh.element_assembler(
+                {str(elem_id): element_internal_forces_hist[:, time_idx]})
+            # Assemble element internal forces of finite element mesh nodes
+            internal_forces_mesh_hist[:, :, time_idx] += \
+                internal_forces_mesh.reshape(-1, n_dim)
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            if strategy == 'memory_efficient':
+                # Loop over parameters
+                for p, param in enumerate(params):
+                    # Reshape element internal forces gradients into mesh
+                    # format
+                    grad_mesh = specimen_mesh.element_assembler(
+                        {str(elem_id): element_grad_hist[:, time_idx, p]})
+                    # Assemble element internal forces gradients of finite
+                    # element mesh nodes
+                    grad_mesh_hist[:, :, time_idx, p] += \
+                        grad_mesh.reshape(-1, n_dim)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+    # CODE ENHANCEMENT
+    if strategy == 'memory_efficient':
+        # Loop over parameters
+        for p, param in enumerate(params):
+            # Initialize loss gradient
+            loss_gradient = torch.tensor(0.0)
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Loop over nodes
+            for i in range(n_node_mesh):
+                # Loop over dimensions
+                for j in range(n_dim):
+                    # Loop over discrete time
+                    for k in range(n_time):
+                        # Assemble contribution to loss gradient
+                        loss_gradient += 2*grad_mesh_hist[i, j, k, p]*(              
+                            internal_forces_mesh_hist[i, j, k]
+                            - external_forces_mesh_hist[i, j, k]
+                            - reaction_forces_mesh_hist[i, j, k])
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Store loss gradient
+            param.grad = loss_gradient
+
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Initialize force equilibrium history loss
+    force_equilibrium_hist_loss = 0
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Loop over discrete time
     for time_idx in range(n_time):
-        # Reshape element internal forces into mesh format
-        internal_forces_mesh = specimen_mesh.element_assembler(
-            {str(elem_id): element_internal_forces_hist[:, time_idx]})
-        # Assemble element internal forces of finite element mesh nodes
-        internal_forces_mesh_hist[:, :, time_idx] += \
-            internal_forces_mesh.reshape(-1, n_dim)
+        # Get internal forces of finite element mesh nodes
+        internal_forces_mesh = internal_forces_mesh_hist[:, :, time_idx]
+        # Set null external forces of finite element mesh nodes
+        external_forces_mesh = external_forces_mesh_hist[:, :, time_idx]
+        # Get reaction forces (Dirichlet boundary conditions) of finite
+        # element mesh nodes
+        reaction_forces_mesh = reaction_forces_mesh_hist[:, :, time_idx]
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        if loss_diff_strategy == 'memory_efficient':
-            # Reshape element internal forces gradients into mesh format
-            grad_mesh = specimen_mesh.element_assembler(
-                {str(elem_id): element_grad_hist[:, time_idx]})
-            # Assemble element internal forces gradients of finite element mesh
-            # nodes
-            grad_mesh_hist[:, :, time_idx] += \
-                grad_mesh.reshape(-1, n_dim)
-# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-
-# CODE ENHANCEMENT
-# Compute loss gradient with respect to material parameter
-if loss_diff_strategy == 'memory_efficient':
-    # Initialize loss gradient
-    loss_gradient = torch.tensor(0.0)
+        # Add contribution to force equilibrium history loss
+        force_equilibrium_hist_loss += force_equilibrium_loss(
+            internal_forces_mesh, external_forces_mesh,
+            reaction_forces_mesh, dirichlet_bool_mesh)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Loop over nodes
-    for i in range(n_node_mesh):
-        # Loop over dimensions
-        for j in range(n_dim):
-            # Loop over discrete time
-            for k in range(n_time):
-                # Assemble contribution to loss gradient
-                loss_gradient += 2*grad_mesh_hist[i, j, k]*(              
-                    internal_forces_mesh_hist[i, j, k]
-                    - external_forces_mesh_hist[i, j, k]
-                    - reaction_forces_mesh_hist[i, j, k])
+    # Compute gradient
+    if strategy == 'full_graph':
+        force_equilibrium_hist_loss.backward()
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Store loss gradient
-    param_1.grad = loss_gradient
-
-
-
-
+    # Display force equilibrium loss
+    print(f'\n  > Force equilibrium loss: ', force_equilibrium_hist_loss)
+    # Display force equilibrium loss gradient with respect to material parameter
+    print(f'\n  > Force equilibrium loss gradient: ')
+    for p, param in enumerate(params):
+        print(f'    > Parameter {p} gradient: ', param.grad)        
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-# Initialize force equilibrium history loss
-force_equilibrium_hist_loss = 0
-# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-# Loop over discrete time
-for time_idx in range(n_time):
-    # Get internal forces of finite element mesh nodes
-    internal_forces_mesh = internal_forces_mesh_hist[:, :, time_idx]
-    # Set null external forces of finite element mesh nodes
-    external_forces_mesh = external_forces_mesh_hist[:, :, time_idx]
-    # Get reaction forces (Dirichlet boundary conditions) of finite
-    # element mesh nodes
-    reaction_forces_mesh = reaction_forces_mesh_hist[:, :, time_idx]
+if __name__ == '__main__':
+    # Set loss differentiation strategy
+    #strategy_range = ('full_graph', )
+    #strategy_range = ('memory_efficient', )
+    strategy_range = ('full_graph', 'memory_efficient')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Add contribution to force equilibrium history loss
-    force_equilibrium_hist_loss += force_equilibrium_loss(
-        internal_forces_mesh, external_forces_mesh,
-        reaction_forces_mesh, dirichlet_bool_mesh)
-# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-# Compute gradient
-if loss_diff_strategy == 'naive':
-    force_equilibrium_hist_loss.backward()
-# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-# Display force equilibrium loss differentiation strategy
-print(f'\nGradient strategy: {loss_diff_strategy}')
-# Display force equilibrium loss
-print(f'\nForce equilibrium loss         : ', force_equilibrium_hist_loss)
-# Display force equilibrium loss gradient with respect to material parameter
-print(f'Force equilibrium loss gradient: ', param_1.grad)
-# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-# Compute total execution time
-total_time_sec = time.time() - start_time_sec
-# Display total execution time
-print(f'\nExecution time: {total_time_sec:.4f} s')
-# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-# Get process non-swapped physical memory usage
-memory_usage = process.memory_info().rss
-memory_usage_mb = memory_usage/(1024**2)
-# Display memory usage
-print(f'Memory usage  : {memory_usage_mb:.2f} MB')
+    # Set number of parameters
+    n_params_range = (1,)
+    # Set number of elements per dimension
+    n_elem_range = (10000,)
+    n_elem_range = (1, 3, 10, 30, 100)
+    # Set time history length
+    n_time_range = (100,)
+    #n_time_range = (1, 10, 100, 1000)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Initialize performance data
+    peak_memory_data = torch.zeros((len(n_elem_range), len(n_time_range),
+                                    len(n_params_range), 2))
+    exec_time_data = torch.zeros_like(peak_memory_data)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Display
+    print('\nStarting performance parametric analysis'
+          '\n----------------------------------------')
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Loop over numbers of parameters
+    for p, n_params in enumerate(n_params_range):
+        # Loop over numbers of elements
+        for i, n_elem in enumerate(n_elem_range):
+            # Set number of elements per dimension
+            n_elem_dim = 2*(n_elem,)
+            # Loop over time history lengths
+            for j, n_time in enumerate(n_time_range):
+                # Loop over differentiation strategies
+                for s, strategy in enumerate(strategy_range):
+                    # Display
+                    print(f'\n\nIteration: n_params = {n_params} '
+                            f'| n_elem_dim = {n_elem} | n_time = {n_time} '
+                            f'| strategy = {strategy}')
+                    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                    # Initialize timer
+                    start_time_sec = time.time()
+                    # Initialize memory usage
+                    start_memory_usage = get_memory_usage()                    
+                    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                    # Compute force equilibrium loss for given discrete time
+                    forward_sequential_element(strategy, n_elem_dim,
+                                               n_time, n_params)
+                    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                    # Compute peak memory usage
+                    peak_memory = get_memory_usage() - start_memory_usage
+                    # Compute execution time
+                    exec_time_sec = time.time() - start_time_sec
+                    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                    # Display peak memory usage
+                    peak_memory_mb = peak_memory/(1024**2)
+                    print(f'\n  > Peak memory usage: {peak_memory_mb:.2f} MB')
+                    # Display execution time
+                    print(f'\n  > Execution time: {exec_time_sec:.4f} s')
+                    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                    # Store performance data
+                    peak_memory_data[i, j, p, s] = peak_memory_mb
+                    exec_time_data[i, j, p, s] = exec_time_sec
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Set plots
+    is_plot = True
+    # Set plots directory
+    plots_dir = ('/home/bernardoferreira/Documents/brown/projects/'
+                 'darpa_project/5_global_specimens/memory_bottleneck')
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Plot: Computational time vs Number of elements
+    if is_plot and len(n_elem_range) > 1:
+        # Set data array
+        data_array = np.zeros((len(n_elem_range), 4))
+        data_array[:, 0] = [x**2 for x in n_elem_range]
+        data_array[:, 1] = exec_time_data[:, 0, 0, 0]
+        data_array[:, 2] = data_array[:, 0]
+        data_array[:, 3] = exec_time_data[:, 0, 0, 1]
+        # Set data labels
+        data_labels = strategy_range
+        # Set title
+        title = (f'$n_e = \Delta$ / $n_t = {n_time}$ / $n_p = {n_params}$')
+        # Set axes labels
+        x_label = 'Number of elements'
+        y_label = 'Computational time (s)'
+        # Set axes limits
+        x_lims = (None, None)
+        y_lims = (None, None)
+        # Set axes scale
+        x_scale = 'log'
+        y_scale = 'log'
+        # Plot data
+        figure, axes = plot_xy_data(data_array, data_labels=data_labels,
+                                    x_lims=x_lims, y_lims=y_lims,
+                                    x_label=x_label, y_label=y_label,
+                                    x_scale=x_scale, y_scale=y_scale,
+                                    title=title, marker='o', is_latex=True)
+        # Display figure
+        plt.show()
+        # Set file name
+        filename = f'time_vs_ne_for_nt_{n_time}_np_{n_params}'
+        # Save figure
+        save_figure(figure, filename, format='pdf', save_dir=plots_dir)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Close plot
+        plt.close(figure)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Plot: Computational time vs Number of time steps
+    if is_plot and len(n_time_range) > 1:
+        # Set data array
+        data_array = np.zeros((len(n_time_range), 4))
+        data_array[:, 0] = [x**2 for x in n_time_range]
+        data_array[:, 1] = exec_time_data[0, :, 0, 0]
+        data_array[:, 2] = data_array[:, 0]
+        data_array[:, 3] = exec_time_data[0, :, 0, 1]
+        # Set data labels
+        data_labels = strategy_range
+        # Set title
+        title = (f'$n_e = {n_elem}$ / $n_t = \Delta$ / $n_p = {n_params}$')
+        # Set axes labels
+        x_label = 'Number of time steps'
+        y_label = 'Computational time (s)'
+        # Set axes limits
+        x_lims = (None, None)
+        y_lims = (None, None)
+        # Set axes scale
+        x_scale = 'log'
+        y_scale = 'log'
+        # Plot data
+        figure, axes = plot_xy_data(data_array, data_labels=data_labels,
+                                    x_lims=x_lims, y_lims=y_lims,
+                                    x_label=x_label, y_label=y_label,
+                                    x_scale=x_scale, y_scale=y_scale,
+                                    title=title, marker='o', is_latex=True)
+        # Display figure
+        plt.show()
+        # Set file name
+        filename = f'time_vs_nt_for_ne_{n_elem}_np_{n_params}'
+        # Save figure
+        save_figure(figure, filename, format='pdf', save_dir=plots_dir)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Close plot
+        plt.close(figure)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Plot: Computational time vs Number of parameters
+    if is_plot and len(n_params_range) > 1:
+        # Set data array
+        data_array = np.zeros((len(n_params_range), 4))
+        data_array[:, 0] = [x**2 for x in n_params_range]
+        data_array[:, 1] = exec_time_data[0, 0, :, 0]
+        data_array[:, 2] = data_array[:, 0]
+        data_array[:, 3] = exec_time_data[0, 0, :, 1]
+        # Set data labels
+        data_labels = strategy_range
+        # Set title
+        title = (f'$n_e = {n_elem}$ / $n_t = {n_time}$ / $n_p = \Delta$')
+        # Set axes labels
+        x_label = 'Number of parameters'
+        y_label = 'Computational time (s)'
+        # Set axes limits
+        x_lims = (None, None)
+        y_lims = (None, None)
+        # Set axes scale
+        x_scale = 'log'
+        y_scale = 'log'
+        # Plot data
+        figure, axes = plot_xy_data(data_array, data_labels=data_labels,
+                                    x_lims=x_lims, y_lims=y_lims,
+                                    x_label=x_label, y_label=y_label,
+                                    x_scale=x_scale, y_scale=y_scale,
+                                    title=title, marker='o', is_latex=True)
+        # Display figure
+        plt.show()
+        # Set file name
+        filename = f'time_vs_np_for_ne_{n_elem}_nt_{n_time}'
+        # Save figure
+        save_figure(figure, filename, format='pdf', save_dir=plots_dir)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Close plot
+        plt.close(figure)
+# =============================================================================
+"""Annotations
+
+np = 1
+------
+
+nt = 1:
+
+              Full Graph            Memory Efficiency
+         --------------------     --------------------
+  ne      time(s)  memory(MB)      time(s)  memory(MB)
+    1      0.01       12.3         0.0028     12.2
+   10     0.007       13.2         0.0157     12.3
+  100      0.06       21.7         0.1598     13.0
+ 1000      0.55       93.8         1.4198     18.9
+10000         7      883.3        16.3368     70.9
 
 
-"""
-# Loop over nodes
-for i_node in range(n_node_mesh):
-    # Loop over dimensions
-    for j_dof in range(n_dim):
-        # Loop over discrete time
-        for k_time in range(n_time):
-            internal_force = i_node*j_dof*k_time*param_1
-            
-            if loss_diff_strategy == 'efficient':
-                internal_force_squared = internal_force**2
-                internal_force_squared.backward()
-                internal_forces_mesh_hist[i_node, j_dof, k_time] = internal_force.detach()
-            else:
-                internal_forces_mesh_hist[i_node, j_dof, k_time] = internal_force
-"""
+nt = 5:
 
-"""
-# Create an input tensor with requires_grad=True
-x = torch.tensor(1.0, requires_grad=True)
+              Full Graph            Memory Efficiency
+         --------------------     --------------------
+  ne      time(s)  memory(MB)      time(s)  memory(MB)
+    1      0.018      12.8          0.030     12.2
+   10      0.028      16.4          0.258     12.5
+  100      0.288      55.8          2.800     13.0
+ 1000      2.835     390.3          25.23     19.3
+10000      43.72      4184          290.6     72.6
 
-# Perform some operation
-y = x ** 2  # y = [1.0, 4.0, 9.0]
 
-y = torch.zeros(2)
-y[0] = 2*x
-y[1] = 3*x
+nt = 10:
 
-# Initialize a list to hold gradients for each element
-grads = []
-
-# Loop through each element in y
-for i in range(y.size(0)):
-    # Zero the gradients before each backward call
-    x.grad = None
-    
-    # Compute the gradient for the i-th element
-    y[i].backward(retain_graph=True)
-    
-    # Store the gradient for this particular output
-    grads.append(x.grad.clone())
-
-# Stack gradients to get a tensor where each row corresponds to the gradient
-# of a specific output with respect to the inputs
-grads = torch.stack(grads)
-
-print(grads)
+              Full Graph            Memory Efficiency
+         --------------------     --------------------
+  ne      time(s)  memory(MB)      time(s)  memory(MB)
+    1     0.023        13             0.1      13
+   10      0.05        20             0.9      13
+  100       0.6        98              10      14
+ 1000         5       762              90      20
+10000        96      8311            1035      73
 
 """
