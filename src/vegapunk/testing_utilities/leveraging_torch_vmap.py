@@ -8,7 +8,9 @@ import torch
 # Summary: Testing vectorized mapping (vmap) to minimize memory costs
 # =============================================================================
 class ConstitutiveModel:
-    def __init__(self):
+    def __init__(self, n_params):
+        # Set number of parameters
+        self._n_params = n_params
         # Set learnable model parameters flag
         is_learnable_parameters = True
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -16,14 +18,16 @@ class ConstitutiveModel:
         if is_learnable_parameters:
             # Initialize model parameters
             self._model_parameters = torch.nn.ParameterDict({})
-            # Set model parameter
-            self._model_parameters['param_1'] = \
-                torch.nn.Parameter(torch.tensor(1.0, requires_grad=True))
+            # Set material learnable parameters
+            self._model_parameters = [
+                torch.nn.Parameter(torch.rand(1)[0], requires_grad=True)
+                for _ in range(self._n_params)]
         else:
             # Initialize model parameters
             self._model_parameters = {}
-            # Set model parameter
-            self._model_parameters = {'param_1': 1.0,}
+            # Set material parameters
+            self._model_parameters = \
+                [torch.rand(1)[0] for _ in range(self._n_params)]
     # -------------------------------------------------------------------------
     def get_model_parameters(self):
         return self._model_parameters
@@ -37,9 +41,9 @@ class StructureMaterialState:
         # Initialize elements material constitutive state variables
         self._elements_state = {}
     # -------------------------------------------------------------------------
-    def init_elements_model(self, element_ids):
+    def init_elements_model(self, n_params, element_ids):
         # Initialize constitutive model
-        constitutive_model = ConstitutiveModel()
+        constitutive_model = ConstitutiveModel(n_params)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Store constitutive model
         self._material_models['1'] = constitutive_model
@@ -140,16 +144,16 @@ class MaterialModelFinder(torch.nn.Module):
         # Compute loss
         loss = compute_loss(elements_state_hist)
         # Display loss
-        print(f'> Loss: {loss}')
+        print(f'> Loss: {loss:.4f}')
         # Compute loss gradient
         loss.backward()
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Get element material constitutive model parameters
         model_parameters = elements_material['1'].get_model_parameters()
-        # Get material model parameter
-        param_1 = model_parameters['param_1']
-        # Display loss gradient w.r.t material model parameter
-        print(f'> Loss gradient: {param_1.grad}')
+        # Get first material model parameter
+        param = model_parameters[0]
+        # Display loss gradient w.r.t first material model parameter
+        print(f'> Loss gradient (model parameter 1): {param.grad:.4f}')
     # -------------------------------------------------------------------------
     def compute_state_variable_hist(self, element_material, element_disp_hist,
                                     time_hist):
@@ -161,8 +165,6 @@ class MaterialModelFinder(torch.nn.Module):
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Get element material constitutive model parameters
         model_parameters = element_material.get_model_parameters()
-        # Get material model parameter
-        param_1 = model_parameters['param_1']
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Initialize element material constitutive model state variables
         # history
@@ -180,9 +182,12 @@ class MaterialModelFinder(torch.nn.Module):
                     state_variable_old = \
                         element_state_hist[time_idx - 1][str(i + 1)]
                 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                # Compute material model parameter term
+                param_term = sum(model_parameters)**2
+                # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                 # Compute state variable
                 state_variable = \
-                    (param_1*element_disp_hist[time_idx]
+                    (param_term*element_disp_hist[time_idx]
                      *torch.ones(6, dtype=torch.float)) + state_variable_old
                 # Store state variable
                 element_state_hist[time_idx][str(i + 1)] = state_variable
@@ -226,8 +231,6 @@ class MaterialModelFinder(torch.nn.Module):
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Get element material constitutive model parameters
             model_parameters = element_material.get_model_parameters()
-            # Get material model parameter
-            param_1 = model_parameters['param_1']
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # BUILD GAUSS POINT BATCHED INPUT TENSOR
             # (shape: n_gp x n_time)
@@ -250,9 +253,12 @@ class MaterialModelFinder(torch.nn.Module):
                     else:
                         state_variable_old = gauss_output_data_vlist[-1]
                     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                    # Compute material model parameter term
+                    param_term = sum(model_parameters)**2
+                    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                     # Compute state variable
                     state_variable = state_variable_old \
-                        + param_1*gauss_input_data[t]*torch.ones(6)
+                        + param_term*gauss_input_data[t]*torch.ones(6)
                     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                     # Store state variable
                     gauss_output_data_vlist.append(state_variable)
@@ -312,21 +318,25 @@ class MaterialModelFinder(torch.nn.Module):
         # Compute loss
         loss = compute_loss(elements_state_hist)
         # Display loss
-        print(f'> Loss: {loss}')
+        print(f'> Loss: {loss:.4f}')
         # Compute loss gradient
         loss.backward()
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Get element material constitutive model parameters
         model_parameters = elements_material['1'].get_model_parameters()
-        # Get material model parameter
-        param_1 = model_parameters['param_1']
-        # Display loss gradient w.r.t material model parameter
-        print(f'> Loss gradient: {param_1.grad}')     
+        # Get first material model parameter
+        param = model_parameters[0]
+        # Display loss gradient w.r.t first material model parameter
+        print(f'> Loss gradient (model parameter 1): {param.grad:.4f}')   
 # =============================================================================
+# Set forward propagation mode
+is_forward_vmap = False
 # Set number of elements
-n_elem = 30
+n_elem = 1
 # Set time history length
-n_time = 10
+n_time = 1
+# Set number of parameters
+n_params = 1
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Set time history
 time_hist = torch.tensor([x for x in range(0, n_time)], dtype=torch.float)
@@ -341,7 +351,7 @@ for i in range(n_elem):
 specimen_material_state = StructureMaterialState(n_elem)
 # Initialize elements constitutive models and state variables
 specimen_material_state.init_elements_model(
-    element_ids=tuple(x for x in range(1, n_elem + 1)))
+    n_params, element_ids=tuple(x for x in range(1, n_elem + 1)))
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Initialize material model finder
 material_model_finder = MaterialModelFinder()
@@ -354,8 +364,6 @@ process = psutil.Process(os.getpid())
 # Initialize timer
 start_time_sec = time.time()
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-# Set forward propagation mode
-is_forward_vmap = True
 # Display forward propagation mode
 print(f'\nForward propagation mode: {is_forward_vmap}\n'
       + len(f'Forward propagation mode: {is_forward_vmap}')*'-')
@@ -371,7 +379,7 @@ else:
 # Compute execution time
 exec_time_sec = time.time() - start_time_sec
 # Display execution time
-print(f'\n> Execution time: {exec_time_sec:.4f} s')
+print(f'\n> Execution time: {exec_time_sec:.4e} s')
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Get process non-swapped physical memory usage
 memory_usage = process.memory_info().rss
@@ -380,3 +388,30 @@ memory_usage_mb = memory_usage/(1024**2)
 print(f'> Memory usage: {memory_usage_mb:.2f} MB')
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 print()
+# =============================================================================
+"""Annotations
+
+Parameters range:
+
+> Number of parameters: np in [1, 10, 100, 1000, 10000]
+> Number of elements:   ne in [1, 10, 100, 1000, 10000]
+> Number of time steps: nt in [1, 10, 100, 1000]
+
+
+Performance analysis:
+
+np = 1
+------
+
+nt = 1:
+
+                   Forward                       Forward VMAP
+         ---------------------------     ---------------------------
+  ne        time(s)      memory(MB)         time(s)      memory(MB)
+    1     
+   10     
+  100     
+ 1000     
+10000     
+
+"""
