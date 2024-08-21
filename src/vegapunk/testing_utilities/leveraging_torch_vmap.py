@@ -22,6 +22,9 @@ class ConstitutiveModel:
             self._model_parameters = [
                 torch.nn.Parameter(torch.rand(1)[0], requires_grad=True)
                 for _ in range(self._n_params)]
+            self._model_parameters = [
+                torch.nn.Parameter(torch.tensor(1.0), requires_grad=True)
+                for _ in range(self._n_params)]
         else:
             # Initialize model parameters
             self._model_parameters = {}
@@ -144,7 +147,7 @@ class MaterialModelFinder(torch.nn.Module):
         # Compute loss
         loss = compute_loss(elements_state_hist)
         # Display loss
-        print(f'> Loss: {loss:.4f}')
+        print(f'> Loss: {loss:.4e}')
         # Compute loss gradient
         loss.backward()
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -153,7 +156,7 @@ class MaterialModelFinder(torch.nn.Module):
         # Get first material model parameter
         param = model_parameters[0]
         # Display loss gradient w.r.t first material model parameter
-        print(f'> Loss gradient (model parameter 1): {param.grad:.4f}')
+        print(f'> Loss gradient (model parameter 1): {param.grad:.4e}')
     # -------------------------------------------------------------------------
     def compute_state_variable_hist(self, element_material, element_disp_hist,
                                     time_hist):
@@ -286,6 +289,27 @@ class MaterialModelFinder(torch.nn.Module):
         elements_state_hist_tensor = vfunc_elem(elements_input_data_tensor,
                                                 n_gauss)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Compute loss
+        loss = torch.sum(elements_state_hist_tensor)
+        # Display loss
+        print(f'> Loss: {loss:.4e}')
+        # Compute loss gradient
+        loss.backward()
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Get element material constitutive model parameters
+        model_parameters = elements_material['1'].get_model_parameters()
+        # Get first material model parameter
+        param = model_parameters[0]
+        # Display loss gradient w.r.t first material model parameter
+        print(f'> Loss gradient (model parameter 1): {param.grad:.4e}')
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        """
+        OBSERVATIONS:
+        1. Build elements_state_hist consumes A LOT of memory
+        2. Computing the backward() call on the loss computed from
+           elements_state_hist takes way more time than naive approach
+        
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Initialize elements state variable history
         elements_state_hist = {}
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -309,17 +333,18 @@ class MaterialModelFinder(torch.nn.Module):
                         elements_state_hist_tensor[i, j, time_idx, :]
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Update element material constitutive state variables
-            specimen_material_state.update_element_state(
-                elem_id, element_state_hist[-1])
+            #specimen_material_state.update_element_state(
+            #    elem_id, element_state_hist[-1])
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Store element state variable history
             elements_state_hist[str(elem_id)] = element_state_hist
-        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~        
         # Compute loss
         loss = compute_loss(elements_state_hist)
         # Display loss
         print(f'> Loss: {loss:.4f}')
         # Compute loss gradient
+        print(f'> Computing loss gradient...')
         loss.backward()
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Get element material constitutive model parameters
@@ -327,7 +352,8 @@ class MaterialModelFinder(torch.nn.Module):
         # Get first material model parameter
         param = model_parameters[0]
         # Display loss gradient w.r.t first material model parameter
-        print(f'> Loss gradient (model parameter 1): {param.grad:.4f}')   
+        print(f'> Loss gradient (model parameter 1): {param.grad:.4f}')
+        """
 # =============================================================================
 # Set forward propagation mode
 is_forward_vmap = False
@@ -403,15 +429,14 @@ Performance analysis:
 np = 1
 ------
 
-nt = 1:
+nt = 10:
+
+WITHOUT BACKWARD()
 
                    Forward                       Forward VMAP
          ---------------------------     ---------------------------
   ne        time(s)      memory(MB)         time(s)      memory(MB)
-    1     
-   10     
-  100     
- 1000     
-10000     
+ 1000     1.8941e+00       926.85         9.0160e-01      706.29
+10000     2.0679e+01      6106.11         9.7314e+00     3880.83
 
 """
