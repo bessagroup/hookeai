@@ -17,8 +17,12 @@ get_problem_type_parameters
     Get parameters dependent on the problem type.
 get_tensor_mf
     Get tensor matricial form.
+vget_tensor_mf
+    Get tensor matricial form (vectorized).
 get_tensor_from_mf
     Recover tensor from associated matricial form.
+vget_tensor_from_mf
+    Recover tensor from associated matricial form (vectorized).
 kelvin_factor
     Get Kelvin notation coefficient of given strain/stress component.
 get_state_3Dmf_from_2Dmf
@@ -206,6 +210,96 @@ def get_tensor_mf(tensor, n_dim, comp_order, device=None):
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     return tensor_mf
 # =============================================================================
+def vget_tensor_mf(tensor, n_dim, comp_order, device=None):
+    """Get tensor matricial form (vectorized).
+
+    Store a given second-order or fourth-order tensor in matricial form for a
+    given number of problem spatial dimensions and given ordered strain/stress
+    components list. If the second-order tensor is symmetric or the
+    fourth-order tensor has minor symmetry (component list only contains
+    independent components), then the Kelvin notation[#]_ is employed to
+    perform the storage. Otherwise, the matricial form is built columnwise.
+
+    .. [#] Nagel, T., Görke, U.-J., Moerman, K. M., and Kolditz, O. (2016). On
+        advantages of the Kelvin mapping in finite element implementations
+        of deformation processes. Environmental Earth Sciences, 75(11):937
+        (see `here <https://dspace.mit.edu/handle/1721.1/105251>`_)
+
+    ----
+
+    Parameters
+    ----------
+    tensor : torch.Tensor
+        Tensor to be stored in matricial form.
+    n_dim : int
+        Problem number of spatial dimensions.
+    comp_order : tuple
+        Strain/Stress components order associated to matricial form.
+    device : torch.device, default=None
+        Device on which torch.Tensor is allocated.
+
+    Returns
+    -------
+    tensor_mf : torch.Tensor
+        Matricial form of input tensor.
+    """
+    # Get device from input tensor
+    if device is None:
+        device = tensor.device
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Get tensor order
+    tensor_order = len(tensor.shape)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Set Kelvin notation flag
+    if len(comp_order) == n_dim**2:
+        is_kelvin_notation = False
+    elif len(comp_order) == sum(range(n_dim + 1)):
+        is_kelvin_notation = True
+    else:
+        raise RuntimeError('Invalid number of components in strain/stress '
+                            'components order.')
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Get number of components
+    n_comps = len(comp_order)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Store tensor according to tensor order
+    if tensor_order == 2:
+        # Build indexing mapping
+        index_map = tuple(
+            [int(x[i]) - 1 for x in comp_order] for i in range(2))
+        # Build indexing Kelvin factor
+        if is_kelvin_notation:
+            index_kelvin = torch.tensor(
+                [np.sqrt(2) if x[0] != x[1] else 1.0 for x in comp_order],
+                dtype=torch.float, device=device)
+        else:
+            index_kelvin = torch.ones(n_comps, dtype=torch.float,
+                                      device=device)
+        # Compute tensor matricial form
+        tensor_mf = torch.mul(tensor[index_map], index_kelvin)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    elif tensor_order == 4:
+        # Build index mapping
+        index_map = tuple(
+            [sum([[int(x[0]) - 1,]*n_comps for x in comp_order], []),
+             sum([[int(x[1]) - 1,]*n_comps for x in comp_order], []),
+             [int(x[0]) - 1 for x in comp_order]*n_comps,
+             [int(x[1]) - 1 for x in comp_order]*n_comps])
+        # Build indexing Kelvin factor
+        if is_kelvin_notation:
+            index_kelvin_1d = torch.tensor(
+                [np.sqrt(2) if x[0] != x[1] else 1.0 for x in comp_order],
+                dtype=torch.float, device=device)
+            index_kelvin = torch.outer(index_kelvin_1d, index_kelvin_1d)
+        else:
+            index_kelvin = torch.ones((n_comps, n_comps), dtype=torch.float,
+                                      device=device)
+        # Compute tensor matricial form
+        tensor_mf = \
+            torch.mul(tensor[index_map].view(-1, n_comps), index_kelvin)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    return tensor_mf
+# =============================================================================
 def get_tensor_from_mf(tensor_mf, n_dim, comp_order, device=None):
     """Recover tensor from associated matricial form.
 
@@ -355,6 +449,116 @@ def get_tensor_from_mf(tensor_mf, n_dim, comp_order, device=None):
                     tensor[tuple(fo_idx[:2]+fo_idx[3:1:-1])] = \
                         (1.0/factor)*tensor_mf[mf_idx]
             tensor[fo_idx] = (1.0/factor)*tensor_mf[mf_idx]
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    return tensor
+# =============================================================================
+def vget_tensor_from_mf(tensor_mf, n_dim, comp_order, device=None):
+    """Recover tensor from associated matricial form (vectorized).
+
+    Recover a given second-order or fourth-order tensor from the associated
+    matricial form, given the problem number of spatial dimensions and given a
+    (compatible) ordered strain/stress components list. If the second-order
+    tensor is symmetric or the fourth-order tensor has minor symmetry
+    (component list only contains independent components), then matricial form
+    is assumed to follow the Kelvin notation [#]_. Otherwise, a columnwise
+    matricial form is assumed.
+
+    .. [#] Nagel, T., Görke, U.-J., Moerman, K. M., and Kolditz, O. (2016). On
+           advantages of the Kelvin mapping in finite element implementations
+           of deformation processes. Environmental Earth Sciences, 75(11):937
+           (see `here <https://dspace.mit.edu/handle/1721.1/105251>`_)
+
+    ----
+
+    Parameters
+    ----------
+    tensor_mf : torch.Tensor
+        Tensor stored in matricial form.
+    n_dim : int
+        Problem number of spatial dimensions.
+    comp_order : tuple
+        Strain/Stress components order associated to matricial form.
+    device : torch.device, default=None
+        Device on which torch.Tensor is allocated.
+
+    Returns
+    -------
+    tensor : torch.Tensor
+        Tensor recovered from matricial form.
+    """
+    # Get device from input tensor
+    if device is None:
+        device = tensor_mf.device
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Get tensor order
+    if len(tensor_mf.shape) == 1:
+        tensor_order = 2
+    elif len(tensor_mf.shape) == 2:
+        tensor_order = 4
+    else:
+        raise RuntimeError('Tensor matricial form must be a vector or a '
+                           'matrix.')
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Set Kelvin notation flag
+    if len(comp_order) == n_dim**2:
+        is_kelvin_notation = False
+    elif len(comp_order) == sum(range(n_dim + 1)):
+        is_kelvin_notation = True
+    else:
+        raise RuntimeError('Invalid number of components in strain/stress '
+                           'components order.')
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Get number of components
+    n_comps = len(comp_order)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Set row major components order
+    if tensor_order == 2:        
+        row_major_order = tuple(
+            f'{i + 1}{j + 1}' for i, j
+            in it.product(range(n_dim), repeat=2))
+    else:
+        row_major_order = tuple(
+            f'{i + 1}{j + 1}{k + 1}{l + 1}' for i, j, k, l
+            in it.product(range(n_dim), repeat=4))
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Get tensor according to tensor order
+    if tensor_order == 2:
+        # Build indexing inverse Kelvin factor
+        if is_kelvin_notation:
+            index_kelvin_inv = torch.tensor(
+                [1.0/np.sqrt(2) if x[0] != x[1] else 1.0 for x in comp_order],
+                dtype=torch.float, device=device)
+        else:
+            index_kelvin_inv = torch.ones(n_comps, dtype=torch.float,
+                                          device=device)
+        # Build indexing mapping
+        index_map = [comp_order.index(x) if x in comp_order
+                     else comp_order.index(x[::-1]) for x in row_major_order]
+        # Get tensor from matricial form
+        tensor = torch.mul(tensor_mf, index_kelvin_inv)[index_map].view(
+            n_dim, n_dim)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    elif tensor_order == 4:
+        # Build indexing inverse Kelvin factor
+        if is_kelvin_notation:
+            index_kelvin_inv_1d = torch.tensor(
+                [1.0/np.sqrt(2) if x[0] != x[1] else 1.0 for x in comp_order],
+                dtype=torch.float, device=device)
+            index_kelvin_inv = torch.outer(index_kelvin_inv_1d,
+                                           index_kelvin_inv_1d)
+        else:
+            index_kelvin_inv = torch.ones((n_comps, n_comps),
+                                          dtype=torch.float, device=device)
+        # Build indexing mapping
+        index_map = ([[comp_order.index(x[:2]) if x[:2] in comp_order
+                       else comp_order.index(x[:2][::-1])
+                       for x in row_major_order],
+                      [comp_order.index(x[2:]) if x[2:] in comp_order
+                       else comp_order.index(x[2:][::-1])
+                       for x in row_major_order]])
+        # Get tensor from matricial form
+        tensor = torch.mul(tensor_mf, index_kelvin_inv)[index_map].view(
+            n_dim, n_dim, n_dim, n_dim)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     return tensor
 # =============================================================================
