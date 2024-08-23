@@ -715,10 +715,11 @@ def vget_state_3Dmf_from_2Dmf(mf_2d, comp_33, device=None):
         comp_order_3d = comp_order_nsym_3d
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Build 3D strain/stress second-order tensor (matricial form)
-    mf_3d = torch.tensor([mf_2d[comp_order_2d.index(x)]
-                          if x in comp_order_2d else 0.0
-                          for x in comp_order_3d],
-                         dtype=torch.float, device=device) \
+    mf_3d = torch.cat([mf_2d[comp_order_2d.index(x)].view(1)
+                       if x in comp_order_2d
+                       else torch.tensor([0.0], dtype=torch.float,
+                                         device=device)
+                       for x in comp_order_3d]) \
         + comp_33*torch.eye(len(comp_order_3d), dtype=torch.float,
                             device=device)[comp_order_3d.index('33')]    
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
