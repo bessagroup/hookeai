@@ -26,6 +26,7 @@ Elastic
 import torch
 # Local
 from simulators.fetorch.material.models.interface import ConstitutiveModel
+from simulators.fetorch.math.tensorops import get_id_operators
 from simulators.fetorch.math.matrixops import get_problem_type_parameters, \
     get_tensor_mf, get_state_3Dmf_from_2Dmf, get_state_2Dmf_from_3Dmf, \
     kelvin_factor
@@ -399,33 +400,44 @@ class Elastic(ConstitutiveModel):
         elastic_tangent_mf : torch.Tensor(2d)
             3D elasticity tensor in matricial form.
         """
+        # Get 3D problem parameters
+        n_dim, comp_order_sym, _ = get_problem_type_parameters(problem_type=4)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Get available elastic symmetries and required elastic moduli
         elastic_symmetries = Elastic.get_available_elastic_symmetries()
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        # Check elastic symmetry and required elastic moduli
+        # Compute 3D elasticity tensor matricial form
         if elastic_symmetry not in elastic_symmetries.keys():
             raise RuntimeError('Unavailable elastic symmetry.')
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        elif elastic_symmetry == 'isotropic' and \
+                {'E', 'v'}.issubset(set(elastic_properties.keys())):
+            # Set required fourth-order tensors
+            _, _, _, fosym, fodiagtrace, _, _ = \
+                get_id_operators(n_dim, device=device)
+            # Get Young modulus and Poisson coefficient
+            E = elastic_properties['E']
+            v = elastic_properties['v']
+            # Compute Lamé parameters
+            lam = (E*v)/((1.0 + v)*(1.0 - 2.0*v))
+            miu = E/(2.0*(1.0 + v))
+            # Compute elasticity tensor
+            elastic_tangent = lam*fodiagtrace + 2.0*miu*fosym
+            # Build elasticity tensor matricial form
+            elastic_tangent_mf = get_tensor_mf(elastic_tangent,
+                                               n_dim, comp_order_sym,
+                                               device=device)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         else:
             # Get required elastic moduli
             required_moduli = elastic_symmetries[elastic_symmetry]
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Initialize elastic moduli
             elastic_moduli = {}
-            # Collect elastic moduli
-            if elastic_symmetry == 'isotropic' and \
-                    {'E', 'v'}.issubset(set(elastic_properties.keys())):
-                # Get Young modulus and Poisson coefficient
-                E = elastic_properties['E']
-                v = elastic_properties['v']
-                # Compute elastic moduli from technical constants
-                elastic_moduli['E1111'] = \
-                    (E*(1.0 - v))/((1.0 + v)*(1.0 - 2.0*v))
-                elastic_moduli['E1122'] = (E*v)/((1.0 + v)*(1.0 - 2.0*v))
-            else:
-                # Extract elastic moduli from elastic properties
-                for param in elastic_properties.keys():
-                    if param in elastic_symmetries['triclinic']:
-                        elastic_moduli[param] = elastic_properties[param]
+            # Extract elastic moduli from elastic properties
+            for param in elastic_properties.keys():
+                if param in elastic_symmetries['triclinic']:
+                    elastic_moduli[param] = elastic_properties[param]
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Initialize independent elastic moduli
             ind_moduli = {str(modulus): 0.0 for modulus in
@@ -442,79 +454,76 @@ class Elastic(ConstitutiveModel):
                 else:
                     raise RuntimeError('Missing elastic moduli for '
                                        + elastic_symmetry + ' material.')      
-        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        # Set all (non-symmetric) elastic moduli according to elastic symmetry
-        all_moduli = {str(modulus): 0.0 for modulus in ind_moduli.keys()}
-        if elastic_symmetry == 'isotropic':
-            all_moduli['E1111'] = ind_moduli['E1111']
-            all_moduli['E2222'] = all_moduli['E1111']
-            all_moduli['E3333'] = all_moduli['E1111']
-            all_moduli['E1122'] = ind_moduli['E1122']
-            all_moduli['E1133'] = all_moduli['E1122']
-            all_moduli['E2233'] = all_moduli['E1122']
-            all_moduli['E1212'] = 0.5*(all_moduli['E1111']
-                                       - all_moduli['E1122'])
-            all_moduli['E2323'] = all_moduli['E1212']
-            all_moduli['E1313'] = all_moduli['E1212']
-        elif elastic_symmetry == 'transverse_isotropic':
-            all_moduli['E1111'] = ind_moduli['E1111']
-            all_moduli['E2222'] = all_moduli['E1111']
-            all_moduli['E3333'] = ind_moduli['E3333']
-            all_moduli['E1122'] = ind_moduli['E1122']
-            all_moduli['E1133'] = ind_moduli['E1133']
-            all_moduli['E2233'] = all_moduli['E1133']
-            all_moduli['E1212'] = 0.5*(all_moduli['E1111']
-                                       - all_moduli['E1122'])
-            all_moduli['E2323'] = ind_moduli['E2323']
-            all_moduli['E1313'] = all_moduli['E2323']
-        elif elastic_symmetry == 'orthotropic':
-            all_moduli['E1111'] = ind_moduli['E1111']
-            all_moduli['E2222'] = ind_moduli['E2222']
-            all_moduli['E3333'] = ind_moduli['E3333']
-            all_moduli['E1122'] = ind_moduli['E1122']
-            all_moduli['E1133'] = ind_moduli['E1133']
-            all_moduli['E2233'] = ind_moduli['E2233']
-            all_moduli['E1212'] = ind_moduli['E1212']
-            all_moduli['E2323'] = ind_moduli['E2323']
-            all_moduli['E1313'] = ind_moduli['E1313']
-        elif elastic_symmetry == 'monoclinic':
-            all_moduli['E1111'] = ind_moduli['E1111']
-            all_moduli['E2222'] = ind_moduli['E2222']
-            all_moduli['E3333'] = ind_moduli['E3333']
-            all_moduli['E1122'] = ind_moduli['E1122']
-            all_moduli['E1133'] = ind_moduli['E1133']
-            all_moduli['E2233'] = ind_moduli['E2233']
-            all_moduli['E1212'] = ind_moduli['E1212']
-            all_moduli['E2323'] = ind_moduli['E2323']
-            all_moduli['E1313'] = ind_moduli['E1313']
-            all_moduli['E1112'] = ind_moduli['E1112']
-            all_moduli['E2212'] = ind_moduli['E2212']
-            all_moduli['E3312'] = ind_moduli['E3312']
-            all_moduli['E2313'] = ind_moduli['E2313']
-        elif elastic_symmetry == 'triclinic':
-            all_moduli = ind_moduli
-        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        # Get 3D problem parameters
-        _, comp_order_sym, _ = get_problem_type_parameters(problem_type=4)
-        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        # Initialize elasticity tensor
-        elastic_tangent_mf = \
-            torch.zeros(2*(len(comp_order_sym),), dtype=torch.float,
-                        device=device)
-        # Build elasticity tensor according with elastic symmetry
-        for modulus in all_moduli.keys():
-            # Get elastic modulus second-order indexes and associated kelvin
-            # factors
-            idx_1 = comp_order_sym.index(modulus[1:3])
-            kf_1 = kelvin_factor(idx_1, comp_order_sym)
-            idx_2 = comp_order_sym.index(modulus[3:5])
-            kf_2 = kelvin_factor(idx_2, comp_order_sym)
-            # Assemble elastic modulus in elasticity tensor matricial form
-            elastic_tangent_mf[idx_1, idx_2] = kf_1*kf_2*all_moduli[modulus]
-            # Set symmetric component of elasticity tensor
-            if idx_1 != idx_2:
-                elastic_tangent_mf[idx_2, idx_1] = \
-                    elastic_tangent_mf[idx_1, idx_2]
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Set all (non-symmetric) elastic moduli
+            all_moduli = {str(modulus): 0.0 for modulus in ind_moduli.keys()}
+            if elastic_symmetry == 'isotropic':
+                all_moduli['E1111'] = ind_moduli['E1111']
+                all_moduli['E2222'] = all_moduli['E1111']
+                all_moduli['E3333'] = all_moduli['E1111']
+                all_moduli['E1122'] = ind_moduli['E1122']
+                all_moduli['E1133'] = all_moduli['E1122']
+                all_moduli['E2233'] = all_moduli['E1122']
+                all_moduli['E1212'] = \
+                    0.5*(all_moduli['E1111'] - all_moduli['E1122'])
+                all_moduli['E2323'] = all_moduli['E1212']
+                all_moduli['E1313'] = all_moduli['E1212']
+            elif elastic_symmetry == 'transverse_isotropic':
+                all_moduli['E1111'] = ind_moduli['E1111']
+                all_moduli['E2222'] = all_moduli['E1111']
+                all_moduli['E3333'] = ind_moduli['E3333']
+                all_moduli['E1122'] = ind_moduli['E1122']
+                all_moduli['E1133'] = ind_moduli['E1133']
+                all_moduli['E2233'] = all_moduli['E1133']
+                all_moduli['E1212'] = \
+                    0.5*(all_moduli['E1111'] - all_moduli['E1122'])
+                all_moduli['E2323'] = ind_moduli['E2323']
+                all_moduli['E1313'] = all_moduli['E2323']
+            elif elastic_symmetry == 'orthotropic':
+                all_moduli['E1111'] = ind_moduli['E1111']
+                all_moduli['E2222'] = ind_moduli['E2222']
+                all_moduli['E3333'] = ind_moduli['E3333']
+                all_moduli['E1122'] = ind_moduli['E1122']
+                all_moduli['E1133'] = ind_moduli['E1133']
+                all_moduli['E2233'] = ind_moduli['E2233']
+                all_moduli['E1212'] = ind_moduli['E1212']
+                all_moduli['E2323'] = ind_moduli['E2323']
+                all_moduli['E1313'] = ind_moduli['E1313']
+            elif elastic_symmetry == 'monoclinic':
+                all_moduli['E1111'] = ind_moduli['E1111']
+                all_moduli['E2222'] = ind_moduli['E2222']
+                all_moduli['E3333'] = ind_moduli['E3333']
+                all_moduli['E1122'] = ind_moduli['E1122']
+                all_moduli['E1133'] = ind_moduli['E1133']
+                all_moduli['E2233'] = ind_moduli['E2233']
+                all_moduli['E1212'] = ind_moduli['E1212']
+                all_moduli['E2323'] = ind_moduli['E2323']
+                all_moduli['E1313'] = ind_moduli['E1313']
+                all_moduli['E1112'] = ind_moduli['E1112']
+                all_moduli['E2212'] = ind_moduli['E2212']
+                all_moduli['E3312'] = ind_moduli['E3312']
+                all_moduli['E2313'] = ind_moduli['E2313']
+            elif elastic_symmetry == 'triclinic':
+                all_moduli = ind_moduli
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Initialize elasticity tensor
+            elastic_tangent_mf = torch.zeros(2*(len(comp_order_sym),),
+                                             dtype=torch.float, device=device)
+            # Build elasticity tensor according with elastic symmetry
+            for modulus in all_moduli.keys():
+                # Get elastic modulus second-order indexes and associated
+                # Kelvin factors
+                idx_1 = comp_order_sym.index(modulus[1:3])
+                kf_1 = kelvin_factor(idx_1, comp_order_sym)
+                idx_2 = comp_order_sym.index(modulus[3:5])
+                kf_2 = kelvin_factor(idx_2, comp_order_sym)
+                # Assemble elastic modulus in elasticity tensor matricial form
+                elastic_tangent_mf[idx_1, idx_2] = \
+                    kf_1*kf_2*all_moduli[modulus]
+                # Set symmetric component of elasticity tensor
+                if idx_1 != idx_2:
+                    elastic_tangent_mf[idx_2, idx_1] = \
+                        elastic_tangent_mf[idx_1, idx_2]
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         return elastic_tangent_mf
     # -------------------------------------------------------------------------
