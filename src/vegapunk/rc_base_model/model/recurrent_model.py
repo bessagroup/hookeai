@@ -852,6 +852,10 @@ class RecurrentConstitutiveModel(torch.nn.Module):
         tensor : torch.Tensor(2d)
             Strain/Stress tensor.
         """
+        # Get device from input tensor
+        if device is None:
+            device = comps_array.device
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Initialize tensor
         tensor = torch.zeros((n_dim, n_dim), device=device)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -885,6 +889,10 @@ class RecurrentConstitutiveModel(torch.nn.Module):
         comps_array : torch.Tensor(1d)
             Strain/Stress components array.
         """
+        # Get device from input tensor
+        if device is None:
+            device = tensor.device
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Initialize tensor components array
         comps_array = torch.zeros(len(comps), device=device)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
