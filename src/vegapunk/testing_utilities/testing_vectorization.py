@@ -16,8 +16,74 @@ from simulators.fetorch.math.matrixops import get_problem_type_parameters, \
     get_tensor_mf, vget_tensor_mf, get_tensor_from_mf, vget_tensor_from_mf, \
     get_state_3Dmf_from_2Dmf, vget_state_3Dmf_from_2Dmf, \
     get_state_2Dmf_from_3Dmf, vget_state_2Dmf_from_3Dmf
+from rc_base_model.model.recurrent_model import RecurrentConstitutiveModel
 # =============================================================================
 # Summary: Testing vectorization and out-of-place operations
+# =============================================================================
+def vbuild_tensor_from_comps(n_dim, comps, comps_array, device=None):
+    """Build strain/stress tensor from given components.
+    
+    Parameters
+    ----------
+    n_dim : int
+        Problem number of spatial dimensions.
+    comps : tuple[str]
+        Strain/Stress components order.
+    comps_array : torch.Tensor(1d)
+        Strain/Stress components array.
+    device : torch.device, default=None
+        Device on which torch.Tensor is allocated.
+    
+    Returns
+    -------
+    tensor : torch.Tensor(2d)
+        Strain/Stress tensor.
+    """
+    # Get device from input tensor
+    if device is None:
+        device = comps_array.device
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Set row major components order       
+    row_major_order = tuple(f'{i + 1}{j + 1}' for i, j
+                            in itertools.product(range(n_dim), repeat=2))
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Build indexing mapping
+    index_map = [comps.index(x) if x in comps
+                 else comps.index(x[::-1]) for x in row_major_order]
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Build tensor
+    tensor = comps_array[index_map].view(n_dim, n_dim)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    return tensor
+# =============================================================================
+def vstore_tensor_comps(comps, tensor, device=None):
+    """Store strain/stress tensor components in array (vectorized).
+    
+    Parameters
+    ----------
+    comps : tuple[str]
+        Strain/Stress components order.
+    tensor : torch.Tensor(2d)
+        Strain/Stress tensor.
+    device : torch.device, default=None
+        Device on which torch.Tensor is allocated.
+    
+    Returns
+    -------
+    comps_array : torch.Tensor(1d)
+        Strain/Stress components array.
+    """
+    # Get device from input tensor
+    if device is None:
+        device = tensor.device
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Build indexing mapping
+    index_map = tuple([int(x[i]) - 1 for x in comps] for i in range(2))
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Build tensor components array
+    comps_array = tensor[index_map]
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    return comps_array
 # =============================================================================
 def function_timer(function, args, n_calls=1):
     # Initialize total execution time
@@ -245,7 +311,6 @@ def testing_get_state_3Dmf_from_2Dmf(device='cpu'):
         RuntimeError('Original and vectorized results do not match!')
 # =============================================================================
 def testing_get_state_2Dmf_from_3Dmf(device='cpu'):
-    # Display tensor
     print('\n' + 40*'-')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Original vs Vectorized: Second order
@@ -310,6 +375,98 @@ def testing_get_state_2Dmf_from_3Dmf(device='cpu'):
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         print('\n' + 40*'-')
 # =============================================================================
+def testing_build_tensor_from_comps(device='cpu'):
+    # Get 3D problem type parameters
+    n_dim, comp_order_sym, comp_order_nsym = \
+        get_problem_type_parameters(problem_type=4)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Display tensor
+    print('\n' + 40*'-')
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Original vs Vectorized
+    #
+    for case in ('symmetric', 'nonsymmetric'):
+        # Create 3D second order tensor components
+        if case == 'symmetric':
+            comps_array = torch.arange(0, 6, dtype=torch.float, device=device)
+            comps = comp_order_sym
+            is_symmetric = True
+        else:
+            comps_array = torch.arange(0, 9, dtype=torch.float, device=device)
+            comps = comp_order_nsym
+            is_symmetric = False
+        print(f'\n2D SECOND ORDER TENSOR COMPONENTS:\n')
+        print(f' {comps_array}')
+        # Original
+        build_tensor_from_comps = \
+            RecurrentConstitutiveModel.build_tensor_from_comps
+        o_tensor = build_tensor_from_comps(n_dim, comps, comps_array,
+                                           is_symmetric=is_symmetric)
+        o_avg_time_call = function_timer(build_tensor_from_comps, 
+                                         (n_dim, comps, comps_array,
+                                          is_symmetric),
+                                         n_calls=1000)
+        print(f'\nMatricial form (original):\n')
+        print(f' {o_tensor}')
+        print(f'\n avg. time per call = {o_avg_time_call:.4e}')
+        # Vectorized
+        v_tensor = vbuild_tensor_from_comps(n_dim, comps, comps_array)
+        v_avg_time_call = function_timer(vbuild_tensor_from_comps, 
+                                         (n_dim, comps, comps_array),
+                                         n_calls=1000)
+        print(f'\nMatricial form (vectorized):\n')
+        print(f' {v_tensor}')
+        print(f'\n avg. time per call = {v_avg_time_call:.4e}')
+        # Check results
+        if not torch.allclose(o_tensor, v_tensor):
+            RuntimeError('Original and vectorized results do not match!')
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        print('\n' + 40*'-')
+# =============================================================================
+def testing_store_tensor_comps(device='cpu'):
+    # Get 3D problem type parameters
+    _, comp_order_sym, comp_order_nsym = \
+        get_problem_type_parameters(problem_type=4)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Create second order tensor
+    tensor = torch.arange(0, 9, dtype=torch.float, device=device).reshape(3, 3)
+    # Display tensor
+    print('\n' + 40*'-')
+    print(f'\nSECOND ORDER TENSOR:\n')
+    print(f' {tensor}')
+    print('\n' + 40*'-')
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Original vs Vectorized
+    #
+    for case in ('symmetric', 'nonsymmetric'):
+        print(f'\nSYMMETRY CASE: {case}')
+        # Create 3D second order tensor
+        if case == 'symmetric':
+            comps = comp_order_sym
+        else:
+            comps = comp_order_nsym
+        # Original
+        store_tensor_comps = RecurrentConstitutiveModel.store_tensor_comps
+        o_comps_array = store_tensor_comps(comps, tensor)
+        o_avg_time_call = function_timer(store_tensor_comps, 
+                                         (comps, tensor), n_calls=1000)
+        print(f'\nMatricial form (original):\n')
+        print(f' {o_comps_array}')
+        print(f'\n avg. time per call = {o_avg_time_call:.4e}')
+        # Vectorized
+        store_tensor_comps = RecurrentConstitutiveModel.store_tensor_comps
+        v_comps_array = vstore_tensor_comps(comps, tensor)
+        v_avg_time_call = function_timer(vstore_tensor_comps, 
+                                         (comps, tensor), n_calls=1000)
+        print(f'\nMatricial form (vectorized):\n')
+        print(f' {v_comps_array}')
+        print(f'\n avg. time per call = {v_avg_time_call:.4e}')
+        # Check results
+        if not torch.allclose(o_comps_array, v_comps_array):
+            RuntimeError('Original and vectorized results do not match!')
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        print('\n' + 40*'-')
+# =============================================================================
 if __name__ == '__main__':
     # Set testing device
     testing_device = 'cpu'
@@ -319,6 +476,8 @@ if __name__ == '__main__':
     is_testing_get_tensor_from_mf = False
     is_testing_get_state_3Dmf_from_2Dmf = False
     is_testing_get_state_2Dmf_from_3Dmf = False
+    is_testing_build_tensor_from_comps = False
+    is_testing_store_tensor_comps = False
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Perform tests
     if is_testing_get_tensor_mf:
@@ -329,3 +488,7 @@ if __name__ == '__main__':
         testing_get_state_3Dmf_from_2Dmf(device=testing_device)
     if is_testing_get_state_2Dmf_from_3Dmf:
         testing_get_state_2Dmf_from_3Dmf(device=testing_device)
+    if is_testing_build_tensor_from_comps:
+        testing_build_tensor_from_comps(device=testing_device)
+    if is_testing_store_tensor_comps:
+        testing_store_tensor_comps(device=testing_device)
