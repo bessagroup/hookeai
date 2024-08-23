@@ -8,11 +8,14 @@ if root_dir not in sys.path:
     sys.path.insert(0, root_dir)
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 import time
+import itertools
 # Third-party
 import torch
 # Local
 from simulators.fetorch.math.matrixops import get_problem_type_parameters, \
-    get_tensor_mf, vget_tensor_mf, get_tensor_from_mf, vget_tensor_from_mf
+    get_tensor_mf, vget_tensor_mf, get_tensor_from_mf, vget_tensor_from_mf, \
+    get_state_3Dmf_from_2Dmf, vget_state_3Dmf_from_2Dmf, \
+    get_state_2Dmf_from_3Dmf, vget_state_2Dmf_from_3Dmf
 # =============================================================================
 # Summary: Testing vectorization and out-of-place operations
 # =============================================================================
@@ -103,8 +106,6 @@ def testing_get_tensor_mf(device='cpu'):
         if not torch.allclose(o_tensor_mf, v_tensor_mf):
             RuntimeError('Original and vectorized results do not match!')
 # =============================================================================
-
-# =============================================================================
 def testing_get_tensor_from_mf(device='cpu'):
     # Get 3D problem type parameters
     n_dim, comp_order_sym, comp_order_nsym = \
@@ -180,16 +181,151 @@ def testing_get_tensor_from_mf(device='cpu'):
         if not torch.allclose(o_tensor, v_tensor):
             RuntimeError('Original and vectorized results do not match!')
 # =============================================================================
+def testing_get_state_3Dmf_from_2Dmf(device='cpu'):
+    # Create 2D tensor matricial form (symmetric)
+    mf_2d = torch.arange(0, 3, device=device)
+    # Set out-of-plane component
+    comp_33 = 3.0
+    # Display tensor
+    print('\n' + 40*'-')
+    print(f'\n2D MATRICIAL FORM:\n')
+    print(f' {mf_2d} and {comp_33}')
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Original vs Vectorized: Symmetric
+    #
+    print('\n' + 40*'-')
+    print(f'\nSYMMETRIC CASE:')
+    # Original
+    o_mf_3d = get_state_3Dmf_from_2Dmf(2, mf_2d, comp_33)
+    o_avg_time_call = function_timer(get_state_3Dmf_from_2Dmf,
+                                     (2, mf_2d, comp_33), n_calls=1000)
+    print(f'\nMatricial form (original):\n')
+    print(f' {o_mf_3d}')
+    print(f'\n avg. time per call = {o_avg_time_call:.4e}')
+    # Vectorized
+    v_mf_3d = vget_state_3Dmf_from_2Dmf(mf_2d, comp_33)
+    v_avg_time_call = function_timer(vget_state_3Dmf_from_2Dmf,
+                                     (mf_2d, comp_33), n_calls=1000)
+    print(f'\nMatricial form (vectorized):\n')
+    print(f' {v_mf_3d}')
+    print(f'\n avg. time per call = {v_avg_time_call:.4e}')
+    # Check results
+    if not torch.allclose(o_mf_3d, v_mf_3d):
+        RuntimeError('Original and vectorized results do not match!')
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Create 2D tensor matricial form (nonsymmetric)
+    mf_2d = torch.arange(0, 4, device=device)
+    # Set out-of-plane component
+    comp_33 = 4.0
+    # Display tensor
+    print('\n' + 40*'-')
+    print(f'\n2D MATRICIAL FORM:\n')
+    print(f' {mf_2d} and {comp_33}')
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Original vs Vectorized: Symmetric
+    #
+    print('\n' + 40*'-')
+    print(f'\nNONSYMMETRIC CASE:')
+    # Original
+    o_mf_3d = get_state_3Dmf_from_2Dmf(2, mf_2d, comp_33)
+    o_avg_time_call = function_timer(get_state_3Dmf_from_2Dmf,
+                                     (2, mf_2d, comp_33), n_calls=1000)
+    print(f'\nMatricial form (original):\n')
+    print(f' {o_mf_3d}')
+    print(f'\n avg. time per call = {o_avg_time_call:.4e}')
+    # Vectorized
+    v_mf_3d = vget_state_3Dmf_from_2Dmf(mf_2d, comp_33)
+    v_avg_time_call = function_timer(vget_state_3Dmf_from_2Dmf,
+                                     (mf_2d, comp_33), n_calls=1000)
+    print(f'\nMatricial form (vectorized):\n')
+    print(f' {v_mf_3d}')
+    print(f'\n avg. time per call = {v_avg_time_call:.4e}')
+    # Check results
+    if not torch.allclose(o_mf_3d, v_mf_3d):
+        RuntimeError('Original and vectorized results do not match!')
+# =============================================================================
+def testing_get_state_2Dmf_from_3Dmf(device='cpu'):
+    # Display tensor
+    print('\n' + 40*'-')
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Original vs Vectorized: Second order
+    #
+    for case in ('symmetric', 'nonsymmetric'):
+        # Create 3D second order tensor matricial form
+        if case == 'symmetric':
+            mf_3d = torch.arange(0, 6, dtype=torch.float, device=device)
+        else:
+            mf_3d = torch.arange(0, 9, dtype=torch.float, device=device)
+        print(f'\n2D SECOND ORDER MATRICIAL FORM:\n')
+        print(f' {mf_3d}')
+        # Original
+        o_mf_2d = get_state_2Dmf_from_3Dmf(2, mf_3d)
+        o_avg_time_call = function_timer(get_state_2Dmf_from_3Dmf,
+                                         (2, mf_3d), n_calls=1000)
+        print(f'\nMatricial form (original):\n')
+        print(f' {o_mf_2d}')
+        print(f'\n avg. time per call = {o_avg_time_call:.4e}')
+        # Vectorized
+        v_mf_2d = vget_state_2Dmf_from_3Dmf(mf_3d)
+        v_avg_time_call = function_timer(vget_state_2Dmf_from_3Dmf,
+                                         (mf_3d,), n_calls=1000)
+        print(f'\nMatricial form (vectorized):\n')
+        print(f' {v_mf_2d}')
+        print(f'\n avg. time per call = {v_avg_time_call:.4e}')
+        # Check results
+        if not torch.allclose(o_mf_2d, v_mf_2d):
+            RuntimeError('Original and vectorized results do not match!')
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        print('\n' + 40*'-')
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Original vs Vectorized: Fourth order
+    #
+    for case in ('symmetric', 'nonsymmetric'):
+        # Create 3D second order tensor matricial form
+        if case == 'symmetric':
+            mf_3d = torch.arange(0, 36, dtype=torch.float,
+                                 device=device).reshape(6, 6)
+        else:
+            mf_3d = torch.arange(0, 81, dtype=torch.float,
+                                 device=device).reshape(9, 9)
+        print(f'\n2D FOURTH ORDER MATRICIAL FORM:\n')
+        print(f' {mf_3d}')
+        # Original
+        o_mf_2d = get_state_2Dmf_from_3Dmf(2, mf_3d)
+        o_avg_time_call = function_timer(get_state_2Dmf_from_3Dmf,
+                                        (2, mf_3d), n_calls=1000)
+        print(f'\nMatricial form (original):\n')
+        print(f' {o_mf_2d}')
+        print(f'\n avg. time per call = {o_avg_time_call:.4e}')
+        # Vectorized
+        v_mf_2d = vget_state_2Dmf_from_3Dmf(mf_3d)
+        v_avg_time_call = function_timer(vget_state_2Dmf_from_3Dmf,
+                                        (mf_3d,), n_calls=1000)
+        print(f'\nMatricial form (vectorized):\n')
+        print(f' {v_mf_2d}')
+        print(f'\n avg. time per call = {v_avg_time_call:.4e}')
+        # Check results
+        if not torch.allclose(o_mf_2d, v_mf_2d):
+            RuntimeError('Original and vectorized results do not match!')
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        print('\n' + 40*'-')
+# =============================================================================
 if __name__ == '__main__':
     # Set testing device
-    testing_device = 'cuda'
+    testing_device = 'cpu'
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set testing options
-    is_testing_get_tensor_mf = True
-    is_testing_get_tensor_from_mf = True
+    is_testing_get_tensor_mf = False
+    is_testing_get_tensor_from_mf = False
+    is_testing_get_state_3Dmf_from_2Dmf = False
+    is_testing_get_state_2Dmf_from_3Dmf = False
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Perform tests
     if is_testing_get_tensor_mf:
         testing_get_tensor_mf(device=testing_device)
     if is_testing_get_tensor_from_mf:
         testing_get_tensor_from_mf(device=testing_device)
+    if is_testing_get_state_3Dmf_from_2Dmf:
+        testing_get_state_3Dmf_from_2Dmf(device=testing_device)
+    if is_testing_get_state_2Dmf_from_3Dmf:
+        testing_get_state_2Dmf_from_3Dmf(device=testing_device)

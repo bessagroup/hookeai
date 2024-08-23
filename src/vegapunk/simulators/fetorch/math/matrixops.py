@@ -27,8 +27,12 @@ kelvin_factor
     Get Kelvin notation coefficient of given strain/stress component.
 get_state_3Dmf_from_2Dmf
     Build 3D counterpart of 2D strain/stress second-order tensor.
+vget_state_3Dmf_from_2Dmf
+    Build 3D counterpart of 2D second-order tensor (vectorized).
 get_state_2Dmf_from_3Dmf
     Build 2D counterpart of 3D strain/stress second- or fourth-order tensor.
+vget_state_2Dmf_from_3Dmf
+    Build 2D counterpart of 3D second- or fourth-order tensor (vectorized).
 """
 #
 #                                                                       Modules
@@ -673,6 +677,53 @@ def get_state_3Dmf_from_2Dmf(problem_type, mf_2d, comp_33, device=None):
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     return mf_3d
 # =============================================================================
+def vget_state_3Dmf_from_2Dmf(mf_2d, comp_33, device=None):
+    """Build 3D counterpart of 2D second-order tensor (vectorized).
+
+    Parameters
+    ----------
+    mf_2d : torch.Tensor(1d)
+        Matricial form of 2D strain/stress second-order tensor.
+    comp_33 : float
+        Out-of-plane strain/stress component.
+    device : torch.device, default=None
+        Device on which torch.Tensor is allocated.
+
+    Returns
+    -------
+    mf_3d : torch.Tensor(1d)
+        Matricial form of 3D strain/stress second-order tensor.
+    """
+    # Get device from input tensor
+    if device is None:
+        device = mf_2d.device
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Get 2D strain/stress components order in symmetric and nonsymmetric cases
+    _, comp_order_sym_2d, comp_order_nsym_2d = \
+        get_problem_type_parameters(problem_type=1)
+    # Get 3D strain/stress components order in symmetric and nonsymmetric cases
+    _, comp_order_sym_3d, comp_order_nsym_3d = \
+        get_problem_type_parameters(problem_type=4)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Set required strain/stress component order according to strain tensor
+    # symmetry
+    if len(mf_2d) == len(comp_order_sym_2d):
+        comp_order_2d = comp_order_sym_2d
+        comp_order_3d = comp_order_sym_3d
+    else:
+        comp_order_2d = comp_order_nsym_2d
+        comp_order_3d = comp_order_nsym_3d
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Build 3D strain/stress second-order tensor (matricial form)
+    mf_3d = torch.tensor([mf_2d[comp_order_2d.index(x)]
+                          if x in comp_order_2d else 0.0
+                          for x in comp_order_3d],
+                         dtype=torch.float, device=device) \
+        + comp_33*torch.eye(len(comp_order_3d), dtype=torch.float,
+                            device=device)[comp_order_3d.index('33')]    
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    return mf_3d
+# =============================================================================
 def get_state_2Dmf_from_3Dmf(problem_type, mf_3d, device=None):
     """Build 2D counterpart of 3D strain/stress second- or fourth-order tensor.
 
@@ -691,6 +742,10 @@ def get_state_2Dmf_from_3Dmf(problem_type, mf_3d, device=None):
     mf_2d : torch.Tensor (1d or 2d)
         Matricial form of 2D strain/stress related tensor.
     """
+    # Get device from input tensor
+    if device is None:
+        device = mf_3d.device
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Get 2D strain/stress components order in symmetric and nonsymmetric cases
     _, comp_order_sym_2d, comp_order_nsym_2d = \
         get_problem_type_parameters(problem_type=1)
@@ -721,5 +776,52 @@ def get_state_2Dmf_from_3Dmf(problem_type, mf_3d, device=None):
                 comp_i = comp_order_2d[i]
                 mf_2d[i, j] = mf_3d[comp_order_3d.index(comp_i),
                                     comp_order_3d.index(comp_j)]
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    return mf_2d
+# =============================================================================
+def vget_state_2Dmf_from_3Dmf(mf_3d, device=None):
+    """Build 2D counterpart of 3D second- or fourth-order tensor (vectorized).
+
+    Parameters
+    ----------
+    mf_3d : torch.Tensor (1d or 2d)
+        Matricial form of 3D strain/stress related tensor.
+    device : torch.device, default=None
+        Device on which torch.Tensor is allocated.
+
+    Returns
+    -------
+    mf_2d : torch.Tensor (1d or 2d)
+        Matricial form of 2D strain/stress related tensor.
+    """
+    # Get 2D strain/stress components order in symmetric and nonsymmetric cases
+    _, comp_order_sym_2d, comp_order_nsym_2d = \
+        get_problem_type_parameters(problem_type=1)
+    # Get 3D strain/stress components order in symmetric and nonsymmetric cases
+    _, comp_order_sym_3d, comp_order_nsym_3d = \
+        get_problem_type_parameters(problem_type=4)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Set required strain/stress component order according to strain tensor
+    # symmetry
+    if len(mf_3d) == len(comp_order_sym_3d):
+        comp_order_2d = comp_order_sym_2d
+        comp_order_3d = comp_order_sym_3d
+    else:
+        comp_order_2d = comp_order_nsym_2d
+        comp_order_3d = comp_order_nsym_3d
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Build indexing mapping
+    index_map = [comp_order_3d.index(x) for x in comp_order_2d]
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Build 2D strain/stress related tensor (matricial form)
+    if len(mf_3d.shape) == 1:
+        mf_2d = mf_3d[index_map]
+    elif len(mf_3d.shape) == 2:
+        index_map = list(zip(*it.product(index_map, repeat=2)))
+        mf_2d = mf_3d[index_map].view(len(comp_order_2d), len(comp_order_2d))
+    else:
+        RuntimeError('The 3D matricial form must correspond to 1d or 2d '
+                     'torch.Tensor (second- or fourth-order strain/stress '
+                     'tensor).')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     return mf_2d
