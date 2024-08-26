@@ -19,7 +19,7 @@ __status__ = 'Planning'
 # =============================================================================
 #
 # =============================================================================
-def eval_jacobian(element_type, nodes_coords, local_coords):
+def eval_jacobian(element_type, nodes_coords, local_coords, device=None):
     """Evaluate finite element Jacobian and determinant at given coordinates.
     
     Parameters
@@ -31,6 +31,8 @@ def eval_jacobian(element_type, nodes_coords, local_coords):
         (n_node, n_dof_node).
     local_coords : torch.Tensor(1d)
         Local coordinates of point where Jacobian is evaluated.
+    device : torch.device, default=None
+        Device on which torch.Tensor is allocated.
     
     Returns
     -------
@@ -44,21 +46,16 @@ def eval_jacobian(element_type, nodes_coords, local_coords):
         i-th shape function with respect to the j-th local coordinate is
         stored in shape_fun_local_deriv[i, j].
     """
-    # Get element number of degrees of freedom per node
-    n_dof_node = element_type.get_n_dof_node()
+    # Get device from input tensor
+    if device is None:
+        device = nodes_coords.device
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Evaluate element shape functions local derivatives
     shape_fun_local_deriv = \
         element_type.eval_shapefun_local_deriv(local_coords)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Initialize Jacobian
-    jacobian = torch.zeros((n_dof_node, n_dof_node))
-    # Loop over dimensions
-    for i in range(jacobian.shape[0]):
-        # Loop over dimensions
-        for j in range(jacobian.shape[1]):
-            # Compute Jacobian
-            jacobian[i, j] = \
-                torch.inner(shape_fun_local_deriv[:, i], nodes_coords[:, j])
+    # Compute Jacobian
+    jacobian = torch.matmul(shape_fun_local_deriv.t(), nodes_coords)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Compute Jacobian determinant
     jacobian_det = torch.det(jacobian)
