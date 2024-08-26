@@ -58,8 +58,18 @@ class ElementType(ABC):
         coordinates.
     _admissible_gauss_quadratures()
         *abstract*: Get admissible Gauss integration quadratures.
+    get_n_node(self)
+        Get number of nodes.
     get_n_dof_node(self)
         Get number of degrees of freedom per node.
+    get_n_gauss(self)
+        Get number of Gauss quadrature integration points.
+    get_gauss_integration_points(self)
+        Get Gaussian quadrature points local coordinates and weights.
+    set_device(self, device_type)
+        Set device on which torch.Tensor is allocated.
+    get_device(self)
+        Get device on which torch.Tensor is allocated.
     check_shape_functions_properties(self)
         Check if element shape functions satisfy known properties.
     """
@@ -174,6 +184,38 @@ class ElementType(ABC):
             1 to n_gauss.
         """
         return copy.deepcopy(self._gp_coords), copy.deepcopy(self._gp_weights)
+    # -------------------------------------------------------------------------
+    def set_device(self, device_type):
+        """Set device on which torch.Tensor is allocated.
+        
+        Parameters
+        ----------
+        device_type : {'cpu', 'cuda'}
+            Type of device on which torch.Tensor is allocated.
+        device : torch.device
+            Device on which torch.Tensor is allocated.
+        """
+        if device_type in ('cpu', 'cuda'):
+            if device_type == 'cuda' and not torch.cuda.is_available():
+                raise RuntimeError('PyTorch with CUDA is not available. '
+                                   'Please set the model device type as CPU '
+                                   'as:\n\n' + 'model.set_device(\'cpu\').')
+            self._device_type = device_type
+            self._device = torch.device(device_type)
+        else:
+            raise RuntimeError('Invalid device type.')
+    # -------------------------------------------------------------------------
+    def get_device(self):
+        """Get device on which torch.Tensor is allocated.
+        
+        Returns
+        -------
+        device_type : {'cpu', 'cuda'}
+            Type of device on which torch.Tensor is allocated.
+        device : torch.device
+            Device on which torch.Tensor is allocated.
+        """
+        return self.device_type, self.device
     # -------------------------------------------------------------------------
     def check_shape_functions_properties(self):
         """Check if element shape functions satisfy known properties."""

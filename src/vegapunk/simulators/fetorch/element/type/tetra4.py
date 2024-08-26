@@ -46,6 +46,10 @@ class FETetra4(ElementType):
         Gauss quadrature integration points (key, str[int]) weights
         (item, float). Gauss integration points are labeled from
         1 to n_gauss.
+    _device_type : {'cpu', 'cuda'}
+        Type of device on which torch.Tensor is allocated.
+    _device : torch.device
+        Device on which torch.Tensor is allocated.
         
     Methods
     -------
@@ -58,13 +62,15 @@ class FETetra4(ElementType):
     _admissible_gauss_quadratures()
         Get admissible Gauss integration quadratures.
     """
-    def __init__(self, n_gauss=4):
+    def __init__(self, n_gauss=4, device_type='cpu'):
         """Constructor.
         
         Parameters
         ----------
         n_gauss : int, default=4
             Number of Gauss quadrature integration points.
+        device_type : {'cpu', 'cuda'}, default='cpu'
+            Type of device on which torch.Tensor is allocated.
         """
         # Set name
         self._name = 'tetra4'
@@ -72,6 +78,9 @@ class FETetra4(ElementType):
         self._n_node = 4
         # Set number of degrees of freedom per node
         self._n_dof_node = 3
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set device
+        self.set_device(device_type)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Set nodes local coordinates
         self._set_nodes_local_coords()
@@ -88,13 +97,13 @@ class FETetra4(ElementType):
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     def _set_nodes_local_coords(self):
         """Set nodes local coordinates."""
-        # Initialize local coordinates
-        nodes_local_coords = torch.zeros((self._n_node, 3), dtype=torch.float)
-        # Set local coordinates
-        nodes_local_coords[0, :] = torch.tensor((0.0, 0.0, 0.0))
-        nodes_local_coords[1, :] = torch.tensor((1.0, 0.0, 0.0))
-        nodes_local_coords[2, :] = torch.tensor((0.0, 1.0, 0.0))
-        nodes_local_coords[3, :] = torch.tensor((0.0, 0.0, 1.0))
+        # Set nodes local coordinates
+        nodes_local_coords = \
+            torch.tensor([(0.0, 0.0, 0.0),
+                          (1.0, 0.0, 0.0),
+                          (0.0, 1.0, 0.0),
+                          (0.0, 0.0, 1.0)],
+                         dtype=torch.float, device=self._device)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Store nodes local coordinates
         self._nodes_local_coords = nodes_local_coords
@@ -116,13 +125,13 @@ class FETetra4(ElementType):
         # Unpack local coordinates
         c1, c2, c3 = local_coords
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        # Initialize shape functions
-        shape_fun = torch.zeros((self._n_node), dtype=torch.float)
         # Compute shape functions at given local coordinates
-        shape_fun[0] = 1.0 - c1 - c2 - c3
-        shape_fun[1] = c1
-        shape_fun[2] = c2
-        shape_fun[3] = c3
+        shape_fun = \
+            torch.tensor([1.0 - c1 - c2 - c3,
+                          c1,
+                          c2,
+                          c3],
+                         dtype=torch.float, device=self._device)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         return shape_fun
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -146,14 +155,13 @@ class FETetra4(ElementType):
         # Unpack local coordinates
         c1, c2, c3 = local_coords
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        # Initialize shape functions
-        shape_fun_local_deriv = \
-            torch.zeros((self._n_node, 3), dtype=torch.float)
         # Compute shape functions at given local coordinates
-        shape_fun_local_deriv[0, :] = torch.tensor((-1.0, -1.0, -1.0))
-        shape_fun_local_deriv[1, :] = torch.tensor((1.0, 0.0, 0.0))
-        shape_fun_local_deriv[2, :] = torch.tensor((0.0, 1.0, 0.0))
-        shape_fun_local_deriv[3, :] = torch.tensor((0.0, 0.0, 1.0))
+        shape_fun_local_deriv = \
+            torch.tensor([(-1.0, -1.0, -1.0),
+                          (1.0, 0.0, 0.0),
+                          (0.0, 1.0, 0.0),
+                          (0.0, 0.0, 1.0)],
+                         dtype=torch.float, device=self._device)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         return shape_fun_local_deriv
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
