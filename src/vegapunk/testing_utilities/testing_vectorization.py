@@ -16,6 +16,8 @@ from simulators.fetorch.math.matrixops import get_problem_type_parameters, \
     get_tensor_mf, vget_tensor_mf, get_tensor_from_mf, vget_tensor_from_mf, \
     get_state_3Dmf_from_2Dmf, vget_state_3Dmf_from_2Dmf, \
     get_state_2Dmf_from_3Dmf, vget_state_2Dmf_from_3Dmf
+from simulators.fetorch.math.voigt_notation import get_stress_vfm, \
+    vget_stress_vmf, get_strain_from_vfm, vget_strain_from_vmf
 from rc_base_model.model.recurrent_model import RecurrentConstitutiveModel
 # =============================================================================
 # Summary: Testing vectorization and out-of-place operations
@@ -467,6 +469,77 @@ def testing_store_tensor_comps(device='cpu'):
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         print('\n' + 40*'-')
 # =============================================================================
+def testing_get_stress_vmf(device='cpu'):
+    # Get 3D problem type parameters
+    n_dim, comp_order_sym, _ = get_problem_type_parameters(problem_type=4)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Create second order tensor
+    tensor = torch.arange(0, 9, dtype=torch.float, device=device).reshape(3, 3)
+    # Display tensor
+    print('\n' + 40*'-')
+    print(f'\nSECOND ORDER TENSOR:\n')
+    print(f' {tensor}')
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Original vs Vectorized:
+    print('\n' + 40*'-')
+    # Original
+    o_tensor_mf = get_stress_vfm(tensor, n_dim, comp_order_sym)
+    o_avg_time_call = function_timer(get_stress_vfm,
+                                    (tensor, n_dim, comp_order_sym),
+                                    n_calls=1000)
+    print(f'\nMatricial form (original):\n')
+    print(f' {o_tensor_mf}')
+    print(f'\n avg. time per call = {o_avg_time_call:.4e}')
+    # Vectorized
+    v_tensor_mf = vget_stress_vmf(tensor, n_dim, comp_order_sym)
+    v_avg_time_call = function_timer(vget_stress_vmf,
+                                    (tensor, n_dim, comp_order_sym),
+                                    n_calls=1000)
+    print(f'\nMatricial form (vectorized):\n')
+    print(f' {v_tensor_mf}')
+    print(f'\n avg. time per call = {v_avg_time_call:.4e}')
+    # Check results
+    if not torch.allclose(o_tensor_mf, v_tensor_mf):
+        RuntimeError('Original and vectorized results do not match!')
+# =============================================================================
+def testing_get_strain_from_vmf(device='cpu'):
+    # Get 3D problem type parameters
+    n_dim, comp_order_sym, comp_order_nsym = \
+        get_problem_type_parameters(problem_type=4)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Create second order tensor
+    tensor = torch.arange(0, 9, device=device).reshape(3, 3)
+    # Display tensor
+    print('\n' + 40*'-')
+    print(f'\nSECOND ORDER TENSOR:\n')
+    print(f' {tensor}')
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Original vs Vectorized: Second order
+    #
+    print('\n' + 40*'-')
+    print(f'\nSECOND ORDER CASE: {comp_order_sym}')
+    # Get tensor matricial form
+    tensor_mf = vget_stress_vmf(tensor, n_dim, comp_order_sym)
+    # Original
+    o_tensor = get_strain_from_vfm(tensor_mf, n_dim, comp_order_sym)
+    o_avg_time_call = function_timer(get_strain_from_vfm,
+                                        (tensor_mf, n_dim, comp_order_sym),
+                                        n_calls=1000)
+    print(f'\nMatricial form (original):\n')
+    print(f' {o_tensor}')
+    print(f'\n avg. time per call = {o_avg_time_call:.4e}')
+    # Vectorized
+    v_tensor = vget_strain_from_vmf(tensor_mf, n_dim, comp_order_sym)
+    v_avg_time_call = function_timer(vget_strain_from_vmf,
+                                        (tensor_mf, n_dim, comp_order_sym),
+                                        n_calls=1000)
+    print(f'\nMatricial form (vectorized):\n')
+    print(f' {v_tensor}')
+    print(f'\n avg. time per call = {v_avg_time_call:.4e}')
+    # Check results
+    if not torch.allclose(o_tensor, v_tensor):
+        RuntimeError('Original and vectorized results do not match!')
+# =============================================================================
 if __name__ == '__main__':
     # Set testing device
     testing_device = 'cpu'
@@ -478,6 +551,8 @@ if __name__ == '__main__':
     is_testing_get_state_2Dmf_from_3Dmf = False
     is_testing_build_tensor_from_comps = False
     is_testing_store_tensor_comps = False
+    is_testing_get_stress_vmf = False
+    is_testing_get_strain_from_vmf = False
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Perform tests
     if is_testing_get_tensor_mf:
@@ -492,3 +567,7 @@ if __name__ == '__main__':
         testing_build_tensor_from_comps(device=testing_device)
     if is_testing_store_tensor_comps:
         testing_store_tensor_comps(device=testing_device)
+    if is_testing_get_stress_vmf:
+        testing_get_stress_vmf(device=testing_device)
+    if is_testing_get_strain_from_vmf:
+        testing_get_strain_from_vmf(device=testing_device)
