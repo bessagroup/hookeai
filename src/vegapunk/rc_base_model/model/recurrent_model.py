@@ -18,6 +18,7 @@ import os
 import copy
 import re
 import pickle
+import itertools
 # Third-party
 import torch
 import tqdm
@@ -139,6 +140,14 @@ class RecurrentConstitutiveModel(torch.nn.Module):
         Build strain/stress tensor from given components.
     store_tensor_comps(cls, comps, tensor)
         Store strain/stress tensor components in array.
+    _vrecurrent_constitutive_model(self, strain_paths)
+        Compute material response (vectorized).
+    _vcompute_stress_path(self, strain_path)
+        Compute material response for given strain path (vectorized).
+    vbuild_tensor_from_comps(cls, n_dim, comps, comps_array, device=None)
+        Build strain/stress tensor from given components (vectorized).
+    vstore_tensor_comps(cls, comps, tensor, device=None)
+        Store strain/stress tensor components in array (vectorized).  
     move_state_tensors_to_device(self, state_variables)
         Move state variables tensors to model device.
     save_model_init_file(self)
@@ -902,6 +911,300 @@ class RecurrentConstitutiveModel(torch.nn.Module):
             i, j = [int(x) - 1 for x in comp]
             # Assemble tensor component
             comps_array[k] = tensor[i, j]
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        return comps_array
+    # -------------------------------------------------------------------------
+    def _vrecurrent_constitutive_model(self, strain_paths):
+        """Compute material response (vectorized).
+        
+        Parameters
+        ----------
+        strain_paths : torch.Tensor
+            Tensor of strain paths stored as torch.Tensor(2d) of shape
+            (sequence_length, n_features_in) for unbatched input or
+            torch.Tensor(3d) of shape
+            (sequence_length, batch_size, n_features_in) for batched input.
+        
+        Returns
+        -------
+        response_paths : torch.Tensor
+            Tensor of material response paths (stress and state variables)
+            stored as torch.Tensor(2d) of shape
+            (sequence_length, n_features_out) for unbatched input or
+            torch.Tensor(3d) of shape
+            (sequence_length, batch_size, n_features_out) for batched input.
+        """
+        # Check input data
+        if len(strain_paths.shape) == 3:
+            # Set batched input flag
+            is_batched = True
+            # Get number of paths
+            n_path = strain_paths.shape[1]
+        elif len(strain_paths.shape) == 2:
+            # Set batched input flag
+            is_batched = False
+            # Set number of paths
+            n_path = 1
+        else:
+            raise RuntimeError('Tensor of strain paths must be stored as'
+                               'torch.Tensor (2d) of shape '
+                               '(sequence_length, n_features_in) for '
+                               'unbatched input or torch.Tensor (2d) of shape '
+                               '(sequence_length, batch_size, n_features_out) '
+                               'for batched input.')
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Initialize material response paths data
+        response_paths_data = []
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Loop over paths
+        for i in range(n_path):
+            # Get strain path
+            if is_batched:
+                strain_path = strain_paths[:, i, :]
+            else:
+                strain_path = strain_paths[:, :]
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Compute material response
+            stress_path, state_path = self._vcompute_stress_path(strain_path)            
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Concatenate path stress and state features
+            if state_path is not None:
+                response_path_data = \
+                    torch.cat((stress_path, state_path), dim=1)
+            else:
+                response_path_data = stress_path
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Check number of output features
+            if response_path_data.shape[1] != self._n_features_out:
+                raise RuntimeError(f'Material response number of dimensions '
+                                   f'({response_path_data.shape[1]}) does not '
+                                   f'match the model number of output '
+                                   f'features ({self._n_features_out}).')
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Store material response path data
+            response_paths_data.append(response_path_data)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Build material response paths
+        if is_batched:
+            response_paths = torch.stack(response_path_data, dim=1)
+        else:
+            response_paths = response_paths_data[0]
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        return response_paths
+    # -------------------------------------------------------------------------
+    def _vcompute_stress_path(self, strain_path):
+        """Compute material response for given strain path (vectorized).
+
+        Parameters
+        ----------
+        strain_path : torch.Tensor(2d)
+            Strain path history stored as torch.Tensor(2d) of shape
+            (sequence_length, n_strain_comps).
+
+        Returns
+        -------
+        stress_path : torch.Tensor(2d)
+            Stress path history stored as torch.Tensor(2d) of shape
+            (sequence_length, n_stress_comps).
+        state_path : torch.Tensor(2d)
+            State path history stored as torch.Tensor(2d) of shape
+            (sequence_length, n_features).
+        """
+        # Get strain and stress components order
+        if self._strain_formulation == 'infinitesimal':
+            strain_comps_order = self._comp_order_sym
+            stress_comps_order = self._comp_order_sym
+        else:
+            raise RuntimeError('Not implemented.')
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Get time history length
+        n_time = strain_path.shape[0]
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Initialize stress path history steps
+        stress_path_steps = []
+        # Set initial stress components
+        stress_comps = torch.zeros(len(stress_comps_order),
+                                   dtype=torch.float, device=self._device)
+        # Store initial stress tensor
+        stress_path_steps.append(stress_comps)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Check state features
+        is_state_features_out = False
+        if len(self._state_features_out) > 0:
+            is_state_features_out = True
+        # Store initial state features tensor
+        if is_state_features_out:
+            # Initialize state features path history steps
+            state_path_steps = []
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Initialize state features
+            state_var_features = []
+            for state_var, n_features in self._state_features_out.items():
+                state_var_features.append(torch.zeros((1, n_features),
+                                                    dtype=torch.float,
+                                                    device=self._device))
+            # Set initial state features tensor
+            state_comps = torch.cat(state_var_features, dim=1) 
+            # Store initial state features tensor
+            state_path_steps.append(state_comps)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Initialize constitutive model state variables
+        state_variables = self._constitutive_model.state_init()
+        # Initialize last converged material constitutive state variables
+        state_variables_old = state_variables
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Loop over discrete time
+        for time_idx in range(1, n_time):
+            # Get previous and current strain tensors
+            strain_tensor_old = self.vbuild_tensor_from_comps(
+                self._n_dim, strain_comps_order, strain_path[time_idx - 1, :],
+                device=self._device)
+            strain_tensor = self.vbuild_tensor_from_comps(
+                self._n_dim, strain_comps_order, strain_path[time_idx, :],
+                device=self._device)
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Compute incremental strain tensor
+            if self._strain_formulation == 'infinitesimal':
+                # Compute incremental infinitesimal strain tensor
+                inc_strain = strain_tensor - strain_tensor_old
+            else:
+                raise RuntimeError('Not implemented.')
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~            
+            # Material state update
+            state_variables, _ = material_state_update(
+                self._strain_formulation, self._problem_type,
+                self._constitutive_model, inc_strain, state_variables_old,
+                def_gradient_old=None)
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Check material state update convergence
+            if state_variables['is_su_fail']:
+                raise RuntimeError('Material state update convergence '
+                                   'failure.')
+            # Update last converged material constitutive state variables
+            state_variables_old = state_variables
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Get stress tensor
+            if self._strain_formulation == 'infinitesimal':
+                # Get Cauchy stress tensor
+                stress = get_tensor_from_mf(state_variables['stress_mf'],
+                                            self._n_dim, self._comp_order_sym,
+                                            device=self._device)
+            else:
+                raise RuntimeError('Not implemented.')
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Get stress components
+            stress_comps = self.vstore_tensor_comps(stress_comps_order, stress,
+                                                    device=self._device)
+            # Store stress tensor
+            stress_path_steps.append(stress_comps) 
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Store state features
+            if is_state_features_out:
+                # Initialize state features
+                state_var_features = []
+                for state_var, n_features in self._state_features_out.items():
+                    # Skip if state variable is not available
+                    if state_var not in state_variables.keys():
+                        continue
+                    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                    # Store state features
+                    if 'strain_mf' in state_var:
+                        # Build strain tensor
+                        if self._strain_formulation == 'infinitesimal':
+                            strain = get_tensor_from_mf(
+                                state_variables[state_var], self._n_dim,
+                                self._comp_order_sym, device=self._device)
+                        else:
+                            raise RuntimeError('Not implemented.')
+                        # Get strain components
+                        state_comps = self.vstore_tensor_comps(
+                            strain_comps_order, strain, device=self._device)
+                    else:
+                        # Get generic state variable components
+                        state_comps = \
+                            state_variables[state_var].reshape(1, n_features)
+                    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                    # Store state features
+                    state_var_features.append(state_comps)
+                # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                # Set state features tensor
+                state_comps = torch.cat(state_var_features, dim=1)
+                # Store state features tensor
+                state_path_steps.append(state_comps)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Build stress path
+        stress_path = torch.stack(stress_path_steps, dim=0)
+        # Build state features path
+        state_path = None
+        if is_state_features_out:
+            state_path = torch.stack(state_path_steps, dim=0)   
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        return stress_path, state_path
+    # -------------------------------------------------------------------------
+    @classmethod
+    def vbuild_tensor_from_comps(cls, n_dim, comps, comps_array, device=None):
+        """Build strain/stress tensor from given components (vectorized).
+        
+        Parameters
+        ----------
+        n_dim : int
+            Problem number of spatial dimensions.
+        comps : tuple[str]
+            Strain/Stress components order.
+        comps_array : torch.Tensor(1d)
+            Strain/Stress components array.
+        device : torch.device, default=None
+            Device on which torch.Tensor is allocated.
+        
+        Returns
+        -------
+        tensor : torch.Tensor(2d)
+            Strain/Stress tensor.
+        """
+        # Get device from input tensor
+        if device is None:
+            device = comps_array.device
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set row major components order       
+        row_major_order = tuple(f'{i + 1}{j + 1}' for i, j
+                                in itertools.product(range(n_dim), repeat=2))
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Build indexing mapping
+        index_map = [comps.index(x) if x in comps
+                     else comps.index(x[::-1]) for x in row_major_order]
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Build tensor
+        tensor = comps_array[index_map].view(n_dim, n_dim)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        return tensor
+    # -------------------------------------------------------------------------
+    @classmethod
+    def vstore_tensor_comps(cls, comps, tensor, device=None):
+        """Store strain/stress tensor components in array (vectorized).
+        
+        Parameters
+        ----------
+        comps : tuple[str]
+            Strain/Stress components order.
+        tensor : torch.Tensor(2d)
+            Strain/Stress tensor.
+        device : torch.device, default=None
+            Device on which torch.Tensor is allocated.
+        
+        Returns
+        -------
+        comps_array : torch.Tensor(1d)
+            Strain/Stress components array.
+        """
+        # Get device from input tensor
+        if device is None:
+            device = tensor.device
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Build indexing mapping
+        index_map = tuple([int(x[i]) - 1 for x in comps] for i in range(2))
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Build tensor components array
+        comps_array = tensor[index_map]
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         return comps_array
     # -------------------------------------------------------------------------
