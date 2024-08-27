@@ -12,13 +12,19 @@ import itertools
 # Third-party
 import torch
 # Local
+from rc_base_model.model.recurrent_model import RecurrentConstitutiveModel
 from simulators.fetorch.math.matrixops import get_problem_type_parameters, \
     get_tensor_mf, vget_tensor_mf, get_tensor_from_mf, vget_tensor_from_mf, \
     get_state_3Dmf_from_2Dmf, vget_state_3Dmf_from_2Dmf, \
     get_state_2Dmf_from_3Dmf, vget_state_2Dmf_from_3Dmf
 from simulators.fetorch.math.voigt_notation import get_stress_vfm, \
     vget_stress_vmf, get_strain_from_vfm, vget_strain_from_vmf
-from rc_base_model.model.recurrent_model import RecurrentConstitutiveModel
+from simulators.fetorch.element.derivatives.jacobian import eval_jacobian
+from simulators.fetorch.element.derivatives.gradients import \
+    build_discrete_sym_gradient, vbuild_discrete_sym_gradient, \
+    build_discrete_gradient, vbuild_discrete_gradient
+from simulators.fetorch.element.type.quad4 import FEQuad4
+from simulators.fetorch.element.type.hexa8 import FEHexa8
 # =============================================================================
 # Summary: Testing vectorization and out-of-place operations
 # =============================================================================
@@ -540,6 +546,202 @@ def testing_get_strain_from_vmf(device='cpu'):
     if not torch.allclose(o_tensor, v_tensor):
         RuntimeError('Original and vectorized results do not match!')
 # =============================================================================
+def testing_eval_jacobian(device='cpu'):
+    # Loop over number of spatial dimensions
+    for n_dim in (2, ):
+        print('\n' + 40*'-')
+        print(f'\nNUMBER OF DIMENSIONS: {n_dim}\n')
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set testing case
+        if n_dim == 2:
+            # Set element type
+            element_type = FEQuad4(n_gauss=4, device_type=device)
+            # Get element type parameters
+            n_node = element_type.get_n_node()
+            n_dof_node = element_type.get_n_dof_node()
+            # Set element node coordinates
+            nodes_coords = torch.zeros((n_node, n_dof_node),
+                                    dtype=torch.float, device=device)
+            nodes_coords[0, :] = torch.tensor((-1.0, -2.0))
+            nodes_coords[1, :] = torch.tensor((0.5, -1.0))
+            nodes_coords[2, :] = torch.tensor((2.0, 1.0))
+            nodes_coords[3, :] = torch.tensor((-1.0, 1.5))
+            # Set Gauss point local coordinates
+            local_coords = torch.tensor((-0.45, 0.25),
+                                        dtype=torch.float, device=device)
+        else:
+            # Set element type
+            element_type = FEHexa8(n_gauss=8, device_type=device)
+            # Get element type parameters
+            n_node = element_type.get_n_node()
+            n_dof_node = element_type.get_n_dof_node()
+            # Set element node coordinates
+            nodes_coords = torch.zeros((n_node, n_dof_node),
+                                    dtype=torch.float, device=device)
+            nodes_coords[0, :] = torch.tensor((-2.0, -1.0, -1.5))
+            nodes_coords[1, :] = torch.tensor((1.0, -1.5, -1.0))
+            nodes_coords[2, :] = torch.tensor((1.0, 1.0, -1.0))
+            nodes_coords[3, :] = torch.tensor((-1.5, 1.0, -1.0))
+            nodes_coords[4, :] = torch.tensor((-1.0, -1.5, 1.0))
+            nodes_coords[5, :] = torch.tensor((1.0, -1.0, 1.0))
+            nodes_coords[6, :] = torch.tensor((2.0, 1.0, 2.0))
+            nodes_coords[7, :] = torch.tensor((-1.0, 1.5, 1.0))
+            # Set Gauss point local coordinates
+            local_coords = torch.tensor((-0.45, 0.25, -0.10),
+                                        dtype=torch.float, device=device)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        ## Original: Function call
+        #o_jacobian, o_jacobian_det, o_shape_fun_local_deriv = \
+        #        eval_jacobian(element_type, nodes_coords, local_coords)
+        ## Original: Average function execution time
+        #o_avg_time_call = \
+        #    function_timer(eval_jacobian,
+        #                (element_type, nodes_coords, local_coords),
+        #                n_calls=1000)
+        ## Original: Display
+        #print(f'\nResults & Time (original):')
+        #print(f'\n {o_jacobian}')
+        #print(f'\n {o_jacobian_det}')
+        #print(f'\n avg. time per call = {o_avg_time_call:.4e}')
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Vectorized: Function call
+        v_jacobian, v_jacobian_det, v_shape_fun_local_deriv = \
+                eval_jacobian(element_type, nodes_coords, local_coords)
+        # Vectorized: Average function execution time
+        v_avg_time_call = \
+            function_timer(eval_jacobian,
+                        (element_type, nodes_coords, local_coords),
+                        n_calls=1000)
+        # Vectorized: Display
+        print(f'\nResults & Time (vectorized):')
+        print(f'\n {v_jacobian}')
+        print(f'\n {v_jacobian_det}')
+        print(f'\n avg. time per call = {v_avg_time_call:.4e}')
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        ## Check results
+        #if not torch.allclose(o_jacobian, v_jacobian):
+        #    RuntimeError('Original and vectorized results do not match!')
+        #if not torch.allclose(o_jacobian_det, v_jacobian_det):
+        #    RuntimeError('Original and vectorized results do not match!')
+# =============================================================================
+def testing_build_discrete_sym_gradient(device='cpu'):
+    # Loop over number of spatial dimensions
+    for n_dim in (2, 3):
+        print('\n' + 40*'-')
+        print(f'\nNUMBER OF DIMENSIONS: {n_dim}\n')
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set testing case
+        if n_dim == 2:
+            # Get problem type parameters
+            n_dim, comp_order_sym, _ = \
+                get_problem_type_parameters(problem_type=1)
+            # Set number of element nodes
+            n_node = 4
+            # Create tensor of shape functions derivatives
+            shape_fun_deriv = torch.arange(0, n_node*n_dim, dtype=torch.float,
+                                           device=device).reshape(n_node, -1)
+        else:
+            # Get problem type parameters
+            n_dim, comp_order_sym, _ = \
+                get_problem_type_parameters(problem_type=4)
+            # Set number of element nodes
+            n_node = 8
+            # Create tensor of shape functions derivatives
+            shape_fun_deriv = torch.arange(0, n_node*n_dim, dtype=torch.float,
+                                           device=device).reshape(n_node, -1)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        print(f'\nShape functions derivatives:')
+        print(f'\n {shape_fun_deriv}')
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Original: Function call
+        o_grad_operator_sym = \
+            build_discrete_sym_gradient(shape_fun_deriv, comp_order_sym)
+        # Original: Average function execution time
+        o_avg_time_call = \
+            function_timer(build_discrete_sym_gradient,
+                           (shape_fun_deriv, comp_order_sym),
+                           n_calls=1000)
+        # Original: Display
+        print(f'\nResults & Time (original):')
+        print(f'\n {o_grad_operator_sym}')
+        print(f'\n avg. time per call = {o_avg_time_call:.4e}')
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Vectorized: Function call
+        v_grad_operator_sym = \
+            vbuild_discrete_sym_gradient(shape_fun_deriv, comp_order_sym)
+        # Vectorized: Average function execution time
+        v_avg_time_call = \
+            function_timer(vbuild_discrete_sym_gradient,
+                           (shape_fun_deriv, comp_order_sym),
+                           n_calls=1000)
+        # Vectorized: Display
+        print(f'\nResults & Time (vectorized):')
+        print(f'\n {v_grad_operator_sym}')
+        print(f'\n avg. time per call = {v_avg_time_call:.4e}')
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        ## Check results
+        if not torch.allclose(o_grad_operator_sym, v_grad_operator_sym):
+            RuntimeError('Original and vectorized results do not match!')
+# =============================================================================
+def testing_build_discrete_gradient(device='cpu'):
+    # Loop over number of spatial dimensions
+    for n_dim in (2, 3):
+        print('\n' + 40*'-')
+        print(f'\nNUMBER OF DIMENSIONS: {n_dim}\n')
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set testing case
+        if n_dim == 2:
+            # Get problem type parameters
+            n_dim, _, comp_order_nsym = \
+                get_problem_type_parameters(problem_type=1)
+            # Set number of element nodes
+            n_node = 4
+            # Create tensor of shape functions derivatives
+            shape_fun_deriv = torch.arange(0, n_node*n_dim, dtype=torch.float,
+                                           device=device).reshape(n_node, -1)
+        else:
+            # Get problem type parameters
+            n_dim, _, comp_order_nsym = \
+                get_problem_type_parameters(problem_type=4)
+            # Set number of element nodes
+            n_node = 8
+            # Create tensor of shape functions derivatives
+            shape_fun_deriv = torch.arange(0, n_node*n_dim, dtype=torch.float,
+                                           device=device).reshape(n_node, -1)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        print(f'\nShape functions derivatives:')
+        print(f'\n {shape_fun_deriv}')
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Original: Function call
+        o_grad_operator = \
+            build_discrete_gradient(shape_fun_deriv, comp_order_nsym)
+        # Original: Average function execution time
+        o_avg_time_call = \
+            function_timer(build_discrete_gradient,
+                           (shape_fun_deriv, comp_order_nsym),
+                           n_calls=1000)
+        # Original: Display
+        print(f'\nResults & Time (original):')
+        print(f'\n {o_grad_operator}')
+        print(f'\n avg. time per call = {o_avg_time_call:.4e}')
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Vectorized: Function call
+        v_grad_operator = \
+            vbuild_discrete_gradient(shape_fun_deriv, comp_order_nsym)
+        # Vectorized: Average function execution time
+        v_avg_time_call = \
+            function_timer(vbuild_discrete_gradient,
+                           (shape_fun_deriv, comp_order_nsym),
+                           n_calls=1000)
+        # Vectorized: Display
+        print(f'\nResults & Time (vectorized):')
+        print(f'\n {v_grad_operator}')
+        print(f'\n avg. time per call = {v_avg_time_call:.4e}')
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        ## Check results
+        if not torch.allclose(o_grad_operator, v_grad_operator):
+            RuntimeError('Original and vectorized results do not match!')
+# =============================================================================
 if __name__ == '__main__':
     # Set testing device
     testing_device = 'cpu'
@@ -553,6 +755,9 @@ if __name__ == '__main__':
     is_testing_store_tensor_comps = False
     is_testing_get_stress_vmf = False
     is_testing_get_strain_from_vmf = False
+    is_testing_eval_jacobian = False
+    is_testing_build_discrete_sym_gradient = False
+    is_testing_build_discrete_gradient = False
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Perform tests
     if is_testing_get_tensor_mf:
@@ -571,3 +776,9 @@ if __name__ == '__main__':
         testing_get_stress_vmf(device=testing_device)
     if is_testing_get_strain_from_vmf:
         testing_get_strain_from_vmf(device=testing_device)
+    if is_testing_eval_jacobian:
+        testing_eval_jacobian(device=testing_device)
+    if is_testing_build_discrete_sym_gradient:
+        testing_build_discrete_sym_gradient(device=testing_device)
+    if is_testing_build_discrete_gradient:
+        testing_build_discrete_gradient(device=testing_device)

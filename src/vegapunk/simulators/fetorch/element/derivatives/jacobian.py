@@ -19,7 +19,7 @@ __status__ = 'Planning'
 # =============================================================================
 #
 # =============================================================================
-def eval_jacobian(element_type, nodes_coords, local_coords, device=None):
+def eval_jacobian(element_type, nodes_coords, local_coords):
     """Evaluate finite element Jacobian and determinant at given coordinates.
     
     Parameters
@@ -31,8 +31,6 @@ def eval_jacobian(element_type, nodes_coords, local_coords, device=None):
         (n_node, n_dof_node).
     local_coords : torch.Tensor(1d)
         Local coordinates of point where Jacobian is evaluated.
-    device : torch.device, default=None
-        Device on which torch.Tensor is allocated.
     
     Returns
     -------
@@ -46,10 +44,6 @@ def eval_jacobian(element_type, nodes_coords, local_coords, device=None):
         i-th shape function with respect to the j-th local coordinate is
         stored in shape_fun_local_deriv[i, j].
     """
-    # Get device from input tensor
-    if device is None:
-        device = nodes_coords.device
-    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Evaluate element shape functions local derivatives
     shape_fun_local_deriv = \
         element_type.eval_shapefun_local_deriv(local_coords)
