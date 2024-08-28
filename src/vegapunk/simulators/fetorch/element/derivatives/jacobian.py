@@ -19,7 +19,8 @@ __status__ = 'Planning'
 # =============================================================================
 #
 # =============================================================================
-def eval_jacobian(element_type, nodes_coords, local_coords):
+def eval_jacobian(element_type, nodes_coords, local_coords,
+                  is_check_det=False):
     """Evaluate finite element Jacobian and determinant at given coordinates.
     
     Parameters
@@ -31,13 +32,16 @@ def eval_jacobian(element_type, nodes_coords, local_coords):
         (n_node, n_dof_node).
     local_coords : torch.Tensor(1d)
         Local coordinates of point where Jacobian is evaluated.
-    
+    is_check_det : bool, default=False
+        If True, then check and raise error if Jacobian determinant is
+        non-positive.
+
     Returns
     -------
     jacobian : torch.Tensor(2d)
-        Element Jacobian.
-    jacobian_det : float
-        Determinant of element jacobian.
+        Element Jacobian evaluated at given local coordinates.
+    jacobian_det : torch.Tensor(0d)
+        Determinant of element Jacobian evaluated at given local coordinates.
     shape_fun_local_deriv : torch.Tensor(2d)
         Shape functions local derivatives evaluated at given local
         coordinates, sorted according with element nodes. Derivative of the
@@ -54,7 +58,7 @@ def eval_jacobian(element_type, nodes_coords, local_coords):
     # Compute Jacobian determinant
     jacobian_det = torch.det(jacobian)
     # Check Jacobian determinant
-    if jacobian_det <= 0.0:
+    if is_check_det and jacobian_det <= 0.0:
         raise RuntimeError('Non-positive element Jacobian determinant signals '
                            'an invalid element configuration.\n\n'
                            f'det(J) = {jacobian_det:.8e}')
