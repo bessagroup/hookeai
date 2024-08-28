@@ -93,7 +93,7 @@ class FEHexa20(ElementType):
             self._n_gauss = int(n_gauss)
         # Get Gaussian quadrature points local coordinates and weights
         self._gp_coords, self._gp_weights = \
-            gauss_quadrature(n_gauss, domain='hexahedral')
+            gauss_quadrature(n_gauss, domain='hexahedral', device=self._device)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     def _set_nodes_local_coords(self):
         """Set nodes local coordinates."""

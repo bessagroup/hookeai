@@ -44,8 +44,12 @@ class ElementType(ABC):
         1 to n_gauss.
     _gp_weights : dict
         Gauss quadrature integration points (key, str[int]) weights
-        (item, float). Gauss integration points are labeled from
+        (item, torch.Tensor(0d)). Gauss integration points are labeled from
         1 to n_gauss.
+    _device_type : {'cpu', 'cuda'}, default='cpu'
+        Type of device on which torch.Tensor is allocated.
+    _device : torch.device
+        Device on which torch.Tensor is allocated.
         
     Methods
     -------
@@ -74,13 +78,15 @@ class ElementType(ABC):
         Check if element shape functions satisfy known properties.
     """
     @abstractmethod
-    def __init__(self, n_gauss=None):
+    def __init__(self, n_gauss=None, device_type='cpu'):
         """Constructor.
         
         Parameters
         ----------
         n_gauss : int, default=None
             Number of Gauss quadrature integration points.
+        device_type : {'cpu', 'cuda'}, default='cpu'
+            Type of device on which torch.Tensor is allocated.
         """
         pass
     # -------------------------------------------------------------------------
@@ -180,10 +186,40 @@ class ElementType(ABC):
             labeled from 1 to n_gauss.
         gp_weights : dict
             Gauss quadrature integration points (key, str[int]) weights
-            (item, float). Gauss integration points are labeled from
+            (item, torch.Tensor(0d)). Gauss integration points are labeled from
             1 to n_gauss.
         """
         return copy.deepcopy(self._gp_coords), copy.deepcopy(self._gp_weights)
+    # -------------------------------------------------------------------------
+    def get_batched_gauss_integration_points(self, device=None):
+        """Get Gaussian quadrature points batched coordinates and weights.
+        
+        Parameters
+        ----------
+        device : torch.device, default=None
+            Device on which torch.Tensor is allocated.
+
+        Returns
+        -------
+        gp_coords_tensor : torch.Tensor(2d)
+            Gauss quadrature integration points local coordinates stored as
+            torch.Tensor(2d) of shape (n_gauss, n_dim). Gauss integration
+            points are sorted according with their label.
+        gp_weights_tensor : torch.Tensor(1d)
+            Gauss quadrature integration points weights stored as
+            torch.Tensor(1d) of shape (n_gauss,). Gauss integration points are
+            sorted with their label.
+        """
+        # Build Gauss quadrature integration points local coordinates tensor
+        gp_coords_tensor = \
+            torch.stack([self._gp_coords[str(x + 1)]
+                         for x in range(self._n_gauss)], dim=0).to(device)
+        # Build Gauss quadrature integration points weights tensor
+        gp_weights_tensor = \
+            torch.stack([self._gp_weights[str(x + 1)]
+                         for x in range(self._n_gauss)], dim=0).to(device)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        return gp_coords_tensor, gp_weights_tensor
     # -------------------------------------------------------------------------
     def set_device(self, device_type):
         """Set device on which torch.Tensor is allocated.

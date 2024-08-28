@@ -93,7 +93,8 @@ class FETetra10(ElementType):
             self._n_gauss = int(n_gauss)
         # Get Gaussian quadrature points local coordinates and weights
         self._gp_coords, self._gp_weights = \
-            gauss_quadrature(n_gauss, domain='tetrahedral')
+            gauss_quadrature(n_gauss, domain='tetrahedral',
+                             device=self._device)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     def _set_nodes_local_coords(self):
         """Set nodes local coordinates."""

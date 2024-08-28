@@ -28,7 +28,7 @@ __status__ = 'Planning'
 # =============================================================================
 #
 # =============================================================================
-def gauss_quadrature(n_gauss, domain):
+def gauss_quadrature(n_gauss, domain, device=None):
     """Get Gaussian quadrature points local coordinates and weights.
     
     Parameters
@@ -38,6 +38,8 @@ def gauss_quadrature(n_gauss, domain):
     domain : {'linear', quadrilateral', 'triangular', 'hexahedral',
               'tetrahedral'}
         Integration domain geometry type.
+    device : torch.device, default=None
+        Device on which torch.Tensor is allocated.
 
     Returns
     -------
@@ -47,16 +49,18 @@ def gauss_quadrature(n_gauss, domain):
         1 to n_gauss.
     gp_weights : dict
         Gauss quadrature integration points (key, str[int]) weights
-        (item, float). Gauss integration points are labeled from
+        (item, torch.Tensor(0d)). Gauss integration points are labeled from
         1 to n_gauss.
     """
     # Get Gauss quadrature points coordinates and weights
     if domain == 'linear':
-        gp_coords, gp_weights = gauss_quadrature_1d(n_gauss)
+        gp_coords, gp_weights = gauss_quadrature_1d(n_gauss, device=device)
     elif domain in ('quadrilateral', 'triangular'):
-        gp_coords, gp_weights = gauss_quadrature_2d(n_gauss, domain)
+        gp_coords, gp_weights = gauss_quadrature_2d(n_gauss, domain,
+                                                    device=device)
     elif domain in ('hexahedral', 'tetrahedral'):
-        gp_coords, gp_weights = gauss_quadrature_3d(n_gauss, domain)
+        gp_coords, gp_weights = gauss_quadrature_3d(n_gauss, domain,
+                                                    device=device)
     else:
         raise RuntimeError('Unknown integration domain geometry type. '
                            'Available options:'
@@ -66,13 +70,15 @@ def gauss_quadrature(n_gauss, domain):
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     return gp_coords, gp_weights
 # =============================================================================
-def gauss_quadrature_1d(n_gauss):
+def gauss_quadrature_1d(n_gauss, device=None):
     """Set 1D Gauss quadrature points local coordinates and weights.
     
     Parameters
     ----------
     n_gauss : int
         Number of Gauss quadrature integration points.
+    device : torch.device, default=None
+        Device on which torch.Tensor is allocated.
         
     Returns
     -------
@@ -82,30 +88,41 @@ def gauss_quadrature_1d(n_gauss):
         1 to n_gauss.
     gp_weights : dict
         Gauss quadrature integration points (key, str[int]) weights
-        (item, float). Gauss integration points are labeled from
+        (item, torch.Tensor(0d)). Gauss integration points are labeled from
         1 to n_gauss.
     """
     # Get 1D Gauss quadrature points coordinates and weights
     if n_gauss == 1:
         # Complete integration: Polynomial Order 1
-        gp_coords = {'1': torch.tensor((0.0,))}
-        gp_weights = {'1': 2.0}
+        gp_coords = \
+            {'1': torch.tensor((0.0,), dtype=torch.float, device=device)}
+        gp_weights = \
+            {'1': torch.tensor(2.0, dtype=torch.float, device=device)}
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     elif n_gauss == 2:
         # Complete integration: Polynomial Order 3
-        gp_coords = {'1': torch.tensor((-1.0/np.sqrt(3.0),)),
-                     '2': torch.tensor((1.0/np.sqrt(3.0),))}
-        gp_weights = {'1': 1.0,
-                      '2': 1.0}
+        gp_coords = \
+            {'1': torch.tensor((-1.0/np.sqrt(3.0),),
+                               dtype=torch.float, device=device),
+             '2': torch.tensor((1.0/np.sqrt(3.0),),
+                               dtype=torch.float, device=device)}
+        gp_weights = \
+            {'1': torch.tensor(1.0, dtype=torch.float, device=device),
+             '2': torch.tensor(1.0, dtype=torch.float, device=device)}
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     elif n_gauss == 3:
         # Complete integration: Polynomial Order 5
-        gp_coords = {'1': torch.tensor((-np.sqrt(3.0/5.0),)),
-                     '2': torch.tensor((0.0,)),
-                     '3': torch.tensor((np.sqrt(3.0/5.0),))}
-        gp_weights = {'1': 5.0/9.0,
-                      '2': 8.0/9.0,
-                      '3': 5.0/9.0}
+        gp_coords = \
+            {'1': torch.tensor((-np.sqrt(3.0/5.0),),
+                               dtype=torch.float, device=device),
+             '2': torch.tensor((0.0,),
+                               dtype=torch.float, device=device),
+             '3': torch.tensor((np.sqrt(3.0/5.0),),
+                               dtype=torch.float, device=device)}
+        gp_weights = \
+            {'1': torch.tensor(5.0/9.0, dtype=torch.float, device=device),
+             '2': torch.tensor(8.0/9.0, dtype=torch.float, device=device),
+             '3': torch.tensor(5.0/9.0, dtype=torch.float, device=device)}
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     else:
         raise RuntimeError(f'The 1D {n_gauss}-point Gauss quadrature has not '
@@ -113,7 +130,7 @@ def gauss_quadrature_1d(n_gauss):
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     return gp_coords, gp_weights
 # =============================================================================
-def gauss_quadrature_2d(n_gauss, domain):
+def gauss_quadrature_2d(n_gauss, domain, device=None):
     """Set 2D Gauss quadrature points local coordinates and weights.
     
     Parameters
@@ -122,6 +139,8 @@ def gauss_quadrature_2d(n_gauss, domain):
         Number of Gauss quadrature integration points.
     domain : {'quadrilateral', 'triangular'}
         Integration domain geometry type.
+    device : torch.device, default=None
+        Device on which torch.Tensor is allocated.
         
     Returns
     -------
@@ -131,7 +150,7 @@ def gauss_quadrature_2d(n_gauss, domain):
         1 to n_gauss.
     gp_weights : dict
         Gauss quadrature integration points (key, str[int]) weights
-        (item, float). Gauss integration points are labeled from
+        (item, torch.Tensor(0d)). Gauss integration points are labeled from
         1 to n_gauss.
     """
     # Get 2D Gauss quadrature points coordinates and weights
@@ -149,20 +168,28 @@ def gauss_quadrature_2d(n_gauss, domain):
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Get Gauss quadrature points coordinates and weights
         gp_coords, gp_weights = uniform_grid_quadrature(
-            n_dim=2, n_gauss=n_gauss, n_gauss_dim=n_gauss_dim)
+            n_dim=2, n_gauss=n_gauss, n_gauss_dim=n_gauss_dim, device=device)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     elif domain == 'triangular':
         if n_gauss == 1:
-            gp_coords = {'1': torch.tensor((1.0/3.0, 1.0/3.0))}
-            gp_weights = {'1': 1.0/2.0}
+            gp_coords = \
+                {'1': torch.tensor((1.0/3.0, 1.0/3.0),
+                                   dtype=torch.float, device=device)}
+            gp_weights = \
+                {'1': torch.tensor(1.0/2.0, dtype=torch.float, device=device)}
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         elif n_gauss == 3:
-            gp_coords = {'1': torch.tensor((1.0/6.0, 1.0/6.0)),
-                         '2': torch.tensor((2.0/3.0, 1.0/6.0)),
-                         '3': torch.tensor((1.0/6.0, 2.0/3.0))}
-            gp_weights = {'1': 1.0/6.0,
-                          '2': 1.0/6.0,
-                          '3': 1.0/6.0}
+            gp_coords = \
+                {'1': torch.tensor((1.0/6.0, 1.0/6.0),
+                                   dtype=torch.float, device=device),
+                 '2': torch.tensor((2.0/3.0, 1.0/6.0),
+                                   dtype=torch.float, device=device),
+                 '3': torch.tensor((1.0/6.0, 2.0/3.0),
+                                   dtype=torch.float, device=device)}
+            gp_weights = \
+                {'1': torch.tensor(1.0/6.0, dtype=torch.float, device=device),
+                 '2': torch.tensor(1.0/6.0, dtype=torch.float, device=device),
+                 '3': torch.tensor(1.0/6.0, dtype=torch.float, device=device)}
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         else:
             raise RuntimeError(f'The 2D triangular {n_gauss}-point Gauss '
@@ -174,7 +201,7 @@ def gauss_quadrature_2d(n_gauss, domain):
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     return gp_coords, gp_weights
 # =============================================================================
-def gauss_quadrature_3d(n_gauss, domain):
+def gauss_quadrature_3d(n_gauss, domain, device=None):
     """Set 3D Gauss quadrature points local coordinates and weights.
     
     Parameters
@@ -183,6 +210,8 @@ def gauss_quadrature_3d(n_gauss, domain):
         Number of Gauss quadrature integration points.
     domain : {'hexahedral', 'tetrahedral'}
         Integration domain geometry type.
+    device : torch.device, default=None
+        Device on which torch.Tensor is allocated.
         
     Returns
     -------
@@ -192,7 +221,7 @@ def gauss_quadrature_3d(n_gauss, domain):
         1 to n_gauss.
     gp_weights : dict
         Gauss quadrature integration points (key, str[int]) weights
-        (item, float). Gauss integration points are labeled from
+        (item, torch.Tensor(0d)). Gauss integration points are labeled from
         1 to n_gauss.
     """
     # Get 2D Gauss quadrature points coordinates and weights
@@ -210,30 +239,39 @@ def gauss_quadrature_3d(n_gauss, domain):
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Get Gauss quadrature points coordinates and weights
         gp_coords, gp_weights = uniform_grid_quadrature(
-            n_dim=3, n_gauss=n_gauss, n_gauss_dim=n_gauss_dim)
+            n_dim=3, n_gauss=n_gauss, n_gauss_dim=n_gauss_dim, device=device)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     elif domain == 'tetrahedral':
         if n_gauss == 1:
-            gp_coords = {'1': (1.0/4.0, 1.0/4.0, 1.0/4.0)}
-            gp_weights = {'1': 1.0/6.0}
+            gp_coords = \
+                {'1': torch.tensor((1.0/4.0, 1.0/4.0, 1.0/4.0),
+                                   dtype=torch.float, device=device)}
+            gp_weights = \
+                {'1': torch.tensor(1.0/6.0, dtype=torch.float, device=device)}
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         elif n_gauss == 4:
-            gp_coords = {'1': torch.tensor(((5.0 - np.sqrt(5))/20.0,
-                                            (5.0 - np.sqrt(5))/20.0,
-                                            (5.0 - np.sqrt(5))/20.0)),
-                         '2': torch.tensor(((5.0 + 3.0*np.sqrt(5))/20.0,
-                                            (5.0 - np.sqrt(5))/20.0,
-                                            (5.0 - np.sqrt(5))/20.0)),
-                         '3': torch.tensor(((5.0 - np.sqrt(5))/20.0,
-                                            (5.0 + 3.0*np.sqrt(5))/20.0,
-                                            (5.0 - np.sqrt(5))/20.0)),
-                         '4': torch.tensor(((5.0 - np.sqrt(5))/20.0,
-                                            (5.0 - np.sqrt(5))/20.0,
-                                            (5.0 + 3.0*np.sqrt(5))/20.0))}
-            gp_weights = {'1': 1.0/24.0,
-                          '2': 1.0/24.0,
-                          '3': 1.0/24.0,
-                          '4': 1.0/24.0}
+            gp_coords = \
+                {'1': torch.tensor(((5.0 - np.sqrt(5))/20.0,
+                                    (5.0 - np.sqrt(5))/20.0,
+                                    (5.0 - np.sqrt(5))/20.0),
+                                   dtype=torch.float, device=device),
+                 '2': torch.tensor(((5.0 + 3.0*np.sqrt(5))/20.0,
+                                    (5.0 - np.sqrt(5))/20.0,
+                                    (5.0 - np.sqrt(5))/20.0),
+                                   dtype=torch.float, device=device),
+                 '3': torch.tensor(((5.0 - np.sqrt(5))/20.0,
+                                    (5.0 + 3.0*np.sqrt(5))/20.0,
+                                    (5.0 - np.sqrt(5))/20.0),
+                                   dtype=torch.float, device=device),
+                 '4': torch.tensor(((5.0 - np.sqrt(5))/20.0,
+                                    (5.0 - np.sqrt(5))/20.0,
+                                    (5.0 + 3.0*np.sqrt(5))/20.0),
+                                   dtype=torch.float, device=device)}
+            gp_weights = \
+                {'1': torch.tensor(1.0/24.0, dtype=torch.float, device=device),
+                 '2': torch.tensor(1.0/24.0, dtype=torch.float, device=device),
+                 '3': torch.tensor(1.0/24.0, dtype=torch.float, device=device),
+                 '4': torch.tensor(1.0/24.0, dtype=torch.float, device=device)}
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         else:
             raise RuntimeError(f'The 3D tetrahedral {n_gauss}-point Gauss '
@@ -245,7 +283,7 @@ def gauss_quadrature_3d(n_gauss, domain):
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     return gp_coords, gp_weights
 # =============================================================================
-def uniform_grid_quadrature(n_dim, n_gauss, n_gauss_dim):
+def uniform_grid_quadrature(n_dim, n_gauss, n_gauss_dim, device=None):
     """Set nD uniform grid Gauss quadrature local coordinates and weights.
     
     Parameters
@@ -256,6 +294,8 @@ def uniform_grid_quadrature(n_dim, n_gauss, n_gauss_dim):
         Number of Gauss quadrature integration points.
     n_gauss_dim : int
         Number of Gauss integration points per dimension.
+    device : torch.device, default=None
+        Device on which torch.Tensor is allocated.
 
     Returns
     -------
@@ -265,11 +305,12 @@ def uniform_grid_quadrature(n_dim, n_gauss, n_gauss_dim):
         1 to n_gauss.
     gp_weights : dict
         Gauss quadrature integration points (key, str[int]) weights
-        (item, float). Gauss integration points are labeled from
+        (item, torch.Tensor(0d)). Gauss integration points are labeled from
         1 to n_gauss.
     """
     # Get 1D Gauss quadrature points coordinates and weights
-    gp_coords_1d, gp_weights_1d = gauss_quadrature_1d(n_gauss_dim)
+    gp_coords_1d, gp_weights_1d = \
+        gauss_quadrature_1d(n_gauss_dim, device=device)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Initialize 1D to nD mapping (sorted by dimension)
     gauss_map = np.zeros((n_dim, n_gauss), dtype=int)
