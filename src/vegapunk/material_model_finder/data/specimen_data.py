@@ -51,6 +51,10 @@ class SpecimenNumericalData:
         Set specimen numerical data translated from experimental results.
     update_specimen_mesh_configuration(self, time_idx, is_update_coords=True)
         Update the specimen mesh configuration for given discrete time.
+    get_batched_mesh_configuration_hist(self, is_update_coords=True)
+        Get batched finite element mesh configuration history.
+    get_element_nodes_field_hist(self, element_nodes, nodes_field_mesh_hist)
+        Get field history of finite element nodes.
     get_n_dim(self)
         Get number of spatial dimensions.
     """
@@ -195,6 +199,81 @@ class SpecimenNumericalData:
         self.specimen_mesh.update_mesh_configuration(
             self.nodes_disps_mesh_hist[:, :, time_idx], time='current',
             is_update_coords=is_update_coords)
+    # -------------------------------------------------------------------------
+    def get_batched_mesh_configuration_hist(self, is_update_coords=True):
+        """Get batched finite element mesh configuration history.
+        
+        Batching operation over elements requires that all finite element mesh
+        elements share the same element type (number of nodes).
+        
+        Parameters
+        ----------
+        is_update_coords : bool, default=True
+            If False, then finite element mesh nodes coordinates are kept fixed
+            throughout history. If True, then finite element mesh nodes
+            coordinates are computed from nodes displacements history.
+        
+        Returns
+        -------
+        elements_coords_hist : torch.Tensor(4d)
+            Coordinates history of finite element mesh elements nodes stored
+            as torch.Tensor(4d) of shape (n_elem, n_node, n_dim, n_time).
+        elements_disps_hist : torch.Tensor(4d)
+            Displacements history of finite element mesh elements nodes stored
+            as torch.Tensor(4d) of shape (n_elem, n_node, n_dim, n_time).        
+        """
+        # Build connectivities tensor
+        connectivities_tensor = self.specimen_mesh.get_connectivities_tensor()
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set vectorized element field history computation (batch along
+        # element)
+        vmap_get_element_nodes_field_hist = \
+            torch.vmap(self.get_element_nodes_field_hist,
+                       in_dims=(0, None), out_dims=(0,))
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Get batched finite element mesh elements displacement history
+        elements_disps_hist = vmap_get_element_nodes_field_hist(
+            connectivities_tensor, self.nodes_disps_mesh_hist)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Get finite element mesh nodes initial coordinates
+        nodes_coords_mesh_init, _ = \
+            self.specimen_mesh.get_mesh_configuration(time='init')
+        # Build finite element mesh nodes coordinates history
+        nodes_coords_mesh_hist = nodes_coords_mesh_init.unsqueeze(2).expand(
+            -1, -1, len(self.time_hist))
+        if is_update_coords:
+            nodes_coords_mesh_hist = \
+                nodes_coords_mesh_hist + self.nodes_disps_mesh_hist
+        # Get batched finite element mesh elements coordinates history
+        elements_coords_hist = vmap_get_element_nodes_field_hist(
+            connectivities_tensor, nodes_coords_mesh_hist)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        return elements_coords_hist, elements_disps_hist
+    # -------------------------------------------------------------------------
+    def get_element_nodes_field_hist(self, element_nodes,
+                                     nodes_field_mesh_hist):
+        """Get field history of finite element nodes.
+        
+        Parameters
+        ----------
+        element_nodes : torch.Tensor(1d)
+            Finite element mesh element connectitivities stored as
+            torch.Tensor(1d) of shape (n_node,). Nodes are labeled from
+            1 to n_node_mesh.
+        nodes_field_mesh_hist : torch.Tensor(3d)
+            Field history of finite element mesh nodes stored as
+            torch.Tensor(3d) of shape (n_node_mesh, n_dim, n_time).
+        
+        Returns
+        -------
+        element_nodes_hist : torch.Tensor(3d)
+            Field history of finite element nodes stored as
+            torch.Tensor(3d) of shape (n_node, n_dim, n_time).
+        """
+        # Get finite element nodes field history
+        element_nodes_hist = nodes_field_mesh_hist[element_nodes - 1, :, :]
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        return element_nodes_hist
     # -------------------------------------------------------------------------
     def get_n_dim(self):
         """Get number of spatial dimensions.
