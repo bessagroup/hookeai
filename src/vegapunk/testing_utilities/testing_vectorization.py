@@ -29,7 +29,7 @@ from simulators.fetorch.element.type.hexa8 import FEHexa8
 # Summary: Testing vectorization and out-of-place operations
 # =============================================================================
 def vbuild_tensor_from_comps(n_dim, comps, comps_array, device=None):
-    """Build strain/stress tensor from given components.
+    """Build strain/stress tensor from given components (vectorized).
     
     Parameters
     ----------
