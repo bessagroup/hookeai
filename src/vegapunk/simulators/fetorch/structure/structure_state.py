@@ -82,6 +82,8 @@ class StructureMaterialState:
         Get material constitutive models.
     get_elements_material(self)
         Get elements material constitutive models.
+    get_n_element_material_type(self)
+        Get the number of material model types of finite element mesh.
     update_element_state(self, element_id, state_variables, time='current', \
                          is_copy=True)
         Update element material constitutive state variables.
@@ -324,6 +326,17 @@ class StructureMaterialState:
             from 1 to n_elem.
         """
         return self._elements_material
+    # -------------------------------------------------------------------------
+    def get_n_element_material_type(self):
+        """Get the number of material model types of finite element mesh.
+        
+        Returns
+        -------
+        n_element_material_type : int
+            Number of types of constitutive material models of finite element
+            mesh.
+        """
+        return len({type(x) for x in self._elements_material.values()})
     # -------------------------------------------------------------------------
     def update_element_state(self, element_id, element_state, time='current',
                              is_copy=True):
