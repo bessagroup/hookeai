@@ -71,6 +71,12 @@ class StructureMesh:
         Number of elements of finite element mesh.
     get_elements_type(self)
         Get type of elements of finite element mesh.
+    get_n_element_type(self)
+        Get the number of elements types of finite element mesh.
+    get_connectivities(self)
+        Get finite element mesh elements connectivities.
+    get_connectivities_tensor(self)
+        Get finite element mesh elements connectivities stored (tensor).
     get_dirichlet_bool_mesh(self)
         Get degrees of freedom subject to Dirichlet boundary conditions.
     get_element_configuration(self, element_id, time='current')
@@ -106,8 +112,8 @@ class StructureMesh:
             of 1 to n_elem (included).
         connectivities : dict
             Nodes (item, tuple[int]) of each finite element mesh element
-            (key, str[int]). Elements labels must be within the range of
-            1 to n_elem (included).
+            (key, str[int]). Nodes are labeled from 1 to n_node_mesh. Elements
+            are labeled from 1 to n_elem.
         dirichlet_bool_mesh : torch.Tensor(2d)
             Degrees of freedom of finite element mesh subject to Dirichlet
             boundary conditions. Stored as torch.Tensor(2d) of shape
@@ -181,6 +187,56 @@ class StructureMesh:
             mesh element (str[int]). Elements are labeled from 1 to n_elem.
         """
         return copy.deepcopy(self._elements_type)
+    # -------------------------------------------------------------------------
+    def get_n_element_type(self):
+        """Get the number of elements types of finite element mesh.
+        
+        Returns
+        -------
+        n_element_type : int
+            Number of element types of finite element mesh.
+        """
+        return len({type(x) for x in self._elements_type.values()})
+    # -------------------------------------------------------------------------
+    def get_connectivities(self):
+        """Get finite element mesh elements connectivities.
+
+        Returns
+        -------
+        connectivities : dict
+            Nodes (item, tuple[int]) of each finite element mesh element
+            (key, str[int]). Nodes are labeled from 1 to n_node_mesh. Elements
+            are labeled from 1 to n_elem.
+        """
+        return copy.deepcopy(self._connectivities)
+    # -------------------------------------------------------------------------
+    def get_connectivities_tensor(self):
+        """Get finite element mesh elements connectivities (tensor).
+        
+        Storage of finite element mesh elements connectivities in tensor,
+        i.e., batching over the element dimension, requires that all finite
+        element mesh elements have the same number of nodes.
+        
+        Returns
+        -------
+        connectivities_tensor : torch.Tensor(2d)
+            Finite element mesh elements connectitivities stored as
+            torch.Tensor(2d) of shape (n_elem, n_node). Elements are sorted
+            according with their labels (1 to n_elem). Nodes are labeled from
+            1 to n_node_mesh.
+        """
+        # Build connectivities tensor
+        try:
+            connectivities_tensor = torch.stack(
+                [torch.tensor(self._connectivities[str(x)], dtype=torch.int)
+                 for x in sorted(self._connectivities.keys())], dim=0)
+        except RuntimeError as error:
+            print(f'Error: {error}')
+            print('Stacking operation over elements requires that all finite '
+                  'element mesh elements share the same element type '
+                  '(number of nodes).')
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        return connectivities_tensor
     # -------------------------------------------------------------------------
     def get_dirichlet_bool_mesh(self):
         """Get degrees of freedom subject to Dirichlet boundary conditions.
