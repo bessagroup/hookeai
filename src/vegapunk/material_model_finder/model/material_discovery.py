@@ -12,6 +12,7 @@ MaterialModelFinder(torch.nn.Module)
 import os
 import copy
 import re
+import itertools
 # Third-party
 import torch
 # Local
@@ -19,12 +20,12 @@ from simulators.fetorch.element.integrations.internal_forces import \
     compute_element_internal_forces, compute_infinitesimal_inc_strain, \
     compute_infinitesimal_strain
 from simulators.fetorch.element.derivatives.gradients import \
-    eval_shapefun_deriv, build_discrete_sym_gradient
+    eval_shapefun_deriv, vbuild_discrete_sym_gradient
 from simulators.fetorch.material.material_su import material_state_update
 from simulators.fetorch.math.matrixops import get_problem_type_parameters, \
-    get_tensor_from_mf, get_tensor_mf
-from simulators.fetorch.math.voigt_notation import get_strain_from_vfm, \
-    get_stress_vfm
+    vget_tensor_mf, vget_tensor_from_mf
+from simulators.fetorch.math.voigt_notation import vget_stress_vmf, \
+    vget_strain_from_vmf
 from utilities.data_scalers import TorchMinMaxScaler
 from rnn_base_model.data.time_dataset import TimeSeriesDatasetInMemory, \
     save_dataset
@@ -869,7 +870,7 @@ class MaterialModelFinder(torch.nn.Module):
                     element_type, nodes_coords_hist[:, :, time_idx],
                     local_coords)
                 # Build discrete symmetric gradient operator
-                grad_operator_sym = build_discrete_sym_gradient(
+                grad_operator_sym = vbuild_discrete_sym_gradient(
                     shape_fun_deriv, comp_order_sym)
                 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                 # Compute strain tensor
@@ -881,7 +882,7 @@ class MaterialModelFinder(torch.nn.Module):
                             grad_operator_sym,
                             nodes_disps_hist[:, :, time_idx])
                         # Get strain tensor
-                        strain_hist[:, :, time_idx] = get_strain_from_vfm(
+                        strain_hist[:, :, time_idx] = vget_strain_from_vmf(
                             strain_vmf, n_dim, comp_order_sym)
                     else:
                         # Compute incremental infinitesimal strain tensor
@@ -890,7 +891,7 @@ class MaterialModelFinder(torch.nn.Module):
                             grad_operator_sym,
                             nodes_inc_disps_hist[:, :, time_idx])
                         # Get incremental strain tensor
-                        inc_strain_hist[:, :, time_idx] = get_strain_from_vfm(
+                        inc_strain_hist[:, :, time_idx] = vget_strain_from_vmf(
                             inc_strain_vmf, n_dim, comp_order_sym)
                 else:
                     raise RuntimeError('Not implemented.')
@@ -927,11 +928,11 @@ class MaterialModelFinder(torch.nn.Module):
                 # Get stress tensor
                 if strain_formulation == 'infinitesimal':
                     # Get Cauchy stress tensor
-                    stress = get_tensor_from_mf(
+                    stress = vget_tensor_from_mf(
                         element_state_hist[time_idx][str(i + 1)]['stress_mf'],
                         n_dim, comp_order_sym)
                     # Get Cauchy stress tensor (Voigt matricial form)
-                    stress_vmf = get_stress_vfm(stress, n_dim, comp_order_sym)
+                    stress_vmf = vget_stress_vmf(stress, n_dim, comp_order_sym)
                 else:
                     raise RuntimeError('Not implemented.')
                 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -940,7 +941,7 @@ class MaterialModelFinder(torch.nn.Module):
                     element_type, nodes_coords_hist[:, :, time_idx],
                     local_coords)
                 # Build discrete symmetric gradient operator
-                grad_operator_sym = build_discrete_sym_gradient(
+                grad_operator_sym = vbuild_discrete_sym_gradient(
                     shape_fun_deriv, comp_order_sym)
                 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                 # Add Gauss integration point contribution to element internal
@@ -1010,24 +1011,24 @@ class MaterialModelFinder(torch.nn.Module):
             # Build and store strain and stress tensors
             if strain_formulation == 'infinitesimal':
                 # Build strain tensor
-                strain = self.build_tensor_from_comps(
+                strain = self.vbuild_tensor_from_comps(
                     n_dim, comp_order_sym,
                     features_in[time_idx, :len(comp_order_sym)],
-                    is_symmetric=True, device=self._device)
+                    device=self._device)
                 # Store strain tensor
                 state_variables_hist[time_idx]['strain_mf'] = \
-                    get_tensor_mf(strain, n_dim, comp_order_sym,
-                                  device=self._device)
+                    vget_tensor_mf(strain, n_dim, comp_order_sym,
+                                   device=self._device)
                 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                 # Build stress tensor
-                stress = self.build_tensor_from_comps(
+                stress = self.vbuild_tensor_from_comps(
                     n_dim, comp_order_sym,
                     features_out[time_idx, :len(comp_order_sym)],
-                    is_symmetric=True, device=self._device)
+                    device=self._device)
                 # Store stress tensor
                 state_variables_hist[time_idx]['stress_mf'] = \
-                    get_tensor_mf(stress, n_dim, comp_order_sym,
-                                  device=self._device)
+                    vget_tensor_mf(stress, n_dim, comp_order_sym,
+                                   device=self._device)
             else:
                 raise RuntimeError('Not implemented.')
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -1389,21 +1390,21 @@ class MaterialModelFinder(torch.nn.Module):
                 strain_mf = \
                     element_state_hist[time_idx][str(i + 1)]['strain_mf']
                 # Get strain tensor
-                strain = get_tensor_from_mf(strain_mf, n_dim,
-                                            strain_comps_order)
+                strain = vget_tensor_from_mf(strain_mf, n_dim,
+                                             strain_comps_order)
                 # Store strain components
                 strain_path[time_idx, :] = \
-                    self.store_tensor_comps(comp_order_sym, strain)
+                    self.vstore_tensor_comps(comp_order_sym, strain)
                 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                 # Get stress tensor (matricial form)
                 stress_mf = \
                     element_state_hist[time_idx][str(i + 1)]['stress_mf']
                 # Get stress tensor
-                stress = get_tensor_from_mf(stress_mf, n_dim,
-                                            stress_comps_order)
+                stress = vget_tensor_from_mf(stress_mf, n_dim,
+                                             stress_comps_order)
                 # Store stress components
                 stress_path[time_idx, :] = \
-                    self.store_tensor_comps(comp_order_sym, stress)
+                    self.vstore_tensor_comps(comp_order_sym, stress)
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Initialize material response path data
             response_path = {}

@@ -28,7 +28,7 @@ import torch
 from simulators.fetorch.material.models.interface import ConstitutiveModel
 from simulators.fetorch.math.tensorops import get_id_operators
 from simulators.fetorch.math.matrixops import get_problem_type_parameters, \
-    get_tensor_mf, get_state_3Dmf_from_2Dmf, get_state_2Dmf_from_3Dmf, \
+    vget_tensor_mf, vget_state_3Dmf_from_2Dmf, vget_state_2Dmf_from_3Dmf, \
     kelvin_factor
 #
 #                                                          Authorship & Credits
@@ -206,7 +206,7 @@ class Elastic(ConstitutiveModel):
         # Initialize constitutive model state variables
         state_variables_init = dict()
         # Initialize strain tensors
-        state_variables_init['e_strain_mf'] = get_tensor_mf(
+        state_variables_init['e_strain_mf'] = vget_tensor_mf(
             torch.zeros((self._n_dim, self._n_dim),
                         dtype=torch.float, device=self._device),
             self._n_dim, self._comp_order_sym)
@@ -215,13 +215,13 @@ class Elastic(ConstitutiveModel):
         # Initialize stress tensors
         if self._strain_formulation == 'infinitesimal':
             # Cauchy stress tensor (symmetric)
-            state_variables_init['stress_mf'] = get_tensor_mf(
+            state_variables_init['stress_mf'] = vget_tensor_mf(
                 torch.zeros((self._n_dim, self._n_dim),
                             dtype=torch.float, device=self._device),
                             self._n_dim, self._comp_order_sym)
         else:
             # First Piola-Kirchhoff stress tensor (nonsymmetric)
-            state_variables_init['stress_mf'] = get_tensor_mf(
+            state_variables_init['stress_mf'] = vget_tensor_mf(
                 torch.zeros((self._n_dim, self._n_dim),
                             dtype=torch.float, device=self._device),
                             self._n_dim, self._comp_order_nsym)
@@ -264,9 +264,9 @@ class Elastic(ConstitutiveModel):
         #                             State update & Consistent tangent modulus
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Build incremental strain tensor matricial form
-        inc_strain_mf = get_tensor_mf(inc_strain, self._n_dim,
-                                      self._comp_order_sym,
-                                      device=self._device)
+        inc_strain_mf = vget_tensor_mf(inc_strain, self._n_dim,
+                                       self._comp_order_sym,
+                                       device=self._device)
         #
         #                                                    2D > 3D conversion
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -280,12 +280,10 @@ class Elastic(ConstitutiveModel):
             _, comp_order_sym, _ = get_problem_type_parameters(4)
             # Build strain tensors (matricial form) by including the
             # appropriate out-of-plain components
-            inc_strain_mf = get_state_3Dmf_from_2Dmf(
-                self._problem_type, inc_strain_mf, comp_33=0.0,
-                device=self._device)
-            e_strain_old_mf = get_state_3Dmf_from_2Dmf(
-                self._problem_type, e_strain_old_mf, e_strain_33_old,
-                self._device)
+            inc_strain_mf = vget_state_3Dmf_from_2Dmf(
+                inc_strain_mf, comp_33=0.0, device=self._device)
+            e_strain_old_mf = vget_state_3Dmf_from_2Dmf(
+                e_strain_old_mf, e_strain_33_old, self._device)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Update elastic strain
         e_strain_mf = e_strain_old_mf + inc_strain_mf
@@ -310,17 +308,17 @@ class Elastic(ConstitutiveModel):
         if self._problem_type == 1:
             # Builds 2D strain and stress tensors (matricial form) from the
             # associated 3D counterparts
-            e_strain_mf = get_state_2Dmf_from_3Dmf(
-                self._problem_type, e_strain_mf, device=self._device)
-            stress_mf = get_state_2Dmf_from_3Dmf(
-                self._problem_type, stress_mf, device=self._device)
+            e_strain_mf = vget_state_2Dmf_from_3Dmf(
+                e_strain_mf, device=self._device)
+            stress_mf = vget_state_2Dmf_from_3Dmf(
+                stress_mf, device=self._device)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # When the problem type corresponds to a 2D analysis, build the
         # 2D consistent tangent modulus (matricial form) from the
         # 3D counterpart
         if self._problem_type == 1:
-            consistent_tangent_mf = get_state_2Dmf_from_3Dmf(
-                self._problem_type, consistent_tangent_mf, device=self._device)
+            consistent_tangent_mf = vget_state_2Dmf_from_3Dmf(
+                consistent_tangent_mf, device=self._device)
         #
         #                                                Update state variables
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -424,9 +422,9 @@ class Elastic(ConstitutiveModel):
             # Compute elasticity tensor
             elastic_tangent = lam*fodiagtrace + 2.0*miu*fosym
             # Build elasticity tensor matricial form
-            elastic_tangent_mf = get_tensor_mf(elastic_tangent,
-                                               n_dim, comp_order_sym,
-                                               device=device)
+            elastic_tangent_mf = vget_tensor_mf(elastic_tangent,
+                                                n_dim, comp_order_sym,
+                                                device=device)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         else:
             # Get required elastic moduli

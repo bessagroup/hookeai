@@ -18,12 +18,12 @@ import copy
 import torch
 # Local
 from simulators.fetorch.element.derivatives.gradients import \
-    eval_shapefun_deriv, build_discrete_sym_gradient
+    eval_shapefun_deriv, vbuild_discrete_sym_gradient
 from simulators.fetorch.material.material_su import material_state_update
 from simulators.fetorch.math.matrixops import get_problem_type_parameters, \
-    get_tensor_from_mf
-from simulators.fetorch.math.voigt_notation import get_strain_from_vfm, \
-    get_stress_vfm
+    vget_tensor_from_mf
+from simulators.fetorch.math.voigt_notation import vget_strain_from_vmf, \
+    vget_stress_vmf
 #
 #                                                          Authorship & Credits
 # =============================================================================
@@ -102,7 +102,7 @@ def compute_element_internal_forces(strain_formulation, problem_type,
             eval_shapefun_deriv(element_type, nodes_coords, local_coords)
         # Build discrete symmetric gradient operator
         grad_operator_sym = \
-            build_discrete_sym_gradient(shape_fun_deriv, comp_order_sym)
+            vbuild_discrete_sym_gradient(shape_fun_deriv, comp_order_sym)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Compute incremental strain tensor
         if strain_formulation == 'infinitesimal':
@@ -111,7 +111,7 @@ def compute_element_internal_forces(strain_formulation, problem_type,
             inc_strain_vmf = compute_infinitesimal_inc_strain(
                 grad_operator_sym, nodes_inc_disps)
             # Get incremental strain tensor
-            inc_strain = get_strain_from_vfm(
+            inc_strain = vget_strain_from_vmf(
                 inc_strain_vmf, n_dim, comp_order_sym)
         else:
             raise RuntimeError('Not implemented.')
@@ -132,10 +132,10 @@ def compute_element_internal_forces(strain_formulation, problem_type,
         # Get stress tensor
         if strain_formulation == 'infinitesimal':
             # Get Cauchy stress tensor
-            stress = get_tensor_from_mf(state_variables['stress_mf'],
-                                        n_dim, comp_order_sym)
+            stress = vget_tensor_from_mf(state_variables['stress_mf'],
+                                         n_dim, comp_order_sym)
             # Get Cauchy stress tensor (Voigt matricial form)
-            stress_vmf = get_stress_vfm(stress, n_dim, comp_order_sym)
+            stress_vmf = vget_stress_vmf(stress, n_dim, comp_order_sym)
         else:
             raise RuntimeError('Not implemented.')
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

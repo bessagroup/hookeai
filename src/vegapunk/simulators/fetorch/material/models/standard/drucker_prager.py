@@ -20,8 +20,8 @@ import copy
 from simulators.fetorch.material.models.interface import ConstitutiveModel
 from simulators.fetorch.material.models.standard.elastic import Elastic
 from simulators.fetorch.math.matrixops import get_problem_type_parameters, \
-    get_tensor_mf, get_tensor_from_mf, get_state_3Dmf_from_2Dmf, \
-    get_state_2Dmf_from_3Dmf
+    vget_tensor_mf, vget_tensor_from_mf, vget_state_3Dmf_from_2Dmf, \
+    vget_state_2Dmf_from_3Dmf
 from simulators.fetorch.math.tensorops import get_id_operators, dyad22_1
 #
 #                                                          Authorship & Credits
@@ -213,7 +213,7 @@ class DruckerPrager(ConstitutiveModel):
         # Initialize constitutive model state variables
         state_variables_init = dict()
         # Initialize strain tensors
-        state_variables_init['e_strain_mf'] = get_tensor_mf(
+        state_variables_init['e_strain_mf'] = vget_tensor_mf(
             torch.zeros((self._n_dim, self._n_dim),
                         dtype=torch.float, device=self._device),
                         self._n_dim, self._comp_order_sym)
@@ -222,13 +222,13 @@ class DruckerPrager(ConstitutiveModel):
         # Initialize stress tensors
         if self._strain_formulation == 'infinitesimal':
             # Cauchy stress tensor (symmetric)
-            state_variables_init['stress_mf'] = get_tensor_mf(
+            state_variables_init['stress_mf'] = vget_tensor_mf(
                 torch.zeros((self._n_dim, self._n_dim),
                             dtype=torch.float, device=self._device),
                             self._n_dim, self._comp_order_sym)
         else:
             # First Piola-Kirchhoff stress tensor (nonsymmetric)
-            state_variables_init['stress_mf'] = get_tensor_mf(
+            state_variables_init['stress_mf'] = vget_tensor_mf(
                 torch.zeros((self._n_dim, self._n_dim),
                             dtype=torch.float, device=self._device),
                             self._n_dim, self._comp_order_nsym)
@@ -271,9 +271,9 @@ class DruckerPrager(ConstitutiveModel):
         su_max_n_iterations = 20
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Build incremental strain tensor matricial form
-        inc_strain_mf = get_tensor_mf(inc_strain, self._n_dim,
-                                      self._comp_order_sym,
-                                      device=self._device)
+        inc_strain_mf = vget_tensor_mf(inc_strain, self._n_dim,
+                                       self._comp_order_sym,
+                                       device=self._device)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Get material properties
         E = self._model_parameters['E']
@@ -322,22 +322,20 @@ class DruckerPrager(ConstitutiveModel):
             n_dim, comp_order_sym, _ = get_problem_type_parameters(4)
             # Build strain tensors (matricial form) by including the
             # appropriate out-of-plain components
-            inc_strain_mf = get_state_3Dmf_from_2Dmf(
-                self._problem_type, inc_strain_mf, comp_33=0.0,
-                device=self._device)
-            e_strain_old_mf = get_state_3Dmf_from_2Dmf(
-                self._problem_type, e_strain_old_mf, e_strain_33_old,
-                device=self._device)
+            inc_strain_mf = vget_state_3Dmf_from_2Dmf(
+                inc_strain_mf, comp_33=0.0, device=self._device)
+            e_strain_old_mf = vget_state_3Dmf_from_2Dmf(
+                e_strain_old_mf, e_strain_33_old, device=self._device)
         #
         #                                                          State update
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Set required second-order and fourth-order tensors
         soid, _, _, fosym, fodiagtrace, _, fodevprojsym = \
             get_id_operators(n_dim, device=self._device)
-        soid_mf = get_tensor_mf(soid, n_dim, comp_order_sym,
-                                device=self._device)
-        fodevprojsym_mf = get_tensor_mf(fodevprojsym, n_dim, comp_order_sym,
-                                        device=self._device)
+        soid_mf = vget_tensor_mf(soid, n_dim, comp_order_sym,
+                                 device=self._device)
+        fodevprojsym_mf = vget_tensor_mf(fodevprojsym, n_dim, comp_order_sym,
+                                         device=self._device)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Compute elastic trial strain
         e_trial_strain_mf = e_strain_old_mf + inc_strain_mf
@@ -346,18 +344,18 @@ class DruckerPrager(ConstitutiveModel):
         # and store it in matricial form
         if self._problem_type in [1, 4]:
             e_consistent_tangent = lam*fodiagtrace + 2.0*miu*fosym
-        e_consistent_tangent_mf = get_tensor_mf(e_consistent_tangent,
-                                                n_dim, comp_order_sym,
-                                                device=self._device)
+        e_consistent_tangent_mf = vget_tensor_mf(e_consistent_tangent,
+                                                 n_dim, comp_order_sym,
+                                                 device=self._device)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Compute trial stress
         trial_stress_mf = torch.matmul(e_consistent_tangent_mf,
                                        e_trial_strain_mf)
         # Compute trial pressure
         trial_pressure = \
-            (1.0/3.0)*torch.trace(get_tensor_from_mf(trial_stress_mf,
-                                                     n_dim, comp_order_sym,
-                                                     device=self._device))
+            (1.0/3.0)*torch.trace(vget_tensor_from_mf(trial_stress_mf,
+                                                      n_dim, comp_order_sym,
+                                                      device=self._device))
         # Compute deviatoric trial stress
         dev_trial_stress_mf = torch.matmul(fodevprojsym_mf, trial_stress_mf)
         # Compute second invariant of deviatoric trial stress
@@ -543,7 +541,7 @@ class DruckerPrager(ConstitutiveModel):
                     K*(1.0 - (K/(K + alpha*beta*H)))*dyad22_1(soid, soid)
             else:
                 # Compute deviatoric elastic trial strain
-                dev_trial_e_strain = get_tensor_from_mf(
+                dev_trial_e_strain = vget_tensor_from_mf(
                     torch.matmul(fodevprojsym_mf, e_trial_strain_mf),
                     n_dim, comp_order_sym, device=self._device)
                 # Compute deviatoric elastic strain unit vector
@@ -562,9 +560,9 @@ class DruckerPrager(ConstitutiveModel):
         else:
             consistent_tangent = e_consistent_tangent
         # Build consistent tangent modulus matricial form
-        consistent_tangent_mf = get_tensor_mf(consistent_tangent, n_dim,
-                                              comp_order_sym,
-                                              device=self._device)
+        consistent_tangent_mf = vget_tensor_mf(consistent_tangent, n_dim,
+                                               comp_order_sym,
+                                               device=self._device)
         #
         #                                                    3D > 2D Conversion
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -574,12 +572,12 @@ class DruckerPrager(ConstitutiveModel):
         if self._problem_type == 1:
             # Builds 2D strain and stress tensors (matricial form) from the
             # associated 3D counterparts
-            e_trial_strain_mf = get_state_2Dmf_from_3Dmf(
-                self._problem_type, e_trial_strain_mf, device=self._device)
-            e_strain_mf = get_state_2Dmf_from_3Dmf(
-                self._problem_type, e_strain_mf, device=self._device)
-            stress_mf = get_state_2Dmf_from_3Dmf(
-                self._problem_type, stress_mf, device=self._device)
+            e_trial_strain_mf = vget_state_2Dmf_from_3Dmf(
+                e_trial_strain_mf, device=self._device)
+            e_strain_mf = vget_state_2Dmf_from_3Dmf(
+                e_strain_mf, device=self._device)
+            stress_mf = vget_state_2Dmf_from_3Dmf(
+                stress_mf, device=self._device)
         #
         #                                                Update state variables
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -602,8 +600,8 @@ class DruckerPrager(ConstitutiveModel):
         # When the problem type corresponds to a 2D analysis, build the 2D
         # consistent tangent modulus (matricial form) from the 3D counterpart
         if self._problem_type == 1:
-            consistent_tangent_mf = get_state_2Dmf_from_3Dmf(
-                self._problem_type, consistent_tangent_mf, device=self._device)
+            consistent_tangent_mf = vget_state_2Dmf_from_3Dmf(
+                consistent_tangent_mf, device=self._device)
         #
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         return state_variables, consistent_tangent_mf

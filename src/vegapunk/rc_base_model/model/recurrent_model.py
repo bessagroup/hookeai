@@ -29,7 +29,7 @@ from simulators.fetorch.material.models.standard.von_mises import VonMises
 from simulators.fetorch.material.models.standard.drucker_prager import \
     DruckerPrager
 from simulators.fetorch.math.matrixops import get_problem_type_parameters, \
-    get_tensor_from_mf
+    vget_tensor_from_mf
 from simulators.fetorch.material.material_su import material_state_update
 from rnn_base_model.data.time_dataset import get_time_series_data_loader
 from utilities.data_scalers import TorchMinMaxScaler, TorchStandardScaler
@@ -632,7 +632,7 @@ class RecurrentConstitutiveModel(torch.nn.Module):
         self._sync_material_model_parameters()
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~        
         # Forward propagation: Material constitutive model
-        features_out = self._recurrent_constitutive_model(features_in)
+        features_out = self._vrecurrent_constitutive_model(features_in)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Denormalize output features data
         if self.is_data_normalization and not is_normalized:
@@ -768,13 +768,11 @@ class RecurrentConstitutiveModel(torch.nn.Module):
         # Loop over discrete time
         for time_idx in range(1, n_time):
             # Get previous and current strain tensors
-            strain_tensor_old = self.build_tensor_from_comps(
+            strain_tensor_old = self.vbuild_tensor_from_comps(
                 self._n_dim, strain_comps_order, strain_path[time_idx - 1, :],
-                is_symmetric=self._strain_formulation == 'infinitesimal',
                 device=self._device)
-            strain_tensor = self.build_tensor_from_comps(
+            strain_tensor = self.vbuild_tensor_from_comps(
                 self._n_dim, strain_comps_order, strain_path[time_idx, :],
-                is_symmetric=self._strain_formulation == 'infinitesimal',
                 device=self._device)
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Compute incremental strain tensor
@@ -800,16 +798,16 @@ class RecurrentConstitutiveModel(torch.nn.Module):
             # Get stress tensor
             if self._strain_formulation == 'infinitesimal':
                 # Get Cauchy stress tensor
-                stress = get_tensor_from_mf(state_variables['stress_mf'],
-                                            self._n_dim, self._comp_order_sym,
-                                            device=self._device)
+                stress = vget_tensor_from_mf(state_variables['stress_mf'],
+                                             self._n_dim, self._comp_order_sym,
+                                             device=self._device)
             else:
                 raise RuntimeError('Not implemented.')
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Store stress tensor
             stress_path[time_idx, :] = \
-                self.store_tensor_comps(stress_comps_order, stress,
-                                        device=self._device)
+                self.vstore_tensor_comps(stress_comps_order, stress,
+                                         device=self._device)
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Loop over state variables
             for state_var in self._state_features_out.keys():
@@ -821,15 +819,15 @@ class RecurrentConstitutiveModel(torch.nn.Module):
                 if 'strain_mf' in state_var:
                     # Build strain tensor
                     if self._strain_formulation == 'infinitesimal':
-                        strain = get_tensor_from_mf(
+                        strain = vget_tensor_from_mf(
                             state_variables[state_var], self._n_dim,
                             self._comp_order_sym, device=self._device)
                     else:
                         raise RuntimeError('Not implemented.')
                     # Store strain tensor
                     state_path[state_var][time_idx, :] = \
-                        self.store_tensor_comps(strain_comps_order, strain,
-                                                device=self._device)
+                        self.vstore_tensor_comps(strain_comps_order, strain,
+                                                 device=self._device)
                 else:
                     # Store generic state variable
                     state_path[state_var][time_idx, :] = \
@@ -1086,9 +1084,9 @@ class RecurrentConstitutiveModel(torch.nn.Module):
             # Get stress tensor
             if self._strain_formulation == 'infinitesimal':
                 # Get Cauchy stress tensor
-                stress = get_tensor_from_mf(state_variables['stress_mf'],
-                                            self._n_dim, self._comp_order_sym,
-                                            device=self._device)
+                stress = vget_tensor_from_mf(state_variables['stress_mf'],
+                                             self._n_dim, self._comp_order_sym,
+                                             device=self._device)
             else:
                 raise RuntimeError('Not implemented.')
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -1111,7 +1109,7 @@ class RecurrentConstitutiveModel(torch.nn.Module):
                     if 'strain_mf' in state_var:
                         # Build strain tensor
                         if self._strain_formulation == 'infinitesimal':
-                            strain = get_tensor_from_mf(
+                            strain = vget_tensor_from_mf(
                                 state_variables[state_var], self._n_dim,
                                 self._comp_order_sym, device=self._device)
                         else:
