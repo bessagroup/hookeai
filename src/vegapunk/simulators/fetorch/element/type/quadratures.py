@@ -327,10 +327,11 @@ def uniform_grid_quadrature(n_dim, n_gauss, n_gauss_dim, device=None):
     # Loop over Gauss quadrature points
     for j in range(n_gauss):
         # Set Gauss point coordinates
-        gp_coords[str(j + 1)] = tuple(
-            [gp_coords_1d[str(gauss_map[i, j])][0] for i in range(n_dim)])
+        gp_coords[str(j + 1)] = torch.tensor(
+            [gp_coords_1d[str(gauss_map[i, j])][0] for i in range(n_dim)])        
         # Set Gauss point weight
-        gp_weights[str(j + 1)] = np.prod(
-            [gp_weights_1d[str(gauss_map[i, j])] for i in range(n_dim)])
+        gp_weights[str(j + 1)] = torch.prod(
+            torch.stack([gp_weights_1d[str(gauss_map[i, j])]
+                         for i in range(n_dim)]))
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     return gp_coords, gp_weights
