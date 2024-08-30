@@ -128,11 +128,10 @@ class FETetra4(ElementType):
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Compute shape functions at given local coordinates
         shape_fun = \
-            torch.tensor([1.0 - c1 - c2 - c3,
-                          c1,
-                          c2,
-                          c3],
-                         dtype=torch.float, device=self._device)
+            torch.stack([1.0 - c1 - c2 - c3,
+                         c1,
+                         c2,
+                         c3])
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         return shape_fun
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -156,13 +155,16 @@ class FETetra4(ElementType):
         # Unpack local coordinates
         c1, c2, c3 = local_coords
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set constant tensors
+        zero = torch.zeros_like(c1)
+        one = torch.ones_like(c1)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Compute shape functions at given local coordinates
         shape_fun_local_deriv = \
-            torch.tensor([(-1.0, -1.0, -1.0),
-                          (1.0, 0.0, 0.0),
-                          (0.0, 1.0, 0.0),
-                          (0.0, 0.0, 1.0)],
-                         dtype=torch.float, device=self._device)
+            torch.stack([torch.stack([-one, -one, -one]),
+                         torch.stack([one, zero, zero]),
+                         torch.stack([zero, one, zero]),
+                         torch.stack([zero, zero, one])])
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         return shape_fun_local_deriv
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

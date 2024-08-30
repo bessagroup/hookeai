@@ -133,7 +133,7 @@ class FETetra10(ElementType):
         c1, c2, c3 = local_coords
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Compute shape functions at given local coordinates
-        shape_fun = torch.tensor([
+        shape_fun = torch.stack([
             (1.0 - c1 - c2 - c3)*(1.0 - 2.0*(c1 + c2 + c3)),
             c1*(2.0*c1 - 1.0),
             c2*(2.0*c2 - 1.0),
@@ -143,8 +143,7 @@ class FETetra10(ElementType):
             4.0*c2*(1.0 - c1 - c2 - c3),
             4.0*c3*(1.0 - c1 - c2 - c3),
             4.0*c1*c3,
-            4.0*c2*c3],
-            dtype=torch.float, device=self._device)
+            4.0*c2*c3])
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         return shape_fun
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -168,21 +167,29 @@ class FETetra10(ElementType):
         # Unpack local coordinates
         c1, c2, c3 = local_coords
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set constant tensors
+        zero = torch.zeros_like(c1)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Compute shape functions at given local coordinates
         shape_fun_local_deriv = \
-            torch.tensor([(4.0*(c1 + c2 + c3) - 3.0,
-                           4.0*(c1 + c2 + c3) - 3.0,
-                           4.0*(c1 + c2 + c3) - 3.0),
-                          (4.0*c1 - 1.0, 0.0, 0.0),
-                          (0.0, 4.0*c2 - 1.0, 0.0),
-                          (0.0, 0.0, 4.0*c3 - 1.0),
-                          (4.0 - 8.0*c1 - 4.0*c2 - 4.0*c3, -4.0*c1, -4.0*c1),
-                          (4.0*c2, 4.0*c1, 0.0),
-                          (-4.0*c2, 4.0 - 4.0*c1 - 8.0*c2 - 4.0*c3, -4.0*c2),
-                          (-4.0*c3, -4.0*c3, 4.0 - 4.0*c1 - 4.0*c2 - 8.0*c3),
-                          (4.0*c3, 0.0, 4.0*c1),
-                          (0.0, 4.0*c3, 4.0*c2)],
-                         dtype=torch.float, device=self._device)
+            torch.stack([torch.stack([4.0*(c1 + c2 + c3) - 3.0,
+                                     4.0*(c1 + c2 + c3) - 3.0,
+                                     4.0*(c1 + c2 + c3) - 3.0]),
+                         torch.stack([4.0*c1 - 1.0, zero, zero]),
+                         torch.stack([zero, 4.0*c2 - 1.0, zero]),
+                         torch.stack([zero, zero, 4.0*c3 - 1.0]),
+                         torch.stack([4.0 - 8.0*c1 - 4.0*c2 - 4.0*c3,
+                                      -4.0*c1,
+                                      -4.0*c1]),
+                         torch.stack([4.0*c2, 4.0*c1, zero]),
+                         torch.stack([-4.0*c2,
+                                      4.0 - 4.0*c1 - 8.0*c2 - 4.0*c3,
+                                      -4.0*c2]),
+                         torch.stack([-4.0*c3,
+                                      -4.0*c3,
+                                      4.0 - 4.0*c1 - 4.0*c2 - 8.0*c3]),
+                         torch.stack([4.0*c3, zero, 4.0*c1]),
+                         torch.stack([zero, 4.0*c3, 4.0*c2])])
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         return shape_fun_local_deriv
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

@@ -129,13 +129,12 @@ class FETri6(ElementType):
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Compute shape functions at given local coordinates
         shape_fun = \
-            torch.tensor([-(1.0 - c1 - c2)*(1.0 - 2.0*(1.0 - c1 - c2)),
-                          -c1*(1.0 - 2.0*c1),
-                          -c2*(1.0 - 2.0*c2),
-                          4.0*c1*(1.0 - c1 - c2),
-                          4.0*c1*c2,
-                          4.0*c2*(1.0 - c1 - c2)],
-                         dtype=torch.float, device=self._device)
+            torch.stack([-(1.0 - c1 - c2)*(1.0 - 2.0*(1.0 - c1 - c2)),
+                         -c1*(1.0 - 2.0*c1),
+                         -c2*(1.0 - 2.0*c2),
+                         4.0*c1*(1.0 - c1 - c2),
+                         4.0*c1*c2,
+                         4.0*c2*(1.0 - c1 - c2)])
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         return shape_fun
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -159,16 +158,18 @@ class FETri6(ElementType):
         # Unpack local coordinates
         c1, c2 = local_coords
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set constant tensors
+        zero = torch.zeros_like(c1)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Compute shape functions at given local coordinates
         shape_fun_local_deriv = \
-            torch.tensor([
-                (1.0 - 4.0*(1.0 - c1 - c2), 1.0 - 4.0*(1.0 - c1 - c2)),
-                (4.0*c1 - 1.0, 0.0),
-                (0.0, 4.0*c2 - 1.0),
-                (4.0*(1.0 - 2.0*c1 - c2), -4.0*c1),
-                (4.0*c2, 4.0*c1),
-                (-4.0*c2, 4.0*(1.0 - c1 - 2.0*c2))],
-                dtype=torch.float, device=self._device)
+            torch.stack([torch.stack([1.0 - 4.0*(1.0 - c1 - c2),
+                                      1.0 - 4.0*(1.0 - c1 - c2)]),
+                         torch.stack([4.0*c1 - 1.0, zero]),
+                         torch.stack([zero, 4.0*c2 - 1.0]),
+                         torch.stack([4.0*(1.0 - 2.0*c1 - c2), -4.0*c1]),
+                         torch.stack([4.0*c2, 4.0*c1]),
+                         torch.stack([-4.0*c2, 4.0*(1.0 - c1 - 2.0*c2)])])
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         return shape_fun_local_deriv
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
