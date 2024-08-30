@@ -5,11 +5,11 @@ storage of strain/stress tensorial quantities following the Voigt notation.
 
 Functions
 ---------
-get_strain_from_vfm
+get_strain_from_vmf
     Recover strain tensor from associated Voigt matricial form.
 vget_strain_from_vmf
     Recover strain tensor from associated Voigt matricial form (vectorized).
-get_stress_vfm
+get_stress_vmf
     Get stress tensor Voigt matricial form.
 vget_stress_vmf
     Get stress tensor Voigt matricial form (vectorized).
@@ -30,7 +30,7 @@ __status__ = 'Stable'
 # =============================================================================
 #
 # =============================================================================
-def get_strain_from_vfm(strain_vmf, n_dim, comp_order_sym, device=None):
+def get_strain_from_vmf(strain_vmf, n_dim, comp_order_sym, device=None):
     """Recover strain tensor from associated Voigt matricial form.
 
     Parameters
@@ -134,7 +134,7 @@ def vget_strain_from_vmf(strain_vmf, n_dim, comp_order_sym, device=None):
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     return strain
 # =============================================================================
-def get_stress_vfm(stress, n_dim, comp_order_sym, device=None):
+def get_stress_vmf(stress, n_dim, comp_order_sym, device=None):
     """Get stress tensor Voigt matricial form.
 
     Parameters

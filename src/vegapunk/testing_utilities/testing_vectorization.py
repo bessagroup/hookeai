@@ -17,8 +17,8 @@ from simulators.fetorch.math.matrixops import get_problem_type_parameters, \
     get_tensor_mf, vget_tensor_mf, get_tensor_from_mf, vget_tensor_from_mf, \
     get_state_3Dmf_from_2Dmf, vget_state_3Dmf_from_2Dmf, \
     get_state_2Dmf_from_3Dmf, vget_state_2Dmf_from_3Dmf
-from simulators.fetorch.math.voigt_notation import get_stress_vfm, \
-    vget_stress_vmf, get_strain_from_vfm, vget_strain_from_vmf
+from simulators.fetorch.math.voigt_notation import get_stress_vmf, \
+    vget_stress_vmf, get_strain_from_vmf, vget_strain_from_vmf
 from simulators.fetorch.element.derivatives.jacobian import eval_jacobian
 from simulators.fetorch.element.derivatives.gradients import \
     build_discrete_sym_gradient, vbuild_discrete_sym_gradient, \
@@ -489,18 +489,18 @@ def testing_get_stress_vmf(device='cpu'):
     # Original vs Vectorized:
     print('\n' + 40*'-')
     # Original
-    o_tensor_mf = get_stress_vfm(tensor, n_dim, comp_order_sym)
-    o_avg_time_call = function_timer(get_stress_vfm,
-                                    (tensor, n_dim, comp_order_sym),
-                                    n_calls=1000)
+    o_tensor_mf = get_stress_vmf(tensor, n_dim, comp_order_sym)
+    o_avg_time_call = function_timer(get_stress_vmf,
+                                     (tensor, n_dim, comp_order_sym),
+                                     n_calls=1000)
     print(f'\nMatricial form (original):\n')
     print(f' {o_tensor_mf}')
     print(f'\n avg. time per call = {o_avg_time_call:.4e}')
     # Vectorized
     v_tensor_mf = vget_stress_vmf(tensor, n_dim, comp_order_sym)
     v_avg_time_call = function_timer(vget_stress_vmf,
-                                    (tensor, n_dim, comp_order_sym),
-                                    n_calls=1000)
+                                     (tensor, n_dim, comp_order_sym),
+                                     n_calls=1000)
     print(f'\nMatricial form (vectorized):\n')
     print(f' {v_tensor_mf}')
     print(f'\n avg. time per call = {v_avg_time_call:.4e}')
@@ -527,18 +527,18 @@ def testing_get_strain_from_vmf(device='cpu'):
     # Get tensor matricial form
     tensor_mf = vget_stress_vmf(tensor, n_dim, comp_order_sym)
     # Original
-    o_tensor = get_strain_from_vfm(tensor_mf, n_dim, comp_order_sym)
-    o_avg_time_call = function_timer(get_strain_from_vfm,
-                                        (tensor_mf, n_dim, comp_order_sym),
-                                        n_calls=1000)
+    o_tensor = get_strain_from_vmf(tensor_mf, n_dim, comp_order_sym)
+    o_avg_time_call = function_timer(get_strain_from_vmf,
+                                     (tensor_mf, n_dim, comp_order_sym),
+                                     n_calls=1000)
     print(f'\nMatricial form (original):\n')
     print(f' {o_tensor}')
     print(f'\n avg. time per call = {o_avg_time_call:.4e}')
     # Vectorized
     v_tensor = vget_strain_from_vmf(tensor_mf, n_dim, comp_order_sym)
     v_avg_time_call = function_timer(vget_strain_from_vmf,
-                                        (tensor_mf, n_dim, comp_order_sym),
-                                        n_calls=1000)
+                                     (tensor_mf, n_dim, comp_order_sym),
+                                     n_calls=1000)
     print(f'\nMatricial form (vectorized):\n')
     print(f' {v_tensor}')
     print(f'\n avg. time per call = {v_avg_time_call:.4e}')

@@ -7,7 +7,7 @@ import pytest
 import torch
 # Local
 from src.vegapunk.simulators.fetorch.math.voigt_notation import \
-    get_strain_from_vfm, get_stress_vfm
+    get_strain_from_vmf, get_stress_vmf
 # =============================================================================
 #
 #                                                          Authorship & Credits
@@ -18,7 +18,7 @@ __status__ = 'Planning'
 # =============================================================================
 #
 # =============================================================================
-def test_get_strain_from_vfm():
+def test_get_strain_from_vmf():
     """Test recovery of strain tensor from Voigt matricial form."""
     # Initialize errors
     errors = []
@@ -31,7 +31,7 @@ def test_get_strain_from_vfm():
     strain_vfm = torch.rand(len(comp_order_sym))
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Recover strain tensor from Voigt matricial form
-    strain = get_strain_from_vfm(strain_vfm, n_dim, comp_order_sym)
+    strain = get_strain_from_vmf(strain_vfm, n_dim, comp_order_sym)
     # Set expected strain tensor
     strain_sol = torch.tensor([[strain_vfm[0], 0.5*strain_vfm[2]],
                                [0.5*strain_vfm[2], strain_vfm[1]]])
@@ -48,7 +48,7 @@ def test_get_strain_from_vfm():
     strain_vfm = torch.rand(len(comp_order_sym))
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Recover strain tensor from Voigt matricial form
-    strain = get_strain_from_vfm(strain_vfm, n_dim, comp_order_sym)
+    strain = get_strain_from_vmf(strain_vfm, n_dim, comp_order_sym)
     # Set expected strain tensor
     strain_sol = \
         torch.tensor([[strain_vfm[0], 0.5*strain_vfm[3], 0.5*strain_vfm[5]],
@@ -61,7 +61,7 @@ def test_get_strain_from_vfm():
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     assert not errors, "Errors:\n{}".format("\n".join(errors))
 # -----------------------------------------------------------------------------
-def test_get_stress_vfm():
+def test_get_stress_vmf():
     """Test stress tensor Voigt matricial form."""
     # Initialize errors
     errors = []
@@ -75,7 +75,7 @@ def test_get_stress_vfm():
     stress = 0.5*(random_tensor + random_tensor.T)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Get stress tensor Voigt matricial form
-    stress_vmf = get_stress_vfm(stress, n_dim, comp_order_sym)
+    stress_vmf = get_stress_vmf(stress, n_dim, comp_order_sym)
     # Set expected stress tensor Voigt matricial form
     stress_vmf_sol = torch.tensor([stress[0, 0], stress[1, 1], stress[0, 1]])
     # Check stress tensor
@@ -92,7 +92,7 @@ def test_get_stress_vfm():
     stress = 0.5*(random_tensor + random_tensor.T)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Get stress tensor Voigt matricial form
-    stress_vmf = get_stress_vfm(stress, n_dim, comp_order_sym)
+    stress_vmf = get_stress_vmf(stress, n_dim, comp_order_sym)
     # Set expected stress tensor Voigt matricial form
     stress_vmf_sol = torch.tensor([stress[0, 0], stress[1, 1], stress[2, 2],
                                    stress[0, 1], stress[1, 2], stress[0, 2]])
