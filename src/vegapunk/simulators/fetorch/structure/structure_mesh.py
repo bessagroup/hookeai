@@ -93,6 +93,10 @@ class StructureMesh:
         Extract element level array from mesh level counterpart.
     _element_extractor_1d(self, mesh_array, element_id)
         Extract element level 1D array from mesh level counterpart.
+    build_elements_mesh_indexing(self, n_dof_node)
+        Build elements nodes degrees of freedom mesh indexes.
+    build_element_mesh_indexing(cls, element_nodes, n_dof_node)
+        Get element nodes degrees of freedom mesh indexes.
     _check_mesh_initialization(self, nodes_coords_mesh_init, elements_type,
                                connectivities)
         Check finite element mesh initialization.
@@ -518,6 +522,58 @@ class StructureMesh:
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         return element_array
     # -------------------------------------------------------------------------
+    def build_elements_mesh_indexing(self, n_dof_node):
+        """Build elements nodes degrees of freedom mesh indexes.
+        
+        Parameters
+        ----------
+        n_dof_node : int
+            Number of degrees of freedom per element node.
+        
+        Returns
+        -------
+        elements_mesh_indexes : torch.Tensor(2d)
+            Elements nodes degrees of freedom mesh indexes stored as
+            torch.Tensor(2d) of shape (n_elem, n_node*n_dof_node).
+        """
+        # Build connectivities tensor
+        connectivities_tensor = self.get_connectivities_tensor()
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set vectorized element mesh indexing (batch along element)
+        vmap_element_mesh_indexing = torch.vmap(
+            self.build_element_mesh_indexing, in_dims=(0, None), out_dims=(0,))
+        # Compute elements mesh indexing
+        elements_mesh_indexes = \
+            vmap_element_mesh_indexing(connectivities_tensor, n_dof_node)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        return elements_mesh_indexes
+    # -------------------------------------------------------------------------
+    @classmethod
+    def build_element_mesh_indexing(cls, element_nodes, n_dof_node):
+        """Get element nodes degrees of freedom mesh indexes.
+        
+        Parameters
+        ----------
+        element_nodes : torch.Tensor(1d)
+            Finite element mesh element connectitivities stored as
+            torch.Tensor(1d) of shape (n_node,). Nodes are labeled from
+            1 to n_node_mesh.
+        n_dof_node : int
+            Number of degrees of freedom per element node.
+        
+        Returns
+        -------
+        element_mesh_indexes : torch.Tensor(1d)
+            Element nodes degrees of freedom mesh indexes stored as
+            torch.Tensor(1d) of shape (n_node*n_dof_node,).
+        """
+        # Build element nodes degrees of freedom mesh indexes
+        element_mesh_indexes = \
+            ((element_nodes - 1)*n_dof_node).repeat_interleave(n_dof_node) \
+            + torch.arange(n_dof_node).repeat(len(element_nodes))
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        return element_mesh_indexes
+    # -------------------------------------------------------------------------
     def _check_mesh_initialization(self, nodes_coords_mesh_init, elements_type,
                                    connectivities):
         """Check finite element mesh initialization.
@@ -574,5 +630,3 @@ class StructureMesh:
                                    f'{len(element_nodes)} do '
                                    f'not match the corresponding element '
                                    f'type number of nodes ({n_node}).')
-
-    
