@@ -480,13 +480,11 @@ class StructureMaterialState:
         for _, model in self._material_models.items():
             # Check model device
             if hasattr(model, '_device_type'):
-                print('updated model device!')
                 # Update model device
                 model.set_device(device_type)
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Check model embedded material model
             if hasattr(model, '_constitutive_model'):
-                print('updated embedded model device!')
                 # Update embedded material model device
                 model._constitutive_model.set_device(device_type)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
