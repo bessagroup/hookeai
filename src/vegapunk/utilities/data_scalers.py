@@ -47,9 +47,9 @@ class TorchMinMaxScaler:
         Set features normalization minimum and maximum tensors.
     fit(self, tensor)
         Fit features normalization minimum and maximum tensors.
-    transform(self, tensor)
+    transform(self, tensor, is_check_data=False)
         Normalize features tensor.
-    inverse_transform(self, tensor)
+    inverse_transform(self, tensor, is_check_data=False)
         Denormalize features tensor.
     _check_minimum(self, minimum)
         Check features normalization minimum tensor.
@@ -151,7 +151,7 @@ class TorchMinMaxScaler:
         self._minimum = self._check_minimum(torch.min(tensor, dim=0)[0])
         self._maximum = self._check_maximum(torch.max(tensor, dim=0)[0])
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    def transform(self, tensor):
+    def transform(self, tensor, is_check_data=False):
         """Normalize features tensor.
 
         If sequential data is provided, then all sequence times are
@@ -164,6 +164,8 @@ class TorchMinMaxScaler:
             Features PyTorch tensor stored as torch.Tensor with shape
             (n_samples, n_features) or as torch.Tensor with shape
             (sequence_length, n_samples, n_features).
+        is_check_data : bool, default=False
+            If True, then check transformed tensor data.
             
         Returns
         -------
@@ -196,17 +198,18 @@ class TorchMinMaxScaler:
             transformed_tensor = torch.reshape(transformed_tensor, input_shape)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Check transformed tensor
-        if not torch.equal(torch.tensor(transformed_tensor.shape),
-                           torch.tensor(input_shape)):
-            raise RuntimeError('Input and transformed tensors do not have the '
-                               'same shape.')
-        elif torch.any(torch.isnan(transformed_tensor)):
-            raise RuntimeError('One or more NaN elements were detected in '
-                               'the transformed tensor.')
+        if is_check_data:
+            if not torch.equal(torch.tensor(transformed_tensor.shape),
+                               torch.tensor(input_shape)):
+                raise RuntimeError('Input and transformed tensors do not '
+                                   'have the same shape.')
+            elif torch.any(torch.isnan(transformed_tensor)):
+                raise RuntimeError('One or more NaN elements were detected in '
+                                   'the transformed tensor.')
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         return transformed_tensor
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    def inverse_transform(self, tensor):
+    def inverse_transform(self, tensor, is_check_data=False):
         """Denormalize features tensor.
 
         If sequential data is provided, then all sequence times are
@@ -219,6 +222,8 @@ class TorchMinMaxScaler:
             Normalized features PyTorch tensor stored as torch.Tensor with
             shape (n_samples, n_features) or as torch.Tensor with shape
             (sequence_length, n_samples, n_features).
+        is_check_data : bool, default=False
+            If True, then check transformed tensor data.
             
         Returns
         -------
@@ -251,10 +256,11 @@ class TorchMinMaxScaler:
             transformed_tensor = torch.reshape(transformed_tensor, input_shape)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Check transformed tensor
-        if not torch.equal(torch.tensor(transformed_tensor.shape),
-                           torch.tensor(input_shape)):
-            raise RuntimeError('Input and transformed tensors do not have the '
-                               'same shape.')
+        if is_check_data:
+            if not torch.equal(torch.tensor(transformed_tensor.shape),
+                               torch.tensor(input_shape)):
+                raise RuntimeError('Input and transformed tensors do not have '
+                                   'the same shape.')
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         return transformed_tensor
     # -------------------------------------------------------------------------
@@ -355,9 +361,9 @@ class TorchStandardScaler:
         Set features standardization standard deviation tensor.    
     fit(self, tensor)
         Fit features standardization mean and standard deviation tensors.
-    transform(self, tensor)
+    transform(self, tensor, is_check_data=False)
         Standardize features tensor.
-    inverse_transform(self, tensor)
+    inverse_transform(self, tensor, is_check_data=False)
         Destandardize features tensor.
     _check_mean(self, mean):
         Check features standardization mean tensor.
@@ -462,7 +468,7 @@ class TorchStandardScaler:
         self._std = self._check_std(torch.std(tensor, dim=0,
                                               correction=int(is_bessel)))
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    def transform(self, tensor):
+    def transform(self, tensor, is_check_data=False):
         """Standardize features tensor.
 
         If sequential data is provided, then all sequence times are
@@ -475,6 +481,8 @@ class TorchStandardScaler:
             Features PyTorch tensor stored as torch.Tensor with shape
             (n_samples, n_features) or as torch.Tensor with shape
             (sequence_length, n_samples, n_features).
+        is_check_data : bool, default=False
+            If True, then check transformed tensor data.
             
         Returns
         -------
@@ -509,17 +517,18 @@ class TorchStandardScaler:
             transformed_tensor = torch.reshape(transformed_tensor, input_shape)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Check transformed tensor
-        if not torch.equal(torch.tensor(transformed_tensor.shape),
-                           torch.tensor(input_shape)):
-            raise RuntimeError('Input and transformed tensors do not have the '
-                               'same shape.')
-        elif torch.any(torch.isnan(transformed_tensor)):
-            raise RuntimeError('One or more NaN elements were detected in '
-                               'the transformed tensor.')
+        if is_check_data:
+            if not torch.equal(torch.tensor(transformed_tensor.shape),
+                               torch.tensor(input_shape)):
+                raise RuntimeError('Input and transformed tensors do not '
+                                   'have the same shape.')
+            elif torch.any(torch.isnan(transformed_tensor)):
+                raise RuntimeError('One or more NaN elements were detected in '
+                                   'the transformed tensor.')
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         return transformed_tensor
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    def inverse_transform(self, tensor):
+    def inverse_transform(self, tensor, is_check_data=False):
         """Destandardize features tensor.
 
         If sequential data is provided, then all sequence times are
@@ -532,6 +541,8 @@ class TorchStandardScaler:
             Standardized features PyTorch tensor stored as torch.Tensor with
             shape (n_samples, n_features) or as torch.Tensor with shape
             (sequence_length, n_samples, n_features).
+        is_check_data : bool, default=False
+            If True, then check transformed tensor data.
             
         Returns
         -------
@@ -562,10 +573,11 @@ class TorchStandardScaler:
             transformed_tensor = torch.reshape(transformed_tensor, input_shape)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Check transformed tensor
-        if not torch.equal(torch.tensor(transformed_tensor.shape),
-                           torch.tensor(input_shape)):
-            raise RuntimeError('Input and transformed tensors do not have the '
-                               'same shape.')
+        if is_check_data:
+            if not torch.equal(torch.tensor(transformed_tensor.shape),
+                               torch.tensor(input_shape)):
+                raise RuntimeError('Input and transformed tensors do not have '
+                                   'the same shape.')
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         return transformed_tensor
     # -------------------------------------------------------------------------
