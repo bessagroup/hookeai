@@ -7,11 +7,11 @@ eval_shapefun_deriv
 build_discrete_sym_gradient
     Build discrete symmetric gradient operator.
 vbuild_discrete_sym_gradient
-    Build discrete symmetric gradient operator (vectorized).
+    Build discrete symmetric gradient operator.
 build_discrete_gradient
     Build discrete gradient operator.
 vbuild_discrete_gradient
-    Build discrete gradient operator (vectorized).
+    Build discrete gradient operator.
 """
 #
 #                                                                       Modules
@@ -122,7 +122,9 @@ def build_discrete_sym_gradient(shape_fun_deriv, comp_order_sym):
     return grad_operator_sym
 # =============================================================================
 def vbuild_discrete_sym_gradient(shape_fun_deriv, comp_order_sym):
-    """Build discrete symmetric gradient operator (vectorized).
+    """Build discrete symmetric gradient operator.
+    
+    Compatible with vectorized mapping.
     
     Parameters
     ----------
@@ -236,7 +238,9 @@ def build_discrete_gradient(shape_fun_deriv, comp_order_nsym):
     return grad_operator
 # =============================================================================
 def vbuild_discrete_gradient(shape_fun_deriv, comp_order_nsym):
-    """Build discrete gradient operator (vectorized).
+    """Build discrete gradient operator.
+    
+    Compatible with vectorized mapping.
     
     Parameters
     ----------
