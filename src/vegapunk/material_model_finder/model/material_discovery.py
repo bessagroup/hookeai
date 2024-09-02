@@ -465,13 +465,23 @@ class MaterialModelFinder(torch.nn.Module):
             Specimen numerical data translated from experimental results.
         specimen_material_state : StructureMaterialState
             FETorch structure material state.
-        sequential_mode : {'sequential_time', 'sequential_element'}, \
+        sequential_mode : {'sequential_time', 'sequential_element', \
+                           'sequential_element_vmap}, \
                           default='sequential_element'
-            If 'sequential_time', then internal forces are computed in the
-            standard way, processing each time step sequentially.
-            If 'sequential_element', then internal forces are computed such
-            that each element is processed sequentially, taking into account
-            the corresponding deformation history.
+                          
+            'sequential_time' : Internal forces are computed in the standard
+            way, processing each time step sequentially. Currently only
+            available for inference.
+            
+            'sequential_element' : Internal forces are computed such that each
+            element is processed sequentially (taking into account the
+            corresponding deformation history). Available for both training
+            and inference. Significantly limited with respect to memory costs.
+            
+            'sequential_element_vmap' : Similar to 'sequential_element' but
+            leveraging vectorizing maps (significant improvement of processing
+            time and memory efficiency). Available for both training and
+            inference.
 
         Returns
         -------
@@ -481,7 +491,10 @@ class MaterialModelFinder(torch.nn.Module):
         if sequential_mode == 'sequential_time':
             force_equilibrium_hist_loss = self.forward_sequential_time()
         elif sequential_mode == 'sequential_element':
-            force_equilibrium_hist_loss = self.forward_sequential_element()
+            #force_equilibrium_hist_loss = self.forward_sequential_element()
+            force_equilibrium_hist_loss = self.vforward_sequential_element()
+        elif sequential_mode == 'sequential_element_vmap':
+            force_equilibrium_hist_loss = self.vforward_sequential_element()
         else:
             raise RuntimeError('Unknown sequential mode.')
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -1037,7 +1050,7 @@ class MaterialModelFinder(torch.nn.Module):
     def force_equilibrium_loss(self, internal_forces_mesh,
                                external_forces_mesh, reaction_forces_mesh,
                                dirichlet_bool_mesh):
-        """Compute force equilibrium loss for given discrete time.
+        """Compute force equilibrium loss.
         
         Parameters
         ----------
@@ -1700,3 +1713,677 @@ class MaterialModelFinder(torch.nn.Module):
             # Delete state file
             if is_best_state_file:
                 os.remove(os.path.join(self.model_directory, filename))
+    # -------------------------------------------------------------------------
+    def vforward_sequential_element(self):
+        """Forward propagation (sequential element).
+        
+        Compatible with vectorized mapping.
+        
+        Returns
+        -------
+        force_equilibrium_hist_loss : torch.Tensor(0d)
+            Force equilibrium history loss.
+        """
+         # Get specimen numerical data
+        specimen_data = self._specimen_data
+         # Get specimen material state
+        specimen_material_state = self._specimen_material_state
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Get strain formulation and problem type
+        strain_formulation = specimen_material_state.get_strain_formulation()
+        problem_type = specimen_material_state.get_problem_type()
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Get specimen finite element mesh
+        specimen_mesh = specimen_data.specimen_mesh
+        # Get elements type
+        elements_type = specimen_mesh.get_elements_type()
+        # Get element type
+        if specimen_mesh.get_n_element_type() > 1:
+            raise RuntimeError('Vectorized forward propagation requires that '
+                               'all the elements share the same element type.')
+        else:
+            # Get unique element type
+            element_type = elements_type['1']
+            # Get number of degrees of freedom per node
+            n_dof_node = element_type.get_n_dof_node()
+        # Get number of spatial dimensions
+        n_dim = specimen_mesh.get_n_dim()
+        # Get number of nodes of finite element mesh
+        n_node_mesh = specimen_mesh.get_n_node_mesh()
+        # Build elements nodes degrees of freedom mesh indexes
+        elements_mesh_indexes = \
+            specimen_mesh.build_elements_mesh_indexing(n_dof_node)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Get elements material
+        elements_material = specimen_material_state.get_elements_material()
+        # Get element constitutive material model
+        if specimen_material_state.get_n_element_material_type() > 1:
+            raise RuntimeError('Vectorized forward propagation requires that '
+                               'all the elements share the same material.')  
+        else:
+            # Get unique constitutive material model
+            element_material = elements_material['1']
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Get batched finite element mesh configuration history
+        elements_coords_hist, elements_disps_hist = \
+            specimen_data.get_batched_mesh_configuration_hist(
+                is_update_coords=strain_formulation != 'infinitesimal',
+                device=self._device)
+        # Get time history
+        time_hist = specimen_data.time_hist
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Compute history of finite element mesh internal forces
+        elements_internal_forces_hist, _ = \
+            self.vcompute_elements_internal_forces_hist(
+                strain_formulation, problem_type, element_type,
+                element_material, elements_coords_hist, elements_disps_hist,
+                time_hist)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Build internal forces history of finite element mesh nodes
+        internal_forces_mesh_hist = self.vbuild_internal_forces_mesh_hist(
+            elements_internal_forces_hist, elements_mesh_indexes, n_node_mesh,
+            n_dim)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set null external forces of finite element mesh nodes
+        external_forces_mesh_hist = torch.zeros_like(internal_forces_mesh_hist)
+        # Get reaction forces (Dirichlet boundary conditions) history of finite
+        # element mesh nodes
+        reaction_forces_mesh_hist = \
+            specimen_data.reaction_forces_mesh_hist.to(self._device)
+        # Get degrees of freedom subject to Dirichlet boundary conditions
+        dirichlet_bool_mesh = \
+            specimen_mesh.get_dirichlet_bool_mesh().to(self._device)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Compute force equilibrium history loss
+        force_equilibrium_hist_loss = \
+            self.vforce_equilibrium_hist_loss(internal_forces_mesh_hist,
+                                              external_forces_mesh_hist,
+                                              reaction_forces_mesh_hist,
+                                              dirichlet_bool_mesh)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        return force_equilibrium_hist_loss
+    # -------------------------------------------------------------------------
+    def vcompute_elements_internal_forces_hist(self, strain_formulation,
+        problem_type, element_type, element_material, elements_coords_hist,
+        elements_disps_hist, time_hist):
+        """Compute history of finite elements internal forces.
+        
+        Compatible with vectorized mapping.
+        
+        Vectorization constraints require that all the elements share the same
+        element type (FETorch finite element) and share the same material
+        constitutive model (FETorch material constitutive model).
+        
+        Parameters
+        ----------
+        strain_formulation: {'infinitesimal', 'finite'}
+            Strain formulation.
+        problem_type : int
+            Problem type: 2D plane strain (1), 2D plane stress (2),
+            2D axisymmetric (3) and 3D (4).
+        element_type : Element
+            FETorch finite element.
+        element_material : ConstitutiveModel
+            FETorch material constitutive model.
+        elements_coords_hist : torch.Tensor(4d)
+            Coordinates history of finite elements nodes stored as
+            torch.Tensor(4d) of shape (n_elem, n_node, n_dim, n_time).
+        elements_disps_hist : torch.Tensor(4d)
+            Displacements history of finite elements nodes stored as
+            torch.Tensor(4d) of shape (n_elem, n_node, n_dim, n_time).
+        time_hist : torch.Tensor(1d)
+            Discrete time history.
+        
+        Returns
+        -------
+        elements_internal_forces_hist : torch.Tensor(3d)
+            Internal forces history of finite elements nodes stored as
+            torch.Tensor(3d) of shape (n_elem, n_node*n_dim, n_time).
+        elements_state_hist : torch.Tensor(4d)
+            Gauss integration points strain and stress path history of finite
+            elements stored as torch.Tensor(4d) of shape
+            (n_elem, n_gauss, n_time, n_strain_comps + n_stress_comps).
+        """
+        # Set vectorized element internal forces history computation (batch
+        # along element)
+        vmap_compute_element_internal_forces_hist = torch.vmap(
+            self.vcompute_element_internal_forces_hist,
+            in_dims=(0, 0, None, None, None, None, None),
+            out_dims=(0, 0))
+        # Compute elements internal forces history
+        elements_internal_forces_hist, elements_state_hist = \
+            vmap_compute_element_internal_forces_hist(
+                elements_coords_hist, elements_disps_hist, strain_formulation,
+                problem_type, element_type, element_material, time_hist)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        return elements_internal_forces_hist, elements_state_hist
+    # -------------------------------------------------------------------------
+    def vcompute_element_internal_forces_hist(
+        self, nodes_coords_hist, nodes_disps_hist, strain_formulation,
+        problem_type, element_type, element_material, time_hist):
+        """Compute history of finite element internal forces.
+        
+        Compatible with vectorized mapping.
+        
+        Parameters
+        ----------
+        nodes_coords_hist : torch.Tensor(3d)
+            Coordinates history of finite element nodes stored as
+            torch.Tensor(3d) of shape (n_node, n_dim, n_time).
+        nodes_disps_hist : torch.Tensor(3d)
+            Displacements history of finite element nodes stored as
+            torch.Tensor(3d) of shape (n_node, n_dim, n_time).
+        strain_formulation: {'infinitesimal', 'finite'}
+            Strain formulation.
+        problem_type : int
+            Problem type: 2D plane strain (1), 2D plane stress (2),
+            2D axisymmetric (3) and 3D (4).
+        element_type : Element
+            FETorch finite element.
+        element_material : ConstitutiveModel
+            FETorch material constitutive model.
+        time_hist : torch.Tensor(1d)
+            Discrete time history.
+
+        Returns
+        -------
+        element_internal_forces_hist : torch.Tensor(2d)
+            Element internal forces history stored as torch.Tensor(2d) of shape
+            (n_node*n_dim, n_time).
+        element_state_hist : torch.Tensor(3d)
+            Element Gauss integration points strain and stress path history
+            stored as torch.Tensor(3d) of shape
+            (n_gauss, n_time, n_strain_comps + n_stress_comps).
+        """
+        # Get element Gauss quadrature integration points local coordinates
+        # and weights
+        gp_coords_tensor, gp_weights_tensor = \
+            element_type.get_batched_gauss_integration_points(
+                device=self._device)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set vectorized strain computation (batch along Gauss integration
+        # points)
+        vmap_compute_local_internal_forces_hist = torch.vmap(
+            self.vcompute_local_internal_forces_hist,
+            in_dims=(0, 0, None, None, None, None, None, None, None),
+            out_dims=(0, 0))
+        # Compute Gauss integration points contribution history to element
+        # internal forces
+        gps_local_internal_forces_hist, element_state_hist = \
+            vmap_compute_local_internal_forces_hist(
+                gp_coords_tensor, gp_weights_tensor, strain_formulation,
+                problem_type, element_type, nodes_coords_hist,
+                nodes_disps_hist, time_hist, element_material)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Compute element internal forces history
+        element_internal_forces_hist = \
+            torch.sum(gps_local_internal_forces_hist, dim=0)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        return element_internal_forces_hist, element_state_hist
+    # -------------------------------------------------------------------------
+    def vcompute_local_internal_forces_hist(
+        self, local_coords, weight, strain_formulation, problem_type,
+        element_type, nodes_coords_hist, nodes_disps_hist, time_hist,
+        element_material):
+        """Compute local integration point internal force contribution history.
+        
+        Compatible with vectorized mapping.
+        
+        Parameters
+        ----------
+        local_coords : torch.Tensor(1d)
+            Local integration point coordinates.
+        weight : torch.Tensor(0d)
+            Local integration point weight.
+        strain_formulation: {'infinitesimal', 'finite'}
+            Strain formulation.
+        problem_type : int
+            Problem type: 2D plane strain (1), 2D plane stress (2),
+            2D axisymmetric (3) and 3D (4).
+        element_type : Element
+            FETorch finite element.
+        nodes_coords_hist : torch.Tensor(3d)
+            Coordinates history of finite element nodes stored as
+            torch.Tensor(3d) of shape (n_node, n_dim, n_time).
+        nodes_disps_hist : torch.Tensor(3d)
+            Displacements history of finite element nodes stored as
+            torch.Tensor(3d) of shape (n_node, n_dim, n_time).
+        time_hist : torch.Tensor(1d)
+            Discrete time history.
+        element_material : ConstitutiveModel
+            FETorch material constitutive model.
+            
+        Returns
+        -------
+        local_internal_forces_hist : torch.Tensor(2d)
+            Local integration point contribution history to finite element
+            internal forces stored as torch.Tensor(2d) of
+            shape (n_node*n_dim, n_time).
+        local_state_variables_hist : torch.Tensor(2d)
+            Local integration point strain and stress path history stored as
+            torch.Tensor(2d) of
+            shape (n_time, n_strain_comps + n_stress_comps).
+        """
+        # Get problem type parameters
+        n_dim, comp_order_sym, _ = get_problem_type_parameters(problem_type)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set vectorized strain computation (batch along time)
+        vmap_compute_local_strain = \
+            torch.vmap(self.vcompute_local_strain,
+                       in_dims=(2, 2, None, None, None, None, None),
+                       out_dims=(0, 0, 0))
+        # Compute Gauss integration point strain history
+        if strain_formulation == 'infinitesimal':
+            # Compute infinitesimal strain tensor history
+            strain_hist, jacobian_det_hist, grad_operator_sym_hist = \
+                vmap_compute_local_strain(nodes_coords_hist, nodes_disps_hist,
+                                          local_coords, strain_formulation,
+                                          n_dim, comp_order_sym, element_type)
+        else:
+            raise RuntimeError('Not implemented.')
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~        
+        # Material state update
+        state_variables_hist = self.vrecurrent_material_state_update(
+            strain_formulation, problem_type, element_material,
+            strain_hist, time_hist)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set stress components index range
+        if strain_formulation == 'infinitesimal':
+            stress_indexes = \
+                torch.arange(len(comp_order_sym), 2*len(comp_order_sym))
+        else:
+            raise RuntimeError('Not implemented.')
+        # Extract stress tensor history
+        stress_vmf_hist = state_variables_hist[:, stress_indexes]
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set vectorized internal force computation (batch along time)
+        vmap_compute_local_internal_forces = \
+            torch.vmap(self.vcompute_local_internal_forces,
+                       in_dims=(0, 0, 0, None), out_dims=(1,))
+        # Compute Gauss integration point contribution history to element
+        # internal forces
+        local_internal_forces_hist = vmap_compute_local_internal_forces(
+            stress_vmf_hist, grad_operator_sym_hist, jacobian_det_hist, weight)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        return local_internal_forces_hist, state_variables_hist
+    # -------------------------------------------------------------------------
+    def vcompute_local_strain(self, nodes_coords, nodes_disps, local_coords,
+                              strain_formulation, n_dim, comp_order,
+                              element_type):
+        """Compute strain tensor at given local point of element.
+        
+        Compatible with vectorized mapping.
+        
+        Parameters
+        ----------
+        nodes_coords : torch.Tensor(2d)
+            Nodes coordinates stored as torch.Tensor(2d) of shape
+            (n_node, n_dof_node).
+        nodes_disps : torch.Tensor(2d)
+            Nodes displacements stored as torch.Tensor(2d) of shape
+            (n_node, n_dof_node).
+        local_coords : torch.Tensor(1d)
+            Local coordinates of point where strain is computed.
+        strain_formulation: {'infinitesimal', 'finite'}
+            Strain formulation.
+        n_dim : int
+            Number of spatial dimensions.
+        comp_order : tuple
+            Strain/Stress components order associated to matricial form.
+        element_type : Element
+            FETorch finite element.
+            
+        Returns
+        -------
+        strain : torch.Tensor(2d)
+            Strain tensor at given local coordinates.
+        jacobian_det : torch.Tensor(0d)
+            Determinant of element Jacobian at given local coordinates.
+        grad_operator_sym : torch.Tensor(2d)
+            Discrete symmetric gradient operator evaluated at given local
+            coordinates.
+        """
+        # Evaluate shape functions derivates and Jacobian
+        shape_fun_deriv, _, jacobian_det = \
+            eval_shapefun_deriv(element_type, nodes_coords, local_coords)
+        # Build discrete symmetric gradient operator
+        grad_operator_sym = vbuild_discrete_sym_gradient(shape_fun_deriv,
+                                                         comp_order)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Compute strain tensor
+        if strain_formulation == 'infinitesimal':
+            # Compute infinitesimal strain tensor (Voigt matricial form)
+            strain_vmf = \
+                compute_infinitesimal_strain(grad_operator_sym, nodes_disps)
+            # Get strain tensor
+            strain = vget_strain_from_vmf(strain_vmf, n_dim, comp_order)
+        else:
+            raise RuntimeError('Not implemented.')      
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        return strain, jacobian_det, grad_operator_sym
+    # -------------------------------------------------------------------------
+    def vrecurrent_material_state_update(self, strain_formulation,
+                                         problem_type, constitutive_model,
+                                         strain_hist, time_hist):
+        """Material state update for recurrent constitutive model.
+
+        Compatible with vectorized mapping.
+        
+        Parameters
+        ----------
+        strain_formulation: {'infinitesimal', 'finite'}
+            Problem strain formulation.
+        problem_type : int
+            Problem type: 2D plane strain (1), 2D plane stress (2),
+            2D axisymmetric (3) and 3D (4).
+        constitutive_model : ConstitutiveModel
+            Recurrent material constitutive model.
+        strain_hist : torch.Tensor(3d)
+            Strain tensor history stored as torch.Tensor(3d) of shape
+            (n_time, n_dim, n_dim).
+        time_hist : torch.Tensor(1d)
+            Discrete time history.
+
+        Returns
+        -------
+        state_variables_hist : torch.Tensor(2d)
+            Strain and stress path history stored as torch.Tensor(2d) of shape
+            (n_time, n_strain_comps + n_stress_comps).
+        """
+        # Get problem type parameters
+        _, comp_order_sym, _ = \
+            get_problem_type_parameters(problem_type)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Get time history length
+        n_time = time_hist.shape[0]
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Get input features data
+        features_in_data = \
+            [self.vstore_tensor_comps(comp_order_sym, strain_hist[t, :, :],
+                                      device=self._device)
+             for t in range(n_time)]
+        # Build input features tensor
+        features_in = torch.stack(features_in_data, dim=0)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Compute output features
+        features_out = constitutive_model(features_in, is_normalized=False)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Build state path history
+        if strain_formulation == 'infinitesimal':
+            state_variables_hist = torch.cat(
+                (features_in[:, 0:len(comp_order_sym)],
+                 features_out[:, 0:len(comp_order_sym)]), dim=1)
+        else:
+            raise RuntimeError('Not implemented.')
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        return state_variables_hist
+    # -------------------------------------------------------------------------
+    def vcompute_local_internal_forces(self, stress_vmf, grad_operator_sym,
+                                       jacobian_det, weight):
+        """Compute local integration point internal forces contribution.
+        
+        Compatible with vectorized mapping.
+        
+        Internal forces are computed in the spatial configuration, i.e., based
+        on the discrete symmetric gradient operator and the Cauchy stress
+        tensor.
+        
+        Parameters
+        ----------
+        stress_vmf : torch.Tensor(1d)
+            Cauchy stress tensor stored in Voigt matricial form.
+        grad_operator_sym : torch.Tensor(2d)
+            Discrete symmetric gradient operator evaluated at given local
+            coordinates.
+        jacobian_det : torch.Tensor(0d)
+            Determinant of element jacobian evaluated at given local
+            coordinates.
+        weight : torch.Tensor(0d)
+            Local integration point weight.
+
+        Returns
+        -------
+        internal_forces : torch.Tensor(1d)
+            Integration point contribution to element internal forces.
+        """
+        # Compute local integration point contribution to element internal
+        # forces
+        internal_forces = weight*torch.matmul(grad_operator_sym.t(),
+                                              stress_vmf)*jacobian_det
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        return internal_forces
+    # -------------------------------------------------------------------------
+    def vbuild_internal_forces_mesh_hist(self, elements_internal_forces_hist,
+                                         elements_mesh_indexes, n_node_mesh,
+                                         n_dim):
+        """Build internal forces history of finite element mesh.
+        
+        Compatible with vectorized mapping.
+        
+        Parameters
+        ----------
+        elements_internal_forces_hist : torch.Tensor(3d)
+            Internal forces history of finite elements nodes stored as
+            torch.Tensor(3d) of shape (n_elem, n_node*n_dim, n_time).
+        elements_mesh_indexes : torch.Tensor(2d)
+            Elements nodes degrees of freedom mesh indexes stored as
+            torch.Tensor(2d) of shape (n_elem, n_node*n_dof_node).
+        n_node_mesh : int
+            Number of nodes of finite element mesh.
+        n_dim : int
+            Number of spatial dimensions.
+        
+        Returns
+        -------
+        internal_forces_mesh_hist : torch.Tensor(3d)
+            Internal forces history of finite element mesh nodes stored as
+            torch.Tensor(3d) of shape (n_node_mesh, n_dim, n_time).
+        """
+        # Set vectorized internal forces assembly (batch along time)
+        vmap_assemble_internal_forces = \
+            torch.vmap(self.vassemble_internal_forces,
+                       in_dims=(2, None, None, None), out_dims=(2,))
+        # Compute internal forces history
+        internal_forces_mesh_hist = vmap_assemble_internal_forces(
+            elements_internal_forces_hist, elements_mesh_indexes, n_node_mesh,
+            n_dim)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        return internal_forces_mesh_hist
+    # -------------------------------------------------------------------------
+    def vassemble_internal_forces(self, elements_internal_forces,
+                                  elements_mesh_indexes, n_node_mesh, n_dim):
+        """Assemble element internal forces into mesh counterpart.
+        
+        Compatible with vectorized mapping.
+        
+        Parameters
+        ----------
+        elements_internal_forces : torch.Tensor(2d)
+            Internal forces of finite elements nodes stored as
+            torch.Tensor(2d) of shape (n_elem, n_node*n_dim).
+        elements_mesh_indexes : torch.Tensor(2d)
+            Elements nodes degrees of freedom mesh indexes stored as
+            torch.Tensor(2d) of shape (n_elem, n_node*n_dof_node).
+        n_node_mesh : int
+            Number of nodes of finite element mesh.
+        n_dim : int
+            Number of spatial dimensions.
+
+        Returns
+        -------
+        internal_forces_mesh : torch.Tensor(2d)
+            Internal forces of finite element mesh nodes stored as
+            torch.Tensor(2d) of shape (n_node_mesh, n_dim).
+        """
+        # Assemble internal forces of finite element mesh
+        internal_forces_mesh = torch.stack(
+            [elements_internal_forces[elements_mesh_indexes == index].sum()
+             for index in range(n_node_mesh*n_dim)]).view(n_node_mesh, n_dim)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        return internal_forces_mesh
+    # -------------------------------------------------------------------------
+    def vforce_equilibrium_hist_loss(self, internal_forces_mesh_hist,
+                                     external_forces_mesh_hist,
+                                     reaction_forces_mesh_hist,
+                                     dirichlet_bool_mesh):
+        """Compute force equilibrium history loss.
+        
+        Compatible with vectorized mapping.
+        
+        Parameters
+        ----------
+        internal_forces_mesh_hist : torch.Tensor(3d)
+            Internal forces history of finite element mesh nodes stored as
+            torch.Tensor(3d) of shape (n_node_mesh, n_dim, n_time).
+        external_forces_mesh_hist : torch.Tensor(3d)
+            External forces history of finite element mesh nodes stored as
+            torch.Tensor(3d) of shape (n_node_mesh, n_dim, n_time).
+        reaction_forces_mesh_hist : torch.Tensor(3d)
+            Reaction forces (Dirichlet boundary conditions) history of finite
+            element mesh nodes stored as torch.Tensor(3d) of shape
+            (n_node_mesh, n_dim, n_time).
+        dirichlet_bool_mesh : torch.Tensor(2d)
+            Degrees of freedom of finite element mesh subject to Dirichlet
+            boundary conditions. Stored as torch.Tensor(2d) of shape
+            (n_node_mesh, n_dim) where constrained degrees of freedom are
+            labeled 1, otherwise 0.
+            
+        Returns
+        -------
+        force_equilibrium_hist_loss : torch.Tensor(0d)
+            Force equilibrium history loss.
+        """
+        # Set vectorized force equilibrium history loss computation (batch
+        # along time)
+        vmap_force_equilibrium_loss = \
+            torch.vmap(self.vforce_equilibrium_loss,
+                       in_dims=(2, 2, 2, None), out_dims=(0,))
+        # Compute force equilibrium history loss
+        force_equilibrium_hist_loss = torch.sum(
+            vmap_force_equilibrium_loss(internal_forces_mesh_hist,
+                                        external_forces_mesh_hist,
+                                        reaction_forces_mesh_hist,
+                                        dirichlet_bool_mesh))
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        return force_equilibrium_hist_loss
+    # -------------------------------------------------------------------------
+    def vforce_equilibrium_loss(self, internal_forces_mesh,
+                                external_forces_mesh, reaction_forces_mesh,
+                                dirichlet_bool_mesh):
+        """Compute force equilibrium loss.
+        
+        Compatible with vectorized mapping.
+        
+        Parameters
+        ----------
+        internal_forces_mesh : torch.Tensor(2d)
+            Internal forces of finite element mesh nodes stored as
+            torch.Tensor(2d) of shape (n_node_mesh, n_dim).
+        external_forces_mesh : torch.Tensor(2d)
+            External forces of finite element mesh nodes stored as
+            torch.Tensor(2d) of shape (n_node_mesh, n_dim).
+        reaction_forces_mesh : torch.Tensor(2d)
+            Reaction forces (Dirichlet boundary conditions) of finite element
+            mesh nodes stored as torch.Tensor(2d) of shape
+            (n_node_mesh, n_dim).
+        dirichlet_bool_mesh : torch.Tensor(2d)
+            Degrees of freedom of finite element mesh subject to Dirichlet
+            boundary conditions. Stored as torch.Tensor(2d) of shape
+            (n_node_mesh, n_dim) where constrained degrees of freedom are
+            labeled 1, otherwise 0.
+            
+        Returns
+        -------
+        force_equilibrium_loss : torch.Tensor(0d)
+            Force equilibrium loss.
+        """
+        # Normalize forces
+        if self._is_force_normalization:
+            # Normalize internal forces
+            internal_forces_mesh = self.data_scaler_transform(
+                internal_forces_mesh, features_type='forces', mode='normalize')
+            # Normalize external forces
+            external_forces_mesh = self.data_scaler_transform(
+                external_forces_mesh, features_type='forces', mode='normalize')
+            # Normalize reaction forces
+            reaction_forces_mesh = self.data_scaler_transform(
+                reaction_forces_mesh, features_type='forces', mode='normalize')
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Compute force equilibrium loss
+        force_equilibrium_loss = \
+            torch.sum((internal_forces_mesh - external_forces_mesh
+                       - torch.where(dirichlet_bool_mesh == 1,
+                                     reaction_forces_mesh, 0.0))**2)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        return force_equilibrium_loss
+    # -------------------------------------------------------------------------
+    @classmethod
+    def vbuild_tensor_from_comps(cls, n_dim, comps, comps_array, device=None):
+        """Build strain/stress tensor from given components.
+        
+        Compatible with vectorized mapping.
+        
+        Parameters
+        ----------
+        n_dim : int
+            Problem number of spatial dimensions.
+        comps : tuple[str]
+            Strain/Stress components order.
+        comps_array : torch.Tensor(1d)
+            Strain/Stress components array.
+        device : torch.device, default=None
+            Device on which torch.Tensor is allocated.
+        
+        Returns
+        -------
+        tensor : torch.Tensor(2d)
+            Strain/Stress tensor.
+        """
+        # Get device from input tensor
+        if device is None:
+            device = comps_array.device
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set row major components order       
+        row_major_order = tuple(f'{i + 1}{j + 1}' for i, j
+                                in itertools.product(range(n_dim), repeat=2))
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Build indexing mapping
+        index_map = [comps.index(x) if x in comps
+                     else comps.index(x[::-1]) for x in row_major_order]
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Build tensor
+        tensor = comps_array[index_map].view(n_dim, n_dim)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        return tensor
+    # -------------------------------------------------------------------------
+    @classmethod
+    def vstore_tensor_comps(cls, comps, tensor, device=None):
+        """Store strain/stress tensor components in array.
+        
+        Compatible with vectorized mapping.
+        
+        Parameters
+        ----------
+        comps : tuple[str]
+            Strain/Stress components order.
+        tensor : torch.Tensor(2d)
+            Strain/Stress tensor.
+        device : torch.device, default=None
+            Device on which torch.Tensor is allocated.
+        
+        Returns
+        -------
+        comps_array : torch.Tensor(1d)
+            Strain/Stress components array.
+        """
+        # Get device from input tensor
+        if device is None:
+            device = tensor.device
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Build indexing mapping
+        index_map = tuple([int(x[i]) - 1 for x in comps] for i in range(2))
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Build tensor components array
+        comps_array = tensor[index_map]
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        return comps_array
