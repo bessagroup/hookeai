@@ -109,10 +109,13 @@ def validate_force_equilibrium_loss(specimen_name, strain_formulation,
     # Set force normalization
     is_force_normalization = True
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Set material model finder device
+    device_type = 'cpu'
     # Initialize material model finder
     material_finder = MaterialModelFinder(
         model_directory, model_name=model_finder_name,
-        is_force_normalization=is_force_normalization)
+        is_force_normalization=is_force_normalization,
+        device_type=device_type)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set number of strain and stress components
     if strain_formulation == 'infinitesimal':
@@ -148,6 +151,8 @@ def validate_force_equilibrium_loss(specimen_name, strain_formulation,
         specimen_material_state.init_elements_model(
             model_name, model_parameters, elements_ids, elements_type,
             model_kwargs)
+        # Update material models device
+        specimen_material_state.update_material_models_device(device_type)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Set specimen data and material state
         material_finder.set_specimen_data(specimen_data,
