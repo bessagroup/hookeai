@@ -189,8 +189,9 @@ class TorchMinMaxScaler:
         minimum = torch.tile(self._minimum, (n_samples, 1)).to(self._device)
         maximum = torch.tile(self._maximum, (n_samples, 1)).to(self._device)
         # Normalization features tensor
-        transformed_tensor = -1.0*torch.ones_like(tensor) \
-            + torch.div(2.0*torch.ones_like(tensor),
+        transformed_tensor = \
+            -1.0*torch.ones_like(tensor, device=self._device) \
+            + torch.div(2.0*torch.ones_like(tensor, device=self._device),
                         maximum - minimum)*(tensor - minimum)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Revert concatenation of sequential data
@@ -248,8 +249,9 @@ class TorchMinMaxScaler:
         maximum = torch.tile(self._maximum, (n_samples, 1)).to(self._device)
         # Denormalize features tensor
         transformed_tensor = minimum \
-            + torch.div(maximum - minimum, 2.0*torch.ones_like(tensor))*(
-                tensor + torch.ones_like(tensor))
+            + torch.div(maximum - minimum,
+                        2.0*torch.ones_like(tensor, self._device))*(
+                tensor + torch.ones_like(tensor, self._device))
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Revert concatenation of sequential data
         if len(input_shape) == 3:

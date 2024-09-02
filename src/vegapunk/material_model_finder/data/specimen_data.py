@@ -200,7 +200,8 @@ class SpecimenNumericalData:
             self.nodes_disps_mesh_hist[:, :, time_idx], time='current',
             is_update_coords=is_update_coords)
     # -------------------------------------------------------------------------
-    def get_batched_mesh_configuration_hist(self, is_update_coords=True):
+    def get_batched_mesh_configuration_hist(self, is_update_coords=True,
+                                            device=None):
         """Get batched finite element mesh configuration history.
         
         Batching operation over elements requires that all finite element mesh
@@ -212,7 +213,9 @@ class SpecimenNumericalData:
             If False, then finite element mesh nodes coordinates are kept fixed
             throughout history. If True, then finite element mesh nodes
             coordinates are computed from nodes displacements history.
-        
+        device : torch.device, default=None
+            Device on which torch.Tensor is allocated.
+
         Returns
         -------
         elements_coords_hist : torch.Tensor(4d)
@@ -233,7 +236,7 @@ class SpecimenNumericalData:
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Get batched finite element mesh elements displacement history
         elements_disps_hist = vmap_get_element_nodes_field_hist(
-            connectivities_tensor, self.nodes_disps_mesh_hist)
+            connectivities_tensor, self.nodes_disps_mesh_hist).to(device)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Get finite element mesh nodes initial coordinates
         nodes_coords_mesh_init, _ = \
@@ -246,7 +249,7 @@ class SpecimenNumericalData:
                 nodes_coords_mesh_hist + self.nodes_disps_mesh_hist
         # Get batched finite element mesh elements coordinates history
         elements_coords_hist = vmap_get_element_nodes_field_hist(
-            connectivities_tensor, nodes_coords_mesh_hist)
+            connectivities_tensor, nodes_coords_mesh_hist).to(device)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         return elements_coords_hist, elements_disps_hist
     # -------------------------------------------------------------------------
