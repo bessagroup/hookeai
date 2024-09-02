@@ -8,11 +8,11 @@ Functions
 get_strain_from_vmf
     Recover strain tensor from associated Voigt matricial form.
 vget_strain_from_vmf
-    Recover strain tensor from associated Voigt matricial form (vectorized).
+    Recover strain tensor from associated Voigt matricial form.
 get_stress_vmf
     Get stress tensor Voigt matricial form.
 vget_stress_vmf
-    Get stress tensor Voigt matricial form (vectorized).
+    Get stress tensor Voigt matricial form.
 """
 #
 #                                                                       Modules
@@ -96,6 +96,8 @@ def get_strain_from_vmf(strain_vmf, n_dim, comp_order_sym, device=None):
 # =============================================================================
 def vget_strain_from_vmf(strain_vmf, n_dim, comp_order_sym, device=None):
     """Recover strain tensor from associated Voigt matricial form.
+
+    Compatible with vectorized mapping.
 
     Parameters
     ----------
@@ -194,7 +196,9 @@ def get_stress_vmf(stress, n_dim, comp_order_sym, device=None):
     return stress_vmf
 # =============================================================================
 def vget_stress_vmf(stress, n_dim, comp_order_sym, device=None):
-    """Get stress tensor Voigt matricial form (vectorized).
+    """Get stress tensor Voigt matricial form.
+
+    Compatible with vectorized mapping.
 
     Parameters
     ----------

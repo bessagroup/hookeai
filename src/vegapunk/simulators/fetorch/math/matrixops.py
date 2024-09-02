@@ -18,21 +18,21 @@ get_problem_type_parameters
 get_tensor_mf
     Get tensor matricial form.
 vget_tensor_mf
-    Get tensor matricial form (vectorized).
+    Get tensor matricial form.
 get_tensor_from_mf
     Recover tensor from associated matricial form.
 vget_tensor_from_mf
-    Recover tensor from associated matricial form (vectorized).
+    Recover tensor from associated matricial form.
 kelvin_factor
     Get Kelvin notation coefficient of given strain/stress component.
 get_state_3Dmf_from_2Dmf
     Build 3D counterpart of 2D strain/stress second-order tensor.
 vget_state_3Dmf_from_2Dmf
-    Build 3D counterpart of 2D second-order tensor (vectorized).
+    Build 3D counterpart of 2D second-order tensor.
 get_state_2Dmf_from_3Dmf
     Build 2D counterpart of 3D strain/stress second- or fourth-order tensor.
 vget_state_2Dmf_from_3Dmf
-    Build 2D counterpart of 3D second- or fourth-order tensor (vectorized).
+    Build 2D counterpart of 3D second- or fourth-order tensor.
 """
 #
 #                                                                       Modules
@@ -215,7 +215,9 @@ def get_tensor_mf(tensor, n_dim, comp_order, device=None):
     return tensor_mf
 # =============================================================================
 def vget_tensor_mf(tensor, n_dim, comp_order, device=None):
-    """Get tensor matricial form (vectorized).
+    """Get tensor matricial form.
+
+    Compatible with vectorized mapping.
 
     Store a given second-order or fourth-order tensor in matricial form for a
     given number of problem spatial dimensions and given ordered strain/stress
@@ -457,7 +459,9 @@ def get_tensor_from_mf(tensor_mf, n_dim, comp_order, device=None):
     return tensor
 # =============================================================================
 def vget_tensor_from_mf(tensor_mf, n_dim, comp_order, device=None):
-    """Recover tensor from associated matricial form (vectorized).
+    """Recover tensor from associated matricial form.
+
+    Compatible with vectorized mapping.
 
     Recover a given second-order or fourth-order tensor from the associated
     matricial form, given the problem number of spatial dimensions and given a
@@ -678,7 +682,9 @@ def get_state_3Dmf_from_2Dmf(problem_type, mf_2d, comp_33, device=None):
     return mf_3d
 # =============================================================================
 def vget_state_3Dmf_from_2Dmf(mf_2d, comp_33, device=None):
-    """Build 3D counterpart of 2D second-order tensor (vectorized).
+    """Build 3D counterpart of 2D second-order tensor.
+    
+    Compatible with vectorized mapping.
 
     Parameters
     ----------
@@ -781,7 +787,9 @@ def get_state_2Dmf_from_3Dmf(problem_type, mf_3d, device=None):
     return mf_2d
 # =============================================================================
 def vget_state_2Dmf_from_3Dmf(mf_3d, device=None):
-    """Build 2D counterpart of 3D second- or fourth-order tensor (vectorized).
+    """Build 2D counterpart of 3D second- or fourth-order tensor.
+    
+    Compatible with vectorized mapping.
 
     Parameters
     ----------
