@@ -98,9 +98,12 @@ def validate_force_equilibrium_loss(specimen_name, strain_formulation,
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set available sequential modes
     if bool(re.search(r'^rc_.*$', model_name)):
-        available_sequential_modes = ('sequential_element',)
+        available_sequential_modes = ['sequential_element',]
+        if bool(re.search(r'_vmap$', model_name)):
+            available_sequential_modes.append('sequential_element_vmap')
     else:
-        available_sequential_modes = ('sequential_time', 'sequential_element')
+        available_sequential_modes = ('sequential_time',
+                                      'sequential_element')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set material model finder directory
     model_directory = os.path.dirname(os.path.abspath(__file__))
@@ -649,7 +652,7 @@ if __name__ == '__main__':
     strain_formulation = 'infinitesimal'
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set constitutive model name and parameters
-    model_name = 'rc_drucker_prager'
+    model_name = 'rc_von_mises_vmap'
     # Set constitutive model parameters
     if model_name == 'elastic':
         # Set constitutive model parameters
@@ -734,7 +737,7 @@ if __name__ == '__main__':
             # Set model validation data directory name
             model_data_name = 'elastic'
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        elif model_name == 'rc_von_mises':
+        elif model_name in ('rc_von_mises', 'rc_von_mises_vmap'):
             # Set constitutive model parameters
             model_parameters = {
                 'elastic_symmetry': 'isotropic',
@@ -752,7 +755,10 @@ if __name__ == '__main__':
             learnable_parameters['v'] = {'initial_value': 0.3,
                                          'bounds': (0.2, 0.4)}
             # Set material constitutive model name
-            material_model_name = 'von_mises'
+            if model_name == 'rc_von_mises_vmap':
+                material_model_name = 'von_mises_vmap'
+            else:
+                material_model_name = 'von_mises'
             # Set material constitutive state variables (prediction)
             state_features_out = {}
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -812,6 +818,8 @@ if __name__ == '__main__':
                            'darpa_project/1_pipeline_validation/'
                            'toy_uniaxial_specimen/temp')
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set state update failure checking flag
+        is_check_su_fail = False
         # Set parameters normalization
         is_normalized_parameters = True
         # Set data normalization
@@ -829,6 +837,7 @@ if __name__ == '__main__':
             'material_model_name': material_model_name,
             'material_model_parameters': model_parameters,
             'state_features_out': state_features_out,
+            'is_check_su_fail': is_check_su_fail,
             'model_directory': model_directory,
             'model_name': model_name,
             'is_normalized_parameters': is_normalized_parameters,
