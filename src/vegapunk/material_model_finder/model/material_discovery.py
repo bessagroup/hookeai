@@ -125,6 +125,54 @@ class MaterialModelFinder(torch.nn.Module):
         Build strain/stress tensor from given components.
     store_tensor_comps(cls, comps, tensor, device=None)
         Store strain/stress tensor components in array.
+    vforward_sequential_element(self)
+        Forward propagation (sequential element).
+    vcompute_elements_internal_forces_hist(self, strain_formulation, \
+                                           problem_type, element_type, \
+                                           element_material, \
+                                           elements_coords_hist, \
+                                           elements_disps_hist, time_hist)
+        Compute history of finite elements internal forces.
+    vcompute_element_internal_forces_hist(self, nodes_coords_hist, \
+                                          nodes_disps_hist, \
+                                          strain_formulation, \
+                                          problem_type, element_type, \
+                                          element_material, time_hist)
+        Compute history of finite element internal forces.
+    vcompute_local_internal_forces_hist(self, local_coords, weight, \
+                                        strain_formulation, problem_type, \
+                                        element_type, nodes_coords_hist, \
+                                        nodes_disps_hist, time_hist, \
+                                        element_material)
+        Compute local integration point internal force contribution history.
+    vcompute_local_strain(self, nodes_coords, nodes_disps, local_coords, \
+                          strain_formulation, n_dim, comp_order, element_type)
+        Compute strain tensor at given local point of element.
+    vrecurrent_material_state_update(self, strain_formulation, problem_type, \
+                                     constitutive_model, strain_hist, \
+                                     time_hist)
+        Material state update for recurrent constitutive model.
+    vcompute_local_internal_forces(self, stress_vmf, grad_operator_sym, \
+                                   jacobian_det, weight)
+        Compute local integration point internal forces contribution.
+    vbuild_internal_forces_mesh_hist(self, elements_internal_forces_hist, \
+                                     elements_mesh_indexes, n_node_mesh, n_dim)
+        Build internal forces history of finite element mesh.
+    vassemble_internal_forces(self, elements_internal_forces, \
+                              elements_mesh_indexes, n_node_mesh, n_dim)
+        Assemble element internal forces into mesh counterpart.
+    vforce_equilibrium_hist_loss(self, internal_forces_mesh_hist, \
+                                 external_forces_mesh_hist, \
+                                 reaction_forces_mesh_hist, \
+                                 dirichlet_bool_mesh)
+        Compute force equilibrium history loss.
+    vforce_equilibrium_loss(self, internal_forces_mesh, external_forces_mesh, \
+                            reaction_forces_mesh, dirichlet_bool_mesh)
+        Compute force equilibrium loss.
+    vbuild_tensor_from_comps(cls, n_dim, comps, comps_array, device=None)
+        Build strain/stress tensor from given components.
+    vstore_tensor_comps(cls, comps, tensor, device=None)
+        Store strain/stress tensor components in array.
     _init_data_scalers(self)
         Initialize model data scalers.
     set_fitted_force_data_scalers(self, force_minimum, force_maximum)
@@ -662,7 +710,9 @@ class MaterialModelFinder(torch.nn.Module):
             specimen_local_samples = []
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Initialize element internal forces of finite element mesh nodes
-        internal_forces_mesh_hist = torch.zeros(((n_node_mesh, n_dim, n_time)))
+        internal_forces_mesh_hist = torch.zeros((n_node_mesh, n_dim, n_time),
+                                                dtype=torch.float,
+                                                device=self._device)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Loop over elements
         for i in range(n_elem):
@@ -687,7 +737,8 @@ class MaterialModelFinder(torch.nn.Module):
             # Initialize element nodes coordinates, displacements and
             # incremental displacements histories
             nodes_coords_hist = \
-                torch.zeros((n_node, n_dim, n_time), dtype=torch.float)
+                torch.zeros((n_node, n_dim, n_time), dtype=torch.float,
+                            device=self._device)
             nodes_disps_hist = torch.zeros_like(nodes_coords_hist)
             nodes_inc_disps_hist = torch.zeros_like(nodes_coords_hist)
             # Loop over discrete time
@@ -756,7 +807,8 @@ class MaterialModelFinder(torch.nn.Module):
             # Get reaction forces (Dirichlet boundary conditions) of finite
             # element mesh nodes
             reaction_forces_mesh = \
-                specimen_data.reaction_forces_mesh_hist[:, :, time_idx]
+                specimen_data.reaction_forces_mesh_hist[:, :, time_idx].to(
+                    self._device)
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Add contribution to force equilibrium history loss
             force_equilibrium_hist_loss += self.force_equilibrium_loss(
@@ -846,7 +898,9 @@ class MaterialModelFinder(torch.nn.Module):
         n_time = time_hist.shape[0]
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Initialize element internal forces history
-        element_internal_forces_hist = torch.zeros((n_node*n_dof_node, n_time))
+        element_internal_forces_hist = torch.zeros((n_node*n_dof_node, n_time),
+                                                   dtype=torch.float,
+                                                   device=self._device)
         # Initialize element material constitutive model state variables
         # history
         element_state_hist = \
@@ -855,8 +909,8 @@ class MaterialModelFinder(torch.nn.Module):
         # Loop over Gauss integration points
         for i in range(n_gauss):
             # Get Gauss integration point local coordinates and weight
-            local_coords = gp_coords[str(i + 1)]
-            weight = gp_weights[str(i + 1)]
+            local_coords = gp_coords[str(i + 1)].to(self._device)
+            weight = gp_weights[str(i + 1)].to(self._device)
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Initialize Gauss integration point last converged material
             # constitutive model state variables
@@ -868,10 +922,12 @@ class MaterialModelFinder(torch.nn.Module):
             if strain_formulation == 'infinitesimal':
                 if is_recurrent_model:
                     strain_hist = \
-                        torch.zeros((n_dim, n_dim, n_time), dtype=torch.float)
+                        torch.zeros((n_dim, n_dim, n_time), dtype=torch.float,
+                                    device=self._device)
                 else:
                     inc_strain_hist = \
-                        torch.zeros((n_dim, n_dim, n_time), dtype=torch.float)
+                        torch.zeros((n_dim, n_dim, n_time), dtype=torch.float,
+                                    device=self._device)
             else:
                 raise RuntimeError('Not implemented.')
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -1001,7 +1057,8 @@ class MaterialModelFinder(torch.nn.Module):
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Initialize tensor of input features
         if strain_formulation == 'infinitesimal':
-            features_in = torch.zeros((n_time, len(comp_order_sym)))
+            features_in = torch.zeros((n_time, len(comp_order_sym)),
+                                      dtype=torch.float, device=self._device)
         else:
             raise RuntimeError('Not implemented.')
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -1180,538 +1237,6 @@ class MaterialModelFinder(torch.nn.Module):
             comps_array[k] = tensor[i, j]
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         return comps_array
-    # -------------------------------------------------------------------------
-    def _init_data_scalers(self):
-        """Initialize model data scalers."""
-        self._data_scalers = {}
-        self._data_scalers['forces'] = None
-    # -------------------------------------------------------------------------
-    def set_fitted_force_data_scalers(self, force_minimum, force_maximum):
-        """Set fitted forces data scalers.
-        
-        Parameters
-        ----------
-        force_minimum : torch.Tensor(1d)
-            Forces normalization minimum tensor stored as a torch.Tensor with
-            shape (n_dim,).
-        force_maximum : torch.Tensor(1d)
-            Forces normalization maximum tensor stored as a torch.Tensor with
-            shape (n_dim,).
-        """
-        # Initialize data scalers
-        self._init_data_scalers()
-        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        # Get number of spatial dimensions
-        n_dim = self._specimen_data.get_n_dim()
-        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        # Instantiate forces data scaler
-        scaler_forces = \
-            TorchMinMaxScaler(n_features=n_dim, device_type=self._device_type)
-        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        # Set data scaler normalization factors
-        scaler_forces.set_minimum_and_maximum(force_minimum, force_maximum)
-        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        # Set fitted data scalers
-        self._data_scalers['forces'] = scaler_forces
-    # -------------------------------------------------------------------------
-    def get_fitted_data_scaler(self, features_type):
-        """Get fitted model data scalers.
-        
-        Parameters
-        ----------
-        features_type : str
-            Features for which data scaler is required:
-            
-            'forces'  : Forces
-
-        Returns
-        -------
-        data_scaler : {TorchMinMaxScaler, TorchStandardScaler}
-            Fitted data scaler.
-        """
-        # Get fitted data scaler
-        if features_type not in self._data_scalers.keys():
-            raise RuntimeError(f'Unknown data scaler for {features_type}.')
-        elif self._data_scalers[features_type] is None:
-            raise RuntimeError(f'Data scaler for {features_type} has not '
-                               f'been fitted.')
-        else:
-            data_scaler = self._data_scalers[features_type]
-        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        return data_scaler
-    # -------------------------------------------------------------------------
-    def data_scaler_transform(self, tensor, features_type, mode='normalize'):
-        """Perform data scaling operation on features PyTorch tensor.
-        
-        Parameters
-        ----------
-        tensor : torch.Tensor
-            Features PyTorch tensor.
-        features_type : str
-            Features for which data scaler is required:
-            
-            'forces'  : Forces
-
-        mode : {'normalize', 'denormalize'}, default=normalize
-            Data scaling transformation type.
-            
-        Returns
-        -------
-        transformed_tensor : torch.Tensor
-            Transformed features PyTorch tensor.
-        """
-        # Check input features tensor
-        if not isinstance(tensor, torch.Tensor):
-            raise RuntimeError('Input tensor is not torch.Tensor.')
-        # Get input features tensor data type
-        input_dtype = tensor.dtype
-        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        # Get fitted data scaler for input features
-        data_scaler = self.get_fitted_data_scaler(features_type)
-        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        # Perform data scaling normalization/denormalization
-        if mode == 'normalize':
-            transformed_tensor = data_scaler.transform(tensor)
-        elif mode == 'denormalize':
-            transformed_tensor = data_scaler.inverse_transform(tensor)
-        else:
-            raise RuntimeError('Invalid data scaling transformation type.')
-        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        # Enforce same data type of input features tensor 
-        transformed_tensor = transformed_tensor.to(input_dtype)
-        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        # Check transformed features tensor
-        if not isinstance(transformed_tensor, torch.Tensor):
-            raise RuntimeError('Transformed tensor is not torch.Tensor.') 
-        elif not torch.equal(torch.tensor(transformed_tensor.size()),
-                             torch.tensor(tensor.size())):
-            raise RuntimeError('Input and transformed tensors do not have '
-                               'the same shape.')
-        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        return transformed_tensor
-    # -------------------------------------------------------------------------
-    def set_material_models_fitted_data_scalers(self, models_scaling_type,
-                                                models_scaling_parameters):
-        """Set material constitutive models fitted data scalers.
-        
-        Data scalers are only fitted for material models that support data
-        normalization and for which the corresponding data scaling type and
-        parameters are provided.
-        
-        Parameters
-        ----------
-        models_scaling_type : dict
-            Type of data scaling (str, {'min-max', 'mean-std'}) for each
-            material model (key, str[int]). Models are labeled from 1 to
-            n_mat_model. Min-Max scaling ('min-max') or standardization
-            ('mean-std').
-        models_scaling_type : dict
-            Features data scaling parameters (item, dict) for each material
-            model (key, str[int]), stored as data scaling parameters
-            (item, tuple[2]) for each features type (key, str). Models are
-            labeled from 1 to n_mat_model. Each data scaling parameter is set
-            as a torch.Tensor(1d) according to the corresponding number of
-            features. For 'min-max' data scaling, the parameters are the
-            'minimum'[0] and 'maximum'[1] tensors, while for 'mean-std' data
-            scaling the parameters are the 'mean'[0] and 'std'[1] tensors.
-        """
-        # Check specimen material state
-        if self._specimen_data is None:
-            raise RuntimeError('The specimen material data and material state '
-                               'must be set prior to set the material '
-                               'constitutive models fitted data scalers '
-                               '(check method set_specimen_data()).')
-        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        # Loop over material models
-        for model_key, model in self.get_material_models().items():
-            # Check if material model supports data normalization
-            if not hasattr(model, 'is_data_normalization'):
-                continue
-            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            # Check material model data normalization
-            if not (model.is_data_normalization
-                    and model_key in models_scaling_type.keys()):
-                continue
-            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            # Get material model data scaling type
-            scaling_type = models_scaling_type[model_key]
-            # Get material model data scaling parameters
-            scaling_parameters = models_scaling_parameters[model_key]
-            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            # Set material model fitted data scalers
-            model.set_fitted_data_scalers(scaling_type, scaling_parameters)
-    # -------------------------------------------------------------------------
-    def build_element_local_samples(self, strain_formulation, problem_type,
-                                    element_type, time_hist,
-                                    element_state_hist):
-        """Build element Gauss integration points local strain-stress paths.
-        
-        Parameters
-        ----------
-        strain_formulation: {'infinitesimal', 'finite'}
-            Strain formulation.
-        problem_type : int
-            Problem type: 2D plane strain (1), 2D plane stress (2),
-            2D axisymmetric (3) and 3D (4).
-        element_type : Element
-            FETorch finite element.
-        time_hist : torch.Tensor(1d)
-            Discrete time history.
-        element_state_hist : list[dict]
-            Material constitutive model state variables history (item, dict)
-            for each Gauss integration point (key, str[int]).
-            
-        Returns
-        -------
-        element_local_samples : list[dict]
-            Element local strain-stress paths, each corresponding to a given
-            element Gauss integration point. Each path is stored as a
-            dictionary where each feature (key, str) data is a torch.Tensor(2d)
-            of shape (sequence_length, n_features).
-        """
-        # Get problem type parameters
-        n_dim, comp_order_sym, _ = get_problem_type_parameters(problem_type)
-        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        # Set strain and stress components
-        if strain_formulation == 'infinitesimal':
-            strain_comps_order = comp_order_sym
-            stress_comps_order = comp_order_sym
-        else:
-            raise RuntimeError('Not implemented.')
-        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        # Get element number of Gauss quadrature integration points
-        n_gauss = element_type.get_n_gauss()
-        # Get time history length
-        n_time = time_hist.shape[0]
-        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        # Initialize element local strain-stress paths
-        element_local_samples = []
-        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        # Loop over Gauss integration points
-        for i in range(n_gauss):
-            # Initialize strain path
-            strain_path = torch.zeros((n_time, len(strain_comps_order)),
-                                      dtype=torch.float)
-            # Initialize stress path
-            stress_path = torch.zeros((n_time, len(stress_comps_order)),
-                                      dtype=torch.float)
-            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            # Loop over discrete time
-            for time_idx in range(n_time):
-                # Get strain tensor (matricial form)
-                strain_mf = \
-                    element_state_hist[time_idx][str(i + 1)]['strain_mf']
-                # Get strain tensor
-                strain = vget_tensor_from_mf(strain_mf, n_dim,
-                                             strain_comps_order)
-                # Store strain components
-                strain_path[time_idx, :] = \
-                    self.vstore_tensor_comps(comp_order_sym, strain)
-                # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-                # Get stress tensor (matricial form)
-                stress_mf = \
-                    element_state_hist[time_idx][str(i + 1)]['stress_mf']
-                # Get stress tensor
-                stress = vget_tensor_from_mf(stress_mf, n_dim,
-                                             stress_comps_order)
-                # Store stress components
-                stress_path[time_idx, :] = \
-                    self.vstore_tensor_comps(comp_order_sym, stress)
-            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            # Initialize material response path data
-            response_path = {}
-            # Assemble strain-stress material response path
-            response_path['strain_comps_order'] = strain_comps_order
-            response_path['strain_path'] = strain_path.detach()
-            response_path['stress_comps_order'] = stress_comps_order
-            response_path['stress_path'] = stress_path.detach()
-            # Assemble time path
-            response_path['time_hist'] = time_hist.detach().reshape(-1, 1)
-            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            # Assemble material response path
-            element_local_samples.append(response_path)
-        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        return element_local_samples
-    # -------------------------------------------------------------------------
-    def save_model_state(self, epoch=None, is_best_state=False,
-                         is_remove_posterior=True):
-        """Save model state to file.
-        
-        Model state file is stored in model_directory under the name
-        < model_name >.pt or < model_name >-< epoch >.pt if epoch is known.
-        
-        Model state file corresponding to the best performance is stored in
-        model_directory under the name < model_name >-best.pt or
-        < model_name >-< epoch >-best.pt if epoch is known.
-        
-        Parameters
-        ----------
-        epoch : int, default=None
-            Training epoch corresponding to current model state.
-        is_best_state : bool, default=False
-            If True, save model state file corresponding to the best
-            performance instead of regular state file.
-        is_remove_posterior : bool, default=True
-            Remove model and optimizer state files corresponding to training
-            epochs posterior to the saved state file. Effective only if saved
-            training epoch is known.
-        """
-        # Check model directory
-        if not os.path.isdir(self.model_directory):
-            raise RuntimeError('The model directory has not been found:\n\n'
-                               + self.model_directory)
-        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        # Set model state filename
-        model_state_file = self.model_name
-        # Append epoch
-        if isinstance(epoch, int):
-            model_state_file += '-' + str(epoch)
-        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        # Set model state corresponding to the best performance
-        if is_best_state:
-            # Append best performance
-            model_state_file += '-' + 'best'
-            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            # Remove any existent best model state file
-            self._remove_best_state_files()
-        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        # Set model state file path
-        model_path = os.path.join(self.model_directory,
-                                  model_state_file + '.pt')
-        # Save model state
-        torch.save(self.state_dict(), model_path)
-        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        # Delete model epoch state files posterior to saved epoch
-        if isinstance(epoch, int) and is_remove_posterior:
-            self._remove_posterior_state_files(epoch)
-    # -------------------------------------------------------------------------
-    def load_model_state(self, load_model_state=None,
-                         is_remove_posterior=True):
-        """Load model state from file.
-        
-        Model state file is stored in model_directory under the name
-        < model_name >.pt or < model_name >-< epoch >.pt if epoch is known.
-        
-        Model state file corresponding to the best performance is stored in
-        model_directory under the name < model_name >-best.pt or
-        < model_name >-< epoch >-best.pt if epoch if known.
-        
-        Parameters
-        ----------
-        load_model_state : {'best', 'last', int, None}, default=None
-            Load available model state from the model directory.
-            Options:
-            
-            'best'      : Model state corresponding to best performance
-            
-            'last'      : Model state corresponding to highest training epoch
-            
-            int         : Model state corresponding to given training epoch
-            
-            None        : Model default state file
-        
-        is_remove_posterior : bool, default=True
-            Remove model state files corresponding to training epochs posterior
-            to the loaded state file. Effective only if loaded training epoch
-            is known.
-            
-        Returns
-        -------
-        epoch : int
-            Loaded model state training epoch. Defaults to None if training
-            epoch is unknown.
-        """
-        # Check model directory
-        if not os.path.isdir(self.model_directory):
-            raise RuntimeError('The model directory has not been found:\n\n'
-                               + self.model_directory)
-        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        if load_model_state == 'best':
-            # Get state files in model directory
-            directory_list = os.listdir(self.model_directory)
-            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            # Initialize model best state files epochs
-            best_state_epochs = []
-            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            # Loop over files in model directory
-            for filename in directory_list:
-                # Check if file is model epoch best state file
-                is_best_state_file, best_state_epoch = \
-                    self._check_best_state_file(filename)
-                # Store model best state file training epoch
-                if is_best_state_file:
-                    best_state_epochs.append(best_state_epoch)
-            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            # Set model best state file
-            if not best_state_epochs:
-                raise RuntimeError('Model best state file has not been found '
-                                   'in directory:\n\n' + self.model_directory)
-            elif len(best_state_epochs) > 1:
-                raise RuntimeError('Two or more model best state files have '
-                                   'been found in directory:'
-                                   '\n\n' + self.model_directory)
-            else:
-                # Set best state epoch
-                epoch = best_state_epochs[0]
-                # Set model best state file
-                model_state_file = self.model_name
-                if isinstance(epoch, int):
-                    model_state_file += '-' + str(epoch)      
-                model_state_file += '-' + 'best'
-            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            # Delete model epoch state files posterior to loaded epoch
-            if isinstance(epoch, int) and is_remove_posterior:
-                self._remove_posterior_state_files(epoch)
-        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        elif load_model_state == 'last':
-            # Get state files in model directory
-            directory_list = os.listdir(self.model_directory)
-            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            # Initialize model state files training epochs
-            epochs = []
-            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            # Loop over files in model directory
-            for filename in directory_list:
-                # Check if file is model epoch state file
-                is_state_file, epoch = self._check_state_file(filename)
-                # Store model state file training epoch
-                if is_state_file:
-                    epochs.append(epoch)
-            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            # Set highest epoch model state file
-            if epochs:
-                # Set highest epoch
-                epoch = max(epochs)
-                # Set highest epoch model state file
-                model_state_file = self.model_name + '-' + str(epoch)
-            else:
-                raise RuntimeError('Model state files corresponding to epochs '
-                                   'have not been found in directory:\n\n'
-                                   + self.model_directory)
-        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        # Set model state filename
-        elif isinstance(load_model_state, int):
-            # Get epoch
-            epoch = load_model_state
-            # Set model state filename with epoch
-            model_state_file = self.model_name + '-' + str(int(epoch))
-            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            # Delete model epoch state files posterior to loaded epoch
-            if is_remove_posterior:
-                self._remove_posterior_state_files(epoch)
-        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        else:
-            # Set model state filename
-            model_state_file = self.model_name
-            # Set epoch as unknown
-            epoch = None
-        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        # Set model state file path
-        model_path = os.path.join(self.model_directory,
-                                  model_state_file + '.pt')
-        # Check model state file
-        if not os.path.isfile(model_path):
-            raise RuntimeError('Model state file has not been found:\n\n'
-                               + model_path)
-        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        # Load model state
-        self.load_state_dict(torch.load(model_path,
-                                        map_location=torch.device('cpu')))
-        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        return epoch
-    # -------------------------------------------------------------------------
-    def _check_state_file(self, filename):
-        """Check if file is model training epoch state file.
-        
-        Model training epoch state file is stored in model_directory under the
-        name < model_name >-< epoch >.pt.
-        
-        Parameters
-        ----------
-        filename : str
-            File name.
-        
-        Returns
-        -------
-        is_state_file : bool
-            True if model training epoch state file, False otherwise.
-        epoch : {None, int}
-            Training epoch corresponding to model state file if
-            is_state_file=True, None otherwise.
-        """
-        # Check if file is model epoch state file
-        is_state_file = bool(re.search(r'^' + self.model_name + r'-[0-9]+'
-                                       + r'\.pt', filename))
-        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        epoch = None
-        if is_state_file:
-            # Get model state epoch
-            epoch = int(os.path.splitext(filename)[0].split('-')[-1])
-        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        return is_state_file, epoch
-    # -------------------------------------------------------------------------
-    def _check_best_state_file(self, filename):
-        """Check if file is model best state file.
-        
-        Model state file corresponding to the best performance is stored in
-        model_directory under the name < model_name >-best.pt. or
-        < model_name >-< epoch >-best.pt if the training epoch is known.
-        
-        Parameters
-        ----------
-        filename : str
-            File name.
-        
-        Returns
-        -------
-        is_best_state_file : bool
-            True if model training epoch state file, False otherwise.
-        epoch : {None, int}
-            Training epoch corresponding to model state file if
-            is_best_state_file=True and training epoch is known, None
-            otherwise.
-        """
-        # Check if file is model epoch best state file
-        is_best_state_file = bool(re.search(r'^' + self.model_name
-                                            + r'-?[0-9]*' + r'-best' + r'\.pt',
-                                            filename))
-        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        epoch = None
-        if is_best_state_file:
-            # Get model state epoch
-            epoch = int(os.path.splitext(filename)[0].split('-')[-2])
-        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        return is_best_state_file, epoch
-    # -------------------------------------------------------------------------
-    def _remove_posterior_state_files(self, epoch):
-        """Delete model training epoch state files posterior to given epoch.
-        
-        Parameters
-        ----------
-        epoch : int
-            Training epoch.
-        """
-        # Get files in model directory
-        directory_list = os.listdir(self.model_directory)
-        # Loop over files in model directory
-        for filename in directory_list:
-            # Check if file is model epoch state file
-            is_state_file, file_epoch = self._check_state_file(filename)
-            # Delete model epoch state file posterior to given epoch
-            if is_state_file and file_epoch > epoch:
-                os.remove(os.path.join(self.model_directory, filename))
-    # -------------------------------------------------------------------------
-    def _remove_best_state_files(self):
-        """Delete existent model best state files."""
-        # Get files in model directory
-        directory_list = os.listdir(self.model_directory)
-        # Loop over files in model directory
-        for filename in directory_list:
-            # Check if file is model best state file
-            is_best_state_file, _ = self._check_best_state_file(filename)
-            # Delete state file
-            if is_best_state_file:
-                os.remove(os.path.join(self.model_directory, filename))
     # -------------------------------------------------------------------------
     def vforward_sequential_element(self):
         """Forward propagation (sequential element).
@@ -2393,3 +1918,535 @@ class MaterialModelFinder(torch.nn.Module):
         comps_array = tensor[index_map]
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         return comps_array
+    # -------------------------------------------------------------------------
+    def _init_data_scalers(self):
+        """Initialize model data scalers."""
+        self._data_scalers = {}
+        self._data_scalers['forces'] = None
+    # -------------------------------------------------------------------------
+    def set_fitted_force_data_scalers(self, force_minimum, force_maximum):
+        """Set fitted forces data scalers.
+        
+        Parameters
+        ----------
+        force_minimum : torch.Tensor(1d)
+            Forces normalization minimum tensor stored as a torch.Tensor with
+            shape (n_dim,).
+        force_maximum : torch.Tensor(1d)
+            Forces normalization maximum tensor stored as a torch.Tensor with
+            shape (n_dim,).
+        """
+        # Initialize data scalers
+        self._init_data_scalers()
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Get number of spatial dimensions
+        n_dim = self._specimen_data.get_n_dim()
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Instantiate forces data scaler
+        scaler_forces = \
+            TorchMinMaxScaler(n_features=n_dim, device_type=self._device_type)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set data scaler normalization factors
+        scaler_forces.set_minimum_and_maximum(force_minimum, force_maximum)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set fitted data scalers
+        self._data_scalers['forces'] = scaler_forces
+    # -------------------------------------------------------------------------
+    def get_fitted_data_scaler(self, features_type):
+        """Get fitted model data scalers.
+        
+        Parameters
+        ----------
+        features_type : str
+            Features for which data scaler is required:
+            
+            'forces'  : Forces
+
+        Returns
+        -------
+        data_scaler : {TorchMinMaxScaler, TorchStandardScaler}
+            Fitted data scaler.
+        """
+        # Get fitted data scaler
+        if features_type not in self._data_scalers.keys():
+            raise RuntimeError(f'Unknown data scaler for {features_type}.')
+        elif self._data_scalers[features_type] is None:
+            raise RuntimeError(f'Data scaler for {features_type} has not '
+                               f'been fitted.')
+        else:
+            data_scaler = self._data_scalers[features_type]
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        return data_scaler
+    # -------------------------------------------------------------------------
+    def data_scaler_transform(self, tensor, features_type, mode='normalize'):
+        """Perform data scaling operation on features PyTorch tensor.
+        
+        Parameters
+        ----------
+        tensor : torch.Tensor
+            Features PyTorch tensor.
+        features_type : str
+            Features for which data scaler is required:
+            
+            'forces'  : Forces
+
+        mode : {'normalize', 'denormalize'}, default=normalize
+            Data scaling transformation type.
+            
+        Returns
+        -------
+        transformed_tensor : torch.Tensor
+            Transformed features PyTorch tensor.
+        """
+        # Check input features tensor
+        if not isinstance(tensor, torch.Tensor):
+            raise RuntimeError('Input tensor is not torch.Tensor.')
+        # Get input features tensor data type
+        input_dtype = tensor.dtype
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Get fitted data scaler for input features
+        data_scaler = self.get_fitted_data_scaler(features_type)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Perform data scaling normalization/denormalization
+        if mode == 'normalize':
+            transformed_tensor = data_scaler.transform(tensor)
+        elif mode == 'denormalize':
+            transformed_tensor = data_scaler.inverse_transform(tensor)
+        else:
+            raise RuntimeError('Invalid data scaling transformation type.')
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Enforce same data type of input features tensor 
+        transformed_tensor = transformed_tensor.to(input_dtype)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Check transformed features tensor
+        if not isinstance(transformed_tensor, torch.Tensor):
+            raise RuntimeError('Transformed tensor is not torch.Tensor.') 
+        elif not torch.equal(torch.tensor(transformed_tensor.size()),
+                             torch.tensor(tensor.size())):
+            raise RuntimeError('Input and transformed tensors do not have '
+                               'the same shape.')
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        return transformed_tensor
+    # -------------------------------------------------------------------------
+    def set_material_models_fitted_data_scalers(self, models_scaling_type,
+                                                models_scaling_parameters):
+        """Set material constitutive models fitted data scalers.
+        
+        Data scalers are only fitted for material models that support data
+        normalization and for which the corresponding data scaling type and
+        parameters are provided.
+        
+        Parameters
+        ----------
+        models_scaling_type : dict
+            Type of data scaling (str, {'min-max', 'mean-std'}) for each
+            material model (key, str[int]). Models are labeled from 1 to
+            n_mat_model. Min-Max scaling ('min-max') or standardization
+            ('mean-std').
+        models_scaling_type : dict
+            Features data scaling parameters (item, dict) for each material
+            model (key, str[int]), stored as data scaling parameters
+            (item, tuple[2]) for each features type (key, str). Models are
+            labeled from 1 to n_mat_model. Each data scaling parameter is set
+            as a torch.Tensor(1d) according to the corresponding number of
+            features. For 'min-max' data scaling, the parameters are the
+            'minimum'[0] and 'maximum'[1] tensors, while for 'mean-std' data
+            scaling the parameters are the 'mean'[0] and 'std'[1] tensors.
+        """
+        # Check specimen material state
+        if self._specimen_data is None:
+            raise RuntimeError('The specimen material data and material state '
+                               'must be set prior to set the material '
+                               'constitutive models fitted data scalers '
+                               '(check method set_specimen_data()).')
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Loop over material models
+        for model_key, model in self.get_material_models().items():
+            # Check if material model supports data normalization
+            if not hasattr(model, 'is_data_normalization'):
+                continue
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Check material model data normalization
+            if not (model.is_data_normalization
+                    and model_key in models_scaling_type.keys()):
+                continue
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Get material model data scaling type
+            scaling_type = models_scaling_type[model_key]
+            # Get material model data scaling parameters
+            scaling_parameters = models_scaling_parameters[model_key]
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Set material model fitted data scalers
+            model.set_fitted_data_scalers(scaling_type, scaling_parameters)
+    # -------------------------------------------------------------------------
+    def build_element_local_samples(self, strain_formulation, problem_type,
+                                    element_type, time_hist,
+                                    element_state_hist):
+        """Build element Gauss integration points local strain-stress paths.
+        
+        Parameters
+        ----------
+        strain_formulation: {'infinitesimal', 'finite'}
+            Strain formulation.
+        problem_type : int
+            Problem type: 2D plane strain (1), 2D plane stress (2),
+            2D axisymmetric (3) and 3D (4).
+        element_type : Element
+            FETorch finite element.
+        time_hist : torch.Tensor(1d)
+            Discrete time history.
+        element_state_hist : list[dict]
+            Material constitutive model state variables history (item, dict)
+            for each Gauss integration point (key, str[int]).
+            
+        Returns
+        -------
+        element_local_samples : list[dict]
+            Element local strain-stress paths, each corresponding to a given
+            element Gauss integration point. Each path is stored as a
+            dictionary where each feature (key, str) data is a torch.Tensor(2d)
+            of shape (sequence_length, n_features).
+        """
+        # Get problem type parameters
+        n_dim, comp_order_sym, _ = get_problem_type_parameters(problem_type)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set strain and stress components
+        if strain_formulation == 'infinitesimal':
+            strain_comps_order = comp_order_sym
+            stress_comps_order = comp_order_sym
+        else:
+            raise RuntimeError('Not implemented.')
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Get element number of Gauss quadrature integration points
+        n_gauss = element_type.get_n_gauss()
+        # Get time history length
+        n_time = time_hist.shape[0]
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Initialize element local strain-stress paths
+        element_local_samples = []
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Loop over Gauss integration points
+        for i in range(n_gauss):
+            # Initialize strain path
+            strain_path = torch.zeros((n_time, len(strain_comps_order)),
+                                      dtype=torch.float)
+            # Initialize stress path
+            stress_path = torch.zeros((n_time, len(stress_comps_order)),
+                                      dtype=torch.float)
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Loop over discrete time
+            for time_idx in range(n_time):
+                # Get strain tensor (matricial form)
+                strain_mf = \
+                    element_state_hist[time_idx][str(i + 1)]['strain_mf']
+                # Get strain tensor
+                strain = vget_tensor_from_mf(strain_mf, n_dim,
+                                             strain_comps_order)
+                # Store strain components
+                strain_path[time_idx, :] = \
+                    self.vstore_tensor_comps(comp_order_sym, strain)
+                # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                # Get stress tensor (matricial form)
+                stress_mf = \
+                    element_state_hist[time_idx][str(i + 1)]['stress_mf']
+                # Get stress tensor
+                stress = vget_tensor_from_mf(stress_mf, n_dim,
+                                             stress_comps_order)
+                # Store stress components
+                stress_path[time_idx, :] = \
+                    self.vstore_tensor_comps(comp_order_sym, stress)
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Initialize material response path data
+            response_path = {}
+            # Assemble strain-stress material response path
+            response_path['strain_comps_order'] = strain_comps_order
+            response_path['strain_path'] = strain_path.detach()
+            response_path['stress_comps_order'] = stress_comps_order
+            response_path['stress_path'] = stress_path.detach()
+            # Assemble time path
+            response_path['time_hist'] = time_hist.detach().reshape(-1, 1)
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Assemble material response path
+            element_local_samples.append(response_path)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        return element_local_samples
+    # -------------------------------------------------------------------------
+    def save_model_state(self, epoch=None, is_best_state=False,
+                         is_remove_posterior=True):
+        """Save model state to file.
+        
+        Model state file is stored in model_directory under the name
+        < model_name >.pt or < model_name >-< epoch >.pt if epoch is known.
+        
+        Model state file corresponding to the best performance is stored in
+        model_directory under the name < model_name >-best.pt or
+        < model_name >-< epoch >-best.pt if epoch is known.
+        
+        Parameters
+        ----------
+        epoch : int, default=None
+            Training epoch corresponding to current model state.
+        is_best_state : bool, default=False
+            If True, save model state file corresponding to the best
+            performance instead of regular state file.
+        is_remove_posterior : bool, default=True
+            Remove model and optimizer state files corresponding to training
+            epochs posterior to the saved state file. Effective only if saved
+            training epoch is known.
+        """
+        # Check model directory
+        if not os.path.isdir(self.model_directory):
+            raise RuntimeError('The model directory has not been found:\n\n'
+                               + self.model_directory)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set model state filename
+        model_state_file = self.model_name
+        # Append epoch
+        if isinstance(epoch, int):
+            model_state_file += '-' + str(epoch)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set model state corresponding to the best performance
+        if is_best_state:
+            # Append best performance
+            model_state_file += '-' + 'best'
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Remove any existent best model state file
+            self._remove_best_state_files()
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set model state file path
+        model_path = os.path.join(self.model_directory,
+                                  model_state_file + '.pt')
+        # Save model state
+        torch.save(self.state_dict(), model_path)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Delete model epoch state files posterior to saved epoch
+        if isinstance(epoch, int) and is_remove_posterior:
+            self._remove_posterior_state_files(epoch)
+    # -------------------------------------------------------------------------
+    def load_model_state(self, load_model_state=None,
+                         is_remove_posterior=True):
+        """Load model state from file.
+        
+        Model state file is stored in model_directory under the name
+        < model_name >.pt or < model_name >-< epoch >.pt if epoch is known.
+        
+        Model state file corresponding to the best performance is stored in
+        model_directory under the name < model_name >-best.pt or
+        < model_name >-< epoch >-best.pt if epoch if known.
+        
+        Parameters
+        ----------
+        load_model_state : {'best', 'last', int, None}, default=None
+            Load available model state from the model directory.
+            Options:
+            
+            'best'      : Model state corresponding to best performance
+            
+            'last'      : Model state corresponding to highest training epoch
+            
+            int         : Model state corresponding to given training epoch
+            
+            None        : Model default state file
+        
+        is_remove_posterior : bool, default=True
+            Remove model state files corresponding to training epochs posterior
+            to the loaded state file. Effective only if loaded training epoch
+            is known.
+            
+        Returns
+        -------
+        epoch : int
+            Loaded model state training epoch. Defaults to None if training
+            epoch is unknown.
+        """
+        # Check model directory
+        if not os.path.isdir(self.model_directory):
+            raise RuntimeError('The model directory has not been found:\n\n'
+                               + self.model_directory)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        if load_model_state == 'best':
+            # Get state files in model directory
+            directory_list = os.listdir(self.model_directory)
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Initialize model best state files epochs
+            best_state_epochs = []
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Loop over files in model directory
+            for filename in directory_list:
+                # Check if file is model epoch best state file
+                is_best_state_file, best_state_epoch = \
+                    self._check_best_state_file(filename)
+                # Store model best state file training epoch
+                if is_best_state_file:
+                    best_state_epochs.append(best_state_epoch)
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Set model best state file
+            if not best_state_epochs:
+                raise RuntimeError('Model best state file has not been found '
+                                   'in directory:\n\n' + self.model_directory)
+            elif len(best_state_epochs) > 1:
+                raise RuntimeError('Two or more model best state files have '
+                                   'been found in directory:'
+                                   '\n\n' + self.model_directory)
+            else:
+                # Set best state epoch
+                epoch = best_state_epochs[0]
+                # Set model best state file
+                model_state_file = self.model_name
+                if isinstance(epoch, int):
+                    model_state_file += '-' + str(epoch)      
+                model_state_file += '-' + 'best'
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Delete model epoch state files posterior to loaded epoch
+            if isinstance(epoch, int) and is_remove_posterior:
+                self._remove_posterior_state_files(epoch)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        elif load_model_state == 'last':
+            # Get state files in model directory
+            directory_list = os.listdir(self.model_directory)
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Initialize model state files training epochs
+            epochs = []
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Loop over files in model directory
+            for filename in directory_list:
+                # Check if file is model epoch state file
+                is_state_file, epoch = self._check_state_file(filename)
+                # Store model state file training epoch
+                if is_state_file:
+                    epochs.append(epoch)
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Set highest epoch model state file
+            if epochs:
+                # Set highest epoch
+                epoch = max(epochs)
+                # Set highest epoch model state file
+                model_state_file = self.model_name + '-' + str(epoch)
+            else:
+                raise RuntimeError('Model state files corresponding to epochs '
+                                   'have not been found in directory:\n\n'
+                                   + self.model_directory)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set model state filename
+        elif isinstance(load_model_state, int):
+            # Get epoch
+            epoch = load_model_state
+            # Set model state filename with epoch
+            model_state_file = self.model_name + '-' + str(int(epoch))
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Delete model epoch state files posterior to loaded epoch
+            if is_remove_posterior:
+                self._remove_posterior_state_files(epoch)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        else:
+            # Set model state filename
+            model_state_file = self.model_name
+            # Set epoch as unknown
+            epoch = None
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set model state file path
+        model_path = os.path.join(self.model_directory,
+                                  model_state_file + '.pt')
+        # Check model state file
+        if not os.path.isfile(model_path):
+            raise RuntimeError('Model state file has not been found:\n\n'
+                               + model_path)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Load model state
+        self.load_state_dict(torch.load(model_path,
+                                        map_location=torch.device('cpu')))
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        return epoch
+    # -------------------------------------------------------------------------
+    def _check_state_file(self, filename):
+        """Check if file is model training epoch state file.
+        
+        Model training epoch state file is stored in model_directory under the
+        name < model_name >-< epoch >.pt.
+        
+        Parameters
+        ----------
+        filename : str
+            File name.
+        
+        Returns
+        -------
+        is_state_file : bool
+            True if model training epoch state file, False otherwise.
+        epoch : {None, int}
+            Training epoch corresponding to model state file if
+            is_state_file=True, None otherwise.
+        """
+        # Check if file is model epoch state file
+        is_state_file = bool(re.search(r'^' + self.model_name + r'-[0-9]+'
+                                       + r'\.pt', filename))
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        epoch = None
+        if is_state_file:
+            # Get model state epoch
+            epoch = int(os.path.splitext(filename)[0].split('-')[-1])
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        return is_state_file, epoch
+    # -------------------------------------------------------------------------
+    def _check_best_state_file(self, filename):
+        """Check if file is model best state file.
+        
+        Model state file corresponding to the best performance is stored in
+        model_directory under the name < model_name >-best.pt. or
+        < model_name >-< epoch >-best.pt if the training epoch is known.
+        
+        Parameters
+        ----------
+        filename : str
+            File name.
+        
+        Returns
+        -------
+        is_best_state_file : bool
+            True if model training epoch state file, False otherwise.
+        epoch : {None, int}
+            Training epoch corresponding to model state file if
+            is_best_state_file=True and training epoch is known, None
+            otherwise.
+        """
+        # Check if file is model epoch best state file
+        is_best_state_file = bool(re.search(r'^' + self.model_name
+                                            + r'-?[0-9]*' + r'-best' + r'\.pt',
+                                            filename))
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        epoch = None
+        if is_best_state_file:
+            # Get model state epoch
+            epoch = int(os.path.splitext(filename)[0].split('-')[-2])
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        return is_best_state_file, epoch
+    # -------------------------------------------------------------------------
+    def _remove_posterior_state_files(self, epoch):
+        """Delete model training epoch state files posterior to given epoch.
+        
+        Parameters
+        ----------
+        epoch : int
+            Training epoch.
+        """
+        # Get files in model directory
+        directory_list = os.listdir(self.model_directory)
+        # Loop over files in model directory
+        for filename in directory_list:
+            # Check if file is model epoch state file
+            is_state_file, file_epoch = self._check_state_file(filename)
+            # Delete model epoch state file posterior to given epoch
+            if is_state_file and file_epoch > epoch:
+                os.remove(os.path.join(self.model_directory, filename))
+    # -------------------------------------------------------------------------
+    def _remove_best_state_files(self):
+        """Delete existent model best state files."""
+        # Get files in model directory
+        directory_list = os.listdir(self.model_directory)
+        # Loop over files in model directory
+        for filename in directory_list:
+            # Check if file is model best state file
+            is_best_state_file, _ = self._check_best_state_file(filename)
+            # Delete state file
+            if is_best_state_file:
+                os.remove(os.path.join(self.model_directory, filename))
