@@ -491,8 +491,7 @@ class MaterialModelFinder(torch.nn.Module):
         if sequential_mode == 'sequential_time':
             force_equilibrium_hist_loss = self.forward_sequential_time()
         elif sequential_mode == 'sequential_element':
-            #force_equilibrium_hist_loss = self.forward_sequential_element()
-            force_equilibrium_hist_loss = self.vforward_sequential_element()
+            force_equilibrium_hist_loss = self.forward_sequential_element()
         elif sequential_mode == 'sequential_element_vmap':
             force_equilibrium_hist_loss = self.vforward_sequential_element()
         else:
