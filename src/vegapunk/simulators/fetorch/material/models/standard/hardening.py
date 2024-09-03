@@ -201,8 +201,8 @@ class PiecewiseLinearIHL(IsotropicHardeningLaw):
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Build lists with the accumulated plastic strain points and
         # associated yield stress values
-        a = hardening_points[:, 0]
-        b = hardening_points[:, 1]
+        a = hardening_points[:, 0].to(acc_p_strain.device)
+        b = hardening_points[:, 1].to(acc_p_strain.device)
         # Check if the accumulated plastic strain list is correctly sorted
         # in ascending order
         if is_check_data:
