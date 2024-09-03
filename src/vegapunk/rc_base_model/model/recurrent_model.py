@@ -103,6 +103,8 @@ class RecurrentConstitutiveModel(torch.nn.Module):
         If True, then input and output features are normalized for training
         False otherwise. Data scalers need to be fitted with fit_data_scalers()
         and are stored as model attributes.
+    _is_check_su_fail : bool, default=True
+        If True, then check if material constitutive model state update failed.
     _data_scalers : dict
         Data scaler (item, sklearn.preprocessing.StandardScaler) for each
         feature data (key, str).
@@ -141,13 +143,13 @@ class RecurrentConstitutiveModel(torch.nn.Module):
     store_tensor_comps(cls, comps, tensor)
         Store strain/stress tensor components in array.
     _vrecurrent_constitutive_model(self, strain_paths)
-        Compute material response (vectorized).
+        Compute material response.
     _vcompute_stress_path(self, strain_path)
-        Compute material response for given strain path (vectorized).
+        Compute material response for given strain path.
     vbuild_tensor_from_comps(cls, n_dim, comps, comps_array, device=None)
-        Build strain/stress tensor from given components (vectorized).
+        Build strain/stress tensor from given components.
     vstore_tensor_comps(cls, comps, tensor, device=None)
-        Store strain/stress tensor components in array (vectorized).  
+        Store strain/stress tensor components in array.  
     move_state_tensors_to_device(self, state_variables)
         Move state variables tensors to model device.
     save_model_init_file(self)
@@ -182,9 +184,10 @@ class RecurrentConstitutiveModel(torch.nn.Module):
     def __init__(self, n_features_in, n_features_out, learnable_parameters,
                  strain_formulation, problem_type, material_model_name,
                  material_model_parameters, model_directory,
-                 model_name='wrapper_recurrent_model', state_features_out={},
-                 is_data_normalization=False, is_normalized_parameters=False,
-                 is_save_model_init_file=True, device_type='cpu'):
+                 model_name='wrapper_recurrent_model', is_check_su_fail=True,
+                 state_features_out={}, is_data_normalization=False,
+                 is_normalized_parameters=False, is_save_model_init_file=True,
+                 device_type='cpu'):
         """Constructor.
         
         Parameters
@@ -217,6 +220,9 @@ class RecurrentConstitutiveModel(torch.nn.Module):
             is additionally predicted in the output features besides the stress
             path history. State variables are sorted as output features
             according with the insertion order.
+        is_check_su_fail : bool, default=True
+            If True, then check if material constitutive model state update
+            failed.
         is_normalized_parameters : bool, default=False
             If True, then learnable parameters are normalized for optimization,
             False otherwise. The initial values and bounds of each parameter
@@ -295,6 +301,9 @@ class RecurrentConstitutiveModel(torch.nn.Module):
         else:
             raise RuntimeError(f'Unknown material constitutive model '
                                f'\'{material_model_name}\'.')
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set state update failure checking flag
+        self._is_check_su_fail = is_check_su_fail
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Initialize data scalers
         self._data_scalers = None
@@ -789,9 +798,10 @@ class RecurrentConstitutiveModel(torch.nn.Module):
                 def_gradient_old=None)
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Check material state update convergence
-            if state_variables['is_su_fail']:
-                raise RuntimeError('Material state update convergence '
-                                    'failure.')
+            if self._is_check_su_fail:
+                if state_variables['is_su_fail']:
+                    raise RuntimeError('Material state update convergence '
+                                       'failure.')
             # Update last converged material constitutive state variables
             state_variables_old = state_variables
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -913,7 +923,9 @@ class RecurrentConstitutiveModel(torch.nn.Module):
         return comps_array
     # -------------------------------------------------------------------------
     def _vrecurrent_constitutive_model(self, strain_paths):
-        """Compute material response (vectorized).
+        """Compute material response.
+        
+        Compatible with vectorized mapping.
         
         Parameters
         ----------
@@ -991,8 +1003,10 @@ class RecurrentConstitutiveModel(torch.nn.Module):
         return response_paths
     # -------------------------------------------------------------------------
     def _vcompute_stress_path(self, strain_path):
-        """Compute material response for given strain path (vectorized).
+        """Compute material response for given strain path.
 
+        Compatible with vectorized mapping.
+        
         Parameters
         ----------
         strain_path : torch.Tensor(2d)
@@ -1075,9 +1089,10 @@ class RecurrentConstitutiveModel(torch.nn.Module):
                 def_gradient_old=None)
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Check material state update convergence
-            if state_variables['is_su_fail']:
-                raise RuntimeError('Material state update convergence '
-                                   'failure.')
+            if self._is_check_su_fail:
+                if state_variables['is_su_fail']:
+                    raise RuntimeError('Material state update convergence '
+                                       'failure.')
             # Update last converged material constitutive state variables
             state_variables_old = state_variables
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -1141,7 +1156,9 @@ class RecurrentConstitutiveModel(torch.nn.Module):
     # -------------------------------------------------------------------------
     @classmethod
     def vbuild_tensor_from_comps(cls, n_dim, comps, comps_array, device=None):
-        """Build strain/stress tensor from given components (vectorized).
+        """Build strain/stress tensor from given components.
+        
+        Compatible with vectorized mapping.
         
         Parameters
         ----------
@@ -1178,7 +1195,9 @@ class RecurrentConstitutiveModel(torch.nn.Module):
     # -------------------------------------------------------------------------
     @classmethod
     def vstore_tensor_comps(cls, comps, tensor, device=None):
-        """Store strain/stress tensor components in array (vectorized).
+        """Store strain/stress tensor components in array.
+        
+        Compatible with vectorized mapping.
         
         Parameters
         ----------
