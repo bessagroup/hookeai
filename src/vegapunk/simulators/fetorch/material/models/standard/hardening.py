@@ -145,7 +145,7 @@ class IsotropicHardeningLaw(ABC):
     """
     @staticmethod
     @abstractmethod
-    def hardening_law(hardening_parameters, acc_p_strain):
+    def hardening_law(hardening_parameters, acc_p_strain, is_check_data=False):
         """Compute yield stress and hardening slope for given plastic strain.
         
         Parameters
@@ -154,6 +154,8 @@ class IsotropicHardeningLaw(ABC):
             Hardening law parameters.
         acc_p_strain : float
             Accumulated plastic strain.
+        is_check_data : bool, default=False
+            If True, then check data required to evaluate strain hardening law.
 
         Returns
         -------
@@ -167,13 +169,15 @@ class IsotropicHardeningLaw(ABC):
 class PiecewiseLinearIHL(IsotropicHardeningLaw):
     """Piecewise linear isotropic strain hardening law.
     
+    Compatible with vectorized mapping.
+    
     Methods
     -------
     hardening_law(hardening_parameters, acc_p_strain)
         Compute yield stress and hardening slope for given plastic strain.
     """
     @staticmethod
-    def hardening_law(hardening_parameters, acc_p_strain):
+    def hardening_law(hardening_parameters, acc_p_strain, is_check_data=False):
         """Compute yield stress and hardening slope for given plastic strain.
         
         Parameters
@@ -182,6 +186,8 @@ class PiecewiseLinearIHL(IsotropicHardeningLaw):
             Hardening law parameters.
         acc_p_strain : float
             Accumulated plastic strain.
+        is_check_data : bool, default=False
+            If True, then check data required to evaluate strain hardening law. 
 
         Returns
         -------
@@ -199,38 +205,67 @@ class PiecewiseLinearIHL(IsotropicHardeningLaw):
         b = hardening_points[:, 1]
         # Check if the accumulated plastic strain list is correctly sorted
         # in ascending order
-        if not np.all(np.diff(a) > 0):
-            raise RuntimeError('Points of piecewise linear isotropic '
-                               'hardening law must be specified in '
-                               'ascending order of accumulated '
-                               'plastic strain.')
-        elif not np.all([i >= 0 for i in a]):
-            raise RuntimeError('Points of piecewise linear isotropic '
-                               'hardening law must be associated with '
-                               'non-negative accumulated plastic strain '
-                               'values.')
+        if is_check_data:
+            if not np.all(np.diff(a) > 0):
+                raise RuntimeError('Points of piecewise linear isotropic '
+                                   'hardening law must be specified in '
+                                   'ascending order of accumulated plastic '
+                                   'strain.')
+            elif not np.all([i >= 0 for i in a]):
+                raise RuntimeError('Points of piecewise linear isotropic '
+                                   'hardening law must be associated with '
+                                   'non-negative accumulated plastic strain '
+                                   'values.')
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Check non-negative accumulated plastic strain
+        if is_check_data and acc_p_strain < 0.0:
+            raise RuntimeError(f'Expecting non-negative accumulated plastic '
+                               f'strain but got {acc_p_strain}.')
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # If the value of the accumulated plastic strain is either below or
         # above the provided hardening curve points, then simply assume the
         # yield stress associated with the first or last provided points,
         # respectively. Otherwise, perform linear interpolation to compute
         # the yield stress        
-        yield_stress = torch_interp(acc_p_strain, a, b, left=b[0], right=b[-1])        
+        yield_stress = torch_interp(acc_p_strain, a, b, left=b[0], right=b[-1])
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Get hardening slope
-        if acc_p_strain < a[0] or acc_p_strain >= a[-1]:
-            hard_slope = 0
-        else:
-            # Get hardening curve bracket index
-            idx = torch.sum(torch.ge(acc_p_strain, a)) - 1
-            # Get hardening curve bracket points
-            x0 = a[idx]
-            y0 = b[idx]
-            x1 = a[idx + 1]
-            y1 = b[idx + 1]
-            # Compute hardening slope
-            hard_slope = (y1 - y0)/(x1 - x0)
+        hard_slope = torch.where(
+            acc_p_strain < a[0], 0.0, torch.where(
+                acc_p_strain >= a[-1], 0.0,
+                PiecewiseLinearIHL._hardening_slope(acc_p_strain, a, b)))
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         return yield_stress, hard_slope
+    # -------------------------------------------------------------------------
+    @staticmethod
+    def _hardening_slope(acc_p_strain, a, b):
+        """Compute hardening slope for given plastic strain.
+        
+        Parameters
+        ----------
+        acc_p_strain : torch.Tensor(0d)
+            Accumulated plastic strain.
+        a : torch.Tensor(1d)
+            Hardening law accumulated plastic strain points.
+        b : torch.Tensor(1d)
+            Hardening law yield stress points.
+        
+        Returns
+        -------
+        hard_slope : torch.Tensor(0d)
+            Material hardening slope.
+        """
+        # Get hardening curve bracket index
+        idx = torch.sum(torch.ge(acc_p_strain, a)).view(-1) - 1
+        # Get hardening curve bracket points
+        x0 = a[idx]
+        y0 = b[idx]
+        x1 = a[idx + 1]
+        y1 = b[idx + 1]
+        # Compute hardening slope
+        hard_slope = (y1 - y0)/(x1 - x0)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        return hard_slope
 # =============================================================================
 class LinearIHL(IsotropicHardeningLaw):
     """Linear isotropic strain hardening law.
@@ -241,7 +276,7 @@ class LinearIHL(IsotropicHardeningLaw):
         Compute yield stress and hardening slope for given plastic strain.
     """
     @staticmethod
-    def hardening_law(hardening_parameters, acc_p_strain):
+    def hardening_law(hardening_parameters, acc_p_strain, is_check_data=False):
         """Compute yield stress and hardening slope for given plastic strain.
         
         Parameters
@@ -250,6 +285,8 @@ class LinearIHL(IsotropicHardeningLaw):
             Hardening law parameters.
         acc_p_strain : float
             Accumulated plastic strain.
+        is_check_data : bool, default=False
+            If True, then check data required to evaluate strain hardening law.
 
         Returns
         -------
@@ -261,6 +298,11 @@ class LinearIHL(IsotropicHardeningLaw):
         # Get initial yield stress and hardening slope
         yield_stress_init = hardening_parameters['s0']
         hard_slope = hardening_parameters['a']
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Check non-negative accumulated plastic strain
+        if is_check_data and acc_p_strain < 0.0:
+            raise RuntimeError(f'Expecting non-negative accumulated plastic '
+                               f'strain but got {acc_p_strain}.')
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Compute yield stress
         yield_stress = yield_stress_init + hard_slope*acc_p_strain
@@ -276,7 +318,7 @@ class NadaiLudwikIHL(IsotropicHardeningLaw):
         Compute yield stress and hardening slope for given plastic strain.
     """
     @staticmethod
-    def hardening_law(hardening_parameters, acc_p_strain):
+    def hardening_law(hardening_parameters, acc_p_strain, is_check_data=False):
         """Compute yield stress and hardening slope for given plastic strain.
         
         Parameters
@@ -285,6 +327,8 @@ class NadaiLudwikIHL(IsotropicHardeningLaw):
             Hardening law parameters.
         acc_p_strain : float
             Accumulated plastic strain.
+        is_check_data : bool, default=False
+            If True, then check data required to evaluate strain hardening law.
 
         Returns
         -------
@@ -300,7 +344,7 @@ class NadaiLudwikIHL(IsotropicHardeningLaw):
         ep0 = hardening_parameters['ep0']
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Check non-negative accumulated plastic strain
-        if acc_p_strain < 0.0:
+        if is_check_data and acc_p_strain < 0.0:
             raise RuntimeError(f'Expecting non-negative accumulated plastic '
                                f'strain but got {acc_p_strain}.')
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -312,8 +356,10 @@ class NadaiLudwikIHL(IsotropicHardeningLaw):
         # Return
         return yield_stress, hard_slope
 # =============================================================================
-def torch_interp(x, xp, fp, left=None, right=None):
+def torch_interp(x, xp, fp, left=None, right=None, is_check_data=False):
     """1D linear interpolation for monotonically increasing data points.
+    
+    Compatible with vectorized mapping.
     
     Returns the one-dimensional piecewise linear interpolant to a function with
     given discrete data points (xp, fp), evaluated at x.
@@ -334,6 +380,8 @@ def torch_interp(x, xp, fp, left=None, right=None):
         Value to return for x < xp[0]. Defaults to fp[0].
     right : float, default=None
         Value to return for x > xp[-1]. Defaults to fp[-1].
+    is_check_data : bool, default=False
+        If True, then check data required to perform linear interpolation.
 
     Returns
     -------
@@ -341,12 +389,13 @@ def torch_interp(x, xp, fp, left=None, right=None):
         The y-coordinates of the interpolated data points.
     """
     # Check if data points are sorted
-    if not torch.all(x == torch.sort(x)[0]):
-        raise RuntimeError('The interpolated data points x-coordinates must '
-                           'be sorted in ascending order.')
-    if not torch.all(xp == torch.sort(xp)[0]):
-        raise RuntimeError('The discrete data points x-coordinates must be '
-                           'sorted in ascending order.')
+    if is_check_data:
+        if not torch.all(x == torch.sort(x)[0]):
+            raise RuntimeError('The interpolated data points x-coordinates must '
+                            'be sorted in ascending order.')
+        if not torch.all(xp == torch.sort(xp)[0]):
+            raise RuntimeError('The discrete data points x-coordinates must be '
+                            'sorted in ascending order.')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Compute linear interpolation parameters
     m = (fp[1:] - fp[:-1])/(xp[1:] - xp[:-1])
@@ -360,15 +409,13 @@ def torch_interp(x, xp, fp, left=None, right=None):
     # Compute interpolated data points
     y = m[idxs]*x + b[idxs]
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Enforce out-of-bounds left value
-    if left is not None:
-        y[x < xp[0]] = left
-    else:
-        y[x < xp[0]] = fp[0]
-    # Enforce out-of-bounds right value
-    if right is not None:
-        y[x > xp[-1]] = right
-    else:
-        y[x > xp[-1]] = fp[-1]
+    # Set out-of-bounds values
+    if left is None:
+        left = fp[0]
+    if right is None:
+        right = fp[-1]
+    # Enforce out-of-bounds values
+    y = torch.where(x < xp[0], left, y)
+    y = torch.where(x > xp[-1], right, y)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     return y
