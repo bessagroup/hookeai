@@ -429,7 +429,9 @@ class StructureMesh:
                              /len(self._connectivities[elem_key]))
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Initialize mesh level array
-        mesh_array = torch.zeros(self._n_node_mesh*n_dim_per_node)
+        mesh_array = torch.zeros(self._n_node_mesh*n_dim_per_node,
+                                 dtype=torch.float,
+                                 device=elements_array_1d[elem_key].device)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Loop over element arrays
         for elem_key, element_array in elements_array_1d.items():
@@ -508,7 +510,9 @@ class StructureMesh:
         elem_nodes = self._connectivities[str(element_id)]
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Initialize element level array
-        element_array = torch.zeros((len(elem_nodes)*n_dim_per_node))
+        element_array = torch.zeros((len(elem_nodes)*n_dim_per_node),
+                                    dtype=torch.float,
+                                    device=mesh_array.device)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Loop over element nodes
         for i, node in enumerate(elem_nodes):
