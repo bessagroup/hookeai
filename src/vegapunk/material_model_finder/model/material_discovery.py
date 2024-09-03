@@ -1856,6 +1856,13 @@ class MaterialModelFinder(torch.nn.Module):
                 elements_coords_hist, elements_disps_hist, strain_formulation,
                 problem_type, element_type, element_material, time_hist)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Check elements internal forces history
+        if torch.isnan(elements_internal_forces_hist).any():
+            raise RuntimeError('NaNs were detected in the tensor storing the '
+                               'elements internal forces history. This may '
+                               'have resulted from a state update convergence '
+                               'failure.')
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         return elements_internal_forces_hist, elements_state_hist
     # -------------------------------------------------------------------------
     def vcompute_element_internal_forces_hist(
