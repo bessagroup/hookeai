@@ -63,8 +63,7 @@ def material_state_update(strain_formulation, problem_type,
         constitutive_model.state_update(inc_strain, state_variables_old)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Compute Cauchy stress tensor and material consistent tangent modulus
-    if (not state_variables['is_su_fail'] and strain_formulation == 'finite'
-        and strain_type == 'finite-kinext'):
+    if (strain_formulation == 'finite' and strain_type == 'finite-kinext'):
         raise RuntimeError('Not implemented.')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     return state_variables, consistent_tangent_mf
