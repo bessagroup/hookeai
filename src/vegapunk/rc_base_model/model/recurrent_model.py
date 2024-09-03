@@ -28,6 +28,7 @@ from simulators.fetorch.material.models.standard.elastic import Elastic
 from simulators.fetorch.material.models.standard.von_mises import VonMises
 from simulators.fetorch.material.models.standard.drucker_prager import \
     DruckerPrager
+from simulators.fetorch.material.models.vmap.von_mises import VonMisesVMAP
 from simulators.fetorch.math.matrixops import get_problem_type_parameters, \
     vget_tensor_from_mf
 from simulators.fetorch.material.material_su import material_state_update
@@ -298,6 +299,11 @@ class RecurrentConstitutiveModel(torch.nn.Module):
                 DruckerPrager(self._strain_formulation, self._problem_type,
                               self._material_model_parameters,
                               device_type=self._device_type)
+        elif material_model_name == 'von_mises_vmap':
+            self._constitutive_model = \
+                VonMisesVMAP(self._strain_formulation, self._problem_type,
+                             self._material_model_parameters,
+                             device_type=self._device_type)
         else:
             raise RuntimeError(f'Unknown material constitutive model '
                                f'\'{material_model_name}\'.')
@@ -447,7 +453,7 @@ class RecurrentConstitutiveModel(torch.nn.Module):
                 sync_val = 1.0*value
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Synchronize material constitutive model parameter
-            if self._material_model_name == 'von_mises':
+            if self._material_model_name in ('von_mises', 'von_mises_vmap'):
                 # Set valid learnable parameters
                 valid_learnable_parameters = ('E', 'v', 's0', 'a', 'b')
                 # Check learnable parameter
