@@ -35,7 +35,7 @@ __status__ = 'Planning'
 # =============================================================================
 #
 # =============================================================================
-class VonMises(ConstitutiveModel):
+class VonMisesVMAP(ConstitutiveModel):
     """Von Mises constitutive model with isotropic strain hardening.
 
     Compatible with vectorized mapping.
