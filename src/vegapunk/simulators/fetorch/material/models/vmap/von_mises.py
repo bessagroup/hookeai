@@ -10,7 +10,7 @@ data-dependent control flows based on if statements or similar constructs
 
 Classes
 -------
-VonMises
+VonMisesVMAP
     Von Mises constitutive model with isotropic strain hardening.
 """
 #
@@ -19,7 +19,6 @@ VonMises
 # Standard
 import torch
 import numpy as np
-import copy
 # Local
 from simulators.fetorch.material.models.interface import ConstitutiveModel
 from simulators.fetorch.material.models.standard.elastic import Elastic
@@ -359,7 +358,6 @@ class VonMises(ConstitutiveModel):
         # Compute trial yield stress
         yield_stress, _ = \
             hardening_law(hardening_parameters, acc_p_trial_strain)
-            
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Set admissible flow vector condition
         cond_flow_vector_mf = torch.norm(dev_trial_stress_mf) \
@@ -375,10 +373,11 @@ class VonMises(ConstitutiveModel):
                                      nadmissible_flow_vector_mf)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Check yield function
-        yield_function = vm_trial_stress - yield_stress
+        yield_function = vm_trial_stress - yield_stress        
         # Set admissible yield function condition
         yield_function_cond = (yield_function/yield_stress) \
-            *torch.ones(2*n_comps + 4) <= su_conv_tol
+            *torch.ones(2*n_comps + 4, device=self._device) \
+                <= su_conv_tol
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # If the trial stress state lies inside the von Mises yield function,
         # then the state update is purely elastic and coincident with the
@@ -510,12 +509,12 @@ class VonMises(ConstitutiveModel):
         acc_p_strain = acc_p_strain_old
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Set plastic step flag
-        is_plast = torch.tensor([False])
+        is_plast = torch.tensor([False], device=e_trial_strain_mf.device)
         # Set incremental plastic multiplier initial iterative guess
         inc_p_mult = torch.tensor(0.0, dtype=torch.float,
-                                  device=e_strain_mf.device)
+                                  device=e_trial_strain_mf.device)
         # Set state update convergence flag
-        is_converged = torch.tensor([True])
+        is_converged = torch.tensor([True], device=e_trial_strain_mf.device)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Build concatenated elastic step output
         elastic_step_output = \
@@ -562,7 +561,7 @@ class VonMises(ConstitutiveModel):
             Plastic step concatenated output data.
         """
         # Set plastic step flag
-        is_plast = torch.tensor([True])
+        is_plast = torch.tensor([True], device=e_trial_strain_mf.device)
         # Set incremental plastic multiplier initial iterative guess
         inc_p_mult = 0.0
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
