@@ -189,7 +189,7 @@ def train_model(n_max_epochs, specimen_data, specimen_material_state,
         epoch_init_step = step
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Compute force equilibrium history loss
-        loss = model(sequential_mode='sequential_element')
+        loss = model(sequential_mode='sequential_element_vmap')
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Initialize gradients (set to zero)
         optimizer.zero_grad()
