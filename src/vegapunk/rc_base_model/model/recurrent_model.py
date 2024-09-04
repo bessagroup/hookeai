@@ -104,6 +104,9 @@ class RecurrentConstitutiveModel(torch.nn.Module):
         If True, then input and output features are normalized for training
         False otherwise. Data scalers need to be fitted with fit_data_scalers()
         and are stored as model attributes.
+    _is_auto_sync_parameters : bool, default=True
+        If True, then automatically synchronize material model parameters
+        with learnable parameters in forward propagation.
     _is_check_su_fail : bool, default=True
         If True, then check if material constitutive model state update failed.
     _data_scalers : dict
@@ -120,7 +123,7 @@ class RecurrentConstitutiveModel(torch.nn.Module):
         Get device on which torch.Tensor is allocated.
     _set_model_parameters(self, learnable_parameters)
         Set recurrent constitutive model learnable parameters.
-    _sync_material_model_parameters(self)
+    sync_material_model_parameters(self)
         Synchronize material model parameters with learnable parameters.
     _transform_parameter(self, name, value, mode='normalize')
         Transform model parameter by means of min-max scaling.
@@ -185,7 +188,8 @@ class RecurrentConstitutiveModel(torch.nn.Module):
     def __init__(self, n_features_in, n_features_out, learnable_parameters,
                  strain_formulation, problem_type, material_model_name,
                  material_model_parameters, model_directory,
-                 model_name='wrapper_recurrent_model', is_check_su_fail=True,
+                 model_name='wrapper_recurrent_model',
+                 is_auto_sync_parameters=True, is_check_su_fail=True,
                  state_features_out={}, is_data_normalization=False,
                  is_normalized_parameters=False, is_save_model_init_file=True,
                  device_type='cpu'):
@@ -215,15 +219,18 @@ class RecurrentConstitutiveModel(torch.nn.Module):
             Directory where model is stored.
         model_name : str, default='wrapper_recurrent_model'
             Name of model.
+        is_auto_sync_parameters : bool, default=True
+            If True, then automatically synchronize material model parameters
+            with learnable parameters in forward propagation.
+        is_check_su_fail : bool, default=True
+            If True, then check if material constitutive model state update
+            failed.
         state_features_out : dict, default={}
             Material constitutive model state variables (key, str) and
             corresponding dimensionality (item, int) for which the path history
             is additionally predicted in the output features besides the stress
             path history. State variables are sorted as output features
             according with the insertion order.
-        is_check_su_fail : bool, default=True
-            If True, then check if material constitutive model state update
-            failed.
         is_normalized_parameters : bool, default=False
             If True, then learnable parameters are normalized for optimization,
             False otherwise. The initial values and bounds of each parameter
@@ -243,6 +250,9 @@ class RecurrentConstitutiveModel(torch.nn.Module):
         """
         # Initialize from base class
         super(RecurrentConstitutiveModel, self).__init__()
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set automatic synchronization of material model parameters
+        self._is_auto_sync_parameters = is_auto_sync_parameters
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Set number of features
         self._n_features_in = n_features_in
@@ -438,7 +448,7 @@ class RecurrentConstitutiveModel(torch.nn.Module):
             self._model_parameters[param] = torch.nn.Parameter(
                 torch.tensor(init_val, requires_grad=True))
     # -------------------------------------------------------------------------
-    def _sync_material_model_parameters(self):
+    def sync_material_model_parameters(self):
         """Synchronize material model parameters with learnable parameters."""
         # Get material constitutive model
         material_model_name = self._material_model_name
@@ -644,7 +654,8 @@ class RecurrentConstitutiveModel(torch.nn.Module):
                                            mode='normalize')
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Synchronize material model parameters with learnable parameters
-        self._sync_material_model_parameters()
+        if self._is_auto_sync_parameters:
+            self.sync_material_model_parameters()
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~        
         # Forward propagation: Material constitutive model
         features_out = self._vrecurrent_constitutive_model(features_in)

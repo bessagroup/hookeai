@@ -208,6 +208,8 @@ class StructureMaterialState:
             material_model_parameters = model_parameters
             # Get material constitutive state variables (prediction)
             state_features_out = model_kwargs['state_features_out']
+            # Get automatic synchronization of material model parameters
+            is_auto_sync_parameters = model_kwargs['is_auto_sync_parameters']
             # Get state update failure checking
             is_check_su_fail = model_kwargs['is_check_su_fail']
             # Get model directory
@@ -229,6 +231,7 @@ class StructureMaterialState:
                 'material_model_name': material_model_name,
                 'material_model_parameters': material_model_parameters,
                 'state_features_out': state_features_out,
+                'is_auto_sync_parameters': is_auto_sync_parameters,
                 'is_check_su_fail': is_check_su_fail,
                 'model_directory': model_directory,
                 'model_name': model_name,
