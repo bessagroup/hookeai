@@ -201,7 +201,8 @@ class MaterialModelFinder(torch.nn.Module):
         Delete existent model best state files.
     """
     def __init__(self, model_directory, model_name='material_model_finder',
-                 is_force_normalization=False, device_type='cpu'):
+                 is_force_normalization=False,
+                 is_detect_autograd_anomaly=False, device_type='cpu'):
         """Constructor.
         
         Parameters
@@ -213,11 +214,19 @@ class MaterialModelFinder(torch.nn.Module):
         is_force_normalization : bool, default=False
             If True, then normalize forces prior to the computation of the
             force equilibrium loss.
+        is_detect_autograd_anomaly : bool, default=False
+            If True, then set context-manager that enables anomaly detection
+            for the autograd engine. Should only be enabled for debugging
+            purposes as it degrades performance.
         device_type : {'cpu', 'cuda'}, default='cpu'
             Type of device on which torch.Tensor is allocated.
         """
         # Initialize from base class
         super(MaterialModelFinder, self).__init__()
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set autograd engine anomaly detection
+        if is_detect_autograd_anomaly:
+            torch.autograd.set_detect_anomaly(True)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Set model directory and name
         if os.path.isdir(model_directory):
@@ -1287,6 +1296,11 @@ class MaterialModelFinder(torch.nn.Module):
         else:
             # Get unique constitutive material model
             element_material = elements_material['1']
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Synchronize material model parameters with learnable parameters
+        if hasattr(element_material, 'sync_material_model_parameters') \
+                and callable(element_material.sync_material_model_parameters):
+            element_material.sync_material_model_parameters()
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Get batched finite element mesh configuration history
         elements_coords_hist, elements_disps_hist = \
