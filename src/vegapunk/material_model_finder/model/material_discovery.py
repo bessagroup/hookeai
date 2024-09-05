@@ -1675,6 +1675,9 @@ class MaterialModelFinder(torch.nn.Module):
         local_internal_forces_hist = vmap_compute_local_internal_forces(
             stress_vmf_hist, grad_operator_sym_hist, jacobian_det_hist, weight)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Detach computation graph (minimize memory costs)
+        state_variables_hist = state_variables_hist.detach()
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         return local_internal_forces_hist, state_variables_hist
     # -------------------------------------------------------------------------
     def vcompute_local_strain(self, nodes_coords, nodes_disps, local_coords,
