@@ -271,8 +271,6 @@ def add_dataset_feature_init(dataset, feature_label, feature_init):
         # Update data set sample
         if isinstance(dataset, TimeSeriesDataset):
             dataset.update_dataset_sample(i, sample)
-        else:
-            dataset[i] = sample
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     return dataset
 # =============================================================================
@@ -342,8 +340,6 @@ def concatenate_dataset_features(dataset, new_feature_label,
         # Update data set sample
         if isinstance(dataset, TimeSeriesDataset):
             dataset.update_dataset_sample(i, sample)
-        else:
-            dataset[i] = sample
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     return dataset
 # =============================================================================
