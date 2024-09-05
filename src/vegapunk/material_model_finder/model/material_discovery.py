@@ -120,6 +120,9 @@ class MaterialModelFinder(torch.nn.Module):
     force_equilibrium_loss(self, internal_forces_mesh, external_forces_mesh, \
                            reaction_forces_mesh, dirichlet_bool_mesh)
         Compute force equilibrium loss for given discrete time.
+    build_element_local_samples(self, strain_formulation, problem_type, \
+                                element_type, time_hist, element_state_hist)
+        Build element Gauss integration points local strain-stress paths.
     build_tensor_from_comps(cls, n_dim, comps, comps_array, is_symmetric=False,
                             device=None)
         Build strain/stress tensor from given components.
@@ -169,6 +172,9 @@ class MaterialModelFinder(torch.nn.Module):
     vforce_equilibrium_loss(self, internal_forces_mesh, external_forces_mesh, \
                             reaction_forces_mesh, dirichlet_bool_mesh)
         Compute force equilibrium loss.
+    build_elements_local_samples(self, strain_formulation, problem_type, \
+                                 time_hist, elements_state_hist)
+        Build elements local strain-stress paths.
     vbuild_tensor_from_comps(cls, n_dim, comps, comps_array, device=None)
         Build strain/stress tensor from given components.
     vstore_tensor_comps(cls, comps, tensor, device=None)
@@ -183,9 +189,6 @@ class MaterialModelFinder(torch.nn.Module):
         Perform data scaling operation on features PyTorch tensor.
     set_material_models_fitted_data_scalers(self, models_scaling_type, \
                                             models_scaling_parameters)
-    build_element_local_samples(self, strain_formulation, problem_type,
-                                element_type, time_hist, element_state_hist)
-        Build element Gauss integration points local strain-stress paths.
     save_model_state(self, epoch=None, is_best_state=False, \
                      is_remove_posterior=True)
         Save model state to file.
@@ -1178,6 +1181,98 @@ class MaterialModelFinder(torch.nn.Module):
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         return force_equilibrium_loss
     # -------------------------------------------------------------------------
+    def build_element_local_samples(self, strain_formulation, problem_type,
+                                    element_type, time_hist,
+                                    element_state_hist):
+        """Build element Gauss integration points local strain-stress paths.
+        
+        Parameters
+        ----------
+        strain_formulation: {'infinitesimal', 'finite'}
+            Strain formulation.
+        problem_type : int
+            Problem type: 2D plane strain (1), 2D plane stress (2),
+            2D axisymmetric (3) and 3D (4).
+        element_type : Element
+            FETorch finite element.
+        time_hist : torch.Tensor(1d)
+            Discrete time history.
+        element_state_hist : list[dict]
+            Material constitutive model state variables history (item, dict)
+            for each Gauss integration point (key, str[int]).
+            
+        Returns
+        -------
+        element_local_samples : list[dict]
+            Element local strain-stress paths, each corresponding to a given
+            element Gauss integration point. Each path is stored as a
+            dictionary where each feature (key, str) data is a torch.Tensor(2d)
+            of shape (sequence_length, n_features).
+        """
+        # Get problem type parameters
+        n_dim, comp_order_sym, _ = get_problem_type_parameters(problem_type)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set strain and stress components
+        if strain_formulation == 'infinitesimal':
+            strain_comps_order = comp_order_sym
+            stress_comps_order = comp_order_sym
+        else:
+            raise RuntimeError('Not implemented.')
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Get element number of Gauss quadrature integration points
+        n_gauss = element_type.get_n_gauss()
+        # Get time history length
+        n_time = time_hist.shape[0]
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Initialize element local strain-stress paths
+        element_local_samples = []
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Loop over Gauss integration points
+        for i in range(n_gauss):
+            # Initialize strain path
+            strain_path = torch.zeros((n_time, len(strain_comps_order)),
+                                      dtype=torch.float)
+            # Initialize stress path
+            stress_path = torch.zeros((n_time, len(stress_comps_order)),
+                                      dtype=torch.float)
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Loop over discrete time
+            for time_idx in range(n_time):
+                # Get strain tensor (matricial form)
+                strain_mf = \
+                    element_state_hist[time_idx][str(i + 1)]['strain_mf']
+                # Get strain tensor
+                strain = vget_tensor_from_mf(strain_mf, n_dim,
+                                             strain_comps_order)
+                # Store strain components
+                strain_path[time_idx, :] = \
+                    self.vstore_tensor_comps(comp_order_sym, strain)
+                # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                # Get stress tensor (matricial form)
+                stress_mf = \
+                    element_state_hist[time_idx][str(i + 1)]['stress_mf']
+                # Get stress tensor
+                stress = vget_tensor_from_mf(stress_mf, n_dim,
+                                             stress_comps_order)
+                # Store stress components
+                stress_path[time_idx, :] = \
+                    self.vstore_tensor_comps(comp_order_sym, stress)
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Initialize material response path data
+            response_path = {}
+            # Assemble strain-stress material response path
+            response_path['strain_comps_order'] = strain_comps_order
+            response_path['strain_path'] = strain_path.detach().cpu()
+            response_path['stress_comps_order'] = stress_comps_order
+            response_path['stress_path'] = stress_path.detach().cpu()
+            # Assemble time path
+            response_path['time_hist'] = time_hist.detach().reshape(-1, 1)
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Assemble material response path
+            element_local_samples.append(response_path)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        return element_local_samples
+    # -------------------------------------------------------------------------
     @classmethod
     def build_tensor_from_comps(cls, n_dim, comps, comps_array,
                                 is_symmetric=False, device=None):
@@ -1247,11 +1342,18 @@ class MaterialModelFinder(torch.nn.Module):
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         return comps_array
     # -------------------------------------------------------------------------
-    def vforward_sequential_element(self):
+    def vforward_sequential_element(self, is_store_local_paths=False):
         """Forward propagation (sequential element).
         
         Compatible with vectorized mapping.
-        
+
+        Parameters
+        ----------
+        is_store_local_paths : bool, default=False
+            If True, then store data set of specimen local (Gauss integration
+            points) strain-stress paths in dedicated model subdirectory.
+            Overwrites existing data set.
+
         Returns
         -------
         force_equilibrium_hist_loss : torch.Tensor(0d)
@@ -1311,7 +1413,7 @@ class MaterialModelFinder(torch.nn.Module):
         time_hist = specimen_data.time_hist
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Compute history of finite element mesh internal forces
-        elements_internal_forces_hist, _ = \
+        elements_internal_forces_hist, elements_state_hist = \
             self.vcompute_elements_internal_forces_hist(
                 strain_formulation, problem_type, element_type,
                 element_material, elements_coords_hist, elements_disps_hist,
@@ -1338,6 +1440,29 @@ class MaterialModelFinder(torch.nn.Module):
                                               external_forces_mesh_hist,
                                               reaction_forces_mesh_hist,
                                               dirichlet_bool_mesh)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Store specimen local strain-stress paths data set
+        if is_store_local_paths:
+            # Build elements local strain-stress paths
+            specimen_local_samples = self.build_elements_local_samples(
+                strain_formulation, problem_type, time_hist,
+                elements_state_hist)
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Create strain-stress material response path data set
+            dataset = TimeSeriesDatasetInMemory(specimen_local_samples)
+            # Set data set file basename
+            dataset_basename = 'ss_paths_dataset'
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Set data set directory
+            dataset_directory = \
+                os.path.join(os.path.normpath(self.model_directory),
+                             'local_response_dataset')
+            # Create model directory
+            make_directory(dataset_directory, is_overwrite=True)
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Save data set
+            save_dataset(dataset, dataset_basename, dataset_directory,
+                         is_append_n_sample=True)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         return force_equilibrium_hist_loss
     # -------------------------------------------------------------------------
@@ -1862,6 +1987,74 @@ class MaterialModelFinder(torch.nn.Module):
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         return force_equilibrium_loss
     # -------------------------------------------------------------------------
+    def build_elements_local_samples(self, strain_formulation, problem_type,
+                                     time_hist, elements_state_hist):
+        """Build elements local strain-stress paths.
+        
+        Parameters
+        ----------
+        strain_formulation: {'infinitesimal', 'finite'}
+            Strain formulation.
+        problem_type : int
+            Problem type: 2D plane strain (1), 2D plane stress (2),
+            2D axisymmetric (3) and 3D (4).
+        time_hist : torch.Tensor(1d)
+            Discrete time history.
+        elements_state_hist : torch.Tensor(4d)
+            Gauss integration points strain and stress path history of finite
+            elements stored as torch.Tensor(4d) of shape
+            (n_elem, n_gauss, n_time, n_strain_comps + n_stress_comps).
+ 
+        Returns
+        -------
+        elements_local_samples : list[dict]
+            Elements local strain-stress paths, each corresponding to a given
+            element Gauss integration point. Each path is stored as a
+            dictionary where each feature (key, str) data is a torch.Tensor(2d)
+            of shape (sequence_length, n_features).
+        """
+        # Get problem type parameters
+        _, comp_order_sym, _ = get_problem_type_parameters(problem_type)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set strain and stress components
+        if strain_formulation == 'infinitesimal':
+            strain_comps_order = comp_order_sym
+            stress_comps_order = comp_order_sym
+        else:
+            raise RuntimeError('Not implemented.')
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set strain indexes
+        strain_slice = slice(0, len(comp_order_sym))
+        # Set stress indexes
+        stress_slice = slice(len(comp_order_sym), 2*len(comp_order_sym))
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Initialize elements local strain-stress paths
+        elements_local_samples = []
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Loop over elements
+        for i in range(elements_state_hist.shape[0]):
+            # Loop over Gauss integration points
+            for j in range(elements_state_hist.shape[1]):
+                # Get strain path
+                strain_path = elements_state_hist[i, j, :, strain_slice]
+                # Get stress path
+                stress_path = elements_state_hist[i, j, :, stress_slice]
+                # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                # Initialize material response path data
+                response_path = {}
+                # Assemble strain-stress material response path
+                response_path['strain_comps_order'] = strain_comps_order
+                response_path['strain_path'] = strain_path.detach().cpu()
+                response_path['stress_comps_order'] = stress_comps_order
+                response_path['stress_path'] = stress_path.detach().cpu()
+                # Assemble time path
+                response_path['time_hist'] = time_hist.detach().reshape(-1, 1)
+                # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                # Assemble material response path
+                elements_local_samples.append(response_path)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        return elements_local_samples
+    # -------------------------------------------------------------------------
     @classmethod
     def vbuild_tensor_from_comps(cls, n_dim, comps, comps_array, device=None):
         """Build strain/stress tensor from given components.
@@ -2092,98 +2285,6 @@ class MaterialModelFinder(torch.nn.Module):
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Set material model fitted data scalers
             model.set_fitted_data_scalers(scaling_type, scaling_parameters)
-    # -------------------------------------------------------------------------
-    def build_element_local_samples(self, strain_formulation, problem_type,
-                                    element_type, time_hist,
-                                    element_state_hist):
-        """Build element Gauss integration points local strain-stress paths.
-        
-        Parameters
-        ----------
-        strain_formulation: {'infinitesimal', 'finite'}
-            Strain formulation.
-        problem_type : int
-            Problem type: 2D plane strain (1), 2D plane stress (2),
-            2D axisymmetric (3) and 3D (4).
-        element_type : Element
-            FETorch finite element.
-        time_hist : torch.Tensor(1d)
-            Discrete time history.
-        element_state_hist : list[dict]
-            Material constitutive model state variables history (item, dict)
-            for each Gauss integration point (key, str[int]).
-            
-        Returns
-        -------
-        element_local_samples : list[dict]
-            Element local strain-stress paths, each corresponding to a given
-            element Gauss integration point. Each path is stored as a
-            dictionary where each feature (key, str) data is a torch.Tensor(2d)
-            of shape (sequence_length, n_features).
-        """
-        # Get problem type parameters
-        n_dim, comp_order_sym, _ = get_problem_type_parameters(problem_type)
-        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        # Set strain and stress components
-        if strain_formulation == 'infinitesimal':
-            strain_comps_order = comp_order_sym
-            stress_comps_order = comp_order_sym
-        else:
-            raise RuntimeError('Not implemented.')
-        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        # Get element number of Gauss quadrature integration points
-        n_gauss = element_type.get_n_gauss()
-        # Get time history length
-        n_time = time_hist.shape[0]
-        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        # Initialize element local strain-stress paths
-        element_local_samples = []
-        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        # Loop over Gauss integration points
-        for i in range(n_gauss):
-            # Initialize strain path
-            strain_path = torch.zeros((n_time, len(strain_comps_order)),
-                                      dtype=torch.float)
-            # Initialize stress path
-            stress_path = torch.zeros((n_time, len(stress_comps_order)),
-                                      dtype=torch.float)
-            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            # Loop over discrete time
-            for time_idx in range(n_time):
-                # Get strain tensor (matricial form)
-                strain_mf = \
-                    element_state_hist[time_idx][str(i + 1)]['strain_mf']
-                # Get strain tensor
-                strain = vget_tensor_from_mf(strain_mf, n_dim,
-                                             strain_comps_order)
-                # Store strain components
-                strain_path[time_idx, :] = \
-                    self.vstore_tensor_comps(comp_order_sym, strain)
-                # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-                # Get stress tensor (matricial form)
-                stress_mf = \
-                    element_state_hist[time_idx][str(i + 1)]['stress_mf']
-                # Get stress tensor
-                stress = vget_tensor_from_mf(stress_mf, n_dim,
-                                             stress_comps_order)
-                # Store stress components
-                stress_path[time_idx, :] = \
-                    self.vstore_tensor_comps(comp_order_sym, stress)
-            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            # Initialize material response path data
-            response_path = {}
-            # Assemble strain-stress material response path
-            response_path['strain_comps_order'] = strain_comps_order
-            response_path['strain_path'] = strain_path.detach()
-            response_path['stress_comps_order'] = stress_comps_order
-            response_path['stress_path'] = stress_path.detach()
-            # Assemble time path
-            response_path['time_hist'] = time_hist.detach().reshape(-1, 1)
-            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            # Assemble material response path
-            element_local_samples.append(response_path)
-        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        return element_local_samples
     # -------------------------------------------------------------------------
     def save_model_state(self, epoch=None, is_best_state=False,
                          is_remove_posterior=True):

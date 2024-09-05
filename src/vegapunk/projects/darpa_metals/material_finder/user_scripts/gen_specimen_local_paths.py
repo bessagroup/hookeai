@@ -61,6 +61,8 @@ def gen_specimen_local_dataset(specimen_data_path,
     specimen_data = torch.load(specimen_data_path)
     # Load specimen material state
     specimen_material_state = torch.load(specimen_material_state_path)
+    # Update material models device
+    specimen_material_state.update_material_models_device(device_type)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set material model finder name
     model_finder_name = 'material_model_finder'
@@ -76,13 +78,13 @@ def gen_specimen_local_dataset(specimen_data_path,
     # Compute force equilibrium history loss
     # (need to manually set is_store_local_paths=True in material_finder!)
     force_equilibrium_hist_loss = \
-        material_finder(sequential_mode='sequential_element')
+        material_finder(sequential_mode='sequential_element_vmap')
     # Check force equilibrium history loss
     if force_equilibrium_hist_loss > 1.0e-6:
-        raise RuntimeError('In order to get the specimen ground-truth local '
-                           'strain-stress paths, make sure to provide the '
-                           'ground-truth constitutive models when generating '
-                           'the specimen training data set!')
+        raise RuntimeError('Force equilibrium history is not admissible. '
+                           'Make sure to set the ground-truth material model '
+                           'and the corresponding material parameters '
+                           'when generating the specimen material state.')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set data set directory
     dataset_directory = os.path.join(os.path.normpath(model_directory),
