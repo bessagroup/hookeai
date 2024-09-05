@@ -1013,7 +1013,7 @@ class RecurrentConstitutiveModel(torch.nn.Module):
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Build material response paths
         if is_batched:
-            response_paths = torch.stack(response_path_data, dim=1)
+            response_paths = torch.stack(response_paths_data, dim=1)
         else:
             response_paths = response_paths_data[0]
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
