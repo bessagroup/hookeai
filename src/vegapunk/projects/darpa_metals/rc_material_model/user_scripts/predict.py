@@ -71,7 +71,7 @@ def perform_model_prediction(predict_directory, dataset_file_path,
     loss_nature, loss_type, loss_kwargs = set_default_prediction_options()
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set data features for prediction
-    features_option = 'stress_acc_p_strain'
+    features_option = 'stress'
     if features_option == 'stress_acc_p_strain':
         # Set input features
         new_label_in = 'features_in'
@@ -123,27 +123,34 @@ def generate_prediction_plots(dataset_file_path, predict_subdir):
     if not os.path.isdir(plot_dir):
         make_directory(plot_dir)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Set prediction types and components
+    # Get first sample from testing data set
+    probe_response_path = load_dataset(dataset_file_path)[0]
+    # Get stress components
+    stress_comps_order = probe_response_path['stress_comps_order']
+    # Build stress components predictions labels
+    stress_labels = tuple([f'stress_{x}' for x in stress_comps_order])
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Set prediction types and corresponding labels
     prediction_types = {}
-    prediction_types['stress_comps'] = ('stress_11', 'stress_22', 'stress_33',
-                                        'stress_12', 'stress_23', 'stress_13')
-    prediction_types['acc_p_strain'] = ('acc_p_strain',)
+    prediction_types['stress_comps'] = stress_labels
+    #prediction_types['acc_p_strain'] = ('acc_p_strain',)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Plot model predictions against ground-truth
-    for prediction_type, prediction_comp in prediction_types.items():
+    for prediction_type, prediction_labels in prediction_types.items():
         # Build samples predictions data arrays with predictions and
         # ground-truth
         prediction_data_arrays = build_prediction_data_arrays(
-            predict_subdir, prediction_type=prediction_type, samples_ids='all')        
+            predict_subdir, prediction_type, prediction_labels,
+            samples_ids='all')        
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Loop over samples predictions data arrays
         for i, data_array in enumerate(prediction_data_arrays):
             # Get prediction plot file name
-            filename = prediction_comp[i]
+            filename = prediction_labels[i]
             # Set prediction process
             if prediction_type == 'stress_comps':
                 prediction_sets = \
-                    {f'Stress {prediction_comp[i].split("_")[-1]}':
+                    {f'Stress {prediction_labels[i].split("_")[-1]}':
                      data_array,}
             elif prediction_type == 'acc_p_strain':
                 prediction_sets = \
@@ -159,11 +166,11 @@ def generate_prediction_plots(dataset_file_path, predict_subdir):
                                      is_latex=True)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Plot model time series prediction and ground-truth
-    for prediction_type, prediction_comps in prediction_types.items():
+    for prediction_type, prediction_labels in prediction_types.items():
         # Build times series predictions data arrays
         prediction_data_dicts = build_time_series_predictions_data(
-            dataset_file_path, predict_subdir, prediction_type=prediction_type,
-            samples_ids=list(np.arange(1, dtype=int)))
+            dataset_file_path, predict_subdir, prediction_type,
+            prediction_labels, samples_ids=list(np.arange(1, dtype=int)))
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~   
         # Loop over times series predictions components
         for i, data_dict in enumerate(prediction_data_dicts):
@@ -175,7 +182,7 @@ def generate_prediction_plots(dataset_file_path, predict_subdir):
                 prediction_sets['Prediction'] = prediction_array[:, [0, 2]]
                 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                 # Get prediction plot file name
-                filename = prediction_comps[i] + f'_path_sample_{sample_id}'
+                filename = prediction_labels[i] + f'_path_sample_{sample_id}'
                 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                 # Set prediction type label
                 if prediction_type == 'stress_comps':

@@ -28,7 +28,7 @@ __status__ = 'Planning'
 #
 # =============================================================================
 def build_prediction_data_arrays(predictions_dir, prediction_type,
-                                 samples_ids='all'):
+                                 prediction_labels, samples_ids='all'):
     """Build samples predictions data arrays with predictions and ground-truth.
     
     Parameters
@@ -42,6 +42,8 @@ def build_prediction_data_arrays(predictions_dir, prediction_type,
         
         'acc_p_strain' : Accumulated plastic strain
 
+    prediction_labels : tuple[str]
+        Labels of prediction data arrays.
     samples_ids : {'all', list[int]}, default='all'
         Samples IDs whose prediction results are collated in each prediction
         data array.
@@ -88,19 +90,19 @@ def build_prediction_data_arrays(predictions_dir, prediction_type,
     if samples_ids == 'all':
         samples_ids = prediction_files_ids
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Set number of stress components
-    n_stress_comps = 6
-    # Set number of prediction data arrays
-    if prediction_type == 'stress_comps':  
-        # Set number of prediction data arrays
+    # Set number of prediction components
+    if prediction_type == 'stress_comps':
+        # Set number of stress components
+        n_stress_comps = len(prediction_labels)
+        # Set number of prediction components
         n_data_arrays = n_stress_comps
-    elif prediction_type == 'acc_p_strain':   
-        # Set number of prediction data arrays
+    elif prediction_type == 'acc_p_strain':
+        # Set number of prediction components
         n_data_arrays = 1
     else:
         raise RuntimeError('Unknown prediction data array type.')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Initialize prediction data arrays
+    # Initialize prediction components
     prediction_data_arrays = n_data_arrays*[np.empty((0, 2)),]
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Loop over samples
@@ -119,16 +121,17 @@ def build_prediction_data_arrays(predictions_dir, prediction_type,
         # Load sample predictions
         sample_results = load_sample_predictions(sample_prediction_path)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        # Loop over prediction data arrays
+        # Loop over prediction components
         for i in range(n_data_arrays):
             # Build sample data array
             if prediction_type == 'stress_comps':
+                # Set stress components features indexes
+                feature_idx = slice(0, n_stress_comps)
+                # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                 # Get stress components predictions
-                stress_path = \
-                    sample_results['features_out'][:, :n_stress_comps]
+                stress_path = sample_results['features_out'][:, feature_idx]
                 # Get stress components ground-truth
-                stress_path_target = \
-                    sample_results['targets'][:, :n_stress_comps]
+                stress_path_target = sample_results['targets'][:, feature_idx]
                 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                 # Check availability of ground-truth
                 if stress_path_target is None:
@@ -142,12 +145,15 @@ def build_prediction_data_arrays(predictions_dir, prediction_type,
                      stress_path[:, i].reshape((-1, 1))), axis=1)
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             elif prediction_type == 'acc_p_strain':
+                # Set accumulated plastic strain feature index
+                feature_idx = len(sample_results['stress_comps_order'])
+                # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                 # Get accumulated plastic strain prediction
                 acc_p_strain_path = \
-                    sample_results['features_out'][:, n_stress_comps]
+                    sample_results['features_out'][:, feature_idx]
                 # Get accumulated plastic strain ground-truth
                 acc_p_strain_path_target = \
-                    sample_results['targets'][:, n_stress_comps]
+                    sample_results['targets'][:, feature_idx]
                 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                 # Check availability of ground-truth
                 if acc_p_strain_path_target is None:
@@ -167,7 +173,8 @@ def build_prediction_data_arrays(predictions_dir, prediction_type,
     return prediction_data_arrays
 # =============================================================================
 def build_time_series_predictions_data(dataset_file_path, predictions_dir,
-                                       prediction_type, samples_ids='all',
+                                       prediction_type, prediction_labels,
+                                       samples_ids='all',
                                        is_uncertainty_quantification=False):
     """Build times series prediction and ground-truth data arrays.
     
@@ -184,6 +191,8 @@ def build_time_series_predictions_data(dataset_file_path, predictions_dir,
         
         'acc_p_strain' : Accumulated plastic strain
 
+    prediction_labels : tuple[str]
+        Labels of prediction data arrays.
     samples_ids : {'all', list[int]}, default='all'
         Samples for which the data arrays with the time series prediction
         and ground-truth are built.
@@ -288,10 +297,10 @@ def build_time_series_predictions_data(dataset_file_path, predictions_dir,
     if samples_ids == 'all':
         samples_ids = prediction_files_ids
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Set number of stress components
-    n_stress_comps = 6 
     # Set number of prediction components
-    if prediction_type == 'stress_comps':   
+    if prediction_type == 'stress_comps':
+        # Set number of stress components
+        n_stress_comps = len(prediction_labels)
         # Set number of prediction components
         n_pred_comps = n_stress_comps
     elif prediction_type == 'acc_p_strain':   
@@ -359,12 +368,15 @@ def build_time_series_predictions_data(dataset_file_path, predictions_dir,
             if prediction_type == 'stress_comps':
                 # Loop over sample predictions
                 for j, sample_results in enumerate(models_sample_results):
+                    # Set stress components features indexes
+                    feature_idx = slice(0, n_stress_comps)
+                    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                     # Get stress component predictions
                     stress_path = \
-                        sample_results['features_out'][:, :n_stress_comps]
+                        sample_results['features_out'][:, feature_idx]
                     # Get stress components ground-truth
                     stress_path_target = \
-                        sample_results['targets'][:, :n_stress_comps]
+                        sample_results['targets'][:, feature_idx]
                     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                     # Assemble sample ground-truth data
                     if j == 0:
@@ -384,14 +396,17 @@ def build_time_series_predictions_data(dataset_file_path, predictions_dir,
                          stress_path[:, i].reshape((-1, 1))), axis=1)
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             elif prediction_type == 'acc_p_strain':
+                # Set accumulated plastic strain feature index
+                feature_idx = len(sample_results['stress_comps_order'])
+                # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                 # Loop over sample predictions
                 for j, sample_results in enumerate(models_sample_results):
                     # Get accumulated plastic strain prediction
                     acc_p_strain_path = \
-                        sample_results['features_out'][:, n_stress_comps]
+                        sample_results['features_out'][:, feature_idx]
                     # Get accumulated plastic strain ground-truth
                     acc_p_strain_path_target = \
-                        sample_results['targets'][:, n_stress_comps]
+                        sample_results['targets'][:, feature_idx]
                     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                     # Check availability of ground-truth
                     if j == 0:
