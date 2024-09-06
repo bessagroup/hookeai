@@ -6,7 +6,22 @@ with isotropic strain hardening.
 This implementation is made compatible with the use of PyTorch vectorizing
 maps that, at the current moment, do not support auto differentiable
 data-dependent control flows based on if statements or similar constructs
-(e.g., torch.cond()).
+(e.g., torch.cond()). Workarounds based on torch.where() were successfully
+implemented, but these lead to complex or inefficient coding, mainly because
+they are constrained by elementwise operations (require pre-computations of
+true and false paths or repeated true/false function calls for each element).
+
+When torch.cond() is available, the state_update() method can be simplified as
+follows:
+
+1. The condition in torch.cond() does not need to be a Tensor with the same
+   shape as the true/false output tensors
+
+2. Avoid elastic and plastic steps pre-computations - only perform the needed
+   step computation based on torch.cond() condition
+
+3. The is_elastic_step flag is no longer required in _plastic_step()
+
 
 Classes
 -------
@@ -72,7 +87,7 @@ class VonMisesVMAP(ConstitutiveModel):
         Perform material constitutive model state update.
     _elastic_step(cls, e_trial_strain_mf, trial_stress_mf, acc_p_strain_old)
         Perform elastic step.
-    _plastic_step(cls, e_trial_strain_mf, vm_trial_stress,
+    _plastic_step(cls, is_elastic_step, e_trial_strain_mf, vm_trial_stress,
                   e_consistent_tangent_mf, flow_vector_mf, acc_p_strain_old, G,
                   hardening_law, hardening_parameters, su_conv_tol,
                   su_max_n_iterations):
@@ -389,10 +404,12 @@ class VonMisesVMAP(ConstitutiveModel):
         elastic_step_output = self._elastic_step(
             e_trial_strain_mf, trial_stress_mf, acc_p_strain_old)
         # Perform plastic step
+        is_elastic_step = (yield_function/yield_stress) <= su_conv_tol
         plastic_step_output = self._plastic_step(
-            e_trial_strain_mf, vm_trial_stress, e_consistent_tangent_mf,
-            flow_vector_mf, acc_p_strain_old, G, hardening_law,
-            hardening_parameters, su_conv_tol, su_max_n_iterations)
+            is_elastic_step, e_trial_strain_mf, vm_trial_stress,
+            e_consistent_tangent_mf, flow_vector_mf, acc_p_strain_old, G,
+            hardening_law, hardening_parameters, su_conv_tol,
+            su_max_n_iterations)
         # Pick elastic or plastic step according with yielding condition
         step_output = torch.where(yield_function_cond,
                                   elastic_step_output,
@@ -526,14 +543,19 @@ class VonMisesVMAP(ConstitutiveModel):
         return elastic_step_output
     # -------------------------------------------------------------------------
     @classmethod
-    def _plastic_step(cls, e_trial_strain_mf, vm_trial_stress,
-                      e_consistent_tangent_mf, flow_vector_mf,
+    def _plastic_step(cls, is_elastic_step, e_trial_strain_mf,
+                      vm_trial_stress, e_consistent_tangent_mf, flow_vector_mf,
                       acc_p_strain_old, G, hardening_law, hardening_parameters,
                       su_conv_tol, su_max_n_iterations):
         """Perform plastic step.
         
         Parameters
         ----------
+        is_elastic_step : torch.Tensor(0d)
+            If True, then avoid return mapping computations and compute elastic
+            response. This flag avoids non-admissible values stemming from
+            invalid return-mapping problem and consequent runtime errors when
+            computing gradients with autograd.
         e_trial_strain_mf : torch.Tensor(1d)
             Elastic trial strain (matricial form).
         vm_trial_stress : torch.Tensor(1d)
@@ -563,7 +585,8 @@ class VonMisesVMAP(ConstitutiveModel):
         # Set plastic step flag
         is_plast = torch.tensor([True], device=e_trial_strain_mf.device)
         # Set incremental plastic multiplier initial iterative guess
-        inc_p_mult = 0.0
+        inc_p_mult = torch.tensor(0.0, dtype=torch.float,
+                                  device=e_trial_strain_mf.device)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Newton-Raphson iterative loop
         for _ in range(su_max_n_iterations):
@@ -574,12 +597,14 @@ class VonMisesVMAP(ConstitutiveModel):
             residual = vm_trial_stress - 3.0*G*inc_p_mult - yield_stress
             # Check Newton-Raphson iterative procedure convergence
             error = abs(residual/yield_stress)
-            is_converged = error < su_conv_tol
+            is_converged = torch.where(is_elastic_step,
+                                       is_elastic_step,
+                                       error < su_conv_tol)
             # Compute iterative incremental plastic multiplier
-            inc_p_mult = \
-                torch.where(is_converged,
-                            inc_p_mult,
-                            cls._nr_iteration(inc_p_mult, residual, G, H))
+            inc_p_mult = torch.where(is_converged,
+                                     inc_p_mult,
+                                     cls._nr_iteration(inc_p_mult, residual,
+                                                       G, H))
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Set incremental plastic multiplier to NaN if state update fails
         inc_p_mult = torch.where(is_converged,
