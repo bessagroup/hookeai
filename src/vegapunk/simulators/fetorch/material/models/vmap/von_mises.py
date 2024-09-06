@@ -16,11 +16,17 @@ follows:
 
 1. The condition in torch.cond() does not need to be a Tensor with the same
    shape as the true/false output tensors
+   
+2. Avoid flow vector pre-computations - only perform the needed step
+   computation based on torch.cond()
 
-2. Avoid elastic and plastic steps pre-computations - only perform the needed
+3. Avoid elastic and plastic steps pre-computations - only perform the needed
    step computation based on torch.cond() condition
 
-3. The is_elastic_step flag is no longer required in _plastic_step()
+4. The is_elastic_step flag is no longer required in _plastic_step()
+
+5. Avoid elastic and plastic consistent tangent moduli pre-computations - only
+   compute the required tangent based on torch.cond() condition
 
 
 Classes
@@ -480,8 +486,8 @@ class VonMisesVMAP(ConstitutiveModel):
                 unit_flow_vector, unit_flow_vector)
         # Pick consistent tangent modulus according with plastic step condition
         consistent_tangent = torch.where(is_plast_cond,
-                                         e_consistent_tangent,
-                                         p_consistent_tangent)
+                                         p_consistent_tangent,
+                                         e_consistent_tangent)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Build consistent tangent modulus matricial form
         consistent_tangent_mf = vget_tensor_mf(consistent_tangent, n_dim,
@@ -641,6 +647,11 @@ class VonMisesVMAP(ConstitutiveModel):
             Shear modulus.
         H : torch.Tensor(0d)
             Hardening modulus.
+            
+        Return
+        ------
+        inc_p_mult : torch.Tensor(0d)
+            Incremental plastic multiplier.
         """
         # Compute return-mapping Jacobian (scalar)
         jacobian = -3.0*G - H

@@ -547,15 +547,14 @@ class DruckerPrager(ConstitutiveModel):
                 # Compute deviatoric elastic strain unit vector
                 trial_unit = dev_trial_e_strain/torch.norm(dev_trial_e_strain)
                 # Compute common scalar terms
-                s1 = inc_p_mult/(np.sqrt(2)*torch.norm(
-                    dev_trial_e_strain))
+                s1 = inc_p_mult/(np.sqrt(2)*torch.norm(dev_trial_e_strain))
                 s2 = 1.0/(G + K*etay*etaf + H*xi**2)
                 # Compute elastoplastic consistent tangent modulus
                 # (cone apex)
                 consistent_tangent = 2.0*G*(1.0 - s1)*fodevprojsym \
                     + 2.0*G*(s1 - G*s2)*dyad22_1(trial_unit, trial_unit) \
                     - np.sqrt(2)*G*s2*K*(etay*dyad22_1(trial_unit, soid)
-                                         + etaf*dyad22_1(soid, trial_unit))\
+                                         + etaf*dyad22_1(soid, trial_unit)) \
                     + K*(1.0 - K*etay*etaf*s2)*dyad22_1(soid, soid)
         else:
             consistent_tangent = e_consistent_tangent
