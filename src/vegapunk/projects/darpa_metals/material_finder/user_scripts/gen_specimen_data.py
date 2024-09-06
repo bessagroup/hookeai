@@ -452,6 +452,10 @@ if __name__ == "__main__":
         else:
             raise RuntimeError('Unknown recurrent constitutive model.')
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set automatic synchronization of material model parameters
+        is_auto_sync_parameters = False
+        # Set state update failure checking flag
+        is_check_su_fail = False
         # Set parameters normalization
         is_normalized_parameters = True
         # Set data normalization
@@ -469,6 +473,8 @@ if __name__ == "__main__":
             'material_model_name': material_model_name,
             'material_model_parameters': model_parameters,
             'state_features_out': state_features_out,
+            'is_auto_sync_parameters': is_auto_sync_parameters,
+            'is_check_su_fail': is_check_su_fail,
             'model_directory': None,
             'model_name': model_name,
             'is_normalized_parameters': is_normalized_parameters,
