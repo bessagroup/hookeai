@@ -1,0 +1,888 @@
+"""Drucker-Prager elasto-plastic constitutive model with isotropic hardening.
+
+This module includes the implementation of the Drucker-Prager constitutive
+model with non-associative plastic flor rule and associative isotropic strain
+hardening.
+
+This implementation is made compatible with the use of PyTorch vectorizing
+maps that, at the current moment, do not support auto differentiable
+data-dependent control flows based on if statements or similar constructs
+(e.g., torch.cond()). Workarounds based on torch.where() were successfully
+implemented, but these lead to complex or inefficient coding, mainly because
+they are constrained by elementwise operations (require pre-computations of
+true and false paths or repeated true/false function calls for each element).
+
+When torch.cond() is available, the state_update() method can be simplified as
+follows:
+
+1. The condition in torch.cond() does not need to be a Tensor with the same
+   shape as the true/false output tensors
+   
+2. Avoid flow vector pre-computations - only perform the needed step
+   computation based on torch.cond()
+
+3. Avoid elastic and plastic steps pre-computations - only perform the needed
+   step computation based on torch.cond() condition
+
+4. The is_elastic_step flag is no longer required in _plastic_step() nor in
+   _plastic_step_apex()
+   
+5. Avoid elastic and plastic consistent tangent moduli pre-computations - only
+   compute the required tangent based on torch.cond() condition
+
+
+Classes
+-------
+DruckerPragerVMAP
+    Drucker-Prager constitutive model with isotropic strain hardening.
+"""
+#
+#                                                                       Modules
+# =============================================================================
+# Standard
+import torch
+import numpy as np
+import copy
+# Local
+from simulators.fetorch.material.models.interface import ConstitutiveModel
+from simulators.fetorch.material.models.standard.elastic import Elastic
+from simulators.fetorch.math.matrixops import get_problem_type_parameters, \
+    vget_tensor_mf, vget_tensor_from_mf, vget_state_3Dmf_from_2Dmf, \
+    vget_state_2Dmf_from_3Dmf
+from simulators.fetorch.math.tensorops import get_id_operators, dyad22_1
+#
+#                                                          Authorship & Credits
+# =============================================================================
+__author__ = 'Bernardo Ferreira (bernardo_ferreira@brown.edu)'
+__credits__ = ['Bernardo Ferreira', ]
+__status__ = 'Stable'
+# =============================================================================
+#
+# =============================================================================
+class DruckerPragerVMAP(ConstitutiveModel):
+    """Drucker-Prager constitutive model with isotropic strain hardening.
+
+    Compatible with vectorized mapping.
+    
+    Attributes
+    ----------
+    _name : str
+        Constitutive model name.
+    _strain_type : {'infinitesimal', 'finite', 'finite-kinext'}
+        Material constitutive model strain formulation: infinitesimal strain
+        formulation ('infinitesimal'), finite strain formulation ('finite') or
+        finite strain formulation through kinematic extension
+        ('finite-kinext').
+    _model_parameters : dict
+        Material constitutive model parameters.
+    _n_dim : int
+        Problem number of spatial dimensions.
+    _comp_order_sym : list
+        Strain/Stress components symmetric order.
+    _comp_order_nsym : list
+        Strain/Stress components nonsymmetric order.
+
+    Methods
+    -------
+    get_required_model_parameters()
+        Get required material constitutive model parameters.
+    state_init(self)
+        Get initialized material constitutive model state variables.
+    state_update(self, inc_strain, state_variables_old)
+        Perform material constitutive model state update.
+    """
+    def __init__(self, strain_formulation, problem_type, model_parameters,
+                 device_type='cpu'):
+        """Constitutive model constructor.
+
+        Parameters
+        ----------
+        strain_formulation: {'infinitesimal', 'finite'}
+            Problem strain formulation.
+        problem_type : int
+            Problem type: 2D plane strain (1), 2D plane stress (2),
+            2D axisymmetric (3) and 3D (4).
+        model_parameters : dict
+            Material constitutive model parameters.
+        device_type : {'cpu', 'cuda'}, default='cpu'
+            Type of device on which torch.Tensor is allocated.
+        """
+        # Set material constitutive model name
+        self._name = 'drucker_prager'
+        # Set constitutive model strain formulation
+        self._strain_type = 'finite-kinext'
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set initialization parameters
+        self._strain_formulation = strain_formulation
+        self._problem_type = problem_type
+        self._model_parameters = model_parameters
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set device
+        self.set_device(device_type)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Get problem type parameters
+        self._n_dim, self._comp_order_sym, self._comp_order_nsym = \
+            get_problem_type_parameters(problem_type)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Get elastic symmetry
+        elastic_symmetry = model_parameters['elastic_symmetry']
+        # Check finite strains formulation
+        if self._strain_formulation == 'finite' and \
+                elastic_symmetry != 'isotropic':
+            raise RuntimeError('The Drucker-Prager constitutive model is only '
+                               'available under finite strains for the '
+                               'elastic isotropic case.')
+        # Compute technical constants of elasticity
+        if elastic_symmetry == 'isotropic':
+            # Compute technical constants of elasticity
+            technical_constants = Elastic.get_technical_from_elastic_moduli(
+                elastic_symmetry, model_parameters)
+            # Assemble technical constants of elasticity
+            self._model_parameters.update(technical_constants)
+        else:
+            raise RuntimeError('The Drucker-Prager constitutive model is '
+                               'currently only available for the elastic '
+                               'isotropic case.')
+    # -------------------------------------------------------------------------
+    @staticmethod
+    def get_required_model_parameters():
+        """Get required material constitutive model parameters.
+        
+        Model parameters:
+        
+        - 'elastic_symmetry' : Elastic symmetry (str, {'isotropic',
+          'transverse_isotropic', 'orthotropic', 'monoclinic', 'triclinic'});
+        - 'elastic_moduli' : Elastic moduli (dict, {'Eijkl': float});
+        - 'euler_angles' : Euler angles (degrees) sorted according with Bunge
+           convention (tuple[float]).
+        - 'yield_cohesion_parameter' : Yield surface cohesion parameter
+        - 'yield_pressure_parameter' : Yield surface pressure parameter
+        - 'flow_pressure_parameter' : Plastic flow rule pressure parameter
+        - 'hardening_law' : Isotropic hardening law (function)
+        - 'hardening_parameters' : Isotropic hardening law parameters (dict)
+
+        Returns
+        -------
+        model_parameters_names : tuple[str]
+            Material constitutive model parameters names (str).
+        """
+        # Set material properties names
+        model_parameters_names = ('elastic_symmetry', 'elastic_moduli',
+                                  'euler_angles', 
+                                  'yield_cohesion_parameter',
+                                  'yield_pressure_parameter',
+                                  'flow_pressure_parameter',
+                                  'hardening_law', 'hardening_parameters')
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        return model_parameters_names
+    # -------------------------------------------------------------------------
+    def state_init(self):
+        """Get initialized material constitutive model state variables.
+
+        Constitutive model state variables:
+
+        * ``e_strain_mf``
+
+            * *Infinitesimal strains*: Elastic infinitesimal strain tensor
+              (matricial form).
+
+            * *Finite strains*: Elastic spatial logarithmic strain tensor
+              (matricial form).
+
+            * *Symbol*: :math:`\\boldsymbol{\\varepsilon^{e}}` /
+              :math:`\\boldsymbol{\\varepsilon^{e}}`
+
+        * ``acc_p_strain``
+
+            * Accumulated plastic strain.
+
+            * *Symbol*: :math:`\\bar{\\varepsilon}^{p}`
+
+        * ``strain_mf``
+
+            * *Infinitesimal strains*: Infinitesimal strain tensor
+              (matricial form).
+
+            * *Finite strains*: Spatial logarithmic strain tensor
+              (matricial form).
+
+            * *Symbol*: :math:`\\boldsymbol{\\varepsilon}` /
+              :math:`\\boldsymbol{\\varepsilon}`
+
+        * ``stress_mf``
+
+            * *Infinitesimal strains*: Cauchy stress tensor (matricial form).
+
+            * *Finite strains*: Kirchhoff stress tensor (matricial form) within
+              :py:meth:`state_update`, first Piola-Kirchhoff stress tensor
+              (matricial form) otherwise.
+
+            * *Symbol*: :math:`\\boldsymbol{\\sigma}` /
+              (:math:`\\boldsymbol{\\tau}`, :math:`\\boldsymbol{P}`)
+
+        * ``is_plastic``
+
+            * Plastic step flag.
+
+        * ``is_su_fail``
+
+            * State update failure flag.
+            
+        * ``is_apex_return``
+        
+            * Return-mapping to apex flag.
+
+        ----
+
+        Returns
+        -------
+        state_variables_init : dict
+            Initialized material constitutive model state variables.
+        """
+        # Initialize constitutive model state variables
+        state_variables_init = dict()
+        # Initialize strain tensors
+        state_variables_init['e_strain_mf'] = vget_tensor_mf(
+            torch.zeros((self._n_dim, self._n_dim),
+                        dtype=torch.float, device=self._device),
+                        self._n_dim, self._comp_order_sym)
+        state_variables_init['strain_mf'] = \
+            state_variables_init['e_strain_mf'].clone()
+        # Initialize stress tensors
+        if self._strain_formulation == 'infinitesimal':
+            # Cauchy stress tensor (symmetric)
+            state_variables_init['stress_mf'] = vget_tensor_mf(
+                torch.zeros((self._n_dim, self._n_dim),
+                            dtype=torch.float, device=self._device),
+                            self._n_dim, self._comp_order_sym)
+        else:
+            # First Piola-Kirchhoff stress tensor (nonsymmetric)
+            state_variables_init['stress_mf'] = vget_tensor_mf(
+                torch.zeros((self._n_dim, self._n_dim),
+                            dtype=torch.float, device=self._device),
+                            self._n_dim, self._comp_order_nsym)
+        # Initialize internal variables
+        state_variables_init['acc_p_strain'] = \
+            torch.tensor(0.0, dtype=torch.float, device=self._device)
+        # Initialize state flags
+        state_variables_init['is_plast'] = False
+        state_variables_init['is_su_fail'] = False
+        state_variables_init['is_apex_return'] = False
+        # Set additional out-of-plane strain and stress components
+        if self._problem_type == 1:
+            state_variables_init['e_strain_33'] = 0.0
+            state_variables_init['stress_33'] = 0.0
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Return
+        return state_variables_init
+    # -------------------------------------------------------------------------
+    def state_update(self, inc_strain, state_variables_old):
+        """Perform material constitutive model state update.
+
+        Parameters
+        ----------
+        inc_strain : torch.Tensor(2d)
+            Incremental strain second-order tensor.
+        state_variables_old : dict
+            Last converged constitutive model material state variables.
+
+        Returns
+        -------
+        state_variables : dict
+            Material constitutive model state variables.
+        consistent_tangent_mf : torch.Tensor(2d)
+            Material constitutive model consistent tangent modulus stored in
+            matricial form.
+        """
+        # Set state update convergence tolerance
+        su_conv_tol = 1e-6
+        # Set state update maximum number of iterations
+        su_max_n_iterations = 20
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Build incremental strain tensor matricial form
+        inc_strain_mf = vget_tensor_mf(inc_strain, self._n_dim,
+                                       self._comp_order_sym,
+                                       device=self._device)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Get material properties
+        E = self._model_parameters['E']
+        v = self._model_parameters['v']
+        xi = self._model_parameters['yield_cohesion_parameter']
+        etay = self._model_parameters['yield_pressure_parameter']
+        etaf = self._model_parameters['flow_pressure_parameter']
+        # Get material isotropic strain hardening law
+        hardening_law = self._model_parameters['hardening_law']
+        hardening_parameters = self._model_parameters['hardening_parameters']
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Compute bulk and shear modulus
+        K = E/(3.0*(1.0 - 2.0*v))
+        G = E/(2.0*(1.0 + v))
+        # Compute Lamé parameters
+        lam = (E*v)/((1.0 + v)*(1.0 - 2.0*v))
+        miu = E/(2.0*(1.0 + v))
+        # Compute material parameters
+        alpha = xi/etay
+        beta = xi/etaf
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Get last increment converged state variables
+        e_strain_old_mf = state_variables_old['e_strain_mf']
+        p_strain_old_mf = state_variables_old['strain_mf'] - e_strain_old_mf
+        acc_p_strain_old = state_variables_old['acc_p_strain']
+        if self._problem_type == 1:
+            e_strain_33_old = state_variables_old['e_strain_33']
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Initialize state update failure flag
+        is_su_fail = False
+        # Initialize plastic step flag
+        is_plast = False
+        # Initialize return-mapping to apex flag
+        is_apex_return = False
+        #
+        #                                                    2D > 3D conversion
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # When the problem type corresponds to a 2D analysis, perform the state
+        # update and consistent tangent computation as in the 3D case,
+        # considering the appropriate out-of-plain strain and stress components
+        if self._problem_type == 4:
+            n_dim = self._n_dim
+            comp_order_sym = self._comp_order_sym
+        else:
+            # Set 3D problem parameters
+            n_dim, comp_order_sym, _ = get_problem_type_parameters(4)
+            # Build strain tensors (matricial form) by including the
+            # appropriate out-of-plain components
+            inc_strain_mf = vget_state_3Dmf_from_2Dmf(
+                inc_strain_mf, comp_33=0.0, device=self._device)
+            e_strain_old_mf = vget_state_3Dmf_from_2Dmf(
+                e_strain_old_mf, e_strain_33_old, device=self._device)
+        # Get number of components
+        n_comps = len(comp_order_sym)
+        #
+        #                                                          State update
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set required second-order and fourth-order tensors
+        soid, _, _, fosym, fodiagtrace, _, fodevprojsym = \
+            get_id_operators(n_dim, device=self._device)
+        soid_mf = vget_tensor_mf(soid, n_dim, comp_order_sym,
+                                 device=self._device)
+        fodevprojsym_mf = vget_tensor_mf(fodevprojsym, n_dim, comp_order_sym,
+                                         device=self._device)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Compute elastic trial strain
+        e_trial_strain_mf = e_strain_old_mf + inc_strain_mf
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Compute elastic consistent tangent modulus according to problem type
+        # and store it in matricial form
+        if self._problem_type in [1, 4]:
+            e_consistent_tangent = lam*fodiagtrace + 2.0*miu*fosym
+        e_consistent_tangent_mf = vget_tensor_mf(e_consistent_tangent,
+                                                 n_dim, comp_order_sym,
+                                                 device=self._device)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Compute trial stress
+        trial_stress_mf = torch.matmul(e_consistent_tangent_mf,
+                                       e_trial_strain_mf)
+        # Compute trial pressure
+        trial_pressure = \
+            (1.0/3.0)*torch.trace(vget_tensor_from_mf(trial_stress_mf,
+                                                      n_dim, comp_order_sym,
+                                                      device=self._device))
+        # Compute deviatoric trial stress
+        dev_trial_stress_mf = torch.matmul(fodevprojsym_mf, trial_stress_mf)
+        # Compute second invariant of deviatoric trial stress
+        j2_dev_trial_stress = 0.5*torch.norm(dev_trial_stress_mf)**2
+        # Compute trial accumulated plastic strain
+        acc_p_trial_strain = acc_p_strain_old
+        # Compute trial cohesion
+        trial_cohesion, _ = \
+            hardening_law(hardening_parameters, acc_p_trial_strain)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Compute yield function
+        yield_function = (torch.sqrt(j2_dev_trial_stress) + etay*trial_pressure
+                          - xi*trial_cohesion)
+        # Set plastic consistency condition
+        plastic_consistency_cond = yield_function/abs(trial_cohesion) \
+            *torch.ones(2*n_comps + 5, device=self._device) \
+                <= su_conv_tol
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # If the trial stress state lies inside the Druger-Prager yield
+        # function, then the state update is purely elastic and coincident with
+        # the elastic trial state. Otherwise, the state update is elastoplastic
+        # and the return-mapping system of nonlinear equations must be solved
+        # in order to update the state variables
+        #
+        # Perform elastic step
+        elastic_step_output = self._elastic_step(
+            e_trial_strain_mf, trial_stress_mf, acc_p_strain_old)
+        # Perform plastic step
+        is_elastic_step = (yield_function/abs(trial_cohesion)) <= su_conv_tol
+        plastic_step_output = self._plastic_step(
+            is_elastic_step, e_trial_strain_mf, trial_pressure,
+            dev_trial_stress_mf, j2_dev_trial_stress, acc_p_strain_old, G, K,
+            xi, etay, etaf, alpha, beta, hardening_law, hardening_parameters,
+            soid_mf, su_conv_tol, su_max_n_iterations)
+        # Pick elastic or plastic step according with plastic consistency
+        # condition
+        step_output = torch.where(plastic_consistency_cond,
+                                  elastic_step_output,
+                                  plastic_step_output)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Unpack state updated variables
+        e_strain_mf = step_output[:n_comps]
+        stress_mf = step_output[n_comps:2*n_comps]
+        acc_p_strain = step_output[2*n_comps]
+        inc_p_mult = step_output[2*n_comps + 1]
+        is_su_fail = torch.logical_not(
+            step_output[2*n_comps + 2].to(torch.bool))
+        is_plast = step_output[2*n_comps + 3].to(torch.bool)
+        is_apex_return = step_output[2*n_comps + 4].to(torch.bool)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Get the out-of-plane strain and stress components
+        if self._problem_type == 1:
+            e_strain_33 = e_strain_mf[comp_order_sym.index('33')]
+            stress_33 = stress_mf[comp_order_sym.index('33')]
+        #
+        #                                            Consistent tangent modulus
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set plastic step condition
+        is_plast_cond = is_plast.expand(e_consistent_tangent.shape)
+        # Set return-mapping to apex condition
+        is_apex_return_cond = is_apex_return.expand(e_consistent_tangent.shape)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # If the state update was purely elastic, then the consistent tangent
+        # modulus is the elastic consistent tangent modulus. Otherwise, compute
+        # the elastoplastic consistent tangent modulus
+        #
+        # Compute plastic consistent tangent modulus (cone surface)
+        _, H = hardening_law(hardening_parameters, acc_p_strain)
+        dev_trial_e_strain = vget_tensor_from_mf(
+            torch.matmul(fodevprojsym_mf, e_trial_strain_mf),
+            n_dim, comp_order_sym, device=self._device)
+        trial_unit = dev_trial_e_strain/torch.norm(dev_trial_e_strain)
+        s1 = inc_p_mult/(np.sqrt(2)*torch.norm(dev_trial_e_strain))
+        s2 = 1.0/(G + K*etay*etaf + H*xi**2)
+        p_consistent_tangent_cone = 2.0*G*(1.0 - s1)*fodevprojsym \
+            + 2.0*G*(s1 - G*s2)*dyad22_1(trial_unit, trial_unit) \
+            - np.sqrt(2)*G*s2*K*(etay*dyad22_1(trial_unit, soid)
+                                 + etaf*dyad22_1(soid, trial_unit)) \
+            + K*(1.0 - K*etay*etaf*s2)*dyad22_1(soid, soid)
+        #
+        # Compute plastic consistent tangent modulus (cone apex)
+        p_consistent_tangent_apex = \
+            K*(1.0 - (K/(K + alpha*beta*H)))*dyad22_1(soid, soid)
+        # Pick consistent tangent modulus according with plastic step condition
+        consistent_tangent = \
+            torch.where(is_plast_cond,
+                        torch.where(is_apex_return_cond,
+                                    p_consistent_tangent_apex,
+                                    p_consistent_tangent_cone),
+                        e_consistent_tangent)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Build consistent tangent modulus matricial form
+        consistent_tangent_mf = vget_tensor_mf(consistent_tangent, n_dim,
+                                               comp_order_sym,
+                                               device=self._device)
+        #
+        #                                                    3D > 2D Conversion
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # When the problem type corresponds to a 2D analysis, build the 2D
+        # strain and stress tensors (matricial form) once the state update has
+        # been performed
+        if self._problem_type == 1:
+            # Builds 2D strain and stress tensors (matricial form) from the
+            # associated 3D counterparts
+            e_trial_strain_mf = vget_state_2Dmf_from_3Dmf(
+                e_trial_strain_mf, device=self._device)
+            e_strain_mf = vget_state_2Dmf_from_3Dmf(
+                e_strain_mf, device=self._device)
+            stress_mf = vget_state_2Dmf_from_3Dmf(
+                stress_mf, device=self._device)
+        #
+        #                                                Update state variables
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Initialize state variables dictionary
+        state_variables = self.state_init()
+        # Store updated state variables
+        state_variables['e_strain_mf'] = e_strain_mf
+        state_variables['acc_p_strain'] = acc_p_strain
+        state_variables['strain_mf'] = e_trial_strain_mf + p_strain_old_mf
+        state_variables['stress_mf'] = stress_mf
+        state_variables['is_su_fail'] = is_su_fail
+        state_variables['is_plast'] = is_plast
+        state_variables['is_apex_return'] = is_apex_return
+        if self._problem_type == 1:
+            state_variables['e_strain_33'] = e_strain_33
+            state_variables['stress_33'] = stress_33
+        #
+        #                                                    3D > 2D Conversion
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # When the problem type corresponds to a 2D analysis, build the 2D
+        # consistent tangent modulus (matricial form) from the 3D counterpart
+        if self._problem_type == 1:
+            consistent_tangent_mf = vget_state_2Dmf_from_3Dmf(
+                consistent_tangent_mf, device=self._device)
+        #
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        return state_variables, consistent_tangent_mf
+    # -------------------------------------------------------------------------
+    @classmethod
+    def _elastic_step(cls, e_trial_strain_mf, trial_stress_mf,
+                      acc_p_strain_old):
+        """Perform elastic step.
+        
+        Parameters
+        ----------
+        e_trial_strain_mf : torch.Tensor(1d)
+            Elastic trial strain (matricial form).
+        trial_stress_mf : torch.Tensor(1d)
+            Trial stress (matricial form).
+        acc_p_strain_old : torch.Tensor(0d)
+            Last convergence accumulated plastic strain.
+        
+        Returns
+        -------
+        elastic_step_output : torch.Tensor(1d)
+            Elastic step concatenated output data.
+        """
+        # Update elastic strain
+        e_strain_mf = e_trial_strain_mf
+        # Update stress
+        stress_mf = trial_stress_mf
+        # Update accumulated plastic strain
+        acc_p_strain = acc_p_strain_old
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set plastic step flag
+        is_plast = torch.tensor([False], device=e_trial_strain_mf.device)
+        # Set return-mapping to apex flag
+        is_apex_return = torch.tensor([False], device=e_trial_strain_mf.device)
+        # Set incremental plastic multiplier
+        inc_p_mult = torch.tensor(0.0, dtype=torch.float,
+                                  device=e_trial_strain_mf.device)
+        # Set state update convergence flag
+        is_converged = torch.tensor([True], device=e_trial_strain_mf.device)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Build concatenated elastic step output
+        elastic_step_output = \
+            torch.cat([e_strain_mf, stress_mf, acc_p_strain.view(-1),
+                       inc_p_mult.view(-1),
+                       is_converged.view(-1),
+                       is_plast.view(-1),
+                       is_apex_return.view(-1)])
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        return elastic_step_output
+    # -------------------------------------------------------------------------
+    @classmethod
+    def _plastic_step(cls, is_elastic_step, e_trial_strain_mf,
+                      trial_pressure, dev_trial_stress_mf, j2_dev_trial_stress,
+                      acc_p_strain_old, G, K, xi, etay, etaf, alpha, beta,
+                      hardening_law, hardening_parameters, soid_mf,
+                      su_conv_tol, su_max_n_iterations):
+        """Perform plastic step.
+        
+        Parameters
+        ----------
+        is_elastic_step : torch.Tensor(0d)
+            If True, then avoid return mapping computations and compute elastic
+            response. This flag avoids non-admissible values stemming from
+            invalid return-mapping problem and consequent runtime errors when
+            computing gradients with autograd.
+        e_trial_strain_mf : torch.Tensor(1d)
+            Elastic trial strain (matricial form).
+        trial_pressure : torch.Tensor(0d)
+            Trial pressure.
+        dev_trial_stress_mf : torch.Tensor(1d)
+            Deviatoric trial stress (matricial form).
+        j2_dev_trial_stress : torch.Tensor(0d)
+            Second invariant of deviatoric trial stress.
+        acc_p_strain_old : torch.Tensor(0d)
+            Last convergence accumulated plastic strain.
+        G : torch.Tensor(0d)
+            Shear modulus.
+        K : torch.Tensor(0d)
+            Bulk modulus.
+        xi : torch.Tensor(0d)
+            Yield surface cohesion parameter.
+        etay : torch.Tensor(0d)
+            Yield surface pressure parameter.
+        etaf : torch.Tensor(0d)
+            Plastic flow rule pressure parameter.
+        alpha : torch.Tensor(0d)
+            Ratio between yield surface cohesion parameter and yield surface
+            pressure parameter.
+        beta : torch.Tensor(0d)
+            Ratio between yield surface cohesion parameter and plastic flow
+            rule pressure parameter.
+        hardening_law : function
+            Hardening law.
+        hardening_parameters : dict
+            Hardening law parameters.
+        soid_mf : torch.Tensor(1d)
+            Second-order identity tensor (matricial form).
+        su_conv_tol : float
+            State update convergence tolerance.
+        su_max_n_iterations : int
+            State update maximum number of iterations.
+
+        Returns
+        -------
+        plastic_step_output : torch.Tensor(1d)
+            Plastic step concatenated output data.
+        """
+        # Set plastic step flag
+        is_plast = torch.tensor([True], device=e_trial_strain_mf.device)
+        # Set incremental plastic multiplier initial iterative guess
+        inc_p_mult = torch.tensor(0.0, dtype=torch.float,
+                                  device=e_trial_strain_mf.device)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Newton-Raphson iterative loop
+        for _ in range(su_max_n_iterations):
+            # Compute initial hardening modulus
+            cohesion, H = hardening_law(hardening_parameters,
+                                        acc_p_strain_old + inc_p_mult)
+            # Compute return-mapping residual (cone surface)
+            residual = (torch.sqrt(j2_dev_trial_stress) - G*inc_p_mult
+                        + etay*(trial_pressure - K*etaf*inc_p_mult)
+                        - xi*cohesion)
+            # Check Newton-Raphson iterative procedure convergence
+            error = torch.abs(residual/torch.abs(cohesion))
+            is_converged = torch.where(is_elastic_step,
+                                       is_elastic_step,
+                                       error < su_conv_tol)
+            # Compute iterative incremental plastic multiplier
+            inc_p_mult = torch.where(is_converged,
+                                     inc_p_mult,
+                                     cls._nr_iteration_surface(
+                                         inc_p_mult, residual, G, K, etaf,
+                                         etay, xi, H))
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set incremental plastic multiplier to NaN if state update fails
+        inc_p_mult = torch.where(is_converged,
+                                 inc_p_mult,
+                                 torch.tensor(torch.nan))
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Compute pressure
+        pressure = trial_pressure - K*etaf*inc_p_mult
+        # Compute deviatoric stress
+        dev_stress_mf = \
+            (1.0 - ((G*inc_p_mult)/torch.sqrt(j2_dev_trial_stress))) \
+            *dev_trial_stress_mf
+        # Update stress
+        stress_mf = pressure*soid_mf + dev_stress_mf
+        # Update accumulated plastic strain
+        acc_p_strain = acc_p_strain_old + inc_p_mult
+        # Update elastic strain
+        e_strain_mf = \
+            (1.0/(3.0*K))*pressure*soid_mf + (1.0/(2.0*G))*dev_stress_mf
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Build concatenated plastic step output (cone surface)
+        plastic_step_cone_output = \
+            torch.cat([e_strain_mf, stress_mf, acc_p_strain.view(-1),
+                       inc_p_mult.view(-1),
+                       is_converged.view(-1)])
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set return-mapping to apex flag
+        is_apex_return = (torch.sqrt(j2_dev_trial_stress) - G*inc_p_mult) < 0
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Perform plastic step (cone apex)
+        is_elastic_step = torch.logical_or(
+            is_elastic_step, torch.logical_not(is_apex_return))
+        plastic_step_apex_output = cls._plastic_step_apex(
+            is_elastic_step, e_trial_strain_mf, trial_pressure,
+            dev_trial_stress_mf, acc_p_strain_old, G, K, alpha, beta, H,
+            hardening_law, hardening_parameters, soid_mf, su_conv_tol,
+            su_max_n_iterations)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set return-mapping validity
+        cone_surface_cond = (torch.sqrt(j2_dev_trial_stress) - G*inc_p_mult) \
+            *torch.ones_like(plastic_step_cone_output) >= 0
+        # Pick surface or apex plastic step according with condition
+        plastic_step_output = torch.where(cone_surface_cond,
+                                          plastic_step_cone_output,
+                                          plastic_step_apex_output)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Build concatenated plastic step output
+        plastic_step_output = \
+            torch.cat([plastic_step_output,
+                       is_plast.view(-1),
+                       is_apex_return.view(-1)])
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        return plastic_step_output
+    # -------------------------------------------------------------------------
+    @classmethod
+    def _nr_iteration_surface(cls, inc_p_mult, residual, G, K, etaf, etay, xi,
+                              H):
+        """Newton-Raphson iteration (return-mapping to cone surface).
+        
+        Parameters
+        ----------
+        inc_p_mult : torch.Tensor(0d)
+            Incremental plastic multiplier.
+        residual : torch.Tensor(0d)
+            Residual.
+        G : torch.Tensor(0d)
+            Shear modulus.
+        K : torch.Tensor(0d)
+            Bulk modulus.
+        xi : torch.Tensor(0d)
+            Yield surface cohesion parameter.
+        etay : torch.Tensor(0d)
+            Yield surface pressure parameter.
+        etaf : torch.Tensor(0d)
+            Plastic flow rule pressure parameter.
+        H : torch.Tensor(0d)
+            Hardening modulus.
+            
+        Return
+        ------
+        inc_p_mult : torch.Tensor(0d)
+            Incremental plastic multiplier.
+        """
+        # Compute return-mapping Jacobian (scalar)
+        jacobian = -G - K*etaf*etay - (xi**2)*H
+        # Solve return-mapping linearized equation
+        d_iter = -residual/jacobian
+        # Update incremental plastic multiplier
+        inc_p_mult = inc_p_mult + d_iter
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        return inc_p_mult
+    # -------------------------------------------------------------------------
+    @classmethod
+    def _plastic_step_apex(cls, is_elastic_step, e_trial_strain_mf,
+                           trial_pressure, dev_trial_stress_mf,
+                           acc_p_strain_old, G, K, alpha, beta, H,
+                           hardening_law, hardening_parameters, soid_mf,
+                           su_conv_tol, su_max_n_iterations):
+        """Perform plastic step (return-mapping to cone apex).
+
+        Parameters
+        ----------
+        is_elastic_step : torch.Tensor(0d)
+            If True, then avoid return mapping computations and compute elastic
+            response. This flag avoids non-admissible values stemming from
+            invalid return-mapping problem and consequent runtime errors when
+            computing gradients with autograd.
+        e_trial_strain_mf : torch.Tensor(1d)
+            Elastic trial strain (matricial form).
+        trial_pressure : torch.Tensor(0d)
+            Trial pressure.
+        dev_trial_stress_mf : torch.Tensor(1d)
+            Deviatoric trial stress (matricial form).
+        acc_p_strain_old : torch.Tensor(0d)
+            Last convergence accumulated plastic strain.
+        G : torch.Tensor(0d)
+            Shear modulus.
+        K : torch.Tensor(0d)
+            Bulk modulus.
+        alpha : torch.Tensor(0d)
+            Ratio between yield surface cohesion parameter and yield surface
+            pressure parameter.
+        beta : torch.Tensor(0d)
+            Ratio between yield surface cohesion parameter and plastic flow
+            rule pressure parameter.
+        H : torch.Tensor(0d)
+            Hardening modulus.
+        hardening_law : function
+            Hardening law.
+        hardening_parameters : dict
+            Hardening law parameters.
+        soid_mf : torch.Tensor(1d)
+            Second-order identity tensor (matricial form).
+        su_conv_tol : float
+            State update convergence tolerance.
+        su_max_n_iterations : int
+            State update maximum number of iterations.
+
+        Returns
+        -------
+        plastic_step_output : torch.Tensor(1d)
+            Plastic step concatenated output data.
+        """
+        # Set incremental plastic multiplier
+        inc_p_mult = torch.tensor(0.0, dtype=torch.float,
+                                  device=e_trial_strain_mf.device)
+        # Set incremental plastic volumetric strain initial iterative guess
+        inc_vol_p_strain = torch.tensor(0.0, dtype=torch.float,
+                                        device=e_trial_strain_mf.device)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Newton-Raphson iterative loop
+        for _ in range(su_max_n_iterations):
+            # Compute current cohesion and hardening modulus
+            cohesion, H = hardening_law(
+                hardening_parameters,
+                acc_p_strain_old + alpha*inc_vol_p_strain)
+            # Compute return-mapping residual (cone apex) 
+            residual = cohesion*beta - (trial_pressure - K*inc_vol_p_strain)
+            # Check Newton-Raphson iterative procedure convergence
+            error = torch.abs(residual/torch.abs(cohesion))
+            is_converged = torch.where(is_elastic_step,
+                                       is_elastic_step,
+                                       error < su_conv_tol)
+            # Compute iterative incremental plastic volumetric strain
+            inc_vol_p_strain = torch.where(is_converged,
+                                           inc_vol_p_strain,
+                                           cls._nr_iteration_apex(
+                                               inc_vol_p_strain, residual,
+                                               alpha, beta, K, H))
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set incremental plastic volumetric strain to NaN if state update
+        # fails
+        inc_vol_p_strain = torch.where(is_converged,
+                                       inc_vol_p_strain,
+                                       torch.tensor(torch.nan))
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Compute pressure
+        pressure = trial_pressure - K*inc_vol_p_strain
+        # Compute deviatoric stress
+        dev_stress_mf = torch.zeros_like(dev_trial_stress_mf,
+                                         device=e_trial_strain_mf.device)
+        # Update stress
+        stress_mf = pressure*soid_mf
+        # Update accumulated plastic strain
+        acc_p_strain = acc_p_strain_old + alpha*inc_vol_p_strain
+        # Update elastic strain
+        e_strain_mf = \
+            (1.0/(3.0*K))*pressure*soid_mf + (1.0/(2.0*G))*dev_stress_mf
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Build concatenated plastic step output
+        plastic_step_output = \
+            torch.cat([e_strain_mf, stress_mf, acc_p_strain.view(-1),
+                       inc_p_mult.view(-1),
+                       is_converged.view(-1)])
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        return plastic_step_output
+    # -------------------------------------------------------------------------
+    @classmethod
+    def _nr_iteration_apex(cls, inc_vol_p_strain, residual, alpha, beta, K, H):
+        """Newton-Raphson iteration (return-mapping to cone apex).
+        
+        Parameters
+        ----------
+        inc_vol_p_strain : torch.Tensor(0d)
+            Incremental plastic volumetric strain.
+        residual : torch.Tensor(0d)
+            Residual.
+        alpha : torch.Tensor(0d)
+            Ratio between yield surface cohesion parameter and yield surface
+            pressure parameter.
+        beta : torch.Tensor(0d)
+            Ratio between yield surface cohesion parameter and plastic flow
+            rule pressure parameter.
+        K : torch.Tensor(0d)
+            Bulk modulus.
+            Plastic flow rule pressure parameter.
+        H : torch.Tensor(0d)
+            Hardening modulus.
+            
+        Return
+        ------
+        inc_vol_p_strain : torch.Tensor(0d)
+            Incremental plastic volumetric strain.
+        """
+        # Compute return-mapping Jacobian (scalar)
+        jacobian = alpha*beta*H + K
+        # Solve return-mapping linearized equation
+        d_iter = -residual/jacobian
+        # Update incremental plastic multiplier
+        inc_vol_p_strain = inc_vol_p_strain + d_iter
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        return inc_vol_p_strain
