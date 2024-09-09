@@ -270,8 +270,10 @@ class DruckerPragerVMAP(ConstitutiveModel):
         state_variables_init['is_apex_return'] = False
         # Set additional out-of-plane strain and stress components
         if self._problem_type == 1:
-            state_variables_init['e_strain_33'] = 0.0
-            state_variables_init['stress_33'] = 0.0
+            state_variables_init['e_strain_33'] = \
+                torch.tensor(0.0, dtype=torch.float, device=self._device)
+            state_variables_init['stress_33'] = \
+                torch.tensor(0.0, dtype=torch.float, device=self._device)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Return
         return state_variables_init
