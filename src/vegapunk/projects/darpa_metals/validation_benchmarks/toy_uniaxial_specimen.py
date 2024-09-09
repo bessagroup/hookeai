@@ -652,7 +652,7 @@ if __name__ == '__main__':
     strain_formulation = 'infinitesimal'
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set constitutive model name and parameters
-    model_name = 'rc_von_mises_vmap'
+    model_name = 'rc_drucker_prager_vmap'
     # Set constitutive model parameters
     if model_name == 'elastic':
         # Set constitutive model parameters
@@ -765,7 +765,7 @@ if __name__ == '__main__':
             # Set model validation data directory name
             model_data_name = 'von_mises'
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        elif model_name == 'rc_drucker_prager':
+        elif model_name in ('rc_drucker_prager', 'rc_drucker_prager_vmap'):
             # Set frictional angle
             friction_angle = np.deg2rad(10)
             # Set dilatancy angle
@@ -803,7 +803,10 @@ if __name__ == '__main__':
             learnable_parameters['v'] = {'initial_value': 0.3,
                                          'bounds': (0.2, 0.4)}
             # Set material constitutive model name
-            material_model_name = 'drucker_prager'
+            if model_name == 'rc_drucker_prager_vmap':
+                material_model_name = 'drucker_prager_vmap'
+            else:
+                material_model_name = 'drucker_prager'
             # Set material constitutive state variables (prediction)
             state_features_out = {}
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
