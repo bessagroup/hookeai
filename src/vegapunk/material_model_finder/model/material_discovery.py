@@ -322,6 +322,12 @@ class MaterialModelFinder(torch.nn.Module):
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Fit force data scalers
         if self._is_force_normalization:
+            # Check forces normalization minimum and maximum tensors
+            if force_minimum is None or force_maximum is None:
+                raise RuntimeError('Forces normalization minimum and maximum '
+                                   'tensors must be provided to perform '
+                                   'force normalization.')
+            # Set fitted force data scalers
             self.set_fitted_force_data_scalers(force_minimum, force_maximum)
     # -------------------------------------------------------------------------
     def get_material_models(self):
