@@ -214,7 +214,7 @@ def train_model(n_max_epochs, specimen_data, specimen_material_state,
                 width=len(str(n_max_epochs))), end='\r')
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Save training step loss and learning rate
-        loss_history_steps.append(loss.clone().detach().cpu())
+        loss_history_steps.append(loss.detach().clone().cpu())
         if is_lr_scheduler:
             lr_history_steps.append(lr_scheduler.get_last_lr())
         else:
