@@ -28,6 +28,7 @@ import re
 # Third-party
 import torch
 import pandas
+import numpy as np
 # Local
 from simulators.fetorch.element.type.tri3 import FETri3
 from simulators.fetorch.element.type.quad4 import FEQuad4
@@ -421,7 +422,7 @@ if __name__ == "__main__":
             # Set material constitutive state variables (prediction)
             state_features_out = {}
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        elif model_name == 'rc_von_mises':            
+        elif model_name in ('rc_von_mises', 'rc_von_mises_vmap'):            
             # Set constitutive model parameters
             model_parameters = {
                 'elastic_symmetry': 'isotropic',
@@ -445,7 +446,61 @@ if __name__ == "__main__":
             learnable_parameters['a'] = {'initial_value': 700,
                                          'bounds': (500, 1000)}
             # Set material constitutive model name
-            material_model_name = 'von_mises'
+            if model_name == 'rc_von_mises_vmap':
+                material_model_name = 'von_mises_vmap'
+            else:
+                material_model_name = 'von_mises'
+            # Set material constitutive state variables (prediction)
+            state_features_out = {}
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        elif model_name in ('rc_drucker_prager', 'rc_drucker_prager_vmap'):            
+            # Set frictional angle
+            friction_angle = np.deg2rad(10)
+            # Set dilatancy angle
+            dilatancy_angle = friction_angle
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Compute angle-related material parameters
+            # (matching with Mohr-Coulomb under uniaxial tension and
+            # compression)
+            # Set yield surface cohesion parameter
+            yield_cohesion_parameter = (2.0/np.sqrt(3))*np.cos(friction_angle)
+            # Set yield pressure parameter
+            yield_pressure_parameter = (3.0/np.sqrt(3))*np.sin(friction_angle)
+            # Set plastic flow pressure parameter
+            flow_pressure_parameter = (3.0/np.sqrt(3))*np.sin(dilatancy_angle)
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Set constitutive model parameters
+            model_parameters = {
+                'elastic_symmetry': 'isotropic',
+                'E': 100, 'v': 0.3,
+                'euler_angles': (0.0, 0.0, 0.0),
+                'hardening_law': get_hardening_law('linear'),
+                'hardening_parameters':{'s0': 2.0/yield_cohesion_parameter,
+                                        'a': 2.0/yield_cohesion_parameter,},
+                'yield_cohesion_parameter': yield_cohesion_parameter,
+                'yield_pressure_parameter': yield_pressure_parameter,
+                'flow_pressure_parameter': flow_pressure_parameter,
+                'friction_angle': np.deg2rad(10.0)}
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Set learnable parameters
+            learnable_parameters = {}
+            #learnable_parameters['E'] = {'initial_value': 85.0,
+            #                             'bounds': (80.0, 120.0)}
+            #learnable_parameters['v'] = {'initial_value': 0.2,
+            #                             'bounds': (0.2, 0.4)}
+            #learnable_parameters['s0'] = {'initial_value': 900,
+            #                              'bounds': (500, 1500)}
+            #learnable_parameters['a'] = {'initial_value': 700,
+            #                             'bounds': (500, 1000)}
+            learnable_parameters['friction_angle'] = \
+                {'initial_value': np.deg2rad(5.0, dtype=np.float32),
+                 'bounds': (np.deg2rad(1.0, dtype=np.float32),
+                            np.deg2rad(20.0, dtype=np.float32))}
+            # Set material constitutive model name
+            if model_name == 'rc_drucker_prager_vmap':
+                material_model_name = 'drucker_prager_vmap'
+            else:
+                material_model_name = 'drucker_prager'
             # Set material constitutive state variables (prediction)
             state_features_out = {}
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -453,7 +508,10 @@ if __name__ == "__main__":
             raise RuntimeError('Unknown recurrent constitutive model.')
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Set automatic synchronization of material model parameters
-        is_auto_sync_parameters = False
+        if bool(re.search(r'_vmap$', model_name)):
+            is_auto_sync_parameters = False
+        else:
+            is_auto_sync_parameters = True
         # Set state update failure checking flag
         is_check_su_fail = False
         # Set parameters normalization
