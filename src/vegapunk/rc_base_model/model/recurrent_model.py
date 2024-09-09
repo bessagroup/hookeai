@@ -508,7 +508,7 @@ class RecurrentConstitutiveModel(torch.nn.Module):
                 if param not in valid_learnable_parameters:
                     raise RuntimeError(f'Parameter "{param}" is not a valid '
                                        f'learnable parameter for model '
-                                       f'"{material_model_name}.')
+                                       f'{material_model_name}.')
                 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                 # Get material model parameters
                 material_parameters = self.get_material_model_parameters()
