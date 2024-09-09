@@ -23,12 +23,15 @@ import itertools
 import torch
 import tqdm
 import sklearn.preprocessing
+import numpy as np
 # Local
 from simulators.fetorch.material.models.standard.elastic import Elastic
 from simulators.fetorch.material.models.standard.von_mises import VonMises
 from simulators.fetorch.material.models.standard.drucker_prager import \
     DruckerPrager
 from simulators.fetorch.material.models.vmap.von_mises import VonMisesVMAP
+from simulators.fetorch.material.models.vmap.drucker_prager import \
+    DruckerPragerVMAP
 from simulators.fetorch.math.matrixops import get_problem_type_parameters, \
     vget_tensor_from_mf
 from simulators.fetorch.material.material_su import material_state_update
@@ -76,6 +79,8 @@ class RecurrentConstitutiveModel(torch.nn.Module):
         Material constitutive model name.
     _material_model_parameters : torch.nn.ParameterDict
         Material constitutive model parameters with learnable parameters.
+    _constitutive_model : ConstitutiveModel
+        FETorch material constitutive model.
     _state_features_out : dict, default={}
         Material constitutive model state variables (key, str) and
         corresponding dimensionality (item, int) for which the path history
@@ -135,6 +140,8 @@ class RecurrentConstitutiveModel(torch.nn.Module):
         Get model parameters normalized bounds.
     get_detached_model_parameters(self, is_normalized=False)
         Get model parameters detached of gradients.
+    get_material_model_parameters(self)
+        Get current material constitutive model parameters.
     forward(self, features_in, is_normalized=False)
         Forward propagation.
     _recurrent_constitutive_model(self, strain_paths)
@@ -314,6 +321,11 @@ class RecurrentConstitutiveModel(torch.nn.Module):
                 VonMisesVMAP(self._strain_formulation, self._problem_type,
                              self._material_model_parameters,
                              device_type=self._device_type)
+        elif material_model_name == 'drucker_prager_vmap':
+            self._constitutive_model = \
+                DruckerPragerVMAP(self._strain_formulation, self._problem_type,
+                                  self._material_model_parameters,
+                                  device_type=self._device_type)
         else:
             raise RuntimeError(f'Unknown material constitutive model '
                                f'\'{material_model_name}\'.')
@@ -446,7 +458,7 @@ class RecurrentConstitutiveModel(torch.nn.Module):
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Set model parameter
             self._model_parameters[param] = torch.nn.Parameter(
-                torch.tensor(init_val, requires_grad=True))
+                torch.tensor(init_val, dtype=torch.float, requires_grad=True))
     # -------------------------------------------------------------------------
     def sync_material_model_parameters(self):
         """Synchronize material model parameters with learnable parameters."""
@@ -472,33 +484,93 @@ class RecurrentConstitutiveModel(torch.nn.Module):
                                        f'learnable parameter for model '
                                        f'"{material_model_name}.')
                 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                # Get material model parameters
+                material_parameters = self.get_material_model_parameters()
+                # Get hardening parameters
+                hardening_parameters = \
+                    material_parameters['hardening_parameters']
+                # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                 # Synchronize parameter
                 if param in ('s0', 'a', 'b'):
-                    self._constitutive_model._model_parameters\
-                        ['hardening_parameters'][param] = sync_val
+                    hardening_parameters[param] = sync_val
                 else:
-                    self._constitutive_model._model_parameters[param] = \
-                        sync_val
+                    material_parameters[param] = sync_val
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            elif self._material_model_name == 'drucker_prager':
+            elif self._material_model_name in \
+                    ('drucker_prager', 'drucker_prager_vmap'):
                 # Set valid learnable parameters
                 valid_learnable_parameters = ('E', 'v', 's0', 'a', 'b',
                                               'yield_cohesion_parameter',
                                               'yield_pressure_parameter',
-                                              'flow_pressure_parameter')
+                                              'flow_pressure_parameter',
+                                              'friction_angle')
                 # Check learnable parameter
                 if param not in valid_learnable_parameters:
                     raise RuntimeError(f'Parameter "{param}" is not a valid '
                                        f'learnable parameter for model '
                                        f'"{material_model_name}.')
                 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                # Get material model parameters
+                material_parameters = self.get_material_model_parameters()
+                # Get hardening parameters
+                hardening_parameters = \
+                    material_parameters['hardening_parameters']
+                # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                 # Synchronize parameter
                 if param in ('s0', 'a', 'b'):
-                    self._constitutive_model._model_parameters\
-                        ['hardening_parameters'][param] = sync_val
+                    hardening_parameters[param] = sync_val
+                elif param == 'friction_angle':
+                    material_parameters[param] = sync_val
+                    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                    # Set frictional angle
+                    friction_angle = sync_val
+                    # Set dilatancy angle
+                    dilatancy_angle = friction_angle
+                    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                    # Store old yield surface cohesion parameter
+                    yield_cohesion_parameter_old = \
+                        material_parameters['yield_cohesion_parameter']
+                    # Detach old computation graph
+                    if isinstance(yield_cohesion_parameter_old, torch.Tensor):
+                        yield_cohesion_parameter_old = \
+                            yield_cohesion_parameter_old.detach()
+                    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                    # Compute angle-related material parameters (matching with
+                    # Mohr-Coulomb under uniaxial tension and compression)
+                    # Set yield surface cohesion parameter
+                    yield_cohesion_parameter = \
+                        (2.0/np.sqrt(3.0))*torch.cos(friction_angle)
+                    # Set yield pressure parameter
+                    yield_pressure_parameter = \
+                        (3.0/np.sqrt(3.0))*torch.sin(friction_angle)
+                    # Set plastic flow pressure parameter
+                    flow_pressure_parameter = \
+                        (3.0/np.sqrt(3.0))*torch.sin(dilatancy_angle)
+                    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                    # Synchronize angle-related material parameters
+                    material_parameters['yield_cohesion_parameter'] = \
+                        yield_cohesion_parameter
+                    material_parameters['yield_pressure_parameter'] = \
+                        yield_pressure_parameter
+                    material_parameters['flow_pressure_parameter'] = \
+                        flow_pressure_parameter
+                    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~      
+                    # Enforce match with Von Mises yield surface for deviatoric
+                    # plane
+                    for h_param, h_value in hardening_parameters.items():
+                        # Compute yield surface cohesion ratio
+                        yield_surface_ratio = (yield_cohesion_parameter_old
+                                               /yield_cohesion_parameter)
+                        # Loop over scaled hardening parameters
+                        if h_param in ('s0', 'a'):
+                            # Detach old computation graph
+                            if isinstance(h_value, torch.Tensor):
+                                h_value = h_value.detach()
+                            # Update scaled hardening parameter
+                            hardening_parameters[h_param] = \
+                                h_value*yield_surface_ratio
                 else:
-                    self._constitutive_model._model_parameters[param] = \
-                        sync_val
+                    material_parameters[param] = sync_val
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             elif self._material_model_name == 'elastic':
                 # Set valid learnable parameters
@@ -509,8 +581,11 @@ class RecurrentConstitutiveModel(torch.nn.Module):
                                        f'learnable parameter for model '
                                        f'"{material_model_name}.')
                 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                # Get material model parameters
+                material_parameters = self.get_material_model_parameters()
+                # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                 # Synchronize parameter
-                self._constitutive_model._model_parameters[param] = sync_val
+                material_parameters[param] = sync_val
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             else:
                 raise RuntimeError('Unknown material constitutive model.')
@@ -616,6 +691,16 @@ class RecurrentConstitutiveModel(torch.nn.Module):
                         param, value, mode='normalize')
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         return model_parameters
+    # -------------------------------------------------------------------------
+    def get_material_model_parameters(self):
+        """Get current material constitutive model parameters.
+        
+        Returns
+        -------
+        model_parameters : dict
+            Material constitutive model parameters.
+        """
+        return self._constitutive_model._model_parameters
     # -------------------------------------------------------------------------
     def forward(self, features_in, is_normalized=False):
         """Forward propagation.
