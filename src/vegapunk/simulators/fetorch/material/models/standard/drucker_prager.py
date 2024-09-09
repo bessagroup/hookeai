@@ -241,8 +241,10 @@ class DruckerPrager(ConstitutiveModel):
         state_variables_init['is_apex_return'] = False
         # Set additional out-of-plane strain and stress components
         if self._problem_type == 1:
-            state_variables_init['e_strain_33'] = 0.0
-            state_variables_init['stress_33'] = 0.0
+            state_variables_init['e_strain_33'] = \
+                torch.tensor(0.0, dtype=torch.float, device=self._device)
+            state_variables_init['stress_33'] = \
+                torch.tensor(0.0, dtype=torch.float, device=self._device)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Return
         return state_variables_init
@@ -461,7 +463,8 @@ class DruckerPrager(ConstitutiveModel):
                 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                 # Set incremental plastic volumetric strain initial iterative
                 # guess
-                inc_vol_p_strain = 0
+                inc_vol_p_strain = \
+                    torch.tensor(0.0, dtype=torch.float, device=self._device)
                 # Compute initial hardening modulus
                 cohesion, H = hardening_law(
                     hardening_parameters,

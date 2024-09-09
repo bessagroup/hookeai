@@ -424,6 +424,9 @@ class MaterialResponseDatasetGenerator():
             else:
                 raise RuntimeError('Not implemented.')
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Convert incremental strain tensor to Torch tensor
+            inc_strain = torch.tensor(inc_strain, dtype=torch.float)
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Material state update
             state_variables, _ = material_state_update(
                 self._strain_formulation, self._problem_type,
@@ -1686,7 +1689,7 @@ def generate_dataset_plots(strain_formulation, n_dim, dataset,
 # =============================================================================
 if __name__ == '__main__':
     # Set data set type
-    dataset_type = ('training', 'validation', 'testing_id', 'testing_od')[2]
+    dataset_type = ('training', 'validation', 'testing_id', 'testing_od')[3]
     # Set data set storage type
     is_in_memory_dataset = False
     # Set save dataset plots flags
@@ -1694,9 +1697,11 @@ if __name__ == '__main__':
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set case studies base directory
     base_dir = ('/home/bernardoferreira/Documents/brown/projects/'
-                'colaboration_bazant_m7/')
+                'darpa_project/4_global_toy_uniaxial_specimen/'
+                '2d_toy_uniaxial_specimen_quad4_rc_drucker_prager/'
+                '0_elastic_properties_E')
     # Set case study directory
-    case_study_name = '1_bazant_m7_gru_model'
+    case_study_name = 'material_model_performance'
     case_study_dir = os.path.join(os.path.normpath(base_dir),
                                   f'{case_study_name}')
     # Set data set file basename
@@ -1728,9 +1733,9 @@ if __name__ == '__main__':
     # Set strain formulation
     strain_formulation = 'infinitesimal'
     # Set problem type
-    problem_type = 4
+    problem_type = 1
     # Set number of spatial dimensions
-    n_dim = 3
+    n_dim = 2
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set number of discrete times
     n_time = 10
@@ -1752,7 +1757,7 @@ if __name__ == '__main__':
     is_cyclic_loading = False
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set constitutive model
-    model_name = 'bazant_m7'
+    model_name = 'drucker_prager'
     # Set constitutive model parameters:
     if model_name == 'von_mises':
         # Set constitutive model parameters
@@ -1785,22 +1790,20 @@ if __name__ == '__main__':
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Set constitutive model parameters
         # (matching Von Mises yield surface for null pressure)
-        model_parameters = \
-            {'elastic_symmetry': 'isotropic',
-             'E': 110e3, 'v': 0.33,
-             'euler_angles': (0.0, 0.0, 0.0),
-             'hardening_law': get_hardening_law('nadai_ludwik'),
-             'hardening_parameters':
-                 {'s0': 900/yield_cohesion_parameter,
-                  'a': 700/yield_cohesion_parameter,
-                  'b': 0.5,
-                  'ep0': 1e-5},
-             'yield_cohesion_parameter': yield_cohesion_parameter,
-             'yield_pressure_parameter': yield_pressure_parameter,
-             'flow_pressure_parameter': flow_pressure_parameter}
+        model_parameters = {
+            'elastic_symmetry': 'isotropic',
+            'E': 100.0, 'v': 0.3,
+            'euler_angles': (0.0, 0.0, 0.0),
+            'hardening_law': get_hardening_law('linear'),
+            'hardening_parameters':{'s0': 2.0/yield_cohesion_parameter,
+                                    'a': 2.0/yield_cohesion_parameter,},
+            'yield_cohesion_parameter': yield_cohesion_parameter,
+            'yield_pressure_parameter': yield_pressure_parameter,
+            'flow_pressure_parameter': flow_pressure_parameter,
+            'friction_angle': friction_angle}
         # Set constitutive state variables to be additionally included in the
         # data set
-        state_features = {'acc_p_strain': 1}
+        state_features = {}
     elif model_name == 'bazant_m7':
         # Set constitutive model parameters
         model_parameters = {}
@@ -1815,7 +1818,7 @@ if __name__ == '__main__':
         state_features = {}
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set number of strain-stress paths of each type
-    n_path_type = {'proportional': 1, 'random': 0}
+    n_path_type = {'proportional': 0, 'random': 10}
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set strain path generators parameters
     strain_path_kwargs_type = {}
