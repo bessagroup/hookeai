@@ -62,6 +62,15 @@ class MaterialModelFinder(torch.nn.Module):
     _is_force_normalization : bool, default=False
         If True, then normalize forces prior to the computation of the force
         equilibrium loss.
+    _is_store_local_paths : bool
+        If True, then store data set of specimen local (Gauss integration
+        points) strain-stress paths in dedicated model subdirectory.
+        Overwrites existing data set.
+    _local_paths_elements : list[int]
+        Elements for which local (Gauss integration points) strain-stress
+        paths are stored as part of the specimen local data set. Elements
+        are labeled from 1 to n_elem. If None, then all elements are
+        stored. Only effective if is_store_local_paths=True.
     model_directory : str
         Directory where model is stored.
     model_name : str
@@ -204,8 +213,9 @@ class MaterialModelFinder(torch.nn.Module):
         Delete existent model best state files.
     """
     def __init__(self, model_directory, model_name='material_model_finder',
-                 is_force_normalization=False,
-                 is_detect_autograd_anomaly=False, device_type='cpu'):
+                 is_force_normalization=False, is_store_local_paths=False,
+                 local_paths_elements=None, is_detect_autograd_anomaly=False,
+                 device_type='cpu'):
         """Constructor.
         
         Parameters
@@ -217,6 +227,15 @@ class MaterialModelFinder(torch.nn.Module):
         is_force_normalization : bool, default=False
             If True, then normalize forces prior to the computation of the
             force equilibrium loss.
+        is_store_local_paths : bool, default=False
+            If True, then store data set of specimen local (Gauss integration
+            points) strain-stress paths in dedicated model subdirectory.
+            Overwrites existing data set.
+        local_paths_elements : list[int], default=None
+            Elements for which local (Gauss integration points) strain-stress
+            paths are stored as part of the specimen local data set. Elements
+            are labeled from 1 to n_elem. If None, then all elements are
+            stored. Only effective if is_store_local_paths=True.
         is_detect_autograd_anomaly : bool, default=False
             If True, then set context-manager that enables anomaly detection
             for the autograd engine. Should only be enabled for debugging
@@ -242,6 +261,11 @@ class MaterialModelFinder(torch.nn.Module):
             self.model_name = model_name
         # Set model subdirectories
         self._set_model_subdirs()
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set storage of specimen local strain-stress paths
+        self._is_store_local_paths = is_store_local_paths
+        # Set elements of specimen local strain-stress data set
+        self._local_paths_elements = local_paths_elements
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Set force normalization
         self._is_force_normalization = is_force_normalization
@@ -676,15 +700,8 @@ class MaterialModelFinder(torch.nn.Module):
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         return force_equilibrium_hist_loss
     # -------------------------------------------------------------------------
-    def forward_sequential_element(self, is_store_local_paths=False):
+    def forward_sequential_element(self):
         """Forward propagation (sequential element).
-        
-        Parameters
-        ----------
-        is_store_local_paths : bool, default=False
-            If True, then store data set of specimen local (Gauss integration
-            points) strain-stress paths in dedicated model subdirectory.
-            Overwrites existing data set.
 
         Returns
         -------
@@ -724,8 +741,14 @@ class MaterialModelFinder(torch.nn.Module):
             is_update_coords = True
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Initialize specimen local strain-stress paths data set samples
-        if is_store_local_paths:
+        if self._is_store_local_paths:
+            # Initialize data set samples
             specimen_local_samples = []
+            # Set elements of specimen local strain-stress data set
+            if isinstance(self._local_paths_elements, list):
+                local_paths_elements = self._local_paths_elements
+            else:
+                local_paths_elements = [x + 1 for x in range(n_elem)]
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Initialize element internal forces of finite element mesh nodes
         internal_forces_mesh_hist = torch.zeros((n_node_mesh, n_dim, n_time),
@@ -802,7 +825,7 @@ class MaterialModelFinder(torch.nn.Module):
                     internal_forces_mesh.reshape(-1, n_dim)
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Assemble element local strain-stress paths
-            if is_store_local_paths:
+            if self._is_store_local_paths and elem_id in local_paths_elements:
                 # Build element local strain-stress paths
                 element_local_samples = self.build_element_local_samples(
                     strain_formulation, problem_type, element_type, time_hist,
@@ -834,7 +857,7 @@ class MaterialModelFinder(torch.nn.Module):
                 reaction_forces_mesh, dirichlet_bool_mesh)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Store specimen local strain-stress paths data set
-        if is_store_local_paths:
+        if self._is_store_local_paths:
             # Create strain-stress material response path data set
             dataset = TimeSeriesDatasetInMemory(specimen_local_samples)
             # Set data set file basename
@@ -1348,17 +1371,10 @@ class MaterialModelFinder(torch.nn.Module):
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         return comps_array
     # -------------------------------------------------------------------------
-    def vforward_sequential_element(self, is_store_local_paths=False):
+    def vforward_sequential_element(self):
         """Forward propagation (sequential element).
         
         Compatible with vectorized mapping.
-
-        Parameters
-        ----------
-        is_store_local_paths : bool, default=False
-            If True, then store data set of specimen local (Gauss integration
-            points) strain-stress paths in dedicated model subdirectory.
-            Overwrites existing data set.
 
         Returns
         -------
@@ -1448,7 +1464,7 @@ class MaterialModelFinder(torch.nn.Module):
                                               dirichlet_bool_mesh)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Store specimen local strain-stress paths data set
-        if is_store_local_paths:
+        if self._is_store_local_paths:
             # Build elements local strain-stress paths
             specimen_local_samples = self.build_elements_local_samples(
                 strain_formulation, problem_type, time_hist,
@@ -2037,11 +2053,17 @@ class MaterialModelFinder(torch.nn.Module):
         # Set stress indexes
         stress_slice = slice(len(comp_order_sym), 2*len(comp_order_sym))
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set elements of specimen local strain-stress data set
+        if isinstance(self._local_paths_elements, list):
+            elements_idxs = [int(x) - 1 for x in self._local_paths_elements]
+        else:
+            elements_idxs = [x for x in range(elements_state_hist.shape[0])]
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Initialize elements local strain-stress paths
         elements_local_samples = []
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Loop over elements
-        for i in range(elements_state_hist.shape[0]):
+        for i in elements_idxs:
             # Loop over Gauss integration points
             for j in range(elements_state_hist.shape[1]):
                 # Get strain path

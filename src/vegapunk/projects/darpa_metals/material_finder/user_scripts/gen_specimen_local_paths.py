@@ -69,16 +69,22 @@ def gen_specimen_local_dataset(specimen_data_path,
     # Set force normalization
     is_force_normalization = False
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Set storage of specimen local strain-stress paths
+    is_store_local_paths = True
+    # Set elements of specimen local strain-stress data set
+    local_paths_elements = [2251, 2260, 2291]
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Initialize material model finder
     material_finder = MaterialModelFinder(
         model_directory, model_name=model_finder_name,
-        is_force_normalization=is_force_normalization, device_type=device_type)
+        is_force_normalization=is_force_normalization,
+        is_store_local_paths=is_store_local_paths,
+        local_paths_elements=local_paths_elements, device_type=device_type)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set specimen data and material state
     material_finder.set_specimen_data(specimen_data, specimen_material_state)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Compute force equilibrium history loss
-    # (need to manually set is_store_local_paths=True in material_finder!)
     force_equilibrium_hist_loss = \
         material_finder(sequential_mode='sequential_element_vmap')
     # Check force equilibrium history loss
