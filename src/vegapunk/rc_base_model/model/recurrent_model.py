@@ -402,6 +402,10 @@ class RecurrentConstitutiveModel(torch.nn.Module):
                                    'as:\n\n' + 'model.set_device(\'cpu\').')
             self._device_type = device_type
             self._device = torch.device(device_type)
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Consistent update of material constitutive model device
+            if hasattr(self, '_constitutive_model'):
+                self._constitutive_model.set_device(self._device_type)
         else:
             raise RuntimeError('Invalid device type.')
     # -------------------------------------------------------------------------
