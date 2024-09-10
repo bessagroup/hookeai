@@ -382,16 +382,16 @@ if __name__ == "__main__":
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set case study base directory
     base_dir = ('/home/bernardoferreira/Documents/brown/projects/'
-                'darpa_project/5_global_specimens/'
-                'rowan_specimen_tension_bv_hexa8_rc_von_mises/'
-                'specimen_analysis')
+                'darpa_project/4_global_toy_uniaxial_specimen/'
+                '3d_toy_uniaxial_specimen_hexa8_rc_drucker_prager_vmap/'
+                '4_elastoplastic_properties_E_v_s0_a')
     # Set case study directory
     case_study_name = 'material_model_finder'
     case_study_dir = os.path.join(os.path.normpath(base_dir),
                                   f'{case_study_name}')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set specimen name
-    specimen_name = '3D_rowan_specimen_tension_bv'
+    specimen_name = '3D_toy_uniaxial_specimen_hexa8'
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set strain formulation
     strain_formulation = 'infinitesimal'
@@ -401,7 +401,7 @@ if __name__ == "__main__":
     n_dim, comp_order_sym, _ = get_problem_type_parameters(problem_type)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set constitutive model name and parameters
-    model_name = 'rc_von_mises'
+    model_name = 'rc_drucker_prager_vmap'
     if bool(re.search(r'^rc_.*$', model_name)):
         # Set constitutive model specific parameters
         if model_name == 'rc_elastic':
@@ -472,7 +472,7 @@ if __name__ == "__main__":
             # Set constitutive model parameters
             model_parameters = {
                 'elastic_symmetry': 'isotropic',
-                'E': 100, 'v': 0.3,
+                'E': 100.0, 'v': 0.3,
                 'euler_angles': (0.0, 0.0, 0.0),
                 'hardening_law': get_hardening_law('linear'),
                 'hardening_parameters':{'s0': 2.0/yield_cohesion_parameter,
@@ -480,22 +480,22 @@ if __name__ == "__main__":
                 'yield_cohesion_parameter': yield_cohesion_parameter,
                 'yield_pressure_parameter': yield_pressure_parameter,
                 'flow_pressure_parameter': flow_pressure_parameter,
-                'friction_angle': np.deg2rad(10.0)}
+                'friction_angle': friction_angle}
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Set learnable parameters
             learnable_parameters = {}
-            #learnable_parameters['E'] = {'initial_value': 85.0,
-            #                             'bounds': (80.0, 120.0)}
-            #learnable_parameters['v'] = {'initial_value': 0.2,
-            #                             'bounds': (0.2, 0.4)}
-            #learnable_parameters['s0'] = {'initial_value': 900,
-            #                              'bounds': (500, 1500)}
-            #learnable_parameters['a'] = {'initial_value': 700,
-            #                             'bounds': (500, 1000)}
-            learnable_parameters['friction_angle'] = \
-                {'initial_value': np.deg2rad(5.0, dtype=np.float32),
-                 'bounds': (np.deg2rad(1.0, dtype=np.float32),
-                            np.deg2rad(20.0, dtype=np.float32))}
+            learnable_parameters['E'] = {'initial_value': 80.0,
+                                         'bounds': (80.0, 120.0)}
+            learnable_parameters['v'] = {'initial_value': 0.25,
+                                         'bounds': (0.2, 0.4)}
+            learnable_parameters['s0'] = {'initial_value': 2.0,
+                                          'bounds': (0.5, 3.0)}
+            learnable_parameters['a'] = {'initial_value': 4.0,
+                                         'bounds': (0.0, 5.0)}
+            #learnable_parameters['friction_angle'] = \
+            #    {'initial_value': np.deg2rad(5.0, dtype=np.float32),
+            #     'bounds': (np.deg2rad(1.0, dtype=np.float32),
+            #                np.deg2rad(20.0, dtype=np.float32))}
             # Set material constitutive model name
             if model_name == 'rc_drucker_prager_vmap':
                 material_model_name = 'drucker_prager_vmap'

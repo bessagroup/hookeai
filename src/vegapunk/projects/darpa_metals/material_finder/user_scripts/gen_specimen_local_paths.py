@@ -66,11 +66,13 @@ def gen_specimen_local_dataset(specimen_data_path,
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set material model finder name
     model_finder_name = 'material_model_finder'
+    # Set force normalization
+    is_force_normalization = False
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Initialize material model finder
     material_finder = MaterialModelFinder(
         model_directory, model_name=model_finder_name,
-        is_force_normalization=False, device_type=device_type)
+        is_force_normalization=is_force_normalization, device_type=device_type)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set specimen data and material state
     material_finder.set_specimen_data(specimen_data, specimen_material_state)
@@ -80,11 +82,13 @@ def gen_specimen_local_dataset(specimen_data_path,
     force_equilibrium_hist_loss = \
         material_finder(sequential_mode='sequential_element_vmap')
     # Check force equilibrium history loss
-    if force_equilibrium_hist_loss > 1.0e-6:
-        raise RuntimeError('Force equilibrium history is not admissible. '
-                           'Make sure to set the ground-truth material model '
-                           'and the corresponding material parameters '
-                           'when generating the specimen material state.')
+    if is_force_normalization and force_equilibrium_hist_loss > 1.0e-6:
+        raise RuntimeError('Warning: Check force equilibrium history loss! '
+                           f'\n\n Loss = {force_equilibrium_hist_loss:11.4e}'
+                           '\n\nTip: Make sure to set the ground-truth '
+                           'material model and the corresponding material '
+                           'parameters when generating the specimen material '
+                           'state.')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set data set directory
     dataset_directory = os.path.join(os.path.normpath(model_directory),

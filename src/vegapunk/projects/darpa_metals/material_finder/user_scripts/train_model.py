@@ -75,7 +75,7 @@ def perform_model_standard_training(specimen_data_path,
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set model training options:
     # Set number of epochs
-    n_max_epochs = 200
+    n_max_epochs = 300
     # Set learning rate
     lr_init = 1.0e+01
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
