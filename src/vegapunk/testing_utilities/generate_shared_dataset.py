@@ -8,13 +8,13 @@ if root_dir not in sys.path:
     sys.path.insert(0, root_dir)
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 import os
+import pickle
 # Third-party
 import torch
 # Local
-from rnn_base_model.data.time_dataset import TimeSeriesDatasetInMemory, \
-    TimeSeriesDataset, save_dataset, load_dataset
+from rnn_base_model.data.time_dataset import save_dataset, load_dataset
 # =============================================================================
-# Summary: Convert TimeSeriesDatasetInMemory to sharable TorchDatasetInMemory
+# Summary: Convert torch.utils.data.Dataset file to given sharable format
 # =============================================================================
 class TorchDatasetInMemory(torch.utils.data.Dataset):
     """Time series data set (in-memory storage only).
@@ -79,37 +79,60 @@ class TorchDatasetInMemory(torch.utils.data.Dataset):
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         return sample_data
 # =============================================================================
-# Set TimeSeriesDatasetInMemory data set file path
-im_dataset_file_path = ('/home/bernardoferreira/Desktop/shunyu_dataset/'
-                        'ss_paths_dataset_n2560.pkl')
-# Set sample file base name
-sample_basename = 'ss_response_path'
-# Set TimeSeriesDataset directory
-dataset_directory = os.path.dirname(im_dataset_file_path)
-# Set TimeSeriesDataset data set file basename
-dataset_basename = 'ss_paths_torch_dataset'
+# Set share format
+shared_format = ('list', 'TorchDatasetInMemory')[0]
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# Set torch.utils.data.Dataset data set file path
+src_dataset_file_path = ('/home/bernardoferreira/Documents/brown/projects/'
+                         'darpa_project/2_local_rnn_training/composite_rve/'
+                         'dataset_07_2024/deliverable_shelly_09_2024/'
+                         '5_testing_id_dataset/ss_paths_dataset_n549.pkl')
+# Set torch.utils.data.Dataset directory
+dataset_directory = os.path.dirname(src_dataset_file_path)
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Initialize time series data set samples
 dataset_sample_files = []
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~         
-# Load TimeSeriesDatasetInMemory data set
-im_dataset = load_dataset(im_dataset_file_path)
+# Load data set
+src_dataset = load_dataset(src_dataset_file_path)
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-# Check TimeSeriesDatasetInMemory data set
-if not isinstance(im_dataset, TimeSeriesDatasetInMemory):
+# Check data set
+if not isinstance(src_dataset, torch.utils.data.Dataset):
     raise RuntimeError('Data set file path does not contain a '
-                       'TimeSeriesDatasetInMemory data set.')
+                       'torch.utils.data.Dataset data set.')
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Initialize data set samples
 dataset_samples = []
+# Set number of samples
+n_sample = len(src_dataset)
 # Loop over samples
-for i in range(len(im_dataset)):
+for i in range(n_sample):
     # Collect sample
-    dataset_samples.append(im_dataset[i])
+    dataset_samples.append(src_dataset[i])
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-# Create TorchDatasetInMemory data set
-dataset = TorchDatasetInMemory(dataset_samples)
+# Store data set in share format
+if shared_format == 'list':
+    # Set data set file basename
+    dataset_basename = 'ss_paths_list' + f'_n{n_sample}'
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Set data set file path
+    dataset_file_path = os.path.join(
+        os.path.normpath(dataset_directory), dataset_basename + '.pkl')
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Save data set
+    with open(dataset_file_path, 'wb') as dataset_file:
+        pickle.dump(dataset_samples, dataset_file)
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-# Save TorchDatasetInMemory data set
-save_dataset(dataset, dataset_basename, dataset_directory,
-             is_append_n_sample=True)
+elif shared_format == 'TorchDatasetInMemory':
+    # Set data set file basename
+    dataset_basename = 'ss_paths_im_torch_dataset'
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Create TorchDatasetInMemory data set
+    dataset = TorchDatasetInMemory(dataset_samples)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Save TorchDatasetInMemory data set
+    save_dataset(dataset, dataset_basename, dataset_directory,
+                is_append_n_sample=True)
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+else:
+    raise RuntimeError('Unknown data set share format.')
