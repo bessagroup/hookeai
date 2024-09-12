@@ -145,7 +145,7 @@ def testing_get_tensor_mf(device='cpu'):
         print(f'\n avg. time per call = {v_avg_time_call:.4e}')
         # Check results
         if not torch.allclose(o_tensor_mf, v_tensor_mf):
-            RuntimeError('Original and vectorized results do not match!')
+            raise RuntimeError('Original and vectorized results do not match!')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Create fourth order tensor
     tensor = torch.arange(0, 3**4, device=device).reshape(3, 3, 3, 3)
@@ -178,7 +178,7 @@ def testing_get_tensor_mf(device='cpu'):
         print(f'\n avg. time per call = {v_avg_time_call:.4e}')
         # Check results
         if not torch.allclose(o_tensor_mf, v_tensor_mf):
-            RuntimeError('Original and vectorized results do not match!')
+            raise RuntimeError('Original and vectorized results do not match!')
 # =============================================================================
 def testing_get_tensor_from_mf(device='cpu'):
     # Get 3D problem type parameters
@@ -218,7 +218,7 @@ def testing_get_tensor_from_mf(device='cpu'):
         print(f'\n avg. time per call = {v_avg_time_call:.4e}')
         # Check results
         if not torch.allclose(o_tensor, v_tensor):
-            RuntimeError('Original and vectorized results do not match!')
+            raise RuntimeError('Original and vectorized results do not match!')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Create fourth order tensor
     tensor = torch.arange(0, 3**4, device=device).reshape(3, 3, 3, 3)
@@ -253,7 +253,7 @@ def testing_get_tensor_from_mf(device='cpu'):
         print(f'\n avg. time per call = {v_avg_time_call:.4e}')
         # Check results
         if not torch.allclose(o_tensor, v_tensor):
-            RuntimeError('Original and vectorized results do not match!')
+            raise RuntimeError('Original and vectorized results do not match!')
 # =============================================================================
 def testing_get_state_3Dmf_from_2Dmf(device='cpu'):
     # Create 2D tensor matricial form (symmetric)
@@ -285,7 +285,7 @@ def testing_get_state_3Dmf_from_2Dmf(device='cpu'):
     print(f'\n avg. time per call = {v_avg_time_call:.4e}')
     # Check results
     if not torch.allclose(o_mf_3d, v_mf_3d):
-        RuntimeError('Original and vectorized results do not match!')
+        raise RuntimeError('Original and vectorized results do not match!')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Create 2D tensor matricial form (nonsymmetric)
     mf_2d = torch.arange(0, 4, device=device)
@@ -316,7 +316,7 @@ def testing_get_state_3Dmf_from_2Dmf(device='cpu'):
     print(f'\n avg. time per call = {v_avg_time_call:.4e}')
     # Check results
     if not torch.allclose(o_mf_3d, v_mf_3d):
-        RuntimeError('Original and vectorized results do not match!')
+        raise RuntimeError('Original and vectorized results do not match!')
 # =============================================================================
 def testing_get_state_2Dmf_from_3Dmf(device='cpu'):
     print('\n' + 40*'-')
@@ -347,7 +347,7 @@ def testing_get_state_2Dmf_from_3Dmf(device='cpu'):
         print(f'\n avg. time per call = {v_avg_time_call:.4e}')
         # Check results
         if not torch.allclose(o_mf_2d, v_mf_2d):
-            RuntimeError('Original and vectorized results do not match!')
+            raise RuntimeError('Original and vectorized results do not match!')
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         print('\n' + 40*'-')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -379,7 +379,7 @@ def testing_get_state_2Dmf_from_3Dmf(device='cpu'):
         print(f'\n avg. time per call = {v_avg_time_call:.4e}')
         # Check results
         if not torch.allclose(o_mf_2d, v_mf_2d):
-            RuntimeError('Original and vectorized results do not match!')
+            raise RuntimeError('Original and vectorized results do not match!')
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         print('\n' + 40*'-')
 # =============================================================================
@@ -427,7 +427,7 @@ def testing_build_tensor_from_comps(device='cpu'):
         print(f'\n avg. time per call = {v_avg_time_call:.4e}')
         # Check results
         if not torch.allclose(o_tensor, v_tensor):
-            RuntimeError('Original and vectorized results do not match!')
+            raise RuntimeError('Original and vectorized results do not match!')
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         print('\n' + 40*'-')
 # =============================================================================
@@ -471,7 +471,7 @@ def testing_store_tensor_comps(device='cpu'):
         print(f'\n avg. time per call = {v_avg_time_call:.4e}')
         # Check results
         if not torch.allclose(o_comps_array, v_comps_array):
-            RuntimeError('Original and vectorized results do not match!')
+            raise RuntimeError('Original and vectorized results do not match!')
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         print('\n' + 40*'-')
 # =============================================================================
@@ -506,7 +506,7 @@ def testing_get_stress_vmf(device='cpu'):
     print(f'\n avg. time per call = {v_avg_time_call:.4e}')
     # Check results
     if not torch.allclose(o_tensor_mf, v_tensor_mf):
-        RuntimeError('Original and vectorized results do not match!')
+        raise RuntimeError('Original and vectorized results do not match!')
 # =============================================================================
 def testing_get_strain_from_vmf(device='cpu'):
     # Get 3D problem type parameters
@@ -544,7 +544,7 @@ def testing_get_strain_from_vmf(device='cpu'):
     print(f'\n avg. time per call = {v_avg_time_call:.4e}')
     # Check results
     if not torch.allclose(o_tensor, v_tensor):
-        RuntimeError('Original and vectorized results do not match!')
+        raise RuntimeError('Original and vectorized results do not match!')
 # =============================================================================
 def testing_eval_jacobian(device='cpu'):
     # Loop over number of spatial dimensions
@@ -681,7 +681,7 @@ def testing_build_discrete_sym_gradient(device='cpu'):
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         ## Check results
         if not torch.allclose(o_grad_operator_sym, v_grad_operator_sym):
-            RuntimeError('Original and vectorized results do not match!')
+            raise RuntimeError('Original and vectorized results do not match!')
 # =============================================================================
 def testing_build_discrete_gradient(device='cpu'):
     # Loop over number of spatial dimensions
@@ -740,7 +740,7 @@ def testing_build_discrete_gradient(device='cpu'):
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         ## Check results
         if not torch.allclose(o_grad_operator, v_grad_operator):
-            RuntimeError('Original and vectorized results do not match!')
+            raise RuntimeError('Original and vectorized results do not match!')
 # =============================================================================
 if __name__ == '__main__':
     # Set testing device
