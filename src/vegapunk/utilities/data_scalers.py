@@ -250,8 +250,8 @@ class TorchMinMaxScaler:
         # Denormalize features tensor
         transformed_tensor = minimum \
             + torch.div(maximum - minimum,
-                        2.0*torch.ones_like(tensor, self._device))*(
-                tensor + torch.ones_like(tensor, self._device))
+                        2.0*torch.ones_like(tensor, device=self._device))*(
+                tensor + torch.ones_like(tensor, device=self._device))
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Revert concatenation of sequential data
         if len(input_shape) == 3:
