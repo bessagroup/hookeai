@@ -205,7 +205,9 @@ class StrainPathGenerator(ABC):
             (sequence_length, n_strain_comps) or list of multiple strain path
             histories.
         is_plot_strain_path : bool, default=False
-            Plot the strain components path (only available for single path).
+            Plot the strain components path. If multiple strain paths are
+            provided, the strain components path is only plotted for the first
+            path.
         is_plot_strain_comp_hist : bool, default=False
             Plot a histogram for each strain component.
         is_plot_strain_norm : bool, default=False
@@ -279,7 +281,7 @@ class StrainPathGenerator(ABC):
             strain_path = [strain_path,]
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Plot strain path
-        if is_plot_strain_path and n_path == 1:
+        if is_plot_strain_path:
             # Set strain data array
             strain_data_xy = \
                 np.zeros((n_time_max, 2*len(strain_comps_order)))
@@ -297,9 +299,16 @@ class StrainPathGenerator(ABC):
                                      y_label=strain_label + strain_units,
                                      is_latex=is_latex)
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Set figure name
+            if n_path > 1:
+                figure_name = filename + '_sample_0'
+            else:
+                figure_name = filename
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Save figure
             if is_save_fig:
-                save_figure(figure, filename, format='pdf', save_dir=save_dir)
+                save_figure(figure, figure_name, format='pdf',
+                            save_dir=save_dir)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~        
         # Plot strain component distribution
         if is_plot_strain_comp_hist:
