@@ -207,7 +207,7 @@ class StrainPathGenerator(ABC):
         is_plot_strain_path : bool, default=False
             Plot the strain components path. If multiple strain paths are
             provided, the strain components path is only plotted for the first
-            path.
+            three available paths.
         is_plot_strain_comp_hist : bool, default=False
             Plot a histogram for each strain component.
         is_plot_strain_norm : bool, default=False
@@ -282,33 +282,43 @@ class StrainPathGenerator(ABC):
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Plot strain path
         if is_plot_strain_path:
-            # Set strain data array
-            strain_data_xy = \
-                np.zeros((n_time_max, 2*len(strain_comps_order)))
-            for j in range(len(strain_comps_order)):
-                strain_data_xy[:, 2*j] = time_hist[0].reshape(-1)
-                strain_data_xy[:, 2*j+1] = strain_path[0][:, j]
-            # Set strain data labels
-            data_labels = [f'{strain_label} {x}' for x in strain_comps_order]
-            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            # Plot strain path
-            figure, _ = plot_xy_data(data_xy=strain_data_xy,
-                                     data_labels=data_labels,
-                                     x_lims=(time_min, time_max),
-                                     x_label='Time',
-                                     y_label=strain_label + strain_units,
-                                     is_latex=is_latex)
-            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            # Set figure name
-            if n_path > 1:
-                figure_name = filename + '_sample_0'
-            else:
-                figure_name = filename
-            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            # Save figure
-            if is_save_fig:
-                save_figure(figure, figure_name, format='pdf',
-                            save_dir=save_dir)
+            # Loop over strain paths
+            for k in range(min(n_path, 3)):
+                # Set strain data array
+                strain_data_xy = \
+                    np.zeros((n_time_max, 2*len(strain_comps_order)))
+                for j in range(len(strain_comps_order)):
+                    strain_data_xy[:, 2*j] = time_hist[k].reshape(-1)
+                    strain_data_xy[:, 2*j+1] = strain_path[k][:, j]
+                # Set strain data labels
+                data_labels = \
+                    [f'{strain_label} {x}' for x in strain_comps_order]
+                # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                # Plot strain path
+                figure, _ = plot_xy_data(data_xy=strain_data_xy,
+                                        data_labels=data_labels,
+                                        x_lims=(time_min, time_max),
+                                        x_label='Time',
+                                        y_label=strain_label + strain_units,
+                                        is_latex=is_latex)
+                # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                # Set figure name
+                if n_path > 1:
+                    figure_name = filename + f'_sample_{k}'
+                else:
+                    figure_name = filename
+                # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                # Display figure
+                if is_stdout_display:
+                    plt.show()
+                # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                # Save figure
+                if is_save_fig:
+                    save_figure(figure, figure_name, format='pdf',
+                                save_dir=save_dir)
+                # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                # Close plot
+                plt.close('all')
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~        
         # Plot strain component distribution
         if is_plot_strain_comp_hist:
@@ -327,10 +337,17 @@ class StrainPathGenerator(ABC):
                      y_label='Probability density',
                      is_latex=is_latex)
                 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                # Display figure
+                if is_stdout_display:
+                    plt.show()
+                # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                 # Save figure
                 if is_save_fig:
                     save_figure(figure, filename + f'_hist_{comp}',
                                 format='pdf', save_dir=save_dir)
+                # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                # Close plot
+                plt.close('all')
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Plot strain norm (path and distribution)
         if (is_plot_strain_norm or is_plot_strain_norm_hist):
@@ -360,10 +377,17 @@ class StrainPathGenerator(ABC):
                                                   + strain_units),
                                          is_latex=is_latex)
                 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                # Display figure
+                if is_stdout_display:
+                    plt.show()
+                # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                 # Save figure
                 if is_save_fig:
                     save_figure(figure, filename + '_norm', format='pdf',
                                 save_dir=save_dir)
+                # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                # Close plot
+                plt.close('all')
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Plot strain norm distribution
             if is_plot_strain_norm_hist:
@@ -381,10 +405,17 @@ class StrainPathGenerator(ABC):
                     y_label='Probability density',
                     is_latex=is_latex)
                 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                # Display figure
+                if is_stdout_display:
+                    plt.show()
+                # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                 # Save figure
                 if is_save_fig:
                     save_figure(figure, filename + '_norm_hist', format='pdf',
                                 save_dir=save_dir)
+                # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                # Close plot
+                plt.close('all')
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Plot strain increment norm (path and distribution)
         if (is_plot_inc_strain_norm or is_plot_inc_strain_norm_hist):
@@ -422,10 +453,17 @@ class StrainPathGenerator(ABC):
                     y_label=f'{strain_label} increment norm' + strain_units,
                     is_latex=is_latex)
                 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                # Display figure
+                if is_stdout_display:
+                    plt.show()
+                # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                 # Save figure
                 if is_save_fig:
                     save_figure(figure, filename + '_inc_norm', format='pdf',
                                 save_dir=save_dir)
+                # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                # Close plot
+                plt.close('all')
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Plot strain increment norm distribution
             if is_plot_inc_strain_norm_hist:
@@ -444,10 +482,17 @@ class StrainPathGenerator(ABC):
                     y_label='Probability density',
                     is_latex=is_latex)
                 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                # Display figure
+                if is_stdout_display:
+                    plt.show()
+                # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                 # Save figure
                 if is_save_fig:
                     save_figure(figure, filename + '_inc_norm_hist',
                                 format='pdf', save_dir=save_dir)
+                # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                # Close plot
+                plt.close('all')
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Plot strain path in strain space (path and distribution)
         if (is_plot_strain_path_pairs or is_plot_strain_pairs_hist
@@ -489,11 +534,18 @@ class StrainPathGenerator(ABC):
                                  + strain_units),
                         marker='o', markersize=2, is_latex=is_latex)
                     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                    # Display figure
+                    if is_stdout_display:
+                        plt.show()
+                    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                     # Save figure
                     if is_save_fig:
                         save_figure(figure, filename
                                     + f'_{strain_pair[0]}v{strain_pair[1]}',
                                     format='pdf', save_dir=save_dir)
+                    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                    # Close plot
+                    plt.close('all')
                 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                 # Plot strain components pair with marginal distributions
                 if is_plot_strain_pairs_marginals:
@@ -506,11 +558,18 @@ class StrainPathGenerator(ABC):
                         is_marginal_dists = True,
                         is_latex=is_latex)
                     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                    # Display figure
+                    if is_stdout_display:
+                        plt.show()
+                    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                     # Save figure
                     if is_save_fig:
                         save_figure(figure, filename + '_marginals'
                                     + f'_{strain_pair[0]}v{strain_pair[1]}',
                                     format='pdf', save_dir=save_dir)
+                    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                    # Close plot
+                    plt.close('all')
                 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                 # Plot strain components pair distribution
                 if is_plot_strain_pairs_hist:
@@ -527,11 +586,18 @@ class StrainPathGenerator(ABC):
                                  + strain_units),
                         is_latex=True)
                     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                    # Display figure
+                    if is_stdout_display:
+                        plt.show()
+                    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                     # Save figure
                     if is_save_fig:
                         save_figure(figure, filename + '_hist'
                                     + f'_{strain_pair[0]}v{strain_pair[1]}',
                                     format='pdf', save_dir=save_dir)
+                    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                    # Close plot
+                    plt.close('all')
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Plot strain components box plot
         if is_plot_strain_comp_box:
@@ -547,14 +613,17 @@ class StrainPathGenerator(ABC):
                                       y_label=f'{strain_label}' + strain_units,
                                       is_latex=True)
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Display figure
+            if is_stdout_display:
+                plt.show()
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Save figure
             if is_save_fig:
                 save_figure(figure, filename + '_boxplot',
                             format='pdf', save_dir=save_dir)
-        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        # Display figures
-        if is_stdout_display:
-            plt.show()
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Close plot
+            plt.close('all')
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Close plot
         plt.close('all')
