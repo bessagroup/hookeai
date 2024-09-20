@@ -74,7 +74,7 @@ def perform_model_standard_training(train_dataset_file_path, model_directory,
                 set_default_training_options()
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set data features for training
-    features_option = 'stress_acc_p_strain'
+    features_option = 'stress'
     if features_option == 'stress_acc_p_strain':
         # Set input features
         new_label_in = 'features_in'
