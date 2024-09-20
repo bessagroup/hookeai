@@ -885,273 +885,298 @@ class NoiseGenerator:
 # =============================================================================
 if __name__ == '__main__':
     # Set data set type
-    dataset_type = ('training', 'validation', 'testing_id', 'testing_od')[0]
+    dataset_type = ('training', 'validation', 'testing_id', 'testing_od')[1]
     # Set save dataset plots flags
     is_save_dataset_plots = True
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Set data sets directory
-    datasets_dir = ('/home/bernardoferreira/Documents/brown/projects/'
-                    'darpa_project/6_local_rnn_training_noisy/von_mises/n10')
-    # Set data set file basename
-    dataset_basename = 'ss_paths_dataset'
-    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Check data sets directory
-    if not os.path.isdir(datasets_dir):
-        raise RuntimeError('The data sets directory has not been found:\n\n'
-                           + datasets_dir)
-    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Set data set directory
+    # Set data set sizes
     if dataset_type == 'training':
-        dataset_type_basename = '1_training_dataset'
+        n_paths_dirs = (10, 20, 40, 80, 160, 320, 640, 1280, 2560)
+        n_paths = n_paths_dirs
     elif dataset_type == 'validation':
-        dataset_type_basename = '2_validation_dataset'
-    elif dataset_type == 'testing_id':
-        dataset_type_basename = '5_testing_id_dataset'
-    elif dataset_type == 'testing_od':
-        dataset_type_basename = '6_testing_od_dataset'
-    else:
-        raise RuntimeError('Unknown data set type.')
+        n_paths_dirs = (10, 20, 40, 80, 160, 320, 640, 1280, 2560)
+        n_paths = (2, 4, 8, 16, 32, 64, 128, 256, 512)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Set strain formulation
-    strain_formulation = 'infinitesimal'
-    # Set problem type
-    problem_type = 4
-    # Get problem type parameters
-    n_dim, comp_order_sym, comp_order_nsym = \
-        get_problem_type_parameters(problem_type)
-    # Set strain components order
-    if strain_formulation == 'infinitesimal':
-        strain_comps_order = comp_order_sym
-    else:
-        raise RuntimeError('Not implemented.')
-    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Set number of discrete times
-    n_time = 100
-    # Set initial and final time
-    time_init = 0.0
-    time_end = 1.0
-    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Set strain components bounds
-    strain_bounds = {x: (-0.05, 0.05) for x in strain_comps_order}
-    # Set incremental strain norm
-    inc_strain_norm = None
-    # Set strain noise
-    strain_noise_std = None
-    # Set cyclic loading
-    is_cyclic_loading = False
-    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Set constitutive model
-    model_name = 'von_mises'
-    # Set constitutive model parameters:
-    if model_name == 'von_mises':
-        # Set constitutive model parameters
-        model_parameters = {'elastic_symmetry': 'isotropic',
-                            'E': 110e3, 'v': 0.33,
-                            'euler_angles': (0.0, 0.0, 0.0),
-                            'hardening_law': get_hardening_law('nadai_ludwik'),
-                            'hardening_parameters':
-                                {'s0': 900,
-                                 'a': 700,
-                                 'b': 0.5,
-                                 'ep0': 1e-5}}
-        # Set constitutive state variables to be additionally included in the
-        # data set
-        #state_features = {'acc_p_strain': 1}
-        state_features = {}
+    # Loop over data set sizes
+    for i, n_path in enumerate(n_paths):
+        # Set data sets base directory
+        datasets_base_dir = ('/home/bernardoferreira/Documents/brown/projects/'
+                             'darpa_project/6_local_rnn_training_noisy/'
+                             'von_mises/datasets_base/')
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        # Initialize constitutive model
-        constitutive_model = VonMises(strain_formulation, problem_type,
-                                      model_parameters)
-    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    elif model_name == 'drucker_prager':
-        # Set frictional angle
-        friction_angle = np.deg2rad(10)
-        # Set dilatancy angle
-        dilatancy_angle = friction_angle
+        # Check data sets directory
+        if not os.path.isdir(datasets_base_dir):
+            raise RuntimeError('The data sets base directory has not been '
+                               'found:\n\n' + datasets_base_dir)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        # Compute angle-related material parameters
-        # (matching with Mohr-Coulomb under uniaxial tension and compression)
-        # Set yield surface cohesion parameter
-        yield_cohesion_parameter = (2.0/np.sqrt(3))*np.cos(friction_angle)
-        # Set yield pressure parameter
-        yield_pressure_parameter = (3.0/np.sqrt(3))*np.sin(friction_angle)
-        # Set plastic flow pressure parameter
-        flow_pressure_parameter = (3.0/np.sqrt(3))*np.sin(dilatancy_angle)
+        # Set data sets directory (current number of paths)
+        datasets_dir = os.path.join(os.path.normpath(datasets_base_dir),
+                                    f'n{n_paths_dirs[i]}')
+        # Create data sets directory
+        if not os.path.isdir(datasets_dir):
+            make_directory(datasets_dir)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        # Set constitutive model parameters
-        # (matching Von Mises yield surface for null pressure)
-        model_parameters = {
-            'elastic_symmetry': 'isotropic',
-            'E': 100.0, 'v': 0.3,
-            'euler_angles': (0.0, 0.0, 0.0),
-            'hardening_law': get_hardening_law('linear'),
-            'hardening_parameters':{'s0': 2.0/yield_cohesion_parameter,
-                                    'a': 2.0/yield_cohesion_parameter,},
-            'yield_cohesion_parameter': yield_cohesion_parameter,
-            'yield_pressure_parameter': yield_pressure_parameter,
-            'flow_pressure_parameter': flow_pressure_parameter,
-            'friction_angle': friction_angle}
-        # Set constitutive state variables to be additionally included in the
-        # data set
-        state_features = {}
+        # Set data set file basename
+        dataset_basename = 'ss_paths_dataset'
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        # Initialize constitutive model
-        constitutive_model = DruckerPrager(strain_formulation, problem_type,
-                                           model_parameters)
-    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    else:
-        # Set constitutive model parameters
-        model_parameters = {'elastic_symmetry': 'isotropic',
-                            'E': 100, 'v': 0.3,
-                            'euler_angles': (0.0, 0.0, 0.0)}
-        # Set constitutive state variables to include in data set
-        state_features = {}
+        # Set data set directory
+        if dataset_type == 'training':
+            dataset_type_basename = '1_training_dataset'
+        elif dataset_type == 'validation':
+            dataset_type_basename = '2_validation_dataset'
+        elif dataset_type == 'testing_id':
+            dataset_type_basename = '5_testing_id_dataset'
+        elif dataset_type == 'testing_od':
+            dataset_type_basename = '6_testing_od_dataset'
+        else:
+            raise RuntimeError('Unknown data set type.')
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        # Initialize constitutive model
-        constitutive_model = Elastic(strain_formulation, problem_type,
-                                     model_parameters)
-    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Set number of strain-stress paths
-    n_path = 10
-    # Set strain path type
-    strain_path_type = 'random'
-    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Set strain path generator parameters
-    if strain_path_type == 'proportional':
-        strain_path_kwargs = \
-            {'strain_bounds': strain_bounds,
-            'n_time': n_time,
-            'time_init': time_init,
-            'time_end': time_end,
-            'inc_strain_norm': inc_strain_norm,
-            'strain_noise_std': strain_noise_std,
-            'is_cyclic_loading': is_cyclic_loading}
-    elif strain_path_type == 'random':
-        strain_path_kwargs = \
-            {'n_control': (4, 7),
-            'strain_bounds': strain_bounds,
-            'n_time': n_time,
-            'generative_type': 'polynomial',
-            'time_init': time_init,
-            'time_end': time_end,
-            'inc_strain_norm': inc_strain_norm,
-            'strain_noise_std': strain_noise_std,
-            'is_cyclic_loading': is_cyclic_loading}
-    else:
-        raise RuntimeError('Unknown strain path type.')
-    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Initialize strain-stress material response path data set generator
-    dataset_generator = NoisyMaterialResponseDatasetGenerator(
-        strain_formulation, problem_type)
-    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Generate noiseless strain-stress material response data set
-    noiseless_dataset = dataset_generator.generate_noiseless_dataset(
-        n_path, strain_path_type,strain_path_kwargs, constitutive_model,
-        state_features=state_features, is_verbose=True)
-    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Set noiseless data set directory
-    noiseless_dataset_dir = os.path.join(datasets_dir, 'noiseless')
-    # Create noiseless data set directory
-    if not os.path.isdir(noiseless_dataset_dir):
-        make_directory(noiseless_dataset_dir, is_overwrite=True)
-    # Set noiseless data set type directory
-    noiseless_dataset_type_dir = os.path.join(noiseless_dataset_dir,
-                                              dataset_type_basename)
-    # Create noiseless data set directory
-    make_directory(noiseless_dataset_type_dir, is_overwrite=True)
-    # Save noiseless data set
-    save_dataset(noiseless_dataset, dataset_basename,
-                 noiseless_dataset_type_dir, is_append_n_sample=True)
-    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Generate plots
-    if is_save_dataset_plots:
-        # Set data set plots directory
-        plots_dir = os.path.join(noiseless_dataset_type_dir, 'plots')
-        # Create plots directory
-        plots_dir = make_directory(plots_dir)
-        # Generate data set plots
-        generate_dataset_plots(strain_formulation, n_dim, noiseless_dataset,
-                               save_dir=plots_dir, is_save_fig=True,
-                               is_stdout_display=False)
-    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Get number of strain components
-    n_strain_comps = len(strain_comps_order)
-    # Set strain normalization bounds
-    strain_minimum = torch.tensor([strain_bounds[key][0]
-                                   for key in strain_bounds.keys()])
-    strain_maximum = torch.tensor([strain_bounds[key][1]
-                                   for key in strain_bounds.keys()])
-    # Set strain components min-max fitted data scaler
-    strain_data_scaler = TorchMinMaxScaler(n_features=n_strain_comps,
-                                           minimum=strain_minimum,
-                                           maximum=strain_maximum)
-    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Initialize noise generator
-    noise_generator = NoiseGenerator()
-    # Set noise distribution type
-    noise_distribution = 'gaussian'
-    noise_generator.set_noise_distribution(noise_distribution)
-    # Set noise distribution parameters
-    noise_parameters_cases = {'noise_low': {'std': 0.1},
-                              'noise_medium': {'std': 0.2},
-                              'noise_high': {'std': 0.3}}
-    noise_parameters_cases = {'noise_low': {'std': 0.1},}
-    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Set noise variability
-    noise_variability = 'heteroscedastic'
-    # Set heteroscedastic noise weights
-    if noise_variability == 'heteroscedastic':
-        # Initialize heteroscedastic normalizer
-        heteroscedastic_normalizer = 0.0
-        # Set heteroscedastic normalizer as maximum strain norm among all paths
-        # of noiseless data set
-        for response_path in noiseless_dataset:
-            # Get noiseless strain path
-            noiseless_strain_path = response_path['strain_path']
-            # Compute noiseless strain norm path
-            noiseless_strain_norm_path = dataset_generator.compute_norm_path(
-                noiseless_strain_path, n_dim, strain_comps_order,
-                is_symmetric=strain_formulation == 'infinitesimal')
-            # Update heteroscedastic normalizer
-            if np.max(noiseless_strain_norm_path) > heteroscedastic_normalizer:
-                heteroscedastic_normalizer = np.max(noiseless_strain_norm_path)
-    else:
-        heteroscedastic_normalizer = None
-    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Loop over noise cases
-    for noise_label, noise_parameters in noise_parameters_cases.items():
-        # Set noise distribution parameters
-        noise_generator.set_noise_parameters(noise_parameters)
+        # Set strain formulation
+        strain_formulation = 'infinitesimal'
+        # Set problem type
+        problem_type = 4
+        # Get problem type parameters
+        n_dim, comp_order_sym, comp_order_nsym = \
+            get_problem_type_parameters(problem_type)
+        # Set strain components order
+        if strain_formulation == 'infinitesimal':
+            strain_comps_order = comp_order_sym
+        else:
+            raise RuntimeError('Not implemented.')
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        # Generate noisy strain-stress material response data set
-        noisy_dataset = dataset_generator.generate_noisy_dataset(
-            noiseless_dataset, noise_generator, constitutive_model,
-            state_features={}, strain_data_scaler=strain_data_scaler,
-            noise_variability=noise_variability,
-            heteroscedastic_normalizer=heteroscedastic_normalizer,
-            is_verbose=True)
+        # Set number of discrete times
+        n_time = 100
+        # Set initial and final time
+        time_init = 0.0
+        time_end = 1.0
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set strain components bounds
+        strain_bounds = {x: (-0.05, 0.05) for x in strain_comps_order}
+        # Set incremental strain norm
+        inc_strain_norm = None
+        # Set strain noise
+        strain_noise_std = None
+        # Set cyclic loading
+        is_cyclic_loading = False
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set constitutive model
+        model_name = 'von_mises'
+        # Set constitutive model parameters:
+        if model_name == 'von_mises':
+            # Set constitutive model parameters
+            model_parameters = \
+                {'elastic_symmetry': 'isotropic',
+                 'E': 110e3, 'v': 0.33,
+                 'euler_angles': (0.0, 0.0, 0.0),
+                 'hardening_law': get_hardening_law('nadai_ludwik'),
+                 'hardening_parameters':
+                    {'s0': 900,
+                     'a': 700,
+                     'b': 0.5,
+                     'ep0': 1e-5}}
+            # Set constitutive state variables to be additionally included in
+            # the data set
+            #state_features = {'acc_p_strain': 1}
+            state_features = {}
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Initialize constitutive model
+            constitutive_model = VonMises(strain_formulation, problem_type,
+                                          model_parameters)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        elif model_name == 'drucker_prager':
+            # Set frictional angle
+            friction_angle = np.deg2rad(10)
+            # Set dilatancy angle
+            dilatancy_angle = friction_angle
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Compute angle-related material parameters (matching with
+            # Mohr-Coulomb under uniaxial tension and compression)
+            # Set yield surface cohesion parameter
+            yield_cohesion_parameter = (2.0/np.sqrt(3))*np.cos(friction_angle)
+            # Set yield pressure parameter
+            yield_pressure_parameter = (3.0/np.sqrt(3))*np.sin(friction_angle)
+            # Set plastic flow pressure parameter
+            flow_pressure_parameter = (3.0/np.sqrt(3))*np.sin(dilatancy_angle)
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Set constitutive model parameters
+            # (matching Von Mises yield surface for null pressure)
+            model_parameters = {
+                'elastic_symmetry': 'isotropic',
+                'E': 110e3, 'v': 0.33,
+                'euler_angles': (0.0, 0.0, 0.0),
+                'hardening_law': get_hardening_law('nadai_ludwik'),
+                'hardening_parameters':
+                    {'s0': 900/yield_cohesion_parameter,
+                     'a': 700/yield_cohesion_parameter,
+                     'b': 0.5,
+                     'ep0': 1e-5},
+                'yield_cohesion_parameter': yield_cohesion_parameter,
+                'yield_pressure_parameter': yield_pressure_parameter,
+                'flow_pressure_parameter': flow_pressure_parameter,
+                'friction_angle': friction_angle}
+            # Set constitutive state variables to be additionally included in
+            # the data set
+            state_features = {}
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Initialize constitutive model
+            constitutive_model = DruckerPrager(strain_formulation,
+                                               problem_type, model_parameters)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        else:
+            # Set constitutive model parameters
+            model_parameters = {'elastic_symmetry': 'isotropic',
+                                'E': 110e3, 'v': 0.33,
+                                'euler_angles': (0.0, 0.0, 0.0)}
+            # Set constitutive state variables to include in data set
+            state_features = {}
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Initialize constitutive model
+            constitutive_model = Elastic(strain_formulation, problem_type,
+                                        model_parameters)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set strain path type
+        strain_path_type = 'random'
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set strain path generator parameters
+        if strain_path_type == 'proportional':
+            strain_path_kwargs = \
+                {'strain_bounds': strain_bounds,
+                'n_time': n_time,
+                'time_init': time_init,
+                'time_end': time_end,
+                'inc_strain_norm': inc_strain_norm,
+                'strain_noise_std': strain_noise_std,
+                'is_cyclic_loading': is_cyclic_loading}
+        elif strain_path_type == 'random':
+            strain_path_kwargs = \
+                {'n_control': (4, 7),
+                'strain_bounds': strain_bounds,
+                'n_time': n_time,
+                'generative_type': 'polynomial',
+                'time_init': time_init,
+                'time_end': time_end,
+                'inc_strain_norm': inc_strain_norm,
+                'strain_noise_std': strain_noise_std,
+                'is_cyclic_loading': is_cyclic_loading}
+        else:
+            raise RuntimeError('Unknown strain path type.')
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Initialize strain-stress material response path data set generator
+        dataset_generator = NoisyMaterialResponseDatasetGenerator(
+            strain_formulation, problem_type)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Generate noiseless strain-stress material response data set
+        noiseless_dataset = dataset_generator.generate_noiseless_dataset(
+            n_path, strain_path_type,strain_path_kwargs, constitutive_model,
+            state_features=state_features, is_verbose=True)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Set noiseless data set directory
-        noisy_dataset_dir = os.path.join(datasets_dir, noise_label)
+        noiseless_dataset_dir = os.path.join(datasets_dir, 'noiseless')
         # Create noiseless data set directory
-        if not os.path.isdir(noisy_dataset_dir):
-            make_directory(noisy_dataset_dir, is_overwrite=True)
+        if not os.path.isdir(noiseless_dataset_dir):
+            make_directory(noiseless_dataset_dir, is_overwrite=True)
         # Set noiseless data set type directory
-        noisy_dataset_type_dir = os.path.join(noisy_dataset_dir,
-                                              dataset_type_basename)
+        noiseless_dataset_type_dir = os.path.join(noiseless_dataset_dir,
+                                                  dataset_type_basename)
         # Create noiseless data set directory
-        make_directory(noisy_dataset_type_dir, is_overwrite=True)
+        make_directory(noiseless_dataset_type_dir, is_overwrite=True)
         # Save noiseless data set
-        save_dataset(noisy_dataset, dataset_basename, noisy_dataset_type_dir,
-                     is_append_n_sample=True)
+        save_dataset(noiseless_dataset, dataset_basename,
+                     noiseless_dataset_type_dir, is_append_n_sample=True)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Generate plots
         if is_save_dataset_plots:
             # Set data set plots directory
-            plots_dir = os.path.join(noisy_dataset_type_dir, 'plots')
+            plots_dir = os.path.join(noiseless_dataset_type_dir, 'plots')
             # Create plots directory
             plots_dir = make_directory(plots_dir)
             # Generate data set plots
             generate_dataset_plots(strain_formulation, n_dim,
-                                   noisy_dataset, save_dir=plots_dir,
+                                   noiseless_dataset, save_dir=plots_dir,
                                    is_save_fig=True, is_stdout_display=False)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Get number of strain components
+        n_strain_comps = len(strain_comps_order)
+        # Set strain normalization bounds
+        strain_minimum = torch.tensor([strain_bounds[key][0]
+                                       for key in strain_bounds.keys()])
+        strain_maximum = torch.tensor([strain_bounds[key][1]
+                                       for key in strain_bounds.keys()])
+        # Set strain components min-max fitted data scaler
+        strain_data_scaler = TorchMinMaxScaler(n_features=n_strain_comps,
+                                               minimum=strain_minimum,
+                                               maximum=strain_maximum)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Initialize noise generator
+        noise_generator = NoiseGenerator()
+        # Set noise distribution type
+        noise_distribution = 'gaussian'
+        noise_generator.set_noise_distribution(noise_distribution)
+        # Set noise distribution parameters
+        noise_parameters_cases = {'homgau_noise_1e-2': {'std': 1e-2},
+                                  'homgau_noise_2d5e-2': {'std': 2.5e-2},
+                                  'homgau_noise_5e-2': {'std': 5e-2},
+                                  'homgau_noise_1e-1': {'std': 1e-1}}
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set noise variability
+        noise_variability = 'homoscedastic'
+        # Set heteroscedastic noise weights
+        if noise_variability == 'heteroscedastic':
+            # Initialize heteroscedastic normalizer
+            heteroscedastic_normalizer = 0.0
+            # Set heteroscedastic normalizer as maximum strain norm among all
+            # paths of noiseless data set
+            for response_path in noiseless_dataset:
+                # Get noiseless strain path
+                noiseless_strain_path = response_path['strain_path']
+                # Compute noiseless strain norm path
+                noiseless_strain_norm_path = \
+                    dataset_generator.compute_norm_path(
+                        noiseless_strain_path, n_dim, strain_comps_order,
+                        is_symmetric=strain_formulation == 'infinitesimal')
+                # Update heteroscedastic normalizer
+                if (np.max(noiseless_strain_norm_path) >
+                        heteroscedastic_normalizer):
+                    heteroscedastic_normalizer = \
+                        np.max(noiseless_strain_norm_path)
+        else:
+            heteroscedastic_normalizer = None
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Loop over noise cases
+        for noise_label, noise_parameters in noise_parameters_cases.items():
+            # Set noise distribution parameters
+            noise_generator.set_noise_parameters(noise_parameters)
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Generate noisy strain-stress material response data set
+            noisy_dataset = dataset_generator.generate_noisy_dataset(
+                noiseless_dataset, noise_generator, constitutive_model,
+                state_features={}, strain_data_scaler=strain_data_scaler,
+                noise_variability=noise_variability,
+                heteroscedastic_normalizer=heteroscedastic_normalizer,
+                is_verbose=True)
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Set noiseless data set directory
+            noisy_dataset_dir = os.path.join(datasets_dir, noise_label)
+            # Create noiseless data set directory
+            if not os.path.isdir(noisy_dataset_dir):
+                make_directory(noisy_dataset_dir, is_overwrite=True)
+            # Set noiseless data set type directory
+            noisy_dataset_type_dir = os.path.join(noisy_dataset_dir,
+                                                dataset_type_basename)
+            # Create noiseless data set directory
+            make_directory(noisy_dataset_type_dir, is_overwrite=True)
+            # Save noiseless data set
+            save_dataset(noisy_dataset, dataset_basename,
+                         noisy_dataset_type_dir, is_append_n_sample=True)
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Generate plots
+            if is_save_dataset_plots:
+                # Set data set plots directory
+                plots_dir = os.path.join(noisy_dataset_type_dir, 'plots')
+                # Create plots directory
+                plots_dir = make_directory(plots_dir)
+                # Generate data set plots
+                generate_dataset_plots(strain_formulation, n_dim,
+                                       noisy_dataset, save_dir=plots_dir,
+                                       is_save_fig=True,
+                                       is_stdout_display=False)
