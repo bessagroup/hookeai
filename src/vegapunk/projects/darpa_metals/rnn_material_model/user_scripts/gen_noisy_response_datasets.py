@@ -896,6 +896,12 @@ if __name__ == '__main__':
     elif dataset_type == 'validation':
         n_paths_dirs = (10, 20, 40, 80, 160, 320, 640, 1280, 2560)
         n_paths = (2, 4, 8, 16, 32, 64, 128, 256, 512)
+    elif dataset_type == 'testing_id':
+        n_paths_dirs = (512,)
+        n_paths = (512,)
+    elif dataset_type == 'testing_od':
+        n_paths_dirs = (512,)
+        n_paths = (512,)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Loop over data set sizes
     for i, n_path in enumerate(n_paths):
