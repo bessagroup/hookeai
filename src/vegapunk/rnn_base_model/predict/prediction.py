@@ -123,7 +123,7 @@ def predict(dataset, model_directory, predict_directory=None,
                            'found:\n\n' + predict_directory)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     if is_verbose:
-        print('\n> Loading Graph Neural Network model...')
+        print('\n> Loading Recurrent Neural Network model...')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Initialize recurrent neural network model
     model = GRURNNModel.init_model_from_file(model_directory)
