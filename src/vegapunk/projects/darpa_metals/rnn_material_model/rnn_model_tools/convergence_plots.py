@@ -320,7 +320,7 @@ def plot_time_series_convergence(models_base_dirs, training_dirs, testing_dirs,
         training_sizes.append(len(load_dataset(train_dataset_file_path)))
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Loop over prediction types
-    for prediction_type, prediction_comps in prediction_types.items():
+    for prediction_type, prediction_labels in prediction_types.items():
         # Initialize models time series predictions data
         models_prediction_data = []
         # Initialize testing data set sizes
@@ -348,13 +348,13 @@ def plot_time_series_convergence(models_base_dirs, training_dirs, testing_dirs,
             if plot_type == 'time_series_scatter':
                 # Build prediction components data arrays
                 prediction_data_arrays = build_prediction_data_arrays(
-                    pred_dir, prediction_type=prediction_type,
+                    pred_dir, prediction_type, prediction_labels,
                     samples_ids=samples_ids)
             elif plot_type == 'time_series_path':
                 # Build prediction components data arrays for each sample
                 prediction_data_arrays = build_time_series_predictions_data(
                     test_dataset_file_path, pred_dir,
-                    prediction_type=prediction_type,
+                    prediction_type, prediction_labels,
                     samples_ids=samples_ids)
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Store model time series prediction components data arrays
@@ -368,7 +368,7 @@ def plot_time_series_convergence(models_base_dirs, training_dirs, testing_dirs,
         testing_size = testing_sizes[0]
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Loop over prediction type components
-        for j, prediction_comp in enumerate(prediction_comps):
+        for j, prediction_comp in enumerate(prediction_labels):
             # Plot model times series prediction component
             if plot_type == 'time_series_scatter':
                 # Initialize prediction processes
@@ -796,7 +796,7 @@ def plot_time_series_convergence_uq(models_base_dirs, training_dirs,
         training_sizes.append(len(load_dataset(train_dataset_file_path)))
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Loop over prediction types
-    for prediction_type, prediction_comps in prediction_types.items():
+    for prediction_type, prediction_labels in prediction_types.items():
         # Initialize models time series predictions data
         models_prediction_data = []
         # Initialize testing data set sizes
@@ -828,7 +828,7 @@ def plot_time_series_convergence_uq(models_base_dirs, training_dirs,
                 # Build prediction components data arrays for each sample
                 prediction_data_arrays = build_time_series_predictions_data(
                     test_dataset_file_path, pred_dir,
-                    prediction_type=prediction_type,
+                    prediction_type, prediction_labels,
                     samples_ids=samples_ids,
                     is_uncertainty_quantification=True)
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -843,7 +843,7 @@ def plot_time_series_convergence_uq(models_base_dirs, training_dirs,
         testing_size = testing_sizes[0]
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Loop over prediction type components
-        for j, prediction_comp in enumerate(prediction_comps):
+        for j, prediction_comp in enumerate(prediction_labels):
             # Plot model times series prediction component
             if plot_type == 'time_series_scatter':
                 raise RuntimeError('Not implemented.')

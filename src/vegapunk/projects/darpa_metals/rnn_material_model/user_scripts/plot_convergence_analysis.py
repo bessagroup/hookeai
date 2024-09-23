@@ -22,7 +22,8 @@ import numpy as np
 # Local
 from projects.darpa_metals.rnn_material_model.rnn_model_tools. \
     convergence_plots import plot_prediction_loss_convergence, \
-        plot_time_series_convergence
+        plot_time_series_convergence, plot_prediction_loss_convergence_uq, \
+        plot_time_series_convergence_uq
 from ioput.iostandard import make_directory
 #
 #                                                          Authorship & Credits
@@ -34,9 +35,10 @@ __status__ = 'Planning'
 #
 # =============================================================================
 def generate_convergence_plots(models_base_dirs, training_dirs, testing_dirs,
-                               predictions_dirs, save_dir=None,
-                               is_save_fig=False, is_stdout_display=False,
-                               is_latex=True):
+                               predictions_dirs,
+                               is_uncertainty_quantification=False,
+                               save_dir=None, is_save_fig=False,
+                               is_stdout_display=False, is_latex=True):
     """Generate plots of convergence analysis.
     
     Parameters
@@ -50,6 +52,9 @@ def generate_convergence_plots(models_base_dirs, training_dirs, testing_dirs,
     predictions_dirs : tuple[str]
         Directory where each model samples predictions results files are
         stored.
+    is_uncertainty_quantification: bool, default=False
+        If True, then account for multiple model samples for each training
+        data set size.
     save_dir : str, default=None
         Directory where data set plots are saved. If None, then plots are
         saved in current working directory.
@@ -63,47 +68,66 @@ def generate_convergence_plots(models_base_dirs, training_dirs, testing_dirs,
         processed to remove $(...)$ enclosure.
     """
     # Plot average prediction loss versus training data set size
-    plot_prediction_loss_convergence(models_base_dirs, training_dirs,
-                                     predictions_dirs,
-                                     filename='testing_loss_convergence',
-                                     save_dir=save_dir,
-                                     is_save_fig=is_save_fig,
-                                     is_stdout_display=is_stdout_display,
-                                     is_latex=is_latex)
+    if is_uncertainty_quantification:
+        # Plot average prediction loss versus training data set size
+        plot_prediction_loss_convergence_uq(
+            models_base_dirs, training_dirs, predictions_dirs,
+            filename='testing_loss_convergence_uq',
+            save_dir=save_dir, is_save_fig=is_save_fig,
+            is_stdout_display=is_stdout_display,
+            is_latex=is_latex)
+    else:
+        # Plot average prediction loss versus training data set size
+        plot_prediction_loss_convergence(
+            models_base_dirs, training_dirs, predictions_dirs,
+            filename='testing_loss_convergence',
+            save_dir=save_dir, is_save_fig=is_save_fig,
+            is_stdout_display=is_stdout_display,
+            is_latex=is_latex)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set prediction types and components
     prediction_types = {}
     prediction_types['stress_comps'] = ('stress_11', 'stress_22', 'stress_33',
                                         'stress_12', 'stress_23', 'stress_13')
-    prediction_types['acc_p_strain'] = ('acc_p_strain',)
+    #prediction_types['acc_p_strain'] = ('acc_p_strain',)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Plot models time series predictions versus ground-truth (scatter)
-    plot_time_series_convergence(models_base_dirs, training_dirs, testing_dirs,
-                                 predictions_dirs, prediction_types,
-                                 plot_type='time_series_scatter',
-                                 samples_ids=list(np.arange(5, dtype=int)),
-                                 filename='time_series_convergence',
-                                 save_dir=save_dir,
-                                 is_save_fig=is_save_fig,
-                                 is_stdout_display=is_stdout_display,
-                                 is_latex=is_latex)
-    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Plot models time series predictions versus ground-truth (path)
-    plot_time_series_convergence(models_base_dirs, training_dirs, testing_dirs,
-                                 predictions_dirs, prediction_types,
-                                 plot_type='time_series_path',
-                                 samples_ids=list(np.arange(5, dtype=int)),
-                                 filename='time_series_convergence',
-                                 save_dir=save_dir,
-                                 is_save_fig=is_save_fig,
-                                 is_stdout_display=is_stdout_display,
-                                 is_latex=is_latex)
+    # Plot models time series predictions versus ground-truth
+    if is_uncertainty_quantification:
+        # Plot models time series predictions versus ground-truth (path)
+        plot_time_series_convergence_uq(
+            models_base_dirs, training_dirs, testing_dirs, predictions_dirs,
+            prediction_types, plot_type='time_series_path',
+            samples_ids=list(np.arange(5, dtype=int)),
+            filename='time_series_convergence_uq',
+            save_dir=save_dir, is_save_fig=is_save_fig,
+            is_stdout_display=is_stdout_display, is_latex=is_latex)
+    else:
+        # Plot models time series predictions versus ground-truth (scatter)
+        plot_time_series_convergence(
+            models_base_dirs, training_dirs, testing_dirs, predictions_dirs,
+            prediction_types, plot_type='time_series_scatter',
+            samples_ids=list(np.arange(5, dtype=int)),
+            filename='time_series_convergence',
+            save_dir=save_dir, is_save_fig=is_save_fig,
+            is_stdout_display=is_stdout_display, is_latex=is_latex)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Plot models time series predictions versus ground-truth (path)
+        plot_time_series_convergence(
+            models_base_dirs, training_dirs, testing_dirs, predictions_dirs,
+            prediction_types, plot_type='time_series_path',
+            samples_ids=list(np.arange(5, dtype=int)),
+            filename='time_series_convergence', save_dir=save_dir,
+            is_save_fig=is_save_fig, is_stdout_display=is_stdout_display,
+            is_latex=is_latex)
 # =============================================================================
 if __name__ == "__main__":
+    # Set computation processes
+    is_uncertainty_quantification = True
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set convergence analysis base directory
     base_dir = ('/home/bernardoferreira/Documents/brown/projects/'
-                'darpa_project/2_local_rnn_training/drucker_prager/'
-                'training_dataset_convergence/')
+                'darpa_project/6_local_rnn_training_noisy/von_mises/'
+                'convergence_analyses_homoscedastic_gaussian/noiseless')
     # Set training data set sizes
     training_sizes = (10, 20, 40, 80, 160, 320, 640, 1280, 2560)
     # Set convergence analyses models base directories
@@ -141,7 +165,7 @@ if __name__ == "__main__":
                                       '7_prediction/in_distribution/'
                                       'prediction_set_0')
         # Store prediction directory
-        if os.path.isdir(prediction_dir):
+        if os.path.isdir(prediction_dir) or is_uncertainty_quantification:
             predictions_dirs.append(prediction_dir)
         else:
             raise RuntimeError('The prediction directory has not been '
@@ -154,7 +178,8 @@ if __name__ == "__main__":
         make_directory(plots_dir)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Generate plots of convergence analysis
-    generate_convergence_plots(models_base_dirs, training_dirs, testing_dirs,
-                               predictions_dirs, save_dir=plots_dir,
-                               is_save_fig=True, is_stdout_display=False,
-                               is_latex=True)
+    generate_convergence_plots(
+        models_base_dirs, training_dirs, testing_dirs, predictions_dirs,
+        is_uncertainty_quantification=is_uncertainty_quantification,
+        save_dir=plots_dir, is_save_fig=True, is_stdout_display=False,
+        is_latex=True)
