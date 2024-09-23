@@ -283,7 +283,7 @@ class StrainPathGenerator(ABC):
         # Plot strain path
         if is_plot_strain_path:
             # Loop over strain paths
-            for k in range(min(n_path, 3)):
+            for k in range(min(n_path, 5)):
                 # Set strain data array
                 strain_data_xy = \
                     np.zeros((n_time_max, 2*len(strain_comps_order)))
