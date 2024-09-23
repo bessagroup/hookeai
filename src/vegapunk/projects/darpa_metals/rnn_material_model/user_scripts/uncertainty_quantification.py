@@ -148,8 +148,8 @@ def perform_model_uq(uq_directory, n_model_sample, train_dataset_file_path,
             # Save model sample prediction
             shutil.copytree(predict_subdir, sample_prediction_subdir)
 # =============================================================================
-def gen_model_uq_plots(uq_directory, testing_dataset_dir, testing_type,
-                       filename='model_uq', is_save_fig=False,
+def gen_model_uq_plots(uq_directory, n_model_sample, testing_dataset_dir,
+                       testing_type, filename='model_uq', is_save_fig=False,
                        is_stdout_display=False, is_latex=True):
     """Generate plots of model uncertainty quantification.
     
@@ -158,6 +158,8 @@ def gen_model_uq_plots(uq_directory, testing_dataset_dir, testing_type,
     uq_directory : str
         Directory where the uncertainty quantification models samples
         directories are stored.
+    n_model_sample : int
+        Number of model samples.
     testing_dataset_dir : str
         Directory where the testing data set is stored (common to all models
         samples).
@@ -605,8 +607,8 @@ if __name__ == "__main__":
                      device_type=device_type, is_verbose=True)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Generate plots of model uncertainty quantification
-    gen_model_uq_plots(uq_directory, testing_dataset_dir, testing_type,
-                       is_save_fig=True, is_stdout_display=False,
+    gen_model_uq_plots(uq_directory, n_model_sample, testing_dataset_dir,
+                       testing_type, is_save_fig=True, is_stdout_display=False,
                        is_latex=True)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Remove model directory
