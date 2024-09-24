@@ -850,6 +850,39 @@ if __name__ == '__main__':
             'is_data_normalization': is_data_normalization,
             'device_type': device_type}
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    elif model_name == 'material_gru_model':
+        # Set model parameters
+        model_parameters = {}
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set number of input features
+        n_features_in = 6
+        # Set number of output features
+        n_features_out = 6
+        # Set hidden layer size
+        hidden_layer_size = 500
+        # Set number of recurrent layers (stacked RNN)
+        n_recurrent_layers = 3
+        # Set dropout probability
+        dropout = 0
+        # Set data normalization
+        is_data_normalization = True
+        # Set device type
+        if torch.cuda.is_available():
+            device_type = 'cuda'
+        else:
+            device_type = 'cpu'
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set other parameters required to initialize constitutive model
+        model_kwargs = {'n_features_in': n_features_in,
+                        'n_features_out': n_features_out,
+                        'hidden_layer_size': hidden_layer_size,
+                        'n_recurrent_layers': n_recurrent_layers,
+                        'dropout': dropout,
+                        'model_directory': None,
+                        'model_name': model_name,
+                        'is_data_normalization': is_data_normalization,
+                        'device_type': device_type}
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     else:
         raise RuntimeError('Unknown constitutive model.')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

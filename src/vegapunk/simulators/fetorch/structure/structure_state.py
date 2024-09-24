@@ -18,6 +18,7 @@ from simulators.fetorch.material.models.standard.von_mises import VonMises
 from simulators.fetorch.material.models.standard.drucker_prager import \
     DruckerPrager
 from rc_base_model.model.recurrent_model import RecurrentConstitutiveModel
+from rnn_base_model.model.gru_model import GRURNNModel
 #
 #                                                          Authorship & Credits
 # =============================================================================
@@ -174,6 +175,7 @@ class StructureMaterialState:
             is_explicit_parameters = False
             # Set recurrency structure
             is_recurrent_model = False
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         elif model_name == 'von_mises':
             # Initialize constitutive model
             constitutive_model = VonMises(self._strain_formulation,
@@ -183,6 +185,7 @@ class StructureMaterialState:
             is_explicit_parameters = False
             # Set recurrency structure
             is_recurrent_model = False
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         elif model_name == 'drucker_prager':
             # Initialize constitutive model
             constitutive_model = DruckerPrager(self._strain_formulation,
@@ -192,6 +195,7 @@ class StructureMaterialState:
             is_explicit_parameters = False
             # Set recurrency structure
             is_recurrent_model = False
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         elif bool(re.search(r'^rc_.*$', model_name)):
             # Get number of input and output features
             n_features_in = model_kwargs['n_features_in']
@@ -245,6 +249,39 @@ class StructureMaterialState:
             is_explicit_parameters = True
             # Set recurrency structure
             is_recurrent_model = True
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        elif model_name == 'material_gru_model':
+            # Get number of input and output features
+            n_features_in = model_kwargs['n_features_in']
+            n_features_out = model_kwargs['n_features_out']
+            # Get hidden layer size
+            hidden_layer_size = model_kwargs['hidden_layer_size']
+            # Get number of recurrent layers
+            n_recurrent_layers = model_kwargs['n_recurrent_layers']
+            # Get dropout probability
+            dropout = model_kwargs['dropout']
+            # Get data normalization
+            is_data_normalization = model_kwargs['is_data_normalization']
+            # Get device type
+            device_type = model_kwargs['device_type']
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Build model initialization parameters
+            model_init_args = {
+                'n_features_in': n_features_in,
+                'n_features_out': n_features_out,
+                'hidden_layer_size': hidden_layer_size,
+                'n_recurrent_layers': n_recurrent_layers,
+                'dropout': dropout,
+                'is_data_normalization': is_data_normalization,
+                'device_type': device_type}
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Initialize constitutive model
+            constitutive_model = GRURNNModel(**model_init_args)
+            # Set learnable parameters nature
+            is_explicit_parameters = False
+            # Set recurrency structure
+            is_recurrent_model = True
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         else:
             raise RuntimeError(f'Unknown material constitutive model '
                                f'\'{model_name}\'.')
