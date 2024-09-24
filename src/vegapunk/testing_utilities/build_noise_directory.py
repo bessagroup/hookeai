@@ -85,9 +85,9 @@ if is_set_shared_testing_dataset:
     src_testing_dataset_dir = \
         ('/home/bernardoferreira/Documents/brown/projects/darpa_project/'
          '6_local_rnn_training_noisy/von_mises/datasets_base/'
-         'noisy_random_std_testing_dataset/6_testing_od_dataset')
+         'noiseless_testing_dataset/5_testing_id_dataset')
     # Set testing data set type
-    dataset_type = ('testing_id', 'testing_od')[1]
+    dataset_type = ('testing_id', 'testing_od')[0]
     # Set testing data set type base name
     if dataset_type == 'testing_id':
         dataset_type_basename = '5_testing_id_dataset'

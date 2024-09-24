@@ -885,7 +885,7 @@ class NoiseGenerator:
 # =============================================================================
 if __name__ == '__main__':
     # Set data set type
-    dataset_type = ('training', 'validation', 'testing_id', 'testing_od')[0]
+    dataset_type = ('training', 'validation', 'testing_id', 'testing_od')[2]
     # Set save dataset plots flags
     is_save_dataset_plots = True
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -908,7 +908,8 @@ if __name__ == '__main__':
         # Set data sets base directory
         datasets_base_dir = ('/home/bernardoferreira/Documents/brown/projects/'
                              'darpa_project/6_local_rnn_training_noisy/'
-                             'von_mises/datasets_base/')
+                             'von_mises/datasets_base/'
+                             'noiseless_testing_dataset')
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Check data sets directory
         if not os.path.isdir(datasets_base_dir):
@@ -1119,10 +1120,18 @@ if __name__ == '__main__':
         noise_distribution = 'gaussian'
         noise_generator.set_noise_distribution(noise_distribution)
         # Set noise distribution parameters
-        noise_parameters_cases = {'homgau_noise_1e-2': {'std': 1e-2},
-                                  'homgau_noise_2d5e-2': {'std': 2.5e-2},
-                                  'homgau_noise_5e-2': {'std': 5e-2},
-                                  'homgau_noise_1e-1': {'std': 1e-1}}
+        if noise_distribution == 'uniform':
+            noise_parameters_cases = {'homuni_noise_4e-2': {'amp': 4e-2},
+                                      'homuni_noise_1e-1': {'amp': 1e-1},
+                                      'homuni_noise_2e-1': {'amp': 2e-1},
+                                      'homuni_noise_4e-1': {'amp': 4e-1}}
+        elif noise_distribution == 'gaussian':
+            noise_parameters_cases = {'homgau_noise_1e-2': {'std': 1e-2},
+                                      'homgau_noise_2d5e-2': {'std': 2.5e-2},
+                                      'homgau_noise_5e-2': {'std': 5e-2},
+                                      'homgau_noise_1e-1': {'std': 1e-1}}
+        else:
+            raise RuntimeError('Unknown noise distribution.')
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Set noise variability
         noise_variability = 'homoscedastic'

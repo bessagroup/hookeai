@@ -45,10 +45,10 @@ if __name__ == "__main__":
     # Set number of model samples for uncertainty quantification
     n_model_sample = 5
     # Set computation processes
-    is_model_training = False
+    is_model_training = True
     # Set testing type
     testing_type = ('training', 'validation', 'in_distribution',
-                    'out_distribution')[3]
+                    'out_distribution')[2]
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set noise cases
     noise_cases = ('noiseless', 'homgau_noise_1e-2', 'homgau_noise_2d5e-2',
