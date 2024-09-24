@@ -50,9 +50,17 @@ if __name__ == "__main__":
     testing_type = ('training', 'validation', 'in_distribution',
                     'out_distribution')[2]
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Set noise distribution type
+    noise_distribution = 'uniform'
     # Set noise cases
-    noise_cases = ('noiseless', 'homgau_noise_1e-2', 'homgau_noise_2d5e-2',
-                   'homgau_noise_5e-2', 'homgau_noise_1e-1')
+    if noise_distribution == 'uniform':
+        noise_cases = ('noiseless', 'homuni_noise_4e-2', 'homuni_noise_1e-1',
+                       'homuni_noise_2e-1', 'homuni_noise_4e-1')
+    elif noise_distribution == 'gaussian':
+        noise_cases = ('noiseless', 'homgau_noise_1e-2', 'homgau_noise_2d5e-2',
+                       'homgau_noise_5e-2', 'homgau_noise_1e-1')
+    else:
+        raise RuntimeError('Unknown noise distribution.')
     # Set training data set sizes
     training_sizes = (10, 20, 40, 80, 160, 320, 640, 1280, 2560)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
