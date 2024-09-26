@@ -518,16 +518,44 @@ if __name__ == "__main__":
     # Set convergence analyses base directory
     base_dir = ('/home/bernardoferreira/Documents/brown/projects/'
                 'darpa_project/6_local_rnn_training_noisy/von_mises/'
-                'convergence_analyses_homoscedastic_gaussian/')
-    # Set noise cases
-    noise_cases = ('noiseless', 'homgau_noise_1e-2', 'homgau_noise_2d5e-2',
-                   'homgau_noise_5e-2', 'homgau_noise_1e-1')
-    # Set noise cases labels
-    noise_cases_labels = ('$\\tilde{\epsilon}=0.0$',
-                          '$\\tilde{\epsilon}=0.01$',
-                          '$\\tilde{\epsilon}=0.025$',
-                          '$\\tilde{\epsilon}=0.05$',
-                          '$\\tilde{\epsilon}=0.1$')
+                'convergence_analyses_homoscedastic_uniform/')
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Set noise distribution type
+    noise_distribution = 'uniform'
+    # Set noise cases and labels
+    if noise_distribution == 'uniform':
+        # Set noise cases
+        noise_cases = ('noiseless', 'homuni_noise_4e-2', 'homuni_noise_1e-1',
+                       'homuni_noise_2e-1', 'homuni_noise_4e-1')
+        # Set noise cases labels
+        noise_cases_labels = ('$\\tilde{\epsilon}=0.0$',
+                              '$\\tilde{\epsilon}=0.04$',
+                              '$\\tilde{\epsilon}=0.1$',
+                              '$\\tilde{\epsilon}=0.2$',
+                              '$\\tilde{\epsilon}=0.4$')
+    elif noise_distribution == 'gaussian':
+        # Set noise cases
+        noise_cases = ('noiseless', 'homgau_noise_1e-2', 'homgau_noise_2d5e-2',
+                       'homgau_noise_5e-2', 'homgau_noise_1e-1')
+        # Set noise cases labels
+        noise_cases_labels = ('$\\tilde{\epsilon}=0.0$',
+                              '$\\tilde{\epsilon}=0.01$',
+                              '$\\tilde{\epsilon}=0.025$',
+                              '$\\tilde{\epsilon}=0.05$',
+                              '$\\tilde{\epsilon}=0.1$')
+    elif noise_distribution == 'spiked_gaussian':
+        # Set noise cases
+        noise_cases = ('noiseless', 'homsgau_noise_1e-2',
+                       'homsgau_noise_2d5e-2', 'homsgau_noise_5e-2',
+                       'homsgau_noise_1e-1')
+        # Set noise cases labels
+        noise_cases_labels = ('$\\tilde{\epsilon}_{s}=0.0$',
+                              '$\\tilde{\epsilon}_{s}=0.01$',
+                              '$\\tilde{\epsilon}_{s}=0.025$',
+                              '$\\tilde{\epsilon}_{s}=0.05$',
+                              '$\\tilde{\epsilon}_{s}=0.1$')
+    else:
+        raise RuntimeError('Unknown noise distribution.')
     # Set training data set sizes
     training_sizes = (10, 20, 40, 80, 160, 320, 640, 1280, 2560)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

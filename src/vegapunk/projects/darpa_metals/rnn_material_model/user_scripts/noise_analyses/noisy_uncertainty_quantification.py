@@ -59,6 +59,10 @@ if __name__ == "__main__":
     elif noise_distribution == 'gaussian':
         noise_cases = ('noiseless', 'homgau_noise_1e-2', 'homgau_noise_2d5e-2',
                        'homgau_noise_5e-2', 'homgau_noise_1e-1')
+    elif noise_distribution == 'spiked_gaussian':
+        noise_cases = ('noiseless', 'homsgau_noise_1e-2',
+                       'homsgau_noise_2d5e-2', 'homsgau_noise_5e-2',
+                       'homsgau_noise_1e-1')
     else:
         raise RuntimeError('Unknown noise distribution.')
     # Set training data set sizes

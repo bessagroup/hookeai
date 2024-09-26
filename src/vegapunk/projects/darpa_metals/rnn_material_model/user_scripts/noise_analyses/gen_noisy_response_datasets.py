@@ -713,7 +713,7 @@ class NoiseGenerator:
     
     Attributes
     ----------
-    _noise_distribution : str, {'uniform', 'gaussian'}
+    _noise_distribution : str, {'uniform', 'gaussian', 'spiked_gaussian'}
         Noise distribution type.
     _noise_parameters : dict
         Noise distribution parameters.
@@ -743,11 +743,12 @@ class NoiseGenerator:
         
         Parameters
         ----------
-        noise_distribution : str, {'uniform', 'gaussian'}
+        noise_distribution : str, {'uniform', 'gaussian', 'spiked_gaussian'}
             Noise distribution type.
         """
         # Check noise distribution type
-        if noise_distribution not in ('uniform', 'gaussian'):
+        if noise_distribution not in ('uniform', 'gaussian',
+                                      'spiked_gaussian'):
             raise RuntimeError('Unknown noise distribution type.')
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Set noise distribution type
@@ -793,6 +794,8 @@ class NoiseGenerator:
             required_parameters = ('amp',)
         elif noise_distribution == 'gaussian':
             required_parameters = ('std',)
+        elif noise_distribution == 'spiked_gaussian':
+            required_parameters = ('std', 'spike', 'p_spike')
         else:
             raise RuntimeError('Unknown noise distribution type.')
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -843,7 +846,7 @@ class NoiseGenerator:
                 noise_path = np.random.uniform(low, high,
                                                size=noise_path_shape)
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            elif self._noise_distribution == 'gaussian':
+            elif self._noise_distribution in ('gaussian', 'spiked_gaussian'):
                 # Set standard deviation
                 std = self._noise_parameters['std']
                 # Sample noise
@@ -871,7 +874,8 @@ class NoiseGenerator:
                     noise = np.random.uniform(low, high,
                                               size=noise_path_shape[1])
                 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-                elif self._noise_distribution == 'gaussian':
+                elif self._noise_distribution in ('gaussian',
+                                                  'spiked_gaussian'):
                     # Set standard deviation
                     std = self._noise_parameters['std']*weight
                     # Sample noise
@@ -880,6 +884,17 @@ class NoiseGenerator:
                 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                 # Assemble noise
                 noise_path[t, :] = noise
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Add noise spike
+        if self._noise_distribution in ('spiked_gaussian',):
+            # Set spike magnitude and probability
+            spike = self._noise_parameters['spike']
+            p_spike = self._noise_parameters['p_spike']
+            # Sample noise spike
+            spike_path = spike*np.random.binomial(n=1, p=p_spike,
+                                                  size=noise_path_shape)
+            # Add noise spike to noise path
+            noise_path += spike_path
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         return noise_path
 # =============================================================================
@@ -1151,6 +1166,22 @@ if __name__ == '__main__':
                                       'homgau_noise_2d5e-2': {'std': 2.5e-2},
                                       'homgau_noise_5e-2': {'std': 5e-2},
                                       'homgau_noise_1e-1': {'std': 1e-1}}
+        elif noise_distribution == 'spiked_gaussian':
+            spike_magnitude = 0.2
+            p_spike = 0.05
+            noise_parameters_cases = {
+                'homsgau_noise_1e-2': {
+                    'std': 1e-2,
+                    'spike': spike_magnitude, 'p_spike': p_spike},
+                'homsgau_noise_2d5e-2': {
+                    'std': 2.5e-2,
+                    'spike': spike_magnitude, 'p_spike': p_spike},
+                'homsgau_noise_5e-2': {
+                    'std': 5e-2,
+                    'spike': spike_magnitude, 'p_spike': p_spike},
+                'homsgau_noise_1e-1': {
+                    'std': 1e-1,
+                    'spike': spike_magnitude, 'p_spike': p_spike}}
         else:
             raise RuntimeError('Unknown noise distribution.')
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
