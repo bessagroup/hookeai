@@ -1088,7 +1088,7 @@ if __name__ == '__main__':
                 os.path.normpath(reference_noiseless_dir),
                 f'n{n_paths_dirs[i]}',
                 f'{dataset_type_basename}',
-                f'{dataset_basename}_n{n_paths_dirs[i]}.pkl')
+                f'{dataset_basename}_n{n_paths[i]}.pkl')
             # Load reference noiseless data set
             noiseless_dataset = load_dataset(reference_noiseless_path)
         else:
