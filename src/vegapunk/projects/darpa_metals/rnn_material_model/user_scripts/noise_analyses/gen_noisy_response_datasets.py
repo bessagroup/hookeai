@@ -29,7 +29,7 @@ import numpy as np
 import tqdm
 # Local
 from rnn_base_model.data.time_dataset import TimeSeriesDatasetInMemory, \
-    save_dataset
+    save_dataset, load_dataset
 from projects.darpa_metals.rnn_material_model.strain_paths.random_path import \
     RandomStrainPathGenerator
 from projects.darpa_metals.rnn_material_model.strain_paths.proportional_path \
@@ -889,6 +889,15 @@ if __name__ == '__main__':
     # Set save dataset plots flags
     is_save_dataset_plots = True
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Set reference noiseless directory
+    is_reference_noiseless = True
+    # Set reference noiseless data set directory
+    if is_reference_noiseless:
+        reference_noiseless_dir = \
+            ('/home/bernardoferreira/Documents/brown/projects/darpa_project/'
+             '6_local_rnn_training_noisy/von_mises/'
+             'convergence_analyses_homoscedastic_gaussian/noiseless')
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set data set sizes
     if dataset_type == 'training':
         n_paths_dirs = (10, 20, 40, 80, 160, 320, 640, 1280, 2560)
@@ -1072,10 +1081,22 @@ if __name__ == '__main__':
         dataset_generator = NoisyMaterialResponseDatasetGenerator(
             strain_formulation, problem_type)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        # Generate noiseless strain-stress material response data set
-        noiseless_dataset = dataset_generator.generate_noiseless_dataset(
-            n_path, strain_path_type,strain_path_kwargs, constitutive_model,
-            state_features=state_features, is_verbose=True)
+        # Generate or load noiseless strain-stress material response data set
+        if is_reference_noiseless:
+            # Set reference noiseless data set path
+            reference_noiseless_path = os.path.join(
+                os.path.normpath(reference_noiseless_dir),
+                f'n{n_paths_dirs[i]}',
+                f'{dataset_type_basename}',
+                f'{dataset_basename}_n{n_paths_dirs[i]}.pkl')
+            # Load reference noiseless data set
+            noiseless_dataset = load_dataset(reference_noiseless_path)
+        else:
+            # Generate reference noiseless data set
+            noiseless_dataset = dataset_generator.generate_noiseless_dataset(
+                n_path, strain_path_type,strain_path_kwargs,
+                constitutive_model, state_features=state_features,
+                is_verbose=True)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Set noiseless data set directory
         noiseless_dataset_dir = os.path.join(datasets_dir, 'noiseless')
