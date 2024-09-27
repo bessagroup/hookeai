@@ -652,7 +652,7 @@ if __name__ == '__main__':
     strain_formulation = 'infinitesimal'
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set constitutive model name and parameters
-    model_name = 'rc_drucker_prager_vmap'
+    model_name = 'von_mises_mixed'
     # Set constitutive model parameters
     if model_name == 'elastic':
         # Set constitutive model parameters
@@ -679,6 +679,25 @@ if __name__ == '__main__':
         model_kwargs = {}
         # Set model validation data directory name
         model_data_name = 'von_mises'
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    elif model_name == 'von_mises_mixed':
+        # Set constitutive model parameters
+        model_parameters = {
+            'elastic_symmetry': 'isotropic',
+            'E': 100, 'v': 0.3,
+            'euler_angles': (0.0, 0.0, 0.0),
+            'hardening_law': get_hardening_law('piecewise_linear'),
+            'hardening_parameters':
+                {'hardening_points': torch.tensor([[0.0, 2.0],
+                                                   [1.0, 4.0]])},
+            'kinematic_hardening_law': get_hardening_law('piecewise_linear'),
+            'kinematic_hardening_parameters':
+                {'hardening_points': torch.tensor([[0.0, 0.0],
+                                                   [1.0, 4.0]])}}
+        # Set other parameters required to initialize constitutive model
+        model_kwargs = {}
+        # Set model validation data directory name
+        model_data_name = 'von_mises_mixed'
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     elif model_name == 'drucker_prager':
         # Set frictional angle

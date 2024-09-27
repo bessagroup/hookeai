@@ -15,6 +15,8 @@ import re
 from simulators.fetorch.math.matrixops import get_problem_type_parameters
 from simulators.fetorch.material.models.standard.elastic import Elastic
 from simulators.fetorch.material.models.standard.von_mises import VonMises
+from simulators.fetorch.material.models.standard.von_mises_mixed import \
+    VonMisesMixed
 from simulators.fetorch.material.models.standard.drucker_prager import \
     DruckerPrager
 from rc_base_model.model.recurrent_model import RecurrentConstitutiveModel
@@ -181,6 +183,16 @@ class StructureMaterialState:
             constitutive_model = VonMises(self._strain_formulation,
                                           self._problem_type,
                                           model_parameters)
+            # Set learnable parameters nature
+            is_explicit_parameters = False
+            # Set recurrency structure
+            is_recurrent_model = False
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        elif model_name == 'von_mises_mixed':
+            # Initialize constitutive model
+            constitutive_model = VonMisesMixed(self._strain_formulation,
+                                               self._problem_type,
+                                               model_parameters)
             # Set learnable parameters nature
             is_explicit_parameters = False
             # Set recurrency structure
