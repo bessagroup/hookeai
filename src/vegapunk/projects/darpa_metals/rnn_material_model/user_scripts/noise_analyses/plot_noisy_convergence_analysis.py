@@ -110,6 +110,10 @@ def plot_prediction_loss_convergence_uq(n_noise_case, noise_case_labels,
     
     Parameters
     ----------
+    n_noise_case : int
+        Number of noise cases.
+    noise_case_labels : tuple[str]
+        Noise cases labels.
     models_base_dirs : tuple[str]
         Base directory where each model is stored.
     training_dirs : tuple[str]
