@@ -346,11 +346,17 @@ def scatter_xy_data_noise_cases(data_xy, data_labels=None, n_noise_case=1,
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Check datasets labels
     if data_labels is not None:
-        if len(data_labels) != n_datasets/n_model_sample:
+        if is_error_bar and len(data_labels) != n_noise_case:
+            raise RuntimeError('Number of data set labels is not consistent '
+                               'with number of noise cases.')
+        elif not is_error_bar and len(data_labels) != n_datasets:
             raise RuntimeError('Number of data set labels is not consistent '
                                'with number of data sets.')
     else:
-        data_labels = int(n_datasets/n_model_sample)*[None,]
+        if is_error_bar:
+            data_labels = n_noise_case*[None,]
+        else:
+            data_labels = n_datasets*[None,]
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set default color cycle
     cycler_color = cycler.cycler('color',['#4477AA', '#EE6677', '#228833',
