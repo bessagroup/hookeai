@@ -123,6 +123,8 @@ def generate_convergence_plots(models_base_dirs, training_dirs, testing_dirs,
 if __name__ == "__main__":
     # Set computation processes
     is_uncertainty_quantification = True
+    # Set testing type
+    testing_type = ('in_distribution', 'out_distribution')[0]
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set convergence analysis base directory
     base_dir = ('/home/bernardoferreira/Documents/brown/projects/'
@@ -151,8 +153,12 @@ if __name__ == "__main__":
                                'found:\n\n' + training_dataset_dir)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Set testing data set directory
-        testing_dataset_dir = os.path.join(os.path.normpath(model_base_dir),
-                                           '5_testing_id_dataset')
+        if testing_type == 'in_distribution':
+            testing_dataset_dir = os.path.join(
+                os.path.normpath(model_base_dir), '5_testing_id_dataset')
+        elif testing_type == 'out_distribution':
+            testing_dataset_dir = os.path.join(
+                os.path.normpath(model_base_dir), '6_testing_od_dataset')
         # Store testing data set directory
         if os.path.isdir(testing_dataset_dir):
             testing_dirs.append(testing_dataset_dir)
@@ -162,7 +168,7 @@ if __name__ == "__main__":
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Set prediction data set directory
         prediction_dir = os.path.join(os.path.normpath(model_base_dir),
-                                      '7_prediction/in_distribution/'
+                                      f'7_prediction/{testing_type}/'
                                       'prediction_set_0')
         # Store prediction directory
         if os.path.isdir(prediction_dir) or is_uncertainty_quantification:
@@ -172,7 +178,12 @@ if __name__ == "__main__":
                                'found:\n\n' + prediction_dir)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set convergence analysis plots directory
-    plots_dir = os.path.join(os.path.normpath(base_dir), 'plots')
+    if testing_type == 'in_distribution':
+        plots_dir = os.path.join(os.path.normpath(base_dir),
+                                 'plots_id_testing')
+    elif testing_type == 'out_distribution':
+        plots_dir = os.path.join(os.path.normpath(base_dir),
+                                 'plots_od_testing')
     # Create convergence analysis plots directory
     if not os.path.isdir(plots_dir):
         make_directory(plots_dir)
