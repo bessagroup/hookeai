@@ -67,40 +67,43 @@ def process_datasets_type(src_dir):
                 dataset_type_basename = '6_testing_od_dataset'
             else:
                 raise RuntimeError('Unknown data set type.')
-        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        # Set data set type directory
-        dataset_type_dir = os.path.join(dataset_dir, dataset_type_basename)
-        # Check data set type directory
-        if not os.path.isdir(dataset_type_dir):
-            continue
-        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        # Get files and directories in data set directory
-        dataset_dir_list = os.listdir(dataset_type_dir)
-        # Loop over files and directories
-        for filename in dataset_dir_list:
-            # Check if data set file
-            is_dataset_file= bool(re.search(r'^' + f'{dataset_basename}'
-                                            + r'_n[0-9]+.pkl$', filename))
-            # Set data set path
-            if is_dataset_file:
-                dataset_path = os.path.join(dataset_type_dir, filename)
-                break
-        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        # Load data set
-        with open(dataset_path, 'rb') as dataset_file:
-            dataset = pickle.load(dataset_file)
-        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        # Check data set type
-        if isinstance(dataset, TimeSeriesDatasetInMemory):
-            pass
-        elif isinstance(dataset, list):
-            # Convert data set to time series data set (in-memory)
-            dataset = TimeSeriesDatasetInMemory(dataset)
-            # Save data set (overwrite)
-            save_dataset(dataset, dataset_basename, dataset_type_dir)
-        else:
-            raise RuntimeError('Invalid data set type stored in file:'
-                               '\n\n' + dataset_path)
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Set data set type directory
+            dataset_type_dir = os.path.join(dataset_dir, dataset_type_basename)
+            # Check data set type directory
+            if not os.path.isdir(dataset_type_dir):
+                continue
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Get files and directories in data set directory
+            dataset_dir_list = os.listdir(dataset_type_dir)
+            # Loop over files and directories
+            for filename in dataset_dir_list:
+                # Check if data set file
+                is_dataset_file= bool(re.search(r'^' + f'{dataset_basename}'
+                                                + r'_n[0-9]+.pkl$', filename))
+                # Set data set path
+                if is_dataset_file:
+                    dataset_path = os.path.join(dataset_type_dir, filename)
+                    break
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Load data set
+            with open(dataset_path, 'rb') as dataset_file:
+                dataset = pickle.load(dataset_file)
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~           
+            # Check data set type
+            if isinstance(dataset, TimeSeriesDatasetInMemory):
+                pass
+            elif isinstance(dataset, list):
+                # Save original data set (renamed)
+                save_dataset(dataset, dataset_basename + '_list',
+                             dataset_type_dir)
+                # Convert data set to time series data set (in-memory)
+                dataset = TimeSeriesDatasetInMemory(dataset)
+                # Save data set (overwrite)
+                save_dataset(dataset, dataset_basename, dataset_type_dir)
+            else:
+                raise RuntimeError('Invalid data set type stored in file:'
+                                   '\n\n' + dataset_path)
 # =============================================================================
 def gru_training_and_predictions(src_dir):
     """Training and prediction of local GRU with uncertainty quantification.
@@ -118,7 +121,7 @@ def gru_training_and_predictions(src_dir):
     # Set number of model samples for uncertainty quantification
     n_model_sample = 3
     # Set computation processes
-    is_model_training = False
+    is_model_training = True
     # Set testing type
     testing_type = ('training', 'validation', 'in_distribution',
                     'out_distribution')[2]
@@ -589,9 +592,9 @@ def get_model_avg_prediction_loss(src_dir, n_model_sample, testing_type):
     x_data = [int(x.strip('n')) for x in models_avg_prediction_loss.keys()]
     y_data = [np.mean(x) for x in models_avg_prediction_loss.values()]
     print('  if all(x is None for x in data_labels):')
-    print(f'    x_data = {x_data}')
-    print(f'    y_data = {y_data}')
-    print("    axes.plot(x_data, y_data, color='#EE6677', marker='v', "
+    print(f'      x_data = {x_data}')
+    print(f'      y_data = {y_data}')
+    print("      axes.plot(x_data, y_data, color='#EE6677', marker='v', "
           "markersize=3)")
     print('')
 # =============================================================================
