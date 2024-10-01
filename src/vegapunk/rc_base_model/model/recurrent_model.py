@@ -27,9 +27,13 @@ import numpy as np
 # Local
 from simulators.fetorch.material.models.standard.elastic import Elastic
 from simulators.fetorch.material.models.standard.von_mises import VonMises
+from simulators.fetorch.material.models.standard.von_mises_mixed import \
+    VonMisesMixed
 from simulators.fetorch.material.models.standard.drucker_prager import \
     DruckerPrager
 from simulators.fetorch.material.models.vmap.von_mises import VonMisesVMAP
+from simulators.fetorch.material.models.vmap.von_mises_mixed import \
+    VonMisesMixedVMAP
 from simulators.fetorch.material.models.vmap.drucker_prager import \
     DruckerPragerVMAP
 from simulators.fetorch.math.matrixops import get_problem_type_parameters, \
@@ -311,6 +315,11 @@ class RecurrentConstitutiveModel(torch.nn.Module):
                 VonMises(self._strain_formulation, self._problem_type,
                          self._material_model_parameters,
                          device_type=self._device_type)
+        elif material_model_name == 'von_mises_mixed':
+            self._constitutive_model = \
+                VonMisesMixed(self._strain_formulation, self._problem_type,
+                              self._material_model_parameters,
+                              device_type=self._device_type)
         elif material_model_name == 'drucker_prager':
             self._constitutive_model = \
                 DruckerPrager(self._strain_formulation, self._problem_type,
@@ -321,6 +330,11 @@ class RecurrentConstitutiveModel(torch.nn.Module):
                 VonMisesVMAP(self._strain_formulation, self._problem_type,
                              self._material_model_parameters,
                              device_type=self._device_type)
+        elif material_model_name == 'von_mises_mixed_vmap':
+            self._constitutive_model = \
+                VonMisesMixedVMAP(self._strain_formulation, self._problem_type,
+                                  self._material_model_parameters,
+                                  device_type=self._device_type)
         elif material_model_name == 'drucker_prager_vmap':
             self._constitutive_model = \
                 DruckerPragerVMAP(self._strain_formulation, self._problem_type,
@@ -497,6 +511,34 @@ class RecurrentConstitutiveModel(torch.nn.Module):
                 # Synchronize parameter
                 if param in ('s0', 'a', 'b'):
                     hardening_parameters[param] = sync_val
+                else:
+                    material_parameters[param] = sync_val
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            elif self._material_model_name in ('von_mises_mixed',
+                                               'von_mises_mixed_vmap'):
+                # Set valid learnable parameters
+                valid_learnable_parameters = ('E', 'v', 's0', 'a', 'b',
+                                              'kin_s0', 'kin_a', 'kin_b')
+                # Check learnable parameter
+                if param not in valid_learnable_parameters:
+                    raise RuntimeError(f'Parameter "{param}" is not a valid '
+                                       f'learnable parameter for model '
+                                       f'"{material_model_name}.')
+                # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                # Get material model parameters
+                material_parameters = self.get_material_model_parameters()
+                # Get isotropic hardening parameters
+                hardening_parameters = \
+                    material_parameters['hardening_parameters']
+                # Get kinematic hardening parameters
+                kinematic_hardening_parameters = \
+                    material_parameters['kinematic_hardening_parameters']
+                # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                # Synchronize parameter
+                if param in ('s0', 'a', 'b'):
+                    hardening_parameters[param] = sync_val
+                elif param in ('kin_s0', 'kin_a', 'kin_b'):
+                    kinematic_hardening_parameters[param[4:]] = sync_val
                 else:
                     material_parameters[param] = sync_val
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

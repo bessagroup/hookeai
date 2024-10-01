@@ -652,7 +652,7 @@ if __name__ == '__main__':
     strain_formulation = 'infinitesimal'
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set constitutive model name and parameters
-    model_name = 'von_mises_mixed'
+    model_name = 'rc_von_mises_mixed_vmap'
     # Set constitutive model parameters
     if model_name == 'elastic':
         # Set constitutive model parameters
@@ -783,6 +783,40 @@ if __name__ == '__main__':
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Set model validation data directory name
             model_data_name = 'von_mises'
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        elif model_name in ('rc_von_mises_mixed', 'rc_von_mises_mixed_vmap'):
+            # Set constitutive model parameters
+            model_parameters = {
+                'elastic_symmetry': 'isotropic',
+                'E': 100, 'v': 0.3,
+                'euler_angles': (0.0, 0.0, 0.0),
+                'hardening_law':
+                    get_hardening_law('piecewise_linear'),
+                'hardening_parameters':
+                    {'hardening_points': torch.tensor([[0.0, 2.0],
+                                                       [1.0, 4.0]])},
+                'kinematic_hardening_law':
+                    get_hardening_law('piecewise_linear'),
+                'kinematic_hardening_parameters':
+                    {'hardening_points': torch.tensor([[0.0, 0.0],
+                                                       [1.0, 4.0]])}}
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Set learnable parameters
+            learnable_parameters = {}
+            learnable_parameters['E'] = {'initial_value': 100.0,
+                                         'bounds': (80, 120)}
+            learnable_parameters['v'] = {'initial_value': 0.3,
+                                         'bounds': (0.2, 0.4)}
+            # Set material constitutive model name
+            if model_name == 'rc_von_mises_mixed_vmap':
+                material_model_name = 'von_mises_mixed_vmap'
+            else:
+                material_model_name = 'von_mises_mixed'
+            # Set material constitutive state variables (prediction)
+            state_features_out = {}
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Set model validation data directory name
+            model_data_name = 'von_mises_mixed'
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         elif model_name in ('rc_drucker_prager', 'rc_drucker_prager_vmap'):
             # Set frictional angle
