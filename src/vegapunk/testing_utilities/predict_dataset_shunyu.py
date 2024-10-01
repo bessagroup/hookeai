@@ -632,3 +632,15 @@ if __name__ == "__main__":
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Get reference model average prediction loss
         get_model_avg_prediction_loss(src_dir, n_model_sample, testing_type)
+# =============================================================================
+""" Reference model average prediction loss
+
+# GRU model (Von Mises dataset):
+
+if all(x is None for x in data_labels):
+    x_data = [10, 20, 40, 80, 160, 320, 640, 1280, 2560]
+    y_data = [0.44371066579999996, 0.208032375, 0.1680087048,
+              0.037462810740000005, 0.02486590622, 0.018032393299999998,
+              0.01445805694, 0.0009277936568, 0.0001907796998]
+    axes.plot(x_data, y_data, color='#EE6677', marker='v', markersize=3)
+"""
