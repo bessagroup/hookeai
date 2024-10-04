@@ -46,7 +46,8 @@ class Denoiser:
         """Constructor."""
         pass
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    def denoise(self, tensor, denoise_method, denoise_parameters={}):
+    def denoise(self, tensor, denoise_method, denoise_parameters={},
+                n_denoise_cycle=1):
         """Denoise features tensor.
 
         Parameters
@@ -58,6 +59,9 @@ class Denoiser:
             Denoising method.
         denoise_parameters : dict, default={}
             Denoising method parameters.
+        n_denoise_cycle : int, default=1
+            Number of times that the denoise method is applied recurrently to
+            denoise the features tensor.
 
         Returns
         -------
@@ -75,15 +79,14 @@ class Denoiser:
             denoiser = self._dn_savitzky_golay
         elif denoise_method == 'frequency_low_pass':
             denoiser = self._dn_frequency_low_pass
-        elif denoise_method == 'kalman_filter':
-            denoiser = self._dn_kalman_filter
-        elif denoise_method == 'gaussian_filter':
-            denoiser = self._dn_gaussian_filter
         else:
             raise RuntimeError('Unknown denoising method.')
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Initialize denoised features tensor
+        dn_tensor = tensor
         # Denoise features tensor
-        dn_tensor = denoiser(tensor, **denoise_parameters)
+        for _ in range(n_denoise_cycle):
+            dn_tensor = denoiser(dn_tensor, **denoise_parameters)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         return dn_tensor
     # -------------------------------------------------------------------------
