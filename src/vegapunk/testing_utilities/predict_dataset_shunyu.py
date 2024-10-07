@@ -584,13 +584,17 @@ def get_model_avg_prediction_loss(src_dir, n_model_sample, testing_type):
     print(f'\nSource directory: {src_dir}')
     print(f'\nNumber of model samples: {n_model_sample}')
     print(f'\nTesting type: {testing_type}')
-    print('\nAvg. prediction loss:\n')
+    print('\nAvg. prediction loss (model samples):\n')
     for key, val in models_avg_prediction_loss.items():
         val_frmt = [f'{x:11.4e}' for x in val]
         print(f'  "{str(key):5s}":  {str(val_frmt)}')
-    print('\nPlot data - Avg. prediction loss (mean):\n')
     x_data = [int(x.strip('n')) for x in models_avg_prediction_loss.keys()]
     y_data = [np.mean(x) for x in models_avg_prediction_loss.values()]
+    print('\nAvg. prediction loss (mean, sqrt(mean)):\n')
+    for i, key in enumerate(models_avg_prediction_loss.keys()):
+        val_frmt = f'{y_data[i]:11.4e}  {np.sqrt(y_data[i]):11.4e}'
+        print(f'  "{str(key):5s}":  {str(val_frmt)}')
+    print('\nPlot data - Avg. prediction loss (mean):\n')
     print('  if all(x is None for x in data_labels):')
     print(f'      x_data = {x_data}')
     print(f'      y_data = {y_data}')
