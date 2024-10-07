@@ -66,6 +66,8 @@ class GRURNNModel(torch.nn.Module):
         Type of device on which torch.Tensor is allocated.
     _device : torch.device
         Device on which torch.Tensor is allocated.
+    is_explicit_parameters : bool
+        True if model learnable parameters are explicit, False otherwise.
     is_data_normalization : bool
         If True, then input and output features are normalized for training
         False otherwise. Data scalers need to be fitted with fit_data_scalers()
@@ -187,6 +189,9 @@ class GRURNNModel(torch.nn.Module):
         self._linear_layer = \
             torch.nn.Linear(in_features=self._hidden_layer_size,
                             out_features=n_features_out, bias=True)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set learnable parameters nature
+        self.is_explicit_parameters = True
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Initialize data scalers
         self._data_scalers = None

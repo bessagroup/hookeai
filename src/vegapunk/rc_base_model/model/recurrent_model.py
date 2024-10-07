@@ -109,6 +109,8 @@ class RecurrentConstitutiveModel(torch.nn.Module):
         If True, then learnable parameters are normalized for optimization,
         False otherwise. The initial values and bounds of each parameter
         are normalized accordingly.
+    is_explicit_parameters : bool
+        True if model learnable parameters are explicit, False otherwise.
     is_data_normalization : bool
         If True, then input and output features are normalized for training
         False otherwise. Data scalers need to be fitted with fit_data_scalers()
@@ -348,6 +350,9 @@ class RecurrentConstitutiveModel(torch.nn.Module):
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Set state update failure checking flag
         self._is_check_su_fail = is_check_su_fail
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set learnable parameters nature
+        self.is_explicit_parameters = True
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Initialize data scalers
         self._data_scalers = None
