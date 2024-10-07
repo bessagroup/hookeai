@@ -239,9 +239,12 @@ def set_default_training_options():
 # =============================================================================
 if __name__ == "__main__":
     # Set case study base directory
-    base_dir = ''
+    base_dir = ('/home/bernardoferreira/Documents/brown/projects/'
+                'darpa_project/5_global_specimens/'
+                'rowan_specimen_tension_bv_hexa8_rc_von_mises_vmap/'
+                '2_learning_parameters/4_elastoplastic_properties_E_v_s0_a')
     # Set case study directory
-    case_study_name = ''
+    case_study_name = 'material_model_finder'
     case_study_dir = os.path.join(os.path.normpath(base_dir),
                                   f'{case_study_name}')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

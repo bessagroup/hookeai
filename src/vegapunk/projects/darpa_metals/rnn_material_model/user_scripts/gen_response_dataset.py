@@ -1689,7 +1689,7 @@ def generate_dataset_plots(strain_formulation, n_dim, dataset,
 # =============================================================================
 if __name__ == '__main__':
     # Set data set type
-    dataset_type = ('training', 'validation', 'testing_id', 'testing_od')[3]
+    dataset_type = ('training', 'validation', 'testing_id', 'testing_od')[2]
     # Set data set storage type
     is_in_memory_dataset = False
     # Set save dataset plots flags
@@ -1697,11 +1697,10 @@ if __name__ == '__main__':
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set case studies base directory
     base_dir = ('/home/bernardoferreira/Documents/brown/projects/'
-                'darpa_project/4_global_toy_uniaxial_specimen/'
-                '2d_toy_uniaxial_specimen_quad4_rc_drucker_prager/'
-                '0_elastic_properties_E')
+                'darpa_project/6_local_rnn_training_noisy/von_mises/'
+                'datasets_base/')
     # Set case study directory
-    case_study_name = 'material_model_performance'
+    case_study_name = 'noiseless_testing_dataset'
     case_study_dir = os.path.join(os.path.normpath(base_dir),
                                   f'{case_study_name}')
     # Set data set file basename
@@ -1733,12 +1732,12 @@ if __name__ == '__main__':
     # Set strain formulation
     strain_formulation = 'infinitesimal'
     # Set problem type
-    problem_type = 1
+    problem_type = 4
     # Set number of spatial dimensions
-    n_dim = 2
+    n_dim = 3
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set number of discrete times
-    n_time = 10
+    n_time = 100
     # Set initial and final time
     time_init = 0.0
     time_end = 1.0
@@ -1757,7 +1756,7 @@ if __name__ == '__main__':
     is_cyclic_loading = False
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set constitutive model
-    model_name = 'drucker_prager'
+    model_name = 'von_mises'
     # Set constitutive model parameters:
     if model_name == 'von_mises':
         # Set constitutive model parameters
@@ -1818,7 +1817,7 @@ if __name__ == '__main__':
         state_features = {}
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set number of strain-stress paths of each type
-    n_path_type = {'proportional': 0, 'random': 10}
+    n_path_type = {'proportional': 0, 'random': 512}
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set strain path generators parameters
     strain_path_kwargs_type = {}

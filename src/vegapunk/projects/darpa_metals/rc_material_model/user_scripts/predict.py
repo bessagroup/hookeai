@@ -228,13 +228,15 @@ def set_default_prediction_options():
 if __name__ == "__main__":
     # Set testing type
     testing_type = ('training', 'validation', 'in_distribution',
-                    'out_distribution')[2]
+                    'out_distribution')[3]
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set case studies base directory
     base_dir = ('/home/bernardoferreira/Documents/brown/projects/'
-                'darpa_project/3_local_rc_training/von_mises/')
+                'darpa_project/5_global_specimens/'
+                'rowan_specimen_tension_bv_hexa8_rc_von_mises_vmap/'
+                '2_learning_parameters/4_elastoplastic_properties_E_v_s0_a')
     # Set case study directory
-    case_study_name = 'convergence_analyses/elastic_properties/n1'
+    case_study_name = 'material_model_performance'
     case_study_dir = os.path.join(os.path.normpath(base_dir),
                                   f'{case_study_name}')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
