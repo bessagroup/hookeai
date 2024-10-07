@@ -126,12 +126,16 @@ def perform_model_prediction(predict_directory, dataset_file_path,
     dataset = add_dataset_feature_init(
         dataset, 'hidden_features_in', hidden_features_in)    
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Set prediction loss normalization
+    is_normalized_loss = False
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Prediction with RNN-based model
     predict_subdir, _ = \
         predict(dataset, model_directory, predict_directory=predict_directory,
                 load_model_state='best', loss_nature=loss_nature,
                 loss_type=loss_type, loss_kwargs=loss_kwargs,
-                is_normalized_loss=True, dataset_file_path=dataset_file_path,
+                is_normalized_loss=is_normalized_loss,
+                dataset_file_path=dataset_file_path,
                 device_type=device_type, seed=None, is_verbose=is_verbose)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Generate plots of model predictions
