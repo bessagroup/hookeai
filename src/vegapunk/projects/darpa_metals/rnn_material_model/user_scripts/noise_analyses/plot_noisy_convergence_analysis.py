@@ -245,8 +245,8 @@ def plot_prediction_loss_convergence_uq(n_noise_case, noise_case_labels,
     data_labels = noise_case_labels
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set axes limits and scale
-    x_lims = (None, None)
-    y_lims = (None, None)
+    x_lims = (10**0, 10**4)
+    y_lims = (10**2, 10**6)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set axes labels
     x_label = 'Training data set size'
