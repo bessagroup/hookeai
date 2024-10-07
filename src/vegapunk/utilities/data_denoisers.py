@@ -45,7 +45,7 @@ class Denoiser:
     def __init__(self):
         """Constructor."""
         pass
-    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # -------------------------------------------------------------------------
     def denoise(self, tensor, denoise_method, denoise_parameters={},
                 n_denoise_cycle=1):
         """Denoise features tensor.
