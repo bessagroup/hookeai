@@ -71,8 +71,8 @@ class GRURNNModel(torch.nn.Module):
         False otherwise. Data scalers need to be fitted with fit_data_scalers()
         and are stored as model attributes.
     _data_scalers : dict
-        Data scaler (item, sklearn.preprocessing.StandardScaler) for each
-        feature data (key, str).
+        Data scaler (item, TorchStandardScaler) for each feature data
+        (key, str).
 
     Methods
     -------
@@ -84,9 +84,9 @@ class GRURNNModel(torch.nn.Module):
         Forward propagation.
     save_model_init_file(self)
         Save model class initialization attributes.
-    save_model_state(self)
-        Save model state to file.
-    load_model_state(self)
+    save_model_state(self, epoch=None, is_best_state=False, \
+                     is_remove_posterior=True)
+    load_model_state(self, load_model_state=None, is_remove_posterior=True)
         Load model state from file.
     _check_state_file(self, filename)
         Check if file is model training epoch state file.
@@ -98,6 +98,8 @@ class GRURNNModel(torch.nn.Module):
         Delete existent model best state files.
     _init_data_scalers(self)
         Initialize model data scalers.
+    set_data_scalers(self, scaler_features_in, scaler_features_out)
+        Set fitted model data scalers.
     fit_data_scalers(self, dataset, is_verbose=False)
         Fit model data scalers.
     get_fitted_data_scaler(self, features_type)
@@ -110,9 +112,9 @@ class GRURNNModel(torch.nn.Module):
         Check if model data normalization is available.
     """
     def __init__(self, n_features_in, n_features_out, hidden_layer_size,
-                 model_directory, model_name, is_data_normalization=False,
-                 n_recurrent_layers=1, dropout=0, is_save_model_init_file=True,
-                 device_type='cpu'):
+                 model_directory, model_name='gru_material_model',
+                 is_data_normalization=False, n_recurrent_layers=1, dropout=0,
+                 is_save_model_init_file=True, device_type='cpu'):
         """Constructor.
         
         Parameters
@@ -125,7 +127,7 @@ class GRURNNModel(torch.nn.Module):
             Number of hidden state features.
         model_directory : str
             Directory where model is stored.
-        model_name : str, default='gru_rnn_model'
+        model_name : str, default='gru_material_model'
             Name of model.
         is_data_normalization : bool, default=False
             If True, then input and output features are normalized for
@@ -665,6 +667,23 @@ class GRURNNModel(torch.nn.Module):
         self._data_scalers = {}
         self._data_scalers['features_in'] = None
         self._data_scalers['features_out'] = None
+    # -------------------------------------------------------------------------
+    def set_data_scalers(self, scaler_features_in, scaler_features_out):
+        """Set fitted model data scalers.
+        
+        Parameters
+        ----------
+        scaler_features_in : {TorchMinMaxScaler, TorchMinMaxScaler}
+            Data scaler for input features.
+        scaler_features_out : {TorchMinMaxScaler, TorchMinMaxScaler}
+            Data scaler for output features.
+        """
+        # Set fitted data scalers
+        self._data_scalers['features_in'] = scaler_features_in
+        self._data_scalers['features_out'] = scaler_features_out
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Update model initialization file with fitted data scalers
+        self.save_model_init_file()
     # -------------------------------------------------------------------------
     def fit_data_scalers(self, dataset, is_verbose=False):
         """Fit model data scalers.
