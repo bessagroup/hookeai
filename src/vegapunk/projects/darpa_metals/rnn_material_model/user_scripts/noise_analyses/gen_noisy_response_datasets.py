@@ -46,6 +46,7 @@ from simulators.fetorch.material.models.standard.drucker_prager import \
 from simulators.fetorch.material.models.standard.hardening import \
     get_hardening_law
 from utilities.data_scalers import TorchMinMaxScaler
+from utilities.data_denoisers import Denoiser
 from ioput.iostandard import make_directory
 #
 #                                                          Authorship & Credits
@@ -302,6 +303,7 @@ class NoisyMaterialResponseDatasetGenerator:
                                strain_data_scaler=None,
                                noise_variability='homoscedastic',
                                heteroscedastic_normalizer=None,
+                               is_denoise_strain_path=False,
                                is_verbose=False):
         """Generate noisy strain-stress material response data set.
         
@@ -336,6 +338,9 @@ class NoisyMaterialResponseDatasetGenerator:
             heteroscedasticity weights. Weights materialize noise
             heteroscedasticity by scaling the noise distribution variance for
             each data point. If None, then maximum strain norm of each path.
+        is_denoise_strain_path : bool, default=False
+            If True, then denoise strain path prior to computation of material
+            response.
         is_verbose : bool, default=False
             If True, enable verbose output.
             
@@ -428,6 +433,25 @@ class NoisyMaterialResponseDatasetGenerator:
                     strain_path = strain_data_scaler.inverse_transform(
                         torch.tensor(strain_path)).numpy()
                 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                # Denoise strain path
+                if is_denoise_strain_path:
+                    # Initialize denoiser
+                    denoiser = Denoiser()
+                    # Set denoise method
+                    denoise_method = 'moving_average'
+                    # Set denoise method parameters
+                    if denoise_method == 'moving_average':
+                        denoise_parameters = {'window_size': 5}
+                    # Set number of denoising cycles
+                    n_denoise_cycle = 1
+                    # Get denoised strain path
+                    strain_path = denoiser.denoise(
+                        torch.tensor(strain_path, dtype=torch.float),
+                        denoise_method, denoise_parameters=denoise_parameters,
+                        n_denoise_cycle=n_denoise_cycle).numpy()
+                    # Enforce null initial noise
+                    strain_path[0, :] = noiseless_strain_path[0, :]
+                # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                 # Compute material response
                 stress_comps_order, stress_path, state_path, \
                     is_stress_path_fail = self.compute_stress_path(
@@ -446,7 +470,7 @@ class NoisyMaterialResponseDatasetGenerator:
             # Build material response path
             response_path = self.build_response_path(
                 strain_comps_order, strain_path, stress_comps_order,
-                stress_path, time_hist, state_path=state_path,
+                noiseless_stress_path, time_hist, state_path=state_path,
                 strain_noise_path=strain_noise_path,
                 stress_noise_path=stress_noise_path)
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -900,7 +924,7 @@ class NoiseGenerator:
 # =============================================================================
 if __name__ == '__main__':
     # Set data set type
-    dataset_type = ('training', 'validation', 'testing_id', 'testing_od')[2]
+    dataset_type = ('training', 'validation', 'testing_id', 'testing_od')[1]
     # Set save dataset plots flags
     is_save_dataset_plots = True
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -932,8 +956,7 @@ if __name__ == '__main__':
         # Set data sets base directory
         datasets_base_dir = ('/home/bernardoferreira/Documents/brown/projects/'
                              'darpa_project/6_local_rnn_training_noisy/'
-                             'von_mises/datasets_base/'
-                             'noiseless_testing_dataset')
+                             'von_mises/datasets_base/')
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Check data sets directory
         if not os.path.isdir(datasets_base_dir):
@@ -1150,10 +1173,15 @@ if __name__ == '__main__':
                                                minimum=strain_minimum,
                                                maximum=strain_maximum)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        # Initialize noise generator
-        noise_generator = NoiseGenerator()
+        # Set noise variability
+        noise_variability = 'homoscedastic'
         # Set noise distribution type
         noise_distribution = 'gaussian'
+        # Set strain path denoising
+        is_denoise_strain_path = False
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Initialize noise generator
+        noise_generator = NoiseGenerator()
         noise_generator.set_noise_distribution(noise_distribution)
         # Set noise distribution parameters
         if noise_distribution == 'uniform':
@@ -1185,8 +1213,6 @@ if __name__ == '__main__':
         else:
             raise RuntimeError('Unknown noise distribution.')
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        # Set noise variability
-        noise_variability = 'homoscedastic'
         # Set heteroscedastic noise weights
         if noise_variability == 'heteroscedastic':
             # Initialize heteroscedastic normalizer
@@ -1220,6 +1246,7 @@ if __name__ == '__main__':
                 state_features={}, strain_data_scaler=strain_data_scaler,
                 noise_variability=noise_variability,
                 heteroscedastic_normalizer=heteroscedastic_normalizer,
+                is_denoise_strain_path=is_denoise_strain_path,
                 is_verbose=True)
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Set noiseless data set directory
