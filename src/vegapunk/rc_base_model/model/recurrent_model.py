@@ -119,8 +119,8 @@ class RecurrentConstitutiveModel(torch.nn.Module):
     _is_check_su_fail : bool, default=True
         If True, then check if material constitutive model state update failed.
     _data_scalers : dict
-        Data scaler (item, sklearn.preprocessing.StandardScaler) for each
-        feature data (key, str).
+        Data scaler (item, TorchStandardScaler) for each feature data
+        (key, str).
 
     Methods
     -------
@@ -183,8 +183,10 @@ class RecurrentConstitutiveModel(torch.nn.Module):
         Delete existent model best state files.
     _init_data_scalers(self)
         Initialize model data scalers.
-    set_fitted_data_scalers(self, scaling_type, scaling_parameters)
+    set_data_scalers(self, scaler_features_in, scaler_features_out)
         Set fitted model data scalers.
+    set_fitted_data_scalers(self, scaling_type, scaling_parameters)
+        Set fitted model data scalers from given scaler type and parameters.
     fit_data_scalers(self, dataset, is_verbose=False)
         Fit model data scalers.
     get_fitted_data_scaler(self, features_type)
@@ -1730,8 +1732,25 @@ class RecurrentConstitutiveModel(torch.nn.Module):
         self._data_scalers['features_in'] = None
         self._data_scalers['features_out'] = None
     # -------------------------------------------------------------------------
-    def set_fitted_data_scalers(self, scaling_type, scaling_parameters):
+    def set_data_scalers(self, scaler_features_in, scaler_features_out):
         """Set fitted model data scalers.
+        
+        Parameters
+        ----------
+        scaler_features_in : {TorchMinMaxScaler, TorchMinMaxScaler}
+            Data scaler for input features.
+        scaler_features_out : {TorchMinMaxScaler, TorchMinMaxScaler}
+            Data scaler for output features.
+        """
+        # Set fitted data scalers
+        self._data_scalers['features_in'] = scaler_features_in
+        self._data_scalers['features_out'] = scaler_features_out
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Update model initialization file with fitted data scalers
+        self.save_model_init_file()
+    # -------------------------------------------------------------------------
+    def set_fitted_data_scalers(self, scaling_type, scaling_parameters):
+        """Set fitted model data scalers from given scaler type and parameters.
         
         Parameters
         ----------
