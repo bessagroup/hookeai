@@ -542,7 +542,7 @@ if __name__ == "__main__":
             'is_data_normalization': is_data_normalization,
             'device_type': device_type}
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    elif model_name == 'material_gru_model':
+    elif model_name == 'gru_material_model':
         # Set model parameters
         model_parameters = {}
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

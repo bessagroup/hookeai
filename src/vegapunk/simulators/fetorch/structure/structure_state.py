@@ -262,7 +262,7 @@ class StructureMaterialState:
             # Set recurrency structure
             is_recurrent_model = True
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        elif model_name == 'material_gru_model':
+        elif model_name == 'gru_material_model':
             # Get number of input and output features
             n_features_in = model_kwargs['n_features_in']
             n_features_out = model_kwargs['n_features_out']

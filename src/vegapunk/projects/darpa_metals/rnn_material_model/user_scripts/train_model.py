@@ -244,7 +244,7 @@ def set_default_model_parameters(model_directory, device_type='cpu'):
         class GNNEPDBaseModel).
     """
     # Set model name
-    model_name = 'material_gru_model'
+    model_name = 'gru_material_model'
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set number of input features
     n_features_in = 6
