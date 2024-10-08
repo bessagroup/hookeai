@@ -304,9 +304,10 @@ def train_model(n_max_epochs, dataset, model_init_args, lr_init,
             # graph or for tensors with the gradient flag set to False.
             if loss_nature == 'features_out':
                 # Get output features
-                features_out, _ = model(batch['features_in'],
-                                        batch['hidden_features_in'],
-                                        is_normalized=is_data_normalization)
+                features_out, _ = \
+                    model(batch['features_in'],
+                          hidden_features_in=batch['hidden_features_in'],
+                          is_normalized=is_data_normalization)
                 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~                
                 # Compute loss
                 loss = loss_function(features_out, features_targets)

@@ -276,7 +276,8 @@ class GRURNNModel(torch.nn.Module):
         """
         return self.device_type, self.device
     # -------------------------------------------------------------------------
-    def forward(self, features_in, hidden_features_in, is_normalized=False):
+    def forward(self, features_in, hidden_features_in=None,
+                is_normalized=False):
         """Forward propagation.
         
         Parameters
@@ -286,12 +287,13 @@ class GRURNNModel(torch.nn.Module):
             (sequence_length, n_features_in) for unbatched input or
             torch.Tensor(3d) of shape
             (sequence_length, batch_size, n_features_in) for batched input.
-        hidden_features_in : torch.Tensor
+        hidden_features_in : torch.Tensor, default=None
             Tensor of initial hidden state features stored as torch.Tensor(2d)
             of shape (n_recurrent_layers, hidden_layer_size) for unbatched
             input or torch.Tensor(3d) of shape
             (n_recurrent_layers, batch_size, hidden_layer_size) for batched
-            input.
+            input. If None, initial hidden state features are initialized to
+            zero.
         is_normalized : bool, default=False
             If True, get normalized output features, False otherwise.
             
@@ -309,13 +311,29 @@ class GRURNNModel(torch.nn.Module):
             (n_recurrent_layers, batch_size, hidden_layer_size) for batched
             input.
         """
-        # Check input and hidden state features
+        # Check input state features
         if not isinstance(features_in, torch.Tensor):
             raise RuntimeError('Input features were not provided as '
                                'torch.Tensor.')
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Initialize hidden state features
+        if hidden_features_in is None:
+            if len(features_in.shape) == 2:
+                hidden_features_in = torch.zeros((self._n_recurrent_layers,
+                                                  self._hidden_layer_size),
+                                                 dtype=torch.float,
+                                                 device=features_in.device)
+            else:
+                hidden_features_in = torch.zeros((self._n_recurrent_layers,
+                                                  features_in.shape[1],
+                                                  self._hidden_layer_size),
+                                                 dtype=torch.float,
+                                                 device=features_in.device)
+        # Check hidden state features
         if not isinstance(hidden_features_in, torch.Tensor):
             raise RuntimeError('Initial hidden state features were not '
                                'provided as torch.Tensor.')
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Check model data normalization
         if is_normalized:
             self.check_normalized_return()

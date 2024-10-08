@@ -177,9 +177,10 @@ def predict(dataset, model_directory, predict_directory=None,
             # Compute output features predictions (forward propagation)
             if loss_nature == 'features_out':
                 # Compute output features
-                features_out, _ = model(batch['features_in'],
-                                        batch['hidden_features_in'],
-                                        is_normalized=False)
+                features_out, _ = model(
+                    batch['features_in'],
+                    hidden_features_in=batch['hidden_features_in'],
+                    is_normalized=False)
                 # Get output features ground-truth (None if not available)
                 targets = batch['features_out']
                 # Store sample results (removing batch dimension)
