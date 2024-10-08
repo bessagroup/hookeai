@@ -165,8 +165,8 @@ def train_model(n_max_epochs, dataset, model_init_args, lr_init,
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     start_time_sec = time.time()
     if is_verbose:
-        print('\nRecurrent Neural Network model training'
-              '\n---------------------------------------')
+        print('\nRecurrent Constitutive model training'
+              '\n-------------------------------------')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Initialize recurrent constitutive model
     model = RecurrentConstitutiveModel(**model_init_args)    
