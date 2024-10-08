@@ -547,7 +547,7 @@ class MaterialModelFinder(torch.nn.Module):
                 # Get hybridized material models
                 material_submodels = model.get_hyb_models_dict()
                 # Loop over material submodels
-                for submodel_key, submodel in material_submodels.items():
+                for _, submodel in material_submodels.items():
                     # Check if submodel parameters are collected
                     is_collect_params = \
                         (hasattr(submodel, 'is_explicit_parameters')
@@ -557,10 +557,7 @@ class MaterialModelFinder(torch.nn.Module):
                     if not is_collect_params:
                         continue
                     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-                    # Get material submodel
-                    submodel = material_submodels[submodel_key]
-                    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-                    # Loop over material model parameters
+                    # Loop over hybridized material model parameters
                     for param in submodel.get_model_parameters().keys():
                         # Get parameter bounds
                         if submodel.is_normalized_parameters:
