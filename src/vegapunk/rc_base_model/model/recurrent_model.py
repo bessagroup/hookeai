@@ -1305,7 +1305,7 @@ class RecurrentConstitutiveModel(torch.nn.Module):
         # Build state features path
         state_path = None
         if is_state_features_out:
-            state_path = torch.stack(state_path_steps, dim=0)   
+            state_path = torch.cat(state_path_steps, dim=0)   
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         return stress_path, state_path
     # -------------------------------------------------------------------------
