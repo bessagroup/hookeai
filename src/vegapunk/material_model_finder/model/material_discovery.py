@@ -16,6 +16,7 @@ import itertools
 # Third-party
 import torch
 # Local
+from hybrid_base_model.model.hybrid_model import HybridMaterialModel
 from simulators.fetorch.element.integrations.internal_forces import \
     compute_element_internal_forces, compute_infinitesimal_inc_strain, \
     compute_infinitesimal_strain
@@ -407,27 +408,55 @@ class MaterialModelFinder(torch.nn.Module):
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Get material models
         material_models = self._specimen_material_state.get_material_models()
-        # Get model selection procedure
-        is_collect_model_parameters = \
-            self._specimen_material_state.get_material_model_param_nature
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Loop over material models
         for model_key, model in material_models.items():
-            # Check if model parameters are collected
-            is_collect_params = is_collect_model_parameters(int(model_key))
-            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            # Skip model parameters
-            if not is_collect_params:
-                continue
-            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            # Get detached model parameters
-            detached_parameters = \
-                model.get_detached_model_parameters(is_normalized=False)
-            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            # Collect parameters (prefix with model label)
-            for param, value in detached_parameters.items():
-                # Store parameter
-                model_parameters[f'model_{model_key}_{param}'] = value
+            # Collect material models explicit learnable parameters
+            if isinstance(model, HybridMaterialModel):
+                # Get hybridized material models
+                material_submodels = model.get_hyb_models_dict()
+                # Loop over material submodels
+                for submodel_key, submodel in material_submodels.items():
+                    # Check if submodel parameters are collected
+                    is_collect_params = \
+                        (hasattr(submodel, 'is_explicit_parameters')
+                         and submodel.is_explicit_parameters)
+                    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                    # Skip submodel parameters
+                    if not is_collect_params:
+                        continue
+                    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                    # Get detached submodel parameters
+                    detached_parameters = \
+                        submodel.get_detached_model_parameters(
+                            is_normalized=False)
+                    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                    # Collect parameters (prefix with model and submodel label)
+                    for param, value in detached_parameters.items():
+                        # Set parameter label
+                        param_label = \
+                            f'model_{model_key}_{submodel_key}_{param}'
+                        # Store parameter
+                        model_parameters[param_label] = value  
+            else:
+                # Check if model parameters are collected
+                is_collect_params = (hasattr(model, 'is_explicit_parameters')
+                                     and model.is_explicit_parameters)
+                # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                # Skip model parameters
+                if not is_collect_params:
+                    continue
+                # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                # Get detached model parameters
+                detached_parameters = \
+                    model.get_detached_model_parameters(is_normalized=False)
+                # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                # Collect parameters (prefix with model label)
+                for param, value in detached_parameters.items():
+                    # Set parameter label
+                    param_label = f'model_{model_key}_{param}'
+                    # Store parameter
+                    model_parameters[param_label] = value
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         return model_parameters
     # -------------------------------------------------------------------------
@@ -451,26 +480,53 @@ class MaterialModelFinder(torch.nn.Module):
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Get material models
         material_models = self._specimen_material_state.get_material_models()
-        # Get model selection procedure
-        is_collect_model_parameters = \
-            self._specimen_material_state.get_material_model_param_nature
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Loop over material models
         for model_key, model in material_models.items():
-            # Check if model parameters are collected
-            is_collect_params = is_collect_model_parameters(int(model_key))
-            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            # Skip model parameters
-            if not is_collect_params:
-                continue
-            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            # Get model parameters bounds
-            parameters_bounds = model.get_model_parameters_bounds()
-            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            # Collect parameters bounds (prefix with model label)
-            for param, bounds in parameters_bounds.items():
-                # Store parameter
-                model_parameters_bounds[f'model_{model_key}_{param}'] = bounds
+            # Collect material models explicit learnable parameters
+            if isinstance(model, HybridMaterialModel):
+                # Get hybridized material models
+                material_submodels = model.get_hyb_models_dict()
+                # Loop over material submodels
+                for submodel_key, submodel in material_submodels.items():
+                    # Check if submodel parameters are collected
+                    is_collect_params = \
+                        (hasattr(submodel, 'is_explicit_parameters')
+                         and submodel.is_explicit_parameters)
+                    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                    # Skip submodel parameters
+                    if not is_collect_params:
+                        continue
+                    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                    # Get model parameters bounds
+                    parameters_bounds = submodel.get_model_parameters_bounds()
+                    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                    # Collect parameters bounds (prefix with model and submodel
+                    # label)
+                    for param, bounds in parameters_bounds.items():
+                        # Set parameter label
+                        param_label = \
+                            f'model_{model_key}_{submodel_key}_{param}'
+                        # Store parameter
+                        model_parameters_bounds[param_label] = bounds
+            else:
+                # Check if model parameters are collected
+                is_collect_params = (hasattr(model, 'is_explicit_parameters')
+                                     and model.is_explicit_parameters)
+                # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                # Skip model parameters
+                if not is_collect_params:
+                    continue
+                # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                # Get model parameters bounds
+                parameters_bounds = model.get_model_parameters_bounds()
+                # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                # Collect parameters bounds (prefix with model label)
+                for param, bounds in parameters_bounds.items():
+                    # Set parameter label
+                    param_label = f'model_{model_key}_{param}'
+                    # Store parameter
+                    model_parameters_bounds[param_label] = bounds
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         return model_parameters_bounds
     # -------------------------------------------------------------------------
@@ -483,36 +539,68 @@ class MaterialModelFinder(torch.nn.Module):
         """
         # Get material models
         material_models = self._specimen_material_state.get_material_models()
-        # Get model selection procedure
-        is_collect_model_parameters = \
-            self._specimen_material_state.get_material_model_param_nature
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Loop over parameters
         for model_key, param_dict in self.get_model_parameters().items():
-            # Check if model parameters are collected
-            is_collect_params = is_collect_model_parameters(int(model_key))
-            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            # Skip model parameters
-            if not is_collect_params:
-                continue
-            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            # Get material model
-            model = material_models[model_key]
-            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            # Loop over material model parameters
-            for param in model.get_model_parameters().keys():
-                # Get parameter bounds
-                if model.is_normalized_parameters:
-                    lower_bound, upper_bound = \
-                        model.get_model_parameters_norm_bounds()[param]
-                else:
-                    lower_bound, upper_bound = \
-                        model.get_model_parameters_bounds()[param]
+            # Enforce bounds in models explicit learnable parameters
+            if isinstance(model, HybridMaterialModel):
+                # Get hybridized material models
+                material_submodels = model.get_hyb_models_dict()
+                # Loop over material submodels
+                for submodel_key, submodel in material_submodels.items():
+                    # Check if submodel parameters are collected
+                    is_collect_params = \
+                        (hasattr(submodel, 'is_explicit_parameters')
+                         and submodel.is_explicit_parameters)
+                    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                    # Skip submodel parameters
+                    if not is_collect_params:
+                        continue
+                    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                    # Get material submodel
+                    submodel = material_submodels[submodel_key]
+                    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                    # Loop over material model parameters
+                    for param in submodel.get_model_parameters().keys():
+                        # Get parameter bounds
+                        if submodel.is_normalized_parameters:
+                            lower_bound, upper_bound = \
+                                submodel.get_model_parameters_norm_bounds(
+                                    )[param]
+                        else:
+                            lower_bound, upper_bound = \
+                                submodel.get_model_parameters_bounds()[param]
+                        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                        # Get learnable parameter
+                        value = param_dict[param]
+                        # Enforce bounds
+                        value.data.clamp_(lower_bound, upper_bound)
+            else:
+                # Check if model parameters are collected
+                is_collect_params = (hasattr(model, 'is_explicit_parameters')
+                                     and model.is_explicit_parameters)
                 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-                # Get learnable parameter
-                value = param_dict[param]
-                # Enforce bounds
-                value.data.clamp_(lower_bound, upper_bound)
+                # Skip model parameters
+                if not is_collect_params:
+                    continue
+                # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                # Get material model
+                model = material_models[model_key]
+                # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                # Loop over material model parameters
+                for param in model.get_model_parameters().keys():
+                    # Get parameter bounds
+                    if model.is_normalized_parameters:
+                        lower_bound, upper_bound = \
+                            model.get_model_parameters_norm_bounds()[param]
+                    else:
+                        lower_bound, upper_bound = \
+                            model.get_model_parameters_bounds()[param]
+                    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                    # Get learnable parameter
+                    value = param_dict[param]
+                    # Enforce bounds
+                    value.data.clamp_(lower_bound, upper_bound)
     # -------------------------------------------------------------------------
     def set_device(self, device_type):
         """Set device on which torch.Tensor is allocated.

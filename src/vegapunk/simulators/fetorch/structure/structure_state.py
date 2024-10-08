@@ -64,9 +64,6 @@ class StructureMaterialState:
         dictionary with the last converged material constitutive model state
         variables (item, dict) for each Gauss integration point
         (key, str[int]).
-    _material_models_is_exparam : dict
-        For each material model (key, str), stores a bool that defines if the
-        material constitutive model learnable parameters are explicit.
     _elements_is_recurrent_material : dict
         For each finite element mesh element (key, str[int]), stores a bool
         that defines if the material constitutive model has a recurrent
@@ -95,8 +92,6 @@ class StructureMaterialState:
         Get element material constitutive state variables.
     update_converged_elements_state(self, is_copy=True)
         Update elements last converged material state variables.
-    get_material_model_param_nature(self, model_id)
-        Get material model learnable parameters nature.
     get_element_model_recurrency(self, element_id)
         Get element constitutive model recurrent structure.
     update_material_models_device(self, device_type)
@@ -123,8 +118,6 @@ class StructureMaterialState:
         self._n_mat_model = 0
         # Initialize material models
         self._material_models = {}
-        # Initialize material models learnable parameters nature
-        self._material_models_is_exparam = {}
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Initialize elements material model
         self._elements_material = {str(i): None for i in range(1, n_elem + 1)}
@@ -173,8 +166,6 @@ class StructureMaterialState:
             constitutive_model = Elastic(self._strain_formulation,
                                          self._problem_type,
                                          model_parameters)
-            # Set learnable parameters nature
-            is_explicit_parameters = False
             # Set recurrency structure
             is_recurrent_model = False
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -183,8 +174,6 @@ class StructureMaterialState:
             constitutive_model = VonMises(self._strain_formulation,
                                           self._problem_type,
                                           model_parameters)
-            # Set learnable parameters nature
-            is_explicit_parameters = False
             # Set recurrency structure
             is_recurrent_model = False
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -193,8 +182,6 @@ class StructureMaterialState:
             constitutive_model = VonMisesMixed(self._strain_formulation,
                                                self._problem_type,
                                                model_parameters)
-            # Set learnable parameters nature
-            is_explicit_parameters = False
             # Set recurrency structure
             is_recurrent_model = False
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -203,8 +190,6 @@ class StructureMaterialState:
             constitutive_model = DruckerPrager(self._strain_formulation,
                                                self._problem_type,
                                                model_parameters)
-            # Set learnable parameters nature
-            is_explicit_parameters = False
             # Set recurrency structure
             is_recurrent_model = False
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -257,8 +242,6 @@ class StructureMaterialState:
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Initialize constitutive model
             constitutive_model = RecurrentConstitutiveModel(**model_init_args)
-            # Set learnable parameters nature
-            is_explicit_parameters = True
             # Set recurrency structure
             is_recurrent_model = True
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -289,8 +272,6 @@ class StructureMaterialState:
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Initialize constitutive model
             constitutive_model = GRURNNModel(**model_init_args)
-            # Set learnable parameters nature
-            is_explicit_parameters = False
             # Set recurrency structure
             is_recurrent_model = True
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -304,8 +285,6 @@ class StructureMaterialState:
         model_id = str(self._n_mat_model)
         # Store constitutive model
         self._material_models[model_id] = constitutive_model
-        # Store constitutive model learnable parameters nature
-        self._material_models_is_exparam[model_id] = is_explicit_parameters
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Loop over elements
         for element_id in element_ids:
@@ -477,26 +456,6 @@ class StructureMaterialState:
             self._elements_state_old = copy.deepcopy(self._elements_state)
         else:
             self._elements_state_old = self._elements_state
-    # -------------------------------------------------------------------------
-    def get_material_model_param_nature(self, model_id):
-        """Get material model learnable parameters nature.
-        
-        Parameters
-        ----------
-        model_id : int
-            Material model label. Models labels must be within the range of
-            1 to n_mat_model (included).
-            
-        Returns
-        -------
-        is_explicit_parameters : bool
-            True if model learnable parameters are explicit, False otherwise.
-        """
-        # Check model learnable parameters nature
-        is_explicit_parameters = \
-            self._material_models_is_exparam[str(model_id)]
-        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        return is_explicit_parameters
     # -------------------------------------------------------------------------
     def get_element_model_recurrency(self, element_id):
         """Get element constitutive model recurrent structure.
