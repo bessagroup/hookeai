@@ -171,9 +171,12 @@ class RecurrentConstitutiveModel(torch.nn.Module):
         Move state variables tensors to model device.
     save_model_init_file(self)
         Save model class initialization attributes.
-    save_model_state(self)
+    save_model_init_state(self):
+        Save model initial state to file.
+    save_model_state(self, epoch=None, is_best_state=False, \
+                     is_remove_posterior=True)
         Save model state to file.
-    load_model_state(self)
+    load_model_state(self, load_model_state=None, is_remove_posterior=True)
         Load model state from file.
     _check_state_file(self, filename)
         Check if file is model training epoch state file.
@@ -1130,7 +1133,7 @@ class RecurrentConstitutiveModel(torch.nn.Module):
                 strain_path = strain_paths[:, :]
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Compute material response
-            stress_path, state_path = self._vcompute_stress_path(strain_path)            
+            stress_path, state_path = self._vcompute_stress_path(strain_path)
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Concatenate path stress and state features
             if state_path is not None:
@@ -1451,6 +1454,28 @@ class RecurrentConstitutiveModel(torch.nn.Module):
         with open(model_init_file_path, 'wb') as init_file:
             pickle.dump(model_init_attributes, init_file)
     # -------------------------------------------------------------------------
+    def save_model_init_state(self):
+        """Save model initial state to file.
+        
+        Model state file is stored in model_directory under the name
+        < model_name >-init.pt.
+
+        """
+        # Check model directory
+        if not os.path.isdir(self.model_directory):
+            raise RuntimeError('The model directory has not been found:\n\n'
+                               + self.model_directory)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set model state filename
+        model_state_file = self.model_name + '-init'
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set model state file path
+        model_path = os.path.join(self.model_directory,
+                                  model_state_file + '.pt')
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Save model state
+        torch.save(self.state_dict(), model_path)
+    # -------------------------------------------------------------------------
     def save_model_state(self, epoch=None, is_best_state=False,
                          is_remove_posterior=True):
         """Save model state to file.
@@ -1514,9 +1539,12 @@ class RecurrentConstitutiveModel(torch.nn.Module):
         model_directory under the name < model_name >-best.pt or
         < model_name >-< epoch >-best.pt if epoch if known.
         
+        Model initial state file is stored in model directory under the name
+        < model_name >-init.pt
+        
         Parameters
         ----------
-        load_model_state : {'best', 'last', int, None}, default=None
+        load_model_state : {'best', 'last', int, 'init', None}, default=None
             Load available model state from the model directory.
             Options:
             
@@ -1525,6 +1553,8 @@ class RecurrentConstitutiveModel(torch.nn.Module):
             'last'      : Model state corresponding to highest training epoch
             
             int         : Model state corresponding to given training epoch
+            
+            'init'      : Model initial state
             
             None        : Model default state file
         
@@ -1607,7 +1637,6 @@ class RecurrentConstitutiveModel(torch.nn.Module):
                                    'have not been found in directory:\n\n'
                                    + self.model_directory)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        # Set model state filename
         elif isinstance(load_model_state, int):
             # Get epoch
             epoch = load_model_state
@@ -1617,6 +1646,12 @@ class RecurrentConstitutiveModel(torch.nn.Module):
             # Delete model epoch state files posterior to loaded epoch
             if is_remove_posterior:
                 self._remove_posterior_state_files(epoch)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        elif load_model_state == 'init':
+            # Set model initial state file
+            model_state_file = self.model_name + '-init'
+            # Set epoch as unknown
+            epoch = None
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         else:
             # Set model state filename

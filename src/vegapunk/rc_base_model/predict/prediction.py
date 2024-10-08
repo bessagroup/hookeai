@@ -52,7 +52,7 @@ def predict(dataset, model_directory, predict_directory=None,
     predict_directory : str, default=None
         Directory where model predictions results are stored. If None, then
         all output files are supressed.
-    load_model_state : {'best', 'last', int, None}, default=None
+    load_model_state : {'best', 'last', int, 'init', None}, default=None
         Load available model state from the model directory. Options:
         
         'best' : Model state corresponding to best performance available
@@ -61,6 +61,8 @@ def predict(dataset, model_directory, predict_directory=None,
         
         int    : Model state corresponding to given training epoch
         
+        'init' : Model initial state
+
         None   : Model default state file
 
     loss_nature : {'features_out',}, default='features_out'

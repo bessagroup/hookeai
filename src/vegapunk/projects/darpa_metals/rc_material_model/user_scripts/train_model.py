@@ -31,6 +31,7 @@ import numpy as np
 # Local
 from rnn_base_model.data.time_dataset import load_dataset, \
     concatenate_dataset_features
+from rc_base_model.model.recurrent_model import RecurrentConstitutiveModel
 from rc_base_model.train.training import train_model, \
     read_parameters_history_from_file
 from rc_base_model.train.training_plots import plot_model_parameters_history
@@ -353,6 +354,21 @@ def generate_model_parameters_plots(model_directory):
                                   model_parameters_bounds, save_dir=plot_dir,
                                   is_save_fig=True, is_stdout_display=False,
                                   is_latex=True)
+# =============================================================================
+def save_model_init_state(model_init_args):
+    """Save model initial state to file.
+    
+    Parameters
+    ----------
+    model_init_args : dict
+        Model class initialization parameters (check
+        RecurrentConstitutiveModel).
+    """
+    # Initialize recurrent constitutive model
+    model = RecurrentConstitutiveModel(**model_init_args)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Save model initial state
+    model.save_model_init_state()
 # =============================================================================
 def set_default_model_parameters(model_directory, device_type='cpu'):
     """Set default model initialization parameters.
