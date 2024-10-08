@@ -257,7 +257,7 @@ def compute_sample_prediction_loss(model, loss_nature, loss_function,
     
     Parameters
     ----------
-    model : GRURNNModel
+    model : torch.nn.Module
         Recurrent neural network model.
     loss_nature : {'features_out',}
         Loss nature.

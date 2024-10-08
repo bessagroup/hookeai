@@ -360,15 +360,15 @@ def set_default_model_parameters(model_directory, device_type='cpu'):
     Parameters
     ----------
     model_directory : str
-        Directory where material patch model is stored.
+        Directory where model is stored.
     device_type : {'cpu', 'cuda'}, default='cpu'
         Type of device on which torch.Tensor is allocated.
 
     Returns
     -------
     model_init_args : dict
-        GNN-based model class initialization parameters (check
-        class GNNEPDBaseModel).
+        Model class initialization parameters (check
+        RecurrentConstitutiveModel).
     """
     # Set model name
     model_name = 'material_rc_model'

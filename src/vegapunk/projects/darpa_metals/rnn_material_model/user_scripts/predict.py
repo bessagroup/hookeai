@@ -7,7 +7,7 @@ perform_model_prediction
 generate_prediction_plots
     Generate plots of model predictions.
 set_default_prediction_options
-    Set default GNN-based model prediction options.
+    Set default model prediction options.
 """
 #
 #                                                                       Modules
