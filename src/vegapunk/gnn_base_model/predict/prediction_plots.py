@@ -141,7 +141,7 @@ def plot_truth_vs_prediction(prediction_sets, error_bound=None,
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Save figure
     if is_save_fig:
-        save_figure(figure, filename, format='pdf', save_dir=save_dir)
+        save_figure(figure, filename, format='png', save_dir=save_dir)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Close plot
     plt.close(figure)
