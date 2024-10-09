@@ -115,6 +115,9 @@ class RecurrentConstitutiveModel(torch.nn.Module):
         If True, then input and output features are normalized for training
         False otherwise. Data scalers need to be fitted with fit_data_scalers()
         and are stored as model attributes.
+    _is_save_model_init_file: bool, default=True
+        If True, saves model initialization file when model is initialized
+        (overwritting existent initialization file), False otherwise.
     _is_auto_sync_parameters : bool, default=True
         If True, then automatically synchronize material model parameters
         with learnable parameters in forward propagation.
@@ -308,6 +311,8 @@ class RecurrentConstitutiveModel(torch.nn.Module):
             self.model_name = model_name
         # Set normalization flag
         self.is_data_normalization = is_data_normalization
+        # Set save initialization file flag
+        self._is_save_model_init_file = is_save_model_init_file
         # Set device
         self.set_device(device_type)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -363,7 +368,7 @@ class RecurrentConstitutiveModel(torch.nn.Module):
             self._init_data_scalers()
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~        
         # Save model initialization file
-        if is_save_model_init_file:
+        if self._is_save_model_init_file:
             self.save_model_init_file()
     # -------------------------------------------------------------------------
     @staticmethod
@@ -1787,7 +1792,8 @@ class RecurrentConstitutiveModel(torch.nn.Module):
         self._data_scalers['features_out'] = scaler_features_out
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Update model initialization file with fitted data scalers
-        self.save_model_init_file()
+        if self._is_save_model_init_file:
+            self.save_model_init_file()
     # -------------------------------------------------------------------------
     def set_fitted_data_scalers(self, scaling_type, scaling_parameters):
         """Set fitted model data scalers from given scaler type and parameters.
@@ -1839,7 +1845,8 @@ class RecurrentConstitutiveModel(torch.nn.Module):
         self._data_scalers['features_out'] = scaler_features_out
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Update model initialization file with fitted data scalers
-        self.save_model_init_file()
+        if self._is_save_model_init_file:
+            self.save_model_init_file()
     # -------------------------------------------------------------------------
     def fit_data_scalers(self, dataset, is_verbose=False):
         """Fit model data scalers.
@@ -1888,7 +1895,8 @@ class RecurrentConstitutiveModel(torch.nn.Module):
         self._data_scalers['features_out'] = scaler_features_out
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Update model initialization file with fitted data scalers
-        self.save_model_init_file()
+        if self._is_save_model_init_file:
+            self.save_model_init_file()
     # -------------------------------------------------------------------------
     def get_fitted_data_scaler(self, features_type):
         """Get fitted model data scalers.
