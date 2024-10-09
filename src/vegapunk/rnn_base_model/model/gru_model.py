@@ -246,6 +246,11 @@ class GRURNNModel(torch.nn.Module):
         # Set model data scalers
         model_data_scalers = model_init_attributes['model_data_scalers']
         model._data_scalers = model_data_scalers
+        # Set model data scalers device
+        if model._data_scalers is not None:
+            # Loop over model data scalers
+            for _, data_scaler in model._data_scalers.items():
+                data_scaler.set_device(model._device_type)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         return model
     # -------------------------------------------------------------------------
