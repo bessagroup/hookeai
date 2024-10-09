@@ -1552,6 +1552,8 @@ class TorchStandardScaler:
     
     Methods
     -------
+    set_device(self, device_type):
+        Set device on which torch.Tensor is allocated.
     set_mean(self, mean)
         Set features standardization mean tensor.
     set_std(self, std)
@@ -1598,6 +1600,26 @@ class TorchStandardScaler:
         else:
              self._std = None
         self._device = torch.device(device_type)
+    # -------------------------------------------------------------------------
+    def set_device(self, device_type):
+        """Set device on which torch.Tensor is allocated.
+        
+        Parameters
+        ----------
+        device_type : {'cpu', 'cuda'}
+            Type of device on which torch.Tensor is allocated.
+        device : torch.device
+            Device on which torch.Tensor is allocated.
+        """
+        if device_type in ('cpu', 'cuda'):
+            if device_type == 'cuda' and not torch.cuda.is_available():
+                raise RuntimeError('PyTorch with CUDA is not available. '
+                                   'Please set the model device type as CPU '
+                                   'as:\n\n' + 'model.set_device(\'cpu\').')
+            self._device_type = device_type
+            self._device = torch.device(device_type)
+        else:
+            raise RuntimeError('Invalid device type.')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     def set_mean(self, mean):
         """Set features standardization mean tensor.
