@@ -191,7 +191,7 @@ class GRURNNModel(torch.nn.Module):
                             out_features=n_features_out, bias=True)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Set learnable parameters nature
-        self.is_explicit_parameters = True
+        self.is_explicit_parameters = False
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Initialize data scalers
         self._data_scalers = None
