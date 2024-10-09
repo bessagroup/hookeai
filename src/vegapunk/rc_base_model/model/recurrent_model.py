@@ -1092,10 +1092,12 @@ class RecurrentConstitutiveModel(torch.nn.Module):
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         return comps_array
     # -------------------------------------------------------------------------
-    def _vrecurrent_constitutive_model(self, strain_paths):
+    def _vrecurrent_constitutive_model_outdated(self, strain_paths):
         """Compute material response.
         
         Compatible with vectorized mapping.
+        
+        This method can be removed once new (vmap-based) version is validated.
         
         Parameters
         ----------
@@ -1148,11 +1150,7 @@ class RecurrentConstitutiveModel(torch.nn.Module):
             stress_path, state_path = self._vcompute_stress_path(strain_path)
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Concatenate path stress and state features
-            if state_path is not None:
-                response_path_data = \
-                    torch.cat((stress_path, state_path), dim=1)
-            else:
-                response_path_data = stress_path
+            response_path_data = torch.cat((stress_path, state_path), dim=1)
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Check number of output features
             if response_path_data.shape[1] != self._n_features_out:
@@ -1169,6 +1167,64 @@ class RecurrentConstitutiveModel(torch.nn.Module):
             response_paths = torch.stack(response_paths_data, dim=1)
         else:
             response_paths = response_paths_data[0]
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        return response_paths
+    # -------------------------------------------------------------------------
+    def _vrecurrent_constitutive_model(self, strain_paths):
+        """Compute material response.
+        
+        Compatible with vectorized mapping.
+        
+        Parameters
+        ----------
+        strain_paths : torch.Tensor
+            Tensor of strain paths stored as torch.Tensor(2d) of shape
+            (sequence_length, n_features_in) for unbatched input or
+            torch.Tensor(3d) of shape
+            (sequence_length, batch_size, n_features_in) for batched input.
+        
+        Returns
+        -------
+        response_paths : torch.Tensor
+            Tensor of material response paths (stress and state variables)
+            stored as torch.Tensor(2d) of shape
+            (sequence_length, n_features_out) for unbatched input or
+            torch.Tensor(3d) of shape
+            (sequence_length, batch_size, n_features_out) for batched input.
+        """
+        # Set batching dimension
+        batch_dim = 1
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Check if batched input
+        is_batched = len(strain_paths.shape) == 3
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set batched dimension
+        if not is_batched:
+            strain_paths = strain_paths.unsqueeze(batch_dim)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set vectorized material response computation (batch along paths)
+        vmap_compute_stress_path = torch.vmap(
+            self._vcompute_stress_path, in_dims=(1,), out_dims=(1, 0))
+        # Compute paths material response
+        stress_paths, state_paths = vmap_compute_stress_path(strain_paths)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Fix batch dimension (required to handle case when there are no state
+        # features)
+        state_paths = state_paths.permute(1, 0, 2)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Concatenate path stress and state features
+        response_paths = torch.cat((stress_paths, state_paths), dim=2)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Check number of output features
+        if response_paths.shape[2] != self._n_features_out:
+            raise RuntimeError(f'Material response number of dimensions '
+                               f'({response_paths.shape[2]}) does not '
+                               f'match the model number of output '
+                               f'features ({self._n_features_out}).')
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Remove batched dimension
+        if not is_batched:
+            response_paths = response_paths.squeeze(batch_dim)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         return response_paths
     # -------------------------------------------------------------------------
@@ -1223,8 +1279,8 @@ class RecurrentConstitutiveModel(torch.nn.Module):
             state_var_features = []
             for state_var, n_features in self._state_features_out.items():
                 state_var_features.append(torch.zeros((1, n_features),
-                                                    dtype=torch.float,
-                                                    device=self._device))
+                                                      dtype=torch.float,
+                                                      device=self._device))
             # Set initial state features tensor
             state_comps = torch.cat(state_var_features, dim=1) 
             # Store initial state features tensor
@@ -1318,9 +1374,10 @@ class RecurrentConstitutiveModel(torch.nn.Module):
         # Build stress path
         stress_path = torch.stack(stress_path_steps, dim=0)
         # Build state features path
-        state_path = None
+        state_path = torch.zeros((n_time, 0), dtype=torch.float,
+                                 device=self._device)
         if is_state_features_out:
-            state_path = torch.cat(state_path_steps, dim=0)   
+            state_path = torch.cat(state_path_steps, dim=0)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         return stress_path, state_path
     # -------------------------------------------------------------------------
