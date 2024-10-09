@@ -48,6 +48,9 @@ class HybridizationModel(torch.nn.Module):
             of the different hybridized models are added to compute the hybrid
             model output.
         """
+        # Initialize from base class
+        super(HybridizationModel, self).__init__()
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Set hybridization model type
         self._hybridization_type = hybridization_type
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -93,7 +96,8 @@ class HMAdditive(torch.nn.Module):
     """
     def __init__(self):
         """Constructor."""
-        pass
+        # Initialize from base class
+        super(HMAdditive, self).__init__()
     # -------------------------------------------------------------------------
     def forward(self, list_features_in):
         """Forward propagation.
