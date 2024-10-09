@@ -435,6 +435,13 @@ class RecurrentConstitutiveModel(torch.nn.Module):
             # Consistent update of material constitutive model device
             if hasattr(self, '_constitutive_model'):
                 self._constitutive_model.set_device(self._device_type)
+            # Consistent update of data scalers device
+            if (hasattr(self, '_data_scalers')
+                    and self._data_scalers is not None):
+                # Loop over data scalers
+                for _, data_scaler in self._data_scalers.items():
+                    # Update data scaler device
+                    data_scaler.set_device(self._device_type)    
         else:
             raise RuntimeError('Invalid device type.')
     # -------------------------------------------------------------------------

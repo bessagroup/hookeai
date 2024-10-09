@@ -23,7 +23,7 @@ import tqdm
 import sklearn.preprocessing
 # Local
 from rnn_base_model.data.time_dataset import get_time_series_data_loader
-from gnn_base_model.model.gnn_model import TorchStandardScaler
+from utilities.data_scalers import TorchStandardScaler
 #
 #                                                          Authorship & Credits
 # =============================================================================
@@ -266,6 +266,14 @@ class GRURNNModel(torch.nn.Module):
                                    'as:\n\n' + 'model.set_device(\'cpu\').')
             self._device_type = device_type
             self._device = torch.device(device_type)
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Consistent update of data scalers device
+            if (hasattr(self, '_data_scalers')
+                    and self._data_scalers is not None):
+                # Loop over data scalers
+                for _, data_scaler in self._data_scalers.items():
+                    # Update data scaler device
+                    data_scaler.set_device(self._device_type) 
         else:
             raise RuntimeError('Invalid device type.')
     # -------------------------------------------------------------------------
