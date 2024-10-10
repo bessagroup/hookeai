@@ -216,7 +216,7 @@ def hydra_wrapper(process, dataset_paths, device_type='cpu'):
                     predict_directory=testing_subdir,
                     load_model_state='best', loss_nature=cfg.loss_nature,
                     loss_type=cfg.loss_type, loss_kwargs=cfg.loss_kwargs,
-                    is_normalized_loss=True, device_type=device_type,
+                    is_normalized_loss=False, device_type=device_type,
                     is_verbose=False)
                 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                 # Generate plots of model predictions

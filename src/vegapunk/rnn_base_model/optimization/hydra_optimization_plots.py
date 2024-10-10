@@ -34,7 +34,8 @@ __status__ = 'Planning'
 #
 # =============================================================================
 def plot_optimization_history(optim_history, optim_metric, is_log_metric=False,
-                              objective_scale='linear', filename=None,
+                              objective_scale='linear', is_data_labels=False,
+                              filename=None,
                               save_dir=None, is_save_fig=False,
                               is_stdout_display=False, is_latex=False):
     """Plot Hydra multi-run optimization process history.
@@ -59,6 +60,9 @@ def plot_optimization_history(optim_history, optim_metric, is_log_metric=False,
         original metric values otherwise.
     objective_scale : {'linear', 'log'}, default='linear'
         Optimization metric values axis scale type.
+    is_data_labels : bool, default=False
+        If True, then plot data labels according with optimization processes
+        dictionary keys.
     filename : str, default=None
         Figure name. If None, then figure name is set as
         optimization_history_{optim_metric}.
@@ -82,7 +86,9 @@ def plot_optimization_history(optim_history, optim_metric, is_log_metric=False,
     # Initialize optimization processes data
     optim_data = {}
     # Initialize data labels
-    data_labels = []
+    data_labels=None
+    if is_data_labels:
+        data_labels = []
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Loop over optimization processes
     for i, (label, optim_dir) in enumerate(optim_history.items()):
@@ -91,8 +97,9 @@ def plot_optimization_history(optim_history, optim_metric, is_log_metric=False,
             raise RuntimeError('The optimization jobs directory has not been '
                                'found:\n\n' + optim_dir)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        # Get job files in optimization process directory                      # BUG: Not sorting as expected (must set key function)
-        directory_list = sorted(os.listdir(optim_dir))
+        # Get job files in optimization process directory
+        directory_list = sorted(os.listdir(optim_dir),
+               key=lambda x: int(re.search(r'^(\d+)$', x).groups()[-1]))
         # Check directory
         if not directory_list:
             raise RuntimeError('No job files have been found in optimization '
@@ -121,6 +128,11 @@ def plot_optimization_history(optim_history, optim_metric, is_log_metric=False,
                 job_summary_path = \
                     os.path.join(os.path.normpath(optim_dir),
                                  f'{job_id}/job_summary.dat')
+                # Check job summary file path
+                if not os.path.isfile(job_summary_path):
+                    raise RuntimeError(f'The job summary file path has not '
+                                       f'been found for job ID {job_id}:'
+                                       f'\n\n {job_summary_path}')
                 # Open job summary file
                 job_summary_file = open(job_summary_path, 'r')
                 job_summary_file.seek(0)
@@ -147,7 +159,8 @@ def plot_optimization_history(optim_history, optim_metric, is_log_metric=False,
         # Assemble optimization metric history
         optim_data[label] = metric_hist
         # Assemble data label
-        data_labels.append(label)
+        if is_data_labels:
+            data_labels.append(label)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Initialize data array and data labels
     data_xy = np.full((max_n_jobs, 2*n_optim_history), fill_value=None)
@@ -172,10 +185,10 @@ def plot_optimization_history(optim_history, optim_metric, is_log_metric=False,
     if is_log_metric:
         y_label = f'log({optim_metric})'
     else:
-        y_label = f'{optim_metric}'
+        y_label = f'{optim_metric.capitalize()}'
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set title
-    title = 'Optimization history'
+    title = 'Hyperparameter optimization history'
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Plot loss history
     figure, _ = plot_xy_data(data_xy, data_labels=data_labels, x_lims=x_lims,
@@ -196,3 +209,26 @@ def plot_optimization_history(optim_history, optim_metric, is_log_metric=False,
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Close plot
     plt.close(figure)
+# =============================================================================
+if __name__ == "__main__":
+    # Set optimization processes
+    optim_history = {}
+    optim_history['label'] = \
+        ('/home/bernardoferreira/Desktop/hyperparameter_opt/'
+         'optimize_gru_material_model_von_mises/2024-10-10/09-16-06')
+    # Set plot directory
+    save_dir = ('/home/bernardoferreira/Documents/brown/projects/'
+                'darpa_project/7_local_hybrid_training/'
+                'case_erroneous_von_mises_properties/hyp_opt_datasets')
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Set optimization metric
+    optim_metric = 'objective'
+    # Set optimization metric scale
+    objective_scale = 'linear'
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Plot optimization process history.
+    plot_optimization_history(optim_history, optim_metric,
+                              objective_scale=objective_scale,
+                              save_dir=save_dir, is_save_fig=True,
+                              is_stdout_display=False, is_latex=True)
+    
