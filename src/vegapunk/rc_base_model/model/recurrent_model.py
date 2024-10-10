@@ -415,7 +415,8 @@ class RecurrentConstitutiveModel(torch.nn.Module):
         if model._data_scalers is not None:
             # Loop over model data scalers
             for _, data_scaler in model._data_scalers.items():
-                data_scaler.set_device(model._device_type)
+                if data_scaler is not None:
+                    data_scaler.set_device(model._device_type)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         return model
     # -------------------------------------------------------------------------
@@ -446,7 +447,8 @@ class RecurrentConstitutiveModel(torch.nn.Module):
                 # Loop over data scalers
                 for _, data_scaler in self._data_scalers.items():
                     # Update data scaler device
-                    data_scaler.set_device(self._device_type)    
+                    if data_scaler is not None:
+                        data_scaler.set_device(self._device_type)    
         else:
             raise RuntimeError('Invalid device type.')
     # -------------------------------------------------------------------------
