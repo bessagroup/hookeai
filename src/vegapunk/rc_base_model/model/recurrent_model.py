@@ -358,6 +358,9 @@ class RecurrentConstitutiveModel(torch.nn.Module):
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Set state update failure checking flag
         self._is_check_su_fail = is_check_su_fail
+        # Force state update failure checking flag
+        if bool(re.search(r'_vmap$', self._material_model_name)):
+            self._is_check_su_fail = False
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Set learnable parameters nature
         self.is_explicit_parameters = True
@@ -1214,6 +1217,12 @@ class RecurrentConstitutiveModel(torch.nn.Module):
             self._vcompute_stress_path, in_dims=(1,), out_dims=(1, 0))
         # Compute paths material response
         stress_paths, state_paths = vmap_compute_stress_path(strain_paths)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Check paths stress history
+        if torch.isnan(stress_paths).any():
+            raise RuntimeError(f'NaNs were detected in the stress paths '
+                               f'history. This may have resulted from a state '
+                               f'update convergence failure.')
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Fix batch dimension (required to handle case when there are no state
         # features)
