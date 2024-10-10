@@ -17,7 +17,7 @@ import sys
 import pathlib
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Add project root directory to sys.path
-root_dir = str(pathlib.Path(__file__).parents[4])
+root_dir = str(pathlib.Path(__file__).parents[2])
 if root_dir not in sys.path:
     sys.path.insert(0, root_dir)
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -116,15 +116,15 @@ def hydra_wrapper(process, dataset_paths, device_type='cpu'):
             training_dataset = load_dataset(train_dataset_file_path)
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Set training data set features
-            train_dataset = concatenate_dataset_features(
-                train_dataset, new_label_in, cat_features_in,
+            training_dataset = concatenate_dataset_features(
+                training_dataset, new_label_in, cat_features_in,
                  is_remove_features=True)
-            train_dataset = concatenate_dataset_features(
-                train_dataset, new_label_out, cat_features_out,
+            training_dataset = concatenate_dataset_features(
+                training_dataset, new_label_out, cat_features_out,
                 is_remove_features=True)
             # Add hidden state initialization to data set
-            train_dataset = add_dataset_feature_init(
-                train_dataset, 'hidden_features_in', hidden_features_in)
+            training_dataset = add_dataset_feature_init(
+                training_dataset, 'hidden_features_in', hidden_features_in)
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Set early stopping
             is_early_stopping = cfg.is_early_stopping
@@ -133,23 +133,25 @@ def hydra_wrapper(process, dataset_paths, device_type='cpu'):
                 # Get validation data set file path
                 val_dataset_file_path = dataset_paths['validation']
                 # Load validation data set
-                val_dataset = load_dataset(val_dataset_file_path)
+                validation_dataset = load_dataset(val_dataset_file_path)
                 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                 # Set validation data set features
-                val_dataset = concatenate_dataset_features(
-                    val_dataset, new_label_in, cat_features_in,
+                validation_dataset = concatenate_dataset_features(
+                    validation_dataset, new_label_in, cat_features_in,
                     is_remove_features=True)
-                val_dataset = concatenate_dataset_features(
-                    val_dataset, new_label_out, cat_features_out,
+                validation_dataset = concatenate_dataset_features(
+                    validation_dataset, new_label_out, cat_features_out,
                     is_remove_features=True)
                 # Add hidden state initialization to data set
-                val_dataset = add_dataset_feature_init(
-                    val_dataset, 'hidden_features_in', hidden_features_in)
+                validation_dataset = add_dataset_feature_init(
+                    validation_dataset, 'hidden_features_in',
+                    hidden_features_in)
                 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                 # Get early stopping parameters
-                early_stopping_kwargs = cfg.early_stopping_kwargs
+                early_stopping_kwargs = {**cfg.early_stopping_kwargs}
                 # Add validation dataset to early stopping parameters
-                early_stopping_kwargs['validation_dataset'] = val_dataset
+                early_stopping_kwargs['validation_dataset'] = \
+                    validation_dataset
         else:
             raise RuntimeError('Unknown hyperparameter optimization process.')
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -191,7 +193,7 @@ def hydra_wrapper(process, dataset_paths, device_type='cpu'):
                 loss_kwargs=cfg.loss_kwargs, batch_size=cfg.batch_size,
                 is_sampler_shuffle=cfg.is_sampler_shuffle,
                 is_early_stopping=cfg.is_early_stopping,
-                early_stopping_kwargs=cfg.early_stopping_kwargs,
+                early_stopping_kwargs=early_stopping_kwargs,
                 device_type=device_type, is_verbose=False)
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Generate plots of model training process
@@ -262,8 +264,18 @@ if __name__ == "__main__":
     if process == 'training':
         datasets_paths['training'] = None
     elif process == 'training-testing':
-        datasets_paths['training'] = None
-        datasets_paths['validation'] = None
+        datasets_paths['training'] = \
+            ('/home/bernardoferreira/Documents/brown/projects/darpa_project/'
+             '7_local_hybrid_training/case_erroneous_von_mises_properties/'
+             'hyp_opt_datasets/1_training_dataset/ss_paths_dataset_n160.pkl')
+        datasets_paths['validation'] = \
+            ('/home/bernardoferreira/Documents/brown/projects/darpa_project/'
+             '7_local_hybrid_training/case_erroneous_von_mises_properties/'
+             'hyp_opt_datasets/2_validation_dataset/ss_paths_dataset_n32.pkl')
+        datasets_paths['testing'] = \
+            ('/home/bernardoferreira/Documents/brown/projects/darpa_project/'
+             '7_local_hybrid_training/case_erroneous_von_mises_properties/'
+             'hyp_opt_datasets/5_testing_id_dataset/ss_paths_dataset_n512.pkl')
     else:
         raise RuntimeError('Unknown hyperparameter optimization process.')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
