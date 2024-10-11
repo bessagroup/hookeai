@@ -61,7 +61,7 @@ defaults:
   #- override hydra/sweeper: basic
   # 2. Nevergrad
   #- override hydra/sweeper: nevergrad
-  # 3. Optuna
+  # 3. Optuna (update sampler according with sweeper._target)
   - override hydra/sweeper: optuna
   - override hydra/sweeper/sampler: grid
   # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -149,8 +149,8 @@ hydra:
   sweeper:
     # Optuna sweeper settings
     _target_: hydra_plugins.hydra_optuna_sweeper.optuna_sweeper.OptunaSweeper
-      # Store Optuna dashboard file (python package sqlalchemy==1.4.44)
-    storage: 'sqlite:////home/bernardoferreira/Documents/hyperparameter_opt/optuna_dashboard.db'
+    # Store Optuna dashboard file
+    #(python package sqlalchemy==1.4.44, delete old optuna_dashboard.db!)
 
     # Maximum number of function evaluations to perform
     n_trials: 300
