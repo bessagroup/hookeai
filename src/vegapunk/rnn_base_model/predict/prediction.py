@@ -34,10 +34,10 @@ __status__ = 'Planning'
 # =============================================================================
 #
 # =============================================================================
-def predict(dataset, model_directory, predict_directory=None,
+def predict(dataset, model_directory, model=None, predict_directory=None,
             load_model_state=None, loss_nature='features_out',
             loss_type='mse', loss_kwargs={}, is_normalized_loss=False,
-            dataset_file_path=None, device_type='cpu', seed=None,
+            batch_size=1, dataset_file_path=None, device_type='cpu', seed=None,
             is_verbose=False):
     """Make predictions with recurrent neural network model for given dataset.
     
@@ -49,6 +49,10 @@ def predict(dataset, model_directory, predict_directory=None,
         (sequence_length, n_features).
     model_directory : str
         Directory where model is stored.
+    model : HybridMaterialModel, default=None
+        Hybrid material constitutive model. If None, then model is initialized
+        from the initialization file and the state is loaded from the state
+        file. In both cases the model is set to evaluation mode.
     predict_directory : str, default=None
         Directory where model predictions results are stored. If None, then
         all output files are supressed.
@@ -79,6 +83,8 @@ def predict(dataset, model_directory, predict_directory=None,
         If True, then samples prediction loss are computed from the normalized
         data, False otherwise. Normalization requires that model features data
         scalers are fitted.
+    batch_size : int, default=1
+        Number of samples loaded per batch.
     dataset_file_path : str, default=None
         Time series data set file path if such file exists. Only used for
         output purposes.
@@ -122,17 +128,19 @@ def predict(dataset, model_directory, predict_directory=None,
         raise RuntimeError('The model prediction directory has not been '
                            'found:\n\n' + predict_directory)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    if is_verbose:
-        print('\n> Loading Recurrent Neural Network model...')
-    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Initialize recurrent neural network model
-    model = GRURNNModel.init_model_from_file(model_directory)
-    # Set model device
-    model.set_device(device_type)
-    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Load recurrent neural network model state
-    _ = model.load_model_state(load_model_state=load_model_state,
-                               is_remove_posterior=True)
+    # Initialize model and load model state if not provided
+    if model is None:
+        if is_verbose:
+            print('\n> Loading Recurrent Neural Network model...')
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Initialize recurrent neural network model
+        model = GRURNNModel.init_model_from_file(model_directory)
+        # Set model device
+        model.set_device(device_type)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Load recurrent neural network model state
+        _ = model.load_model_state(load_model_state=load_model_state,
+                                   is_remove_posterior=False)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Move model to device
     model.to(device=device)
@@ -147,15 +155,18 @@ def predict(dataset, model_directory, predict_directory=None,
     # Set data loader
     if isinstance(seed, int):
         data_loader = get_time_series_data_loader(
-            dataset=dataset,
+            dataset=dataset, batch_size=batch_size,
             kwargs={'worker_init_fn': seed_worker, 'generator': generator})
     else:
-        data_loader = get_time_series_data_loader(dataset=dataset)
+        data_loader = get_time_series_data_loader(
+            dataset=dataset, batch_size=batch_size)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Initialize loss function
     loss_function = get_pytorch_loss(loss_type, **loss_kwargs)
     # Initialize samples prediction loss
     loss_samples = []
+    # Initialize sample ID
+    sample_id = 0
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     if is_verbose:
         print('\n\n> Starting prediction process...\n')
@@ -163,16 +174,19 @@ def predict(dataset, model_directory, predict_directory=None,
     # Set context manager to avoid creation of computation graphs during the
     # model evaluation (forward propagation)
     with torch.no_grad():
-        # Loop over graph samples
-        for i, batch in enumerate(tqdm.tqdm(data_loader,
-                                            desc='> Predictions: ',
+        # Loop over samples
+        for _, batch in enumerate(tqdm.tqdm(data_loader,
+                                            desc='> Predictions (batches): ',
                                             disable=not is_verbose)):
             # Move batch to device
             for key in batch.keys():
                 batch[key] = batch[key].to(device)
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            # Initialize sample results
-            results = {}
+            # Get number of batched samples
+            batch_n_sample = batch['features_in'].shape[1]
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Initialize batched samples results
+            samples_results = []
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Compute output features predictions (forward propagation)
             if loss_nature == 'features_out':
@@ -183,31 +197,46 @@ def predict(dataset, model_directory, predict_directory=None,
                     is_normalized=False)
                 # Get output features ground-truth (None if not available)
                 targets = batch['features_out']
-                # Store sample results (removing batch dimension)
-                results['features_out'] = features_out.detach().cpu()[:, 0, :]
-                results['targets'] = None
-                if targets is not None:
-                    results['targets'] = targets.detach().cpu()[:, 0, :]
+                # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                # Loop over batched samples
+                for j in range(batch_n_sample):
+                    # Initialize sample results
+                    sample_results = {}
+                    # Build sample results (removing batch dimension)
+                    sample_results['features_out'] = \
+                        features_out.detach().cpu()[:, j, :]
+                    sample_results['targets'] = None
+                    if targets is not None:
+                        sample_results['targets'] = \
+                            targets.detach().cpu()[:, j, :]
+                    # Store sample results
+                    samples_results.append(sample_results)
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             else:
                 raise RuntimeError('Unknown loss nature.')
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            # Compute sample output features prediction loss
-            loss = compute_sample_prediction_loss(
-                model, loss_nature, loss_function, features_out, targets,
-                is_normalized=is_normalized_loss)
-            # Store prediction loss data
-            results['prediction_loss_data'] = \
-                (loss_nature, loss_type, loss, is_normalized_loss)
-            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            # Assemble sample prediction loss if ground-truth is available
-            if loss is not None:
-                loss_samples.append(loss.detach().cpu())
-            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            # Save sample predictions results
-            if predict_directory is not None:
-                save_sample_predictions(predictions_dir=predict_subdir,
-                                        sample_id=i, sample_results=results)
+            # Loop over batched samples
+            for sample_results in samples_results:
+                # Compute sample output features prediction loss
+                loss = compute_sample_prediction_loss(
+                    model, loss_nature, loss_function, features_out, targets,
+                    is_normalized=is_normalized_loss)
+                # Store prediction loss data
+                sample_results['prediction_loss_data'] = \
+                    (loss_nature, loss_type, loss, is_normalized_loss)
+                # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                # Assemble sample prediction loss if ground-truth is available
+                if loss is not None:
+                    loss_samples.append(loss.detach().cpu())
+                # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                # Save sample predictions results
+                if predict_directory is not None:
+                    save_sample_predictions(predictions_dir=predict_subdir,
+                                            sample_id=sample_id,
+                                            sample_results=sample_results)
+                # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                # Increment sample ID
+                sample_id += 1
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     if is_verbose:
         print('\n> Finished prediction process!\n')

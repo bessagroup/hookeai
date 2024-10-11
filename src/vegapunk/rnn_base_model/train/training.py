@@ -381,7 +381,7 @@ def train_model(n_max_epochs, dataset, model_init_args, lr_init,
                 is_stop_training = early_stopper.evaluate_criterion(
                     model, optimizer, epoch, loss_nature=loss_nature,
                     loss_type=loss_type, loss_kwargs=loss_kwargs,
-                    device_type=device_type)
+                    batch_size=batch_size, device_type=device_type)
             # If early stopping is triggered, save model and optimizer best
             # performance corresponding to early stopping criterion
             if is_stop_training:
@@ -500,11 +500,11 @@ class EarlyStopper:
         Check whether to evaluate early stopping criterion.
     evaluate_criterion(self, model, optimizer, epoch, \
                        loss_nature='node_features_out', loss_type='mse', \
-                       loss_kwargs={}, device_type='cpu')
+                       loss_kwargs={}, batch_size=1, device_type='cpu')
         Evaluate early stopping criterion.
     _validate_model(self, model, optimizer, epoch,
                     loss_nature='node_features_out', loss_type='mse',
-                    loss_kwargs={}, device_type='cpu')
+                    loss_kwargs={}, batch_size=1, device_type='cpu')
         Perform model validation.
     load_best_performance_state(self, model, optimizer)
         Load minimum validation loss model and optimizer states.
@@ -582,7 +582,7 @@ class EarlyStopper:
     # -------------------------------------------------------------------------
     def evaluate_criterion(self, model, optimizer, epoch,
                            loss_nature='features_out', loss_type='mse',
-                           loss_kwargs={}, device_type='cpu'):
+                           loss_kwargs={}, batch_size=1, device_type='cpu'):
         """Evaluate early stopping criterion.
         
         Parameters
@@ -605,6 +605,8 @@ class EarlyStopper:
             
         loss_kwargs : dict, default={}
             Arguments of torch.nn._Loss initializer.
+        batch_size : int, default=1
+            Number of samples loaded per batch.
         device_type : {'cpu', 'cuda'}, default='cpu'
             Type of device on which torch.Tensor is allocated.
             
@@ -621,7 +623,7 @@ class EarlyStopper:
         avg_valid_loss_sample = self._validate_model(
             model, optimizer, epoch, loss_nature=loss_nature,
             loss_type=loss_type, loss_kwargs=loss_kwargs,
-            device_type=device_type)
+            batch_size=batch_size, device_type=device_type)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Update minimum validation loss and performance counter
         if avg_valid_loss_sample < self._min_validation_loss:
@@ -661,7 +663,7 @@ class EarlyStopper:
     # -------------------------------------------------------------------------
     def _validate_model(self, model, optimizer, epoch,
                         loss_nature='features_out', loss_type='mse',
-                        loss_kwargs={}, device_type='cpu'):
+                        loss_kwargs={}, batch_size=1, device_type='cpu'):
         """Perform model validation.
         
         Parameters
@@ -684,6 +686,8 @@ class EarlyStopper:
             
         loss_kwargs : dict, default={}
             Arguments of torch.nn._Loss initializer.
+        batch_size : int, default=1
+            Number of samples loaded per batch.
         device_type : {'cpu', 'cuda'}, default='cpu'
             Type of device on which torch.Tensor is allocated.
             
@@ -715,11 +719,15 @@ class EarlyStopper:
         # Prediction with model
         _, avg_valid_loss_sample = predict(
             self._validation_dataset, model.model_directory,
-            predict_directory=None, load_model_state=epoch,
+            model=model, predict_directory=None, load_model_state=epoch,
             loss_nature=loss_nature, loss_type=loss_type,
             loss_kwargs=loss_kwargs,
             is_normalized_loss=model.is_data_normalization,
+            batch_size=batch_size,
             device_type=device_type, seed=None, is_verbose=False)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set model in training mode
+        model.train()
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Update validation epochs history
         self._validation_steps_history.append(epoch)

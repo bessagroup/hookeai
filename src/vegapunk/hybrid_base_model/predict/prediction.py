@@ -131,7 +131,7 @@ def predict(dataset, model_directory, model=None, predict_directory=None,
     # Initialize model and load model state if not provided
     if model is None:
         if is_verbose:
-            print('\n> Loading Hybrid material constitutive model...')
+            print('\n> Loading hybrid material constitutive model...')
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Initialize hybrid material constitutive model
         model = HybridMaterialModel.init_model_from_file(model_directory)
