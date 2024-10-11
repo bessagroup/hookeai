@@ -119,7 +119,7 @@ def gru_training_and_predictions(src_dir):
         GRU performance output data.
     """
     # Set number of model samples for uncertainty quantification
-    n_model_sample = 3
+    n_model_sample = 5
     # Set computation processes
     is_model_training = True
     # Set testing type
@@ -611,7 +611,7 @@ if __name__ == "__main__":
     if is_compute_gru_performance:
         # Set data sets directory
         src_dir = ('/home/bernardoferreira/Documents/brown/projects/'
-                   'colaboration_shunyu/1_testing')
+                   'colaboration_shunyu/2_test_dataset_shunyu-1')
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Process data sets directory (convert to TimeSeriesDatasetInMemory)
         process_datasets_type(src_dir)
@@ -639,12 +639,14 @@ if __name__ == "__main__":
 # =============================================================================
 """ Reference model average prediction loss
 
+Paste in plots.py (scatter_xy_data())
+
 # GRU model (Von Mises dataset):
 
 if all(x is None for x in data_labels):
     x_data = [10, 20, 40, 80, 160, 320, 640, 1280, 2560]
-    y_data = [0.44371066579999996, 0.208032375, 0.1680087048,
-              0.037462810740000005, 0.02486590622, 0.018032393299999998,
-              0.01445805694, 0.0009277936568, 0.0001907796998]
+    y_data = [481714.60020000004, 195728.23440000002, 150600.85940000002,
+              70988.07029999999, 41977.939060000004, 27503.2418,
+              19327.506260000002, 2476.8044440000003, 731.3099858]
     axes.plot(x_data, y_data, color='#EE6677', marker='v', markersize=3)
 """
