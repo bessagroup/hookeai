@@ -82,6 +82,8 @@ class HybridMaterialModel(torch.nn.Module):
         Get hybridized material models dictionary.
     get_detached_model_parameters(self, is_normalized=False)
         Get model parameters detached of gradients.
+    get_model_parameters_bounds(self)
+        Get model parameters bounds.
     forward(self, features_in, is_normalized=False)
         Forward propagation.
     save_model_init_file(self)
@@ -366,6 +368,47 @@ class HybridMaterialModel(torch.nn.Module):
                 model_parameters[param_label] = value
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         return model_parameters
+    # -------------------------------------------------------------------------
+    def get_model_parameters_bounds(self):
+        """Get model parameters bounds.
+        
+        Only collects parameters from hybridized material models with explicit
+        learnable parameters. Parameters labels are prefixed with hybridized
+        model name.
+
+        Returns
+        -------
+        model_parameters_bounds : dict
+            Model learnable parameters bounds. For each parameter (key, str),
+            the corresponding bounds are stored as a
+            tuple(lower_bound, upper_bound) (item, tuple).
+        """
+        # Get hybridized material models
+        hyb_models_dict = self.get_hyb_models_dict()
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Initialize model parameters bounds
+        model_parameters_bounds = {}
+        # Loop over hybridized material models
+        for hyb_model_name, hyb_model in hyb_models_dict.items():
+            # Check if hybridized material model parameters are collected
+            is_collect_params = (hasattr(hyb_model, 'is_explicit_parameters')
+                                 and hyb_model.is_explicit_parameters)
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Skip hybridized material model parameters
+            if not is_collect_params:
+                continue
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Get hybridized material model parameters bounds
+            parameters_bounds = hyb_model.get_model_parameters_bounds()
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Collect parameters bounds (prefix with hybridized model name)
+            for param, value in parameters_bounds.items():
+                # Set parameter label
+                param_label = f'{hyb_model_name}_{param}'
+                # Store parameter bounds
+                model_parameters_bounds[param_label] = value
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        return model_parameters_bounds
     # -------------------------------------------------------------------------
     def forward(self, features_in, is_normalized=False):
         """Forward propagation.
