@@ -32,16 +32,16 @@ def plot_avg_prediction_loss(save_dir, is_save_fig=False,
     # Set training data set sizes
     training_sizes = (10, 20, 40, 80, 160, 320, 640, 1280, 2560)
     # Set models labels
-    models_labels = ('GRU model', 'Hybrid model')
+    models_labels = ('GRU model', 'Hybrid model (worst candidate)')
     # Initialize models average prediction loss
     models_avg_predict_loss = {}
     # Set models average prediction loss
     models_avg_predict_loss['GRU model'] = \
-        [481714.60020000004, 195728.23440000002, 150600.85940000002,
-         70988.07029999999, 41977.939060000004, 27503.2418,
-         19327.506260000002, 2476.8044440000003, 731.3099858]
-    models_avg_predict_loss['Hybrid model'] = \
-        [0.5*x for x in  models_avg_predict_loss['GRU model']]
+        [789840.062, 163945.734, 174982.516, 55882.1094, 33157.9766,
+         23583.9043, 14188.707, 2268.23462, 731.69928]
+    models_avg_predict_loss['Hybrid model (worst candidate)'] = \
+        [87211.1328, 46635.0664, 33203.5078, 18189.6543, 7997.9668,
+         7598.12549, 3608.25098, 820.335022, 330.519562]
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ 
     # Get number of training data set sizes
     n_training_sizes = len(training_sizes)
@@ -90,9 +90,11 @@ if __name__ == "__main__":
     is_plot_avg_prediction_loss = True
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set plots directory
-    plots_dir = ('')
+    plots_dir = ('/home/bernardoferreira/Documents/brown/projects/'
+                 'darpa_project/7_local_hybrid_training/'
+                 'case_erroneous_von_mises_properties/z_case_plots')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Plot average prediction loss
     if is_plot_avg_prediction_loss:
-        plot_avg_prediction_loss(save_dir=plots_dir, is_save_fig=False,
+        plot_avg_prediction_loss(save_dir=plots_dir, is_save_fig=True,
                                  is_stdout_display=True)
