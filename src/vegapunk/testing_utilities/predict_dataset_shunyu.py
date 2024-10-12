@@ -158,14 +158,14 @@ def gru_training_and_predictions(src_dir):
     models_avg_prediction_loss = {}
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Loop over data sets directories
-    for i, case_study_dir in enumerate(src_dataset_dirs):
-        # Check case study directory
-        if not os.path.isdir(case_study_dir):
-            raise RuntimeError('The case study directory has not been found:'
-                               '\n\n' + case_study_dir)
+    for i, model_base_dir in enumerate(src_dataset_dirs):
+        # Check model base directory
+        if not os.path.isdir(model_base_dir):
+            raise RuntimeError('The model base directory has not been found:'
+                               '\n\n' + model_base_dir)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Set training data set directory
-        training_dataset_dir = os.path.join(os.path.normpath(case_study_dir),
+        training_dataset_dir = os.path.join(os.path.normpath(model_base_dir),
                                             '1_training_dataset')
         # Get training data set file path
         regex = (r'^ss_paths_dataset_n[0-9]+.pkl$',)
@@ -181,12 +181,12 @@ def gru_training_and_predictions(src_dir):
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Set model directory
         model_directory = \
-            os.path.join(os.path.normpath(case_study_dir), '3_model')
+            os.path.join(os.path.normpath(model_base_dir), '3_model')
         # Create model directory (overwrite)
         make_directory(model_directory, is_overwrite=True)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Set validation data set directory
-        val_dataset_directory = os.path.join(os.path.normpath(case_study_dir),
+        val_dataset_directory = os.path.join(os.path.normpath(model_base_dir),
                                              '2_validation_dataset')
         # Get validation data set file path
         val_dataset_file_path = None
@@ -204,20 +204,20 @@ def gru_training_and_predictions(src_dir):
         if testing_type == 'training':
             # Set testing data set directory (training data set)
             testing_dataset_dir = os.path.join(
-                os.path.normpath(case_study_dir), '1_training_dataset')
+                os.path.normpath(model_base_dir), '1_training_dataset')
         elif testing_type == 'validation':
             # Set testing data set directory (validation data set)
             testing_dataset_dir = os.path.join(
-                os.path.normpath(case_study_dir), '2_validation_dataset')
+                os.path.normpath(model_base_dir), '2_validation_dataset')
         elif testing_type == 'in_distribution':
             # Set testing data set directory (in-distribution testing data set)
             testing_dataset_dir = os.path.join(
-                os.path.normpath(case_study_dir), '5_testing_id_dataset')
+                os.path.normpath(model_base_dir), '5_testing_id_dataset')
         elif testing_type == 'out_distribution':
             # Set testing data set directory (out-of-distribution testing
             # data set)
             testing_dataset_dir = os.path.join(
-                os.path.normpath(case_study_dir), '6_testing_od_dataset')
+                os.path.normpath(model_base_dir), '6_testing_od_dataset')
         else:
             raise RuntimeError('Unknown testing type.')
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -234,7 +234,7 @@ def gru_training_and_predictions(src_dir):
                                f'{testing_dataset_dir}')
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Set model predictions directory
-        prediction_directory = os.path.join(os.path.normpath(case_study_dir),
+        prediction_directory = os.path.join(os.path.normpath(model_base_dir),
                                             '7_prediction')
         # Create model predictions directory
         if not os.path.isdir(prediction_directory):
@@ -248,7 +248,7 @@ def gru_training_and_predictions(src_dir):
             make_directory(prediction_subdir)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Set uncertainty quantification directory
-        uq_directory = os.path.join(os.path.normpath(case_study_dir),
+        uq_directory = os.path.join(os.path.normpath(model_base_dir),
                                     'uncertainty_quantification')
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Set device type
@@ -272,14 +272,13 @@ def gru_training_and_predictions(src_dir):
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Get model samples average prediction loss
         samples_avg_prediction_loss = \
-            get_prediction_loss_uq(uq_directory, n_model_sample,
-                                   testing_dataset_dir, testing_type)
+            get_avg_prediction_loss_uq(uq_directory, testing_type)
         # Store model samples average prediction loss
         models_avg_prediction_loss[dataset_dir_names[i]] = \
             samples_avg_prediction_loss
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Set prediction data set directory
-        prediction_dir = os.path.join(os.path.normpath(case_study_dir),
+        prediction_dir = os.path.join(os.path.normpath(model_base_dir),
                                       f'7_prediction/{testing_type}/'
                                       'prediction_set_0')
         # Store prediction directory
@@ -321,20 +320,17 @@ def gru_training_and_predictions(src_dir):
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     return output_data
 # =============================================================================
-def get_prediction_loss_uq(uq_directory, n_model_sample, testing_dataset_dir,
-                           testing_type):
+def get_avg_prediction_loss_uq(uq_directory, testing_type):
     """Get model average prediction loss with uncertainty quantification.
+    
+    Model samples average prediction loss are read from the corresponding
+    predictions summary files.
     
     Parameters
     ----------
     uq_directory : str
         Directory where the uncertainty quantification models samples
         directories are stored.
-    n_model_sample : int
-        Number of model samples.
-    testing_dataset_dir : str
-        Directory where the testing data set is stored (common to all models
-        samples).
     testing_type : {'training', 'validation', 'in_distribution',
                     'out_distribution'}
         Testing type according with the testing data set.
@@ -367,8 +363,11 @@ def get_prediction_loss_uq(uq_directory, n_model_sample, testing_dataset_dir,
             model_sample_dirs.append(
                 os.path.join(os.path.normpath(uq_directory), dirname))
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Get number of model samples
+    n_model_sample = len(model_sample_dirs)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Check model samples directories
-    if len(model_sample_dirs) < 1:
+    if n_model_sample < 1:
         raise RuntimeError('Model samples have not been found in the '
                            'uncertainty quantification directory:'
                            '\n\n' + uq_directory)
@@ -379,7 +378,6 @@ def get_prediction_loss_uq(uq_directory, n_model_sample, testing_dataset_dir,
                key=lambda x: int(re.search(r'(\d+)\D*$', x).groups()[-1]))
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Initialize model samples testing and predictions directories
-    sample_testing_dirs = []
     sample_prediction_dirs = []
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Loop over model samples
@@ -387,8 +385,6 @@ def get_prediction_loss_uq(uq_directory, n_model_sample, testing_dataset_dir,
         # Get model sample directory
         sample_dir = model_sample_dirs[i]
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        # Append model sample testing directory (shared)
-        sample_testing_dirs.append(testing_dataset_dir)
         # Append model sample prediction directory
         sample_prediction_dirs.append(os.path.join(
             os.path.normpath(sample_dir), f'7_prediction/{testing_type}'))
@@ -476,18 +472,21 @@ def write_output_file(src_dir, **kwargs):
     # Close output data file
     output_file.close()
 # =============================================================================
-def get_model_avg_prediction_loss(src_dir, n_model_sample, testing_type):
-    """Get model average prediction loss.
+def display_convergence_avg_prediction_loss(
+    src_dir, testing_type, is_uncertainty_quantification=False):
+    """Get model average prediction loss for multiple data set sizes.
     
     Parameters
     ----------
     src_dir : str
         Data sets source directory.
-    n_model_sample : int
-        Number of model samples.
     testing_type : {'training', 'validation', 'in_distribution',
                     'out_distribution'}
         Testing type according with the testing data set.
+    is_uncertainty_quantification : bool, default=False
+        If True, then account for one or more model samples when extracting the
+        model average prediction loss. Uncertainty quantification data
+        accounting for different model samples predictions is required.
     """
     # Initialize source directory data sets directories
     src_dataset_dirs = []
@@ -516,14 +515,14 @@ def get_model_avg_prediction_loss(src_dir, n_model_sample, testing_type):
     models_avg_prediction_loss = {}
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Loop over data sets directories
-    for i, case_study_dir in enumerate(src_dataset_dirs):
-        # Check case study directory
-        if not os.path.isdir(case_study_dir):
-            raise RuntimeError('The case study directory has not been found:'
-                               '\n\n' + case_study_dir)
+    for i, model_base_dir in enumerate(src_dataset_dirs):
+        # Check model base directory
+        if not os.path.isdir(model_base_dir):
+            raise RuntimeError('The model base directory has not been found:'
+                               '\n\n' + model_base_dir)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Set training data set directory
-        training_dataset_dir = os.path.join(os.path.normpath(case_study_dir),
+        training_dataset_dir = os.path.join(os.path.normpath(model_base_dir),
                                             '1_training_dataset')
         # Get training data set file path
         regex = (r'^ss_paths_dataset_n[0-9]+.pkl$',)
@@ -539,20 +538,20 @@ def get_model_avg_prediction_loss(src_dir, n_model_sample, testing_type):
         if testing_type == 'training':
             # Set testing data set directory (training data set)
             testing_dataset_dir = os.path.join(
-                os.path.normpath(case_study_dir), '1_training_dataset')
+                os.path.normpath(model_base_dir), '1_training_dataset')
         elif testing_type == 'validation':
             # Set testing data set directory (validation data set)
             testing_dataset_dir = os.path.join(
-                os.path.normpath(case_study_dir), '2_validation_dataset')
+                os.path.normpath(model_base_dir), '2_validation_dataset')
         elif testing_type == 'in_distribution':
             # Set testing data set directory (in-distribution testing data set)
             testing_dataset_dir = os.path.join(
-                os.path.normpath(case_study_dir), '5_testing_id_dataset')
+                os.path.normpath(model_base_dir), '5_testing_id_dataset')
         elif testing_type == 'out_distribution':
             # Set testing data set directory (out-of-distribution testing
             # data set)
             testing_dataset_dir = os.path.join(
-                os.path.normpath(case_study_dir), '6_testing_od_dataset')
+                os.path.normpath(model_base_dir), '6_testing_od_dataset')
         else:
             raise RuntimeError('Unknown testing type.')
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -566,14 +565,25 @@ def get_model_avg_prediction_loss(src_dir, n_model_sample, testing_type):
                                f'in data set directory:\n\n'
                                f'{testing_dataset_dir}')
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        # Set uncertainty quantification directory
-        uq_directory = os.path.join(os.path.normpath(case_study_dir),
-                                    'uncertainty_quantification')
-        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Get model samples average prediction loss
-        samples_avg_prediction_loss = \
-            get_prediction_loss_uq(uq_directory, n_model_sample,
-                                   testing_dataset_dir, testing_type)
+        if is_uncertainty_quantification:
+            # Set uncertainty quantification directory
+            uq_directory = os.path.join(os.path.normpath(model_base_dir),
+                                        'uncertainty_quantification')
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Get model samples average prediction loss
+            samples_avg_prediction_loss = \
+                get_avg_prediction_loss_uq(uq_directory, testing_type)
+        else:
+            # Set prediction data set directory
+            prediction_dir = os.path.join(os.path.normpath(model_base_dir),
+                                          f'7_prediction/{testing_type}/'
+                                          'prediction_set_0')
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Get model average prediction loss
+            samples_avg_prediction_loss = \
+                [get_avg_prediction_loss(prediction_dir),]
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Store model samples average prediction loss
         models_avg_prediction_loss[dataset_dir_names[i]] = \
             samples_avg_prediction_loss
@@ -582,7 +592,6 @@ def get_model_avg_prediction_loss(src_dir, n_model_sample, testing_type):
     print('\nExtracting Model Avg. Prediction Loss',
           '\n-------------------------------------')
     print(f'\nSource directory: {src_dir}')
-    print(f'\nNumber of model samples: {n_model_sample}')
     print(f'\nTesting type: {testing_type}')
     print('\nAvg. prediction loss (model samples):\n')
     for key, val in models_avg_prediction_loss.items():
@@ -602,10 +611,57 @@ def get_model_avg_prediction_loss(src_dir, n_model_sample, testing_type):
           "markersize=3)")
     print('')
 # =============================================================================
+def get_avg_prediction_loss(prediction_dir):
+    """Get model average prediction loss.
+    
+    Model average prediction loss is read from prediction summary file.
+    
+    Parameters
+    ----------
+    prediction_dir : str
+        Directory model predictions results files are stored.
+
+    Returns
+    -------
+    avg_prediction_loss : float
+        Average prediction loss.
+    """
+    # Check model predictions directory
+    if not os.path.isdir(prediction_dir):
+        raise RuntimeError('The model predictions directory has not been '
+                           'found:\n\n' + prediction_dir)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Get prediction summary file
+    regex = (r'^summary.dat$',)
+    is_file_found, summary_file_path = \
+        find_unique_file_with_regex(prediction_dir, regex) 
+    # Check prediction summary file
+    if not is_file_found:
+        raise RuntimeError(f'Prediction summary file has not been '
+                           f'found in directory:\n\n{prediction_dir}')
+    # Open prediction summary file
+    summary_file = open(summary_file_path, 'r')
+    summary_file.seek(0)
+    # Look for average prediction loss
+    avg_prediction_loss = None
+    line_number = 0
+    for line in summary_file:
+        line_number = line_number + 1
+        if 'Avg. prediction loss per sample' in line:
+            avg_prediction_loss = float(line.split()[-1])
+            break
+    # Store average prediction loss
+    if avg_prediction_loss is None:
+        raise RuntimeError('Average prediction loss has not been '
+                           'found in prediction summary file:\n\n'
+                           f'{summary_file_path}')
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    return avg_prediction_loss
+# =============================================================================
 if __name__ == "__main__":
     # Set computation processes
-    is_compute_gru_performance = True
-    is_get_reference_loss = False
+    is_compute_gru_performance = False
+    is_get_reference_loss = True
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Compute GRU performance data
     if is_compute_gru_performance:
@@ -628,14 +684,17 @@ if __name__ == "__main__":
         src_dir = ('/home/bernardoferreira/Documents/brown/projects/'
                    'colaboration_shunyu/0_base_random_datasets')
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        # Set number of model samples for uncertainty quantification
-        n_model_sample = 5
         # Set testing type
         testing_type = ('training', 'validation', 'in_distribution',
                         'out_distribution')[2]
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set uncertainty quantification flag
+        is_uncertainty_quantification = False
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Get reference model average prediction loss
-        get_model_avg_prediction_loss(src_dir, n_model_sample, testing_type)
+        display_convergence_avg_prediction_loss(
+            src_dir, testing_type,
+            is_uncertainty_quantification=is_uncertainty_quantification)
 # =============================================================================
 """ Reference model average prediction loss
 
