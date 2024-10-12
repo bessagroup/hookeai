@@ -186,12 +186,40 @@ def generate_prediction_plots(dataset_file_path, predict_subdir):
     for prediction_type, prediction_labels in prediction_types.items():
         # Set samples for which time series data is plotted
         samples_ids = list(np.arange(5, dtype=int))
+        # Set plot reference prediction data
+        is_reference_data = False
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ 
         # Build times series predictions data arrays
         prediction_data_dicts = build_time_series_predictions_data(
             dataset_file_path, predict_subdir, prediction_type,
             prediction_labels, samples_ids=samples_ids)
-        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~   
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ v SECTION TO BE REMOVED
+        # Set plot candidate model flag
+        is_plot_candidate_model = False
+        # Build candidate model time series predictions data arrays
+        if is_plot_candidate_model:
+            # Set candidate model testing data set file path
+            candidate_dataset_file_path = \
+                ('/home/bernardoferreira/Documents/brown/projects/'
+                 'darpa_project/7_local_hybrid_training/'
+                 'case_erroneous_von_mises_properties/'
+                 '1_candidate_rc_von_mises_model/5_testing_id_dataset/'
+                 'ss_paths_dataset_n512.pkl')
+            candidate_predict_subdir = \
+                ('/home/bernardoferreira/Documents/brown/projects/'
+                 'darpa_project/7_local_hybrid_training/'
+                 'case_erroneous_von_mises_properties/'
+                 '1_candidate_rc_von_mises_model/7_prediction/'
+                 'in_distribution/prediction_set_0')
+            # Build times series predictions data arrays
+            candidate_prediction_data_dicts = \
+                build_time_series_predictions_data(
+                    candidate_dataset_file_path, candidate_predict_subdir,
+                    prediction_type, prediction_labels,
+                    samples_ids=samples_ids)
+            # Set plot reference prediction data
+            is_reference_data = True
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ^ SECTION TO BE REMOVED  
         # Loop over times series predictions components
         for i, data_dict in enumerate(prediction_data_dicts):
             # Loop over samples (time series paths)
@@ -200,7 +228,20 @@ def generate_prediction_plots(dataset_file_path, predict_subdir):
                 prediction_sets = {}
                 prediction_sets['Ground-truth'] = prediction_array[:, [0, 1]]
                 prediction_sets['Prediction'] = prediction_array[:, [0, 2]]
-                # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ v SECTION TO BE REMOVED
+                # Build prediction processes data (with candidate model)
+                if is_plot_candidate_model:
+                    prediction_sets.pop('Prediction')
+                    prediction_sets['Hybrid'] = prediction_array[:, [0, 2]]
+                    prediction_sets['Candidate'] = \
+                        candidate_prediction_data_dicts[i][
+                            sample_id][:, [0, 2]]
+                    prediction_sets['Corrector'] = \
+                        np.copy(prediction_sets['Hybrid'])
+                    prediction_sets['Corrector'][:, 1] = \
+                        prediction_sets['Hybrid'][:, 1] \
+                            - prediction_sets['Candidate'][:, 1]
+                # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ^ SECTION TO BE REMOVED 
                 # Get prediction plot file name
                 filename = prediction_labels[i] + f'_path_sample_{sample_id}'
                 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -212,7 +253,8 @@ def generate_prediction_plots(dataset_file_path, predict_subdir):
                 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                 # Plot model times series predictions against ground-truth
                 plot_time_series_prediction(
-                    prediction_sets, is_normalize_data=False,
+                    prediction_sets, is_reference_data=is_reference_data,
+                    is_normalize_data=False,
                     x_label='Time', y_label=y_label,
                     filename=filename,
                     save_dir=plot_dir,is_save_fig=True,
