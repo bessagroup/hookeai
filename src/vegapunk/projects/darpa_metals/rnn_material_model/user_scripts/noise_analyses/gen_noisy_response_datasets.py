@@ -1189,9 +1189,9 @@ if __name__ == '__main__':
                                    noiseless_dataset, save_dir=plots_dir,
                                    is_save_fig=True, is_stdout_display=False)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        # Finish after generation of noiseless data set
+        # Proceed to generation of next noiseless data set
         if is_only_noiseless:
-            sys.exit(1)
+            continue
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Get number of strain components
         n_strain_comps = len(strain_comps_order)
