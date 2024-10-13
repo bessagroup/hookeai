@@ -41,6 +41,8 @@ from simulators.fetorch.math.matrixops import get_problem_type_parameters, \
 from simulators.fetorch.material.material_su import material_state_update
 from simulators.fetorch.material.models.standard.elastic import Elastic
 from simulators.fetorch.material.models.standard.von_mises import VonMises
+from simulators.fetorch.material.models.standard.von_mises_mixed import \
+    VonMisesMixed
 from simulators.fetorch.material.models.standard.drucker_prager import \
     DruckerPrager
 from simulators.fetorch.material.models.standard.hardening import \
@@ -928,8 +930,10 @@ if __name__ == '__main__':
     # Set save dataset plots flags
     is_save_dataset_plots = True
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Set noiseless generation only
+    is_only_noiseless = True
     # Set reference noiseless directory
-    is_reference_noiseless = True
+    is_reference_noiseless = False
     # Set reference noiseless data set directory
     if is_reference_noiseless:
         reference_noiseless_dir = \
@@ -1024,10 +1028,10 @@ if __name__ == '__main__':
                  'euler_angles': (0.0, 0.0, 0.0),
                  'hardening_law': get_hardening_law('nadai_ludwik'),
                  'hardening_parameters':
-                    {'s0': 900,
-                     'a': 700,
-                     'b': 0.5,
-                     'ep0': 1e-5}}
+                     {'s0': 900,
+                      'a': 700,
+                      'b': 0.5,
+                      'ep0': 1e-5}}
             # Set constitutive state variables to be additionally included in
             # the data set
             #state_features = {'acc_p_strain': 1}
@@ -1036,6 +1040,30 @@ if __name__ == '__main__':
             # Initialize constitutive model
             constitutive_model = VonMises(strain_formulation, problem_type,
                                           model_parameters)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        elif model_name == 'von_mises_mixed':
+            # Set constitutive model parameters
+            model_parameters = \
+                {'elastic_symmetry': 'isotropic',
+                 'E': 110e3, 'v': 0.33,
+                 'euler_angles': (0.0, 0.0, 0.0),
+                 'hardening_law': get_hardening_law('nadai_ludwik'),
+                 'hardening_parameters':
+                     {'s0': 900,
+                      'a': 700,
+                      'b': 0.5,
+                      'ep0': 1e-5},
+                 'kinematic_hardening_law': get_hardening_law('linear'),
+                 'kinematic_hardening_parameters':
+                     {'s0': 0,
+                      'a': 600}}
+            # Set constitutive state variables to be additionally included in
+            # the data set
+            state_features = {}
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Initialize constitutive model
+            constitutive_model = VonMisesMixed(strain_formulation,
+                                               problem_type, model_parameters)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         elif model_name == 'drucker_prager':
             # Set frictional angle
@@ -1160,6 +1188,10 @@ if __name__ == '__main__':
             generate_dataset_plots(strain_formulation, n_dim,
                                    noiseless_dataset, save_dir=plots_dir,
                                    is_save_fig=True, is_stdout_display=False)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Finish after generation of noiseless data set
+        if is_only_noiseless:
+            sys.exit(1)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Get number of strain components
         n_strain_comps = len(strain_comps_order)
