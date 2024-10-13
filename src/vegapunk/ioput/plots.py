@@ -48,7 +48,8 @@ def plot_xy_data(data_xy, data_labels=None, is_reference_data=False,
                  x_lims=(None, None), y_lims=(None, None), title=None,
                  x_label=None, y_label=None, x_scale='linear',
                  y_scale='linear', x_tick_format=None, y_tick_format=None,
-                 marker=None, markersize=None, is_latex=False):
+                 marker=None, markersize=None, markeredgecolor=None,
+                 markeredgewidth=None, is_latex=False):
     """Plot data in xy axes.
 
     Parameters
@@ -88,6 +89,10 @@ def plot_xy_data(data_xy, data_labels=None, is_reference_data=False,
         Marker type.
     markersize : float, default=None
         Marker size in points.
+    markeredgecolor : float, default=None
+        Marker edge color.
+    markeredgewidth : float, default=None
+        Marker edge width in points.
     is_latex : bool, default=False
         If True, then render all strings in LaTeX. If LaTex is not available,
         then this option is silently set to False and all input strings are
@@ -202,7 +207,9 @@ def plot_xy_data(data_xy, data_labels=None, is_reference_data=False,
         # Plot data set
         axes.plot(data_xy[:, 2*i], data_xy[:, 2*i + 1],
                   label=tex_str(data_labels[i], is_latex),
-                  marker=marker, markersize=markersize)
+                  marker=marker, markersize=markersize,
+                  markeredgecolor=markeredgecolor,
+                  markeredgewidth=markeredgewidth)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set legend
     if not all([x is None for x in data_labels]):
