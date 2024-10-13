@@ -98,10 +98,10 @@ def perform_model_prediction(predict_directory, dataset_file_path,
     # Set prediction batch size
     batch_size = batch_size=len(dataset)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Prediction with RNN-based model
+    # Prediction with recurrent constitutive model
     predict_subdir, _ = \
         predict(dataset, model_directory, predict_directory=predict_directory,
-                load_model_state='init', loss_nature=loss_nature,
+                load_model_state='best', loss_nature=loss_nature,
                 loss_type=loss_type, loss_kwargs=loss_kwargs,
                 batch_size=batch_size, is_normalized_loss=False,
                 dataset_file_path=dataset_file_path,
