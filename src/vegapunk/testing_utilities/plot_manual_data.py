@@ -31,21 +31,65 @@ def plot_avg_prediction_loss(save_dir, is_save_fig=False,
     """
     # Set training data set sizes
     training_sizes = (10, 20, 40, 80, 160, 320, 640, 1280, 2560)
-    # Set models labels
-    models_labels = ('GRU', 'Hybrid (worst candidate)',
-                     'Hybrid (best candidate)')
-    # Initialize models average prediction loss
-    models_avg_predict_loss = {}
-    # Set models average prediction loss
-    models_avg_predict_loss['GRU'] = \
-        [789840.062, 163945.734, 174982.516, 55882.1094, 33157.9766,
-         23583.9043, 14188.707, 2268.23462, 731.69928]
-    models_avg_predict_loss['Hybrid (worst candidate)'] = \
-        [87211.1328, 46635.0664, 33203.5078, 18189.6543, 7997.9668,
-         7598.12549, 3608.25098, 820.335022, 330.519562]
-    models_avg_predict_loss['Hybrid (best candidate)'] = \
-        [5289.27295, 3571.09009, 3482.17212, 1808.65771, 1354.48035,
-         653.862671, 388.217255, 92.2604599, 39.0522423]
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Set example
+    example = 'learning_drucker_prager_pressure_dependency'
+    # Set example data
+    if example == 'erroneous_von_mises_properties':
+        # Set models labels
+        models_labels = ('GRU', 'Hybrid (worst cand.)',
+                         'Hybrid (best cand.)', 'Candidate (worst)',
+                         'Candidate (best)')
+        # Initialize models average prediction loss
+        models_avg_predict_loss = {}
+        # Set models average prediction loss
+        models_avg_predict_loss['GRU'] = \
+            [789840.062, 163945.734, 174982.516, 55882.1094, 33157.9766,
+             23583.9043, 14188.707, 2268.23462, 731.69928]
+        models_avg_predict_loss['Hybrid (worst cand.)'] = \
+            [87211.1328, 46635.0664, 33203.5078, 18189.6543, 7997.9668,
+             7598.12549, 3608.25098, 820.335022, 330.519562]
+        models_avg_predict_loss['Hybrid (best cand.)'] = \
+            [5289.27295, 3571.09009, 3482.17212, 1808.65771, 1354.48035,
+             653.862671, 388.217255, 92.2604599, 39.0522423]
+        models_avg_predict_loss['Candidate (worst)'] = \
+            len(models_avg_predict_loss['GRU'])*[2.43422850e+06,]
+        models_avg_predict_loss['Candidate (best)'] = \
+            len(models_avg_predict_loss['GRU'])*[1.40105781e+05,]
+        # Set axes limits
+        y_lims = (None, 2*10**7)
+    elif example == 'learning_von_mises_hardening':
+        # Set models labels
+        models_labels = ('GRU', 'Hybrid', 'Candidate')
+        # Initialize models average prediction loss
+        models_avg_predict_loss = {}
+        # Set models average prediction loss
+        models_avg_predict_loss['GRU'] = \
+            [344412.344, 213267.188, 111589.875, 53791.375, 32541.502,
+             22198.9668, 17533.1738, 2447.47217, 599.129028]
+        models_avg_predict_loss['Hybrid'] = \
+            [29293.6641, 9592.91211, 5925.93701, 4881.25781, 2361.27759,
+             1783.32178, 1379.46692, 210.375671, 76.2688141]
+        models_avg_predict_loss['Candidate'] = \
+            len(models_avg_predict_loss['Hybrid'])*[1.13914746e+04,]
+        # Set axes limits
+        y_lims = (None, None)
+    elif example == 'learning_drucker_prager_pressure_dependency':
+        # Set models labels
+        models_labels = ('GRU', 'Hybrid', 'Candidate')
+        # Initialize models average prediction loss
+        models_avg_predict_loss = {}
+        # Set models average prediction loss
+        models_avg_predict_loss['GRU'] = \
+            [12339631.0, 13428719.0, 3992861.0, 2326316.5, 1208200.12,
+             318718.031, 167748.719, 78753.625, 18856.5293]
+        models_avg_predict_loss['Hybrid'] = \
+            [16871554.0, 8107942.0, 5108467.0, 1671295.88, 879273.062,
+             490463.125, 137429.875, 100223.531, 27711.1582]
+        models_avg_predict_loss['Candidate'] = \
+            len(models_avg_predict_loss['Hybrid'])*[5.40929320e+07,]
+        # Set axes limits
+        y_lims = (None, None)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ 
     # Get number of training data set sizes
     n_training_sizes = len(training_sizes)
@@ -70,6 +114,7 @@ def plot_avg_prediction_loss(save_dir, is_save_fig=False,
     # Plot data
     figure, axes = plot_xy_data(
         data_xy, data_labels=data_labels, x_label=x_label, y_label=y_label,
+        y_lims=y_lims,
         x_scale='log', y_scale='log', marker='o', markersize=3,
         markeredgecolor='k', markeredgewidth=0.5, is_latex=True)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -84,7 +129,10 @@ def plot_avg_prediction_loss(save_dir, is_save_fig=False,
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Save figure
     if is_save_fig:
-        filename = 'testing_loss_convergence'
+        if any('Candidate' in s for s in models_labels):
+            filename = 'testing_loss_convergence_with_candidate'
+        else:
+            filename = 'testing_loss_convergence'
         save_figure(figure, filename, format='pdf', save_dir=save_dir)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Close plot
@@ -171,13 +219,14 @@ def plot_hardening_laws(save_dir, is_save_fig=False, is_stdout_display=False):
 # =============================================================================
 if __name__ == "__main__":
     # Set plot processes
-    is_plot_avg_prediction_loss = False
-    is_plot_hardening_laws = True
+    is_plot_avg_prediction_loss = True
+    is_plot_hardening_laws = False
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set plots directory
     plots_dir = ('/home/bernardoferreira/Documents/brown/projects/'
                  'darpa_project/7_local_hybrid_training/'
-                 'case_erroneous_von_mises_properties/z_case_plots')
+                 'case_learning_drucker_prager_pressure_dependency/'
+                 'z_case_plots')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Plot average prediction loss
     if is_plot_avg_prediction_loss:
