@@ -1219,10 +1219,11 @@ class RecurrentConstitutiveModel(torch.nn.Module):
         stress_paths, state_paths = vmap_compute_stress_path(strain_paths)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Check paths stress history
-        if torch.isnan(stress_paths).any():
-            raise RuntimeError(f'NaNs were detected in the stress paths '
-                               f'history. This may have resulted from a state '
-                               f'update convergence failure.')
+        if self._is_check_su_fail:
+            if torch.isnan(stress_paths).any():
+                raise RuntimeError(f'NaNs were detected in the stress paths '
+                                   f'history. This may have resulted from a '
+                                   f'state update convergence failure.')
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Fix batch dimension (required to handle case when there are no state
         # features)
