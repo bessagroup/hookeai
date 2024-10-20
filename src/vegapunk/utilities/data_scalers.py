@@ -47,6 +47,8 @@ class TorchMinMaxScaler:
         Set features normalization maximum tensor.
     set_minimum_and_maximum(self, minimum, maximum)
         Set features normalization minimum and maximum tensors.
+    get_minimum_and_maximum(self)
+        Get features normalization minimum and maximum tensors.
     fit(self, tensor)
         Fit features normalization minimum and maximum tensors.
     transform(self, tensor, is_check_data=False)
@@ -147,6 +149,20 @@ class TorchMinMaxScaler:
         """
         self._minimum = self._check_minimum(minimum)
         self._maximum = self._check_maximum(maximum)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    def get_minimum_and_maximum(self):
+        """Get features normalization minimum and maximum tensors.
+        
+        Returns
+        -------
+        minimum : torch.Tensor
+            Features normalization minimum tensor stored as a torch.Tensor with
+            shape (n_features,).
+        maximum : torch.Tensor
+            Features normalization maximum tensor stored as a torch.Tensor with
+            shape (n_features,).
+        """
+        return self._minimum, self._maximum
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     def fit(self, tensor):
         """Fit features normalization minimum and maximum tensors.
@@ -384,7 +400,11 @@ class TorchStandardScaler:
     set_mean(self, mean)
         Set features standardization mean tensor.
     set_std(self, std)
-        Set features standardization standard deviation tensor.    
+        Set features standardization standard deviation tensor.
+    set_mean_and_std(self, mean, std)
+        Set features standardization mean and standard deviation tensors.
+    get_mean_and_std(self)
+        Get features standardization mean and standard deviation tensors.
     fit(self, tensor)
         Fit features standardization mean and standard deviation tensors.
     transform(self, tensor, is_check_data=False)
@@ -484,6 +504,20 @@ class TorchStandardScaler:
         """
         self._mean = self._check_mean(mean)
         self._std = self._check_std(std)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    def get_mean_and_std(self):
+        """Get features standardization mean and standard deviation tensors.
+        
+        Returns
+        -------
+        mean : torch.Tensor
+            Features standardization mean tensor stored as a torch.Tensor with
+            shape (n_features,).
+        std : torch.Tensor
+            Features standardization standard deviation tensor stored as a
+            torch.Tensor with shape (n_features,).
+        """
+        return self._mean, self._std
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     def fit(self, tensor, is_bessel=False):
         """Fit features standardization mean and standard deviation tensors.
