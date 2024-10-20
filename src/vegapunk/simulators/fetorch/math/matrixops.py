@@ -3,14 +3,6 @@
 This module contains fundamental procedures associated with the matricial
 storage of strain/stress tensorial quantities and related manipulations.
 
-Apart from a conversion to a PyTorch framework and some additional procedures,
-most of the code is taken from the package cratepy [#]_.
-
-.. [#] Ferreira, B.P., Andrade Pires, F.M., and Bessa, M.A. (2023). CRATE: A
-       Python package to perform fast material simulations. The Journal of Open
-       Source Software, 8(87)
-       (see `here <https://joss.theoj.org/papers/10.21105/joss.05594>`_)
-
 Functions
 ---------
 get_problem_type_parameters
@@ -89,7 +81,8 @@ def get_problem_type_parameters(problem_type):
 #
 #                                        Tensorial - Matricial forms conversion
 # =============================================================================
-def get_tensor_mf(tensor, n_dim, comp_order, device=None):
+def get_tensor_mf(tensor, n_dim, comp_order, is_kelvin_notation=True,
+                  device=None):
     """Get tensor matricial form.
 
     Store a given second-order or fourth-order tensor in matricial form for a
@@ -97,7 +90,7 @@ def get_tensor_mf(tensor, n_dim, comp_order, device=None):
     components list. If the second-order tensor is symmetric or the
     fourth-order tensor has minor symmetry (component list only contains
     independent components), then the Kelvin notation[#]_ is employed to
-    perform the storage. Otherwise, the matricial form is built columnwise.
+    perform the storage by default.
 
     .. [#] Nagel, T., Görke, U.-J., Moerman, K. M., and Kolditz, O. (2016). On
            advantages of the Kelvin mapping in finite element implementations
@@ -114,6 +107,9 @@ def get_tensor_mf(tensor, n_dim, comp_order, device=None):
         Problem number of spatial dimensions.
     comp_order : tuple
         Strain/Stress components order associated to matricial form.
+    is_kelvin_notation : bool, default=True
+        If True, then Kelvin notation is employed to store symmetric tensors in
+        matricial form. If False, then tensor components are stored unchanged.
     device : torch.device, default=None
         Device on which torch.Tensor is allocated.
 
@@ -150,7 +146,7 @@ def get_tensor_mf(tensor, n_dim, comp_order, device=None):
     if len(comp_order) == n_dim**2:
         is_kelvin_notation = False
     elif len(comp_order) == sum(range(n_dim + 1)):
-        is_kelvin_notation = True
+        pass
     else:
         raise RuntimeError('Invalid number of components in strain/stress '
                            'components order.')
@@ -214,7 +210,8 @@ def get_tensor_mf(tensor, n_dim, comp_order, device=None):
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     return tensor_mf
 # =============================================================================
-def vget_tensor_mf(tensor, n_dim, comp_order, device=None):
+def vget_tensor_mf(tensor, n_dim, comp_order, is_kelvin_notation=True,
+                   device=None):
     """Get tensor matricial form.
 
     Compatible with vectorized mapping.
@@ -224,7 +221,7 @@ def vget_tensor_mf(tensor, n_dim, comp_order, device=None):
     components list. If the second-order tensor is symmetric or the
     fourth-order tensor has minor symmetry (component list only contains
     independent components), then the Kelvin notation[#]_ is employed to
-    perform the storage. Otherwise, the matricial form is built columnwise.
+    perform the storage by default.
 
     .. [#] Nagel, T., Görke, U.-J., Moerman, K. M., and Kolditz, O. (2016). On
         advantages of the Kelvin mapping in finite element implementations
@@ -241,6 +238,9 @@ def vget_tensor_mf(tensor, n_dim, comp_order, device=None):
         Problem number of spatial dimensions.
     comp_order : tuple
         Strain/Stress components order associated to matricial form.
+    is_kelvin_notation : bool, default=True
+        If True, then Kelvin notation is employed to store symmetric tensors in
+        matricial form. If False, then tensor components are stored unchanged.
     device : torch.device, default=None
         Device on which torch.Tensor is allocated.
 
@@ -260,7 +260,7 @@ def vget_tensor_mf(tensor, n_dim, comp_order, device=None):
     if len(comp_order) == n_dim**2:
         is_kelvin_notation = False
     elif len(comp_order) == sum(range(n_dim + 1)):
-        is_kelvin_notation = True
+        pass
     else:
         raise RuntimeError('Invalid number of components in strain/stress '
                             'components order.')
@@ -306,7 +306,8 @@ def vget_tensor_mf(tensor, n_dim, comp_order, device=None):
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     return tensor_mf
 # =============================================================================
-def get_tensor_from_mf(tensor_mf, n_dim, comp_order, device=None):
+def get_tensor_from_mf(tensor_mf, n_dim, comp_order, is_kelvin_notation=True,
+                       device=None):
     """Recover tensor from associated matricial form.
 
     Recover a given second-order or fourth-order tensor from the associated
@@ -314,8 +315,7 @@ def get_tensor_from_mf(tensor_mf, n_dim, comp_order, device=None):
     (compatible) ordered strain/stress components list. If the second-order
     tensor is symmetric or the fourth-order tensor has minor symmetry
     (component list only contains independent components), then matricial form
-    is assumed to follow the Kelvin notation [#]_. Otherwise, a columnwise
-    matricial form is assumed.
+    is assumed to follow the Kelvin notation [#]_ by default.
 
     .. [#] Nagel, T., Görke, U.-J., Moerman, K. M., and Kolditz, O. (2016). On
            advantages of the Kelvin mapping in finite element implementations
@@ -332,6 +332,9 @@ def get_tensor_from_mf(tensor_mf, n_dim, comp_order, device=None):
         Problem number of spatial dimensions.
     comp_order : tuple
         Strain/Stress components order associated to matricial form.
+    is_kelvin_notation : bool, default=True
+        If True, then Kelvin notation is employed to store symmetric tensors in
+        matricial form. If False, then tensor components are stored unchanged.
     device : torch.device, default=None
         Device on which torch.Tensor is allocated.
 
@@ -380,7 +383,7 @@ def get_tensor_from_mf(tensor_mf, n_dim, comp_order, device=None):
     if len(comp_order) == n_dim**2:
         is_kelvin_notation = False
     elif len(comp_order) == sum(range(n_dim + 1)):
-        is_kelvin_notation = True
+        pass
     else:
         raise RuntimeError('Invalid number of components in strain/stress '
                            'components order.')
@@ -458,7 +461,8 @@ def get_tensor_from_mf(tensor_mf, n_dim, comp_order, device=None):
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     return tensor
 # =============================================================================
-def vget_tensor_from_mf(tensor_mf, n_dim, comp_order, device=None):
+def vget_tensor_from_mf(tensor_mf, n_dim, comp_order, is_kelvin_notation=True,
+                        device=None):
     """Recover tensor from associated matricial form.
 
     Compatible with vectorized mapping.
@@ -468,8 +472,7 @@ def vget_tensor_from_mf(tensor_mf, n_dim, comp_order, device=None):
     (compatible) ordered strain/stress components list. If the second-order
     tensor is symmetric or the fourth-order tensor has minor symmetry
     (component list only contains independent components), then matricial form
-    is assumed to follow the Kelvin notation [#]_. Otherwise, a columnwise
-    matricial form is assumed.
+    is assumed to follow the Kelvin notation [#]_ by default.
 
     .. [#] Nagel, T., Görke, U.-J., Moerman, K. M., and Kolditz, O. (2016). On
            advantages of the Kelvin mapping in finite element implementations
@@ -486,6 +489,9 @@ def vget_tensor_from_mf(tensor_mf, n_dim, comp_order, device=None):
         Problem number of spatial dimensions.
     comp_order : tuple
         Strain/Stress components order associated to matricial form.
+    is_kelvin_notation : bool, default=True
+        If True, then Kelvin notation is employed to store symmetric tensors in
+        matricial form. If False, then tensor components are stored unchanged.
     device : torch.device, default=None
         Device on which torch.Tensor is allocated.
 
@@ -511,7 +517,7 @@ def vget_tensor_from_mf(tensor_mf, n_dim, comp_order, device=None):
     if len(comp_order) == n_dim**2:
         is_kelvin_notation = False
     elif len(comp_order) == sum(range(n_dim + 1)):
-        is_kelvin_notation = True
+        pass
     else:
         raise RuntimeError('Invalid number of components in strain/stress '
                            'components order.')
