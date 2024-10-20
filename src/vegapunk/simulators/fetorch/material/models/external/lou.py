@@ -1,0 +1,676 @@
+"""Lou-Zhang-Yoon model with general differentiable yield function.
+
+This module includes the implementation of the Lou-Zhang-Yoon model with
+general differentiable yield function and anisotropic hardening.
+
+Classes
+-------
+LouZhangYoon
+    Lou-Zhang-Yoon model with general differentiable yield function.
+"""
+#
+#                                                                       Modules
+# =============================================================================
+# Standard
+import torch
+import numpy as np
+import copy
+# Local
+from simulators.fetorch.material.models.interface import ConstitutiveModel
+from simulators.fetorch.material.models.standard.elastic import Elastic
+from simulators.fetorch.math.matrixops import get_problem_type_parameters, \
+    vget_tensor_mf, vget_tensor_from_mf, vget_state_3Dmf_from_2Dmf, \
+    vget_state_2Dmf_from_3Dmf
+from simulators.fetorch.math.tensorops import get_id_operators, dyad22_1, \
+    ddot42_1
+#
+#                                                          Authorship & Credits
+# =============================================================================
+__author__ = 'Bernardo Ferreira (bernardo_ferreira@brown.edu)'
+__credits__ = ['Bernardo Ferreira', ]
+__status__ = 'Stable'
+# =============================================================================
+#
+# =============================================================================
+class LouZhangYoon(ConstitutiveModel):
+    """Lou-Zhang-Yoon model with general differentiable yield function.
+
+    Attributes
+    ----------
+    _name : str
+        Constitutive model name.
+    _strain_type : {'infinitesimal', 'finite', 'finite-kinext'}
+        Material constitutive model strain formulation: infinitesimal strain
+        formulation ('infinitesimal'), finite strain formulation ('finite') or
+        finite strain formulation through kinematic extension
+        ('finite-kinext').
+    _model_parameters : dict
+        Material constitutive model parameters.
+    _n_dim : int
+        Problem number of spatial dimensions.
+    _comp_order_sym : list
+        Strain/Stress components symmetric order.
+    _comp_order_nsym : list
+        Strain/Stress components nonsymmetric order.
+    _device_type : {'cpu', 'cuda'}
+        Type of device on which torch.Tensor is allocated.
+    _device : torch.device
+        Device on which torch.Tensor is allocated.
+
+    Methods
+    -------
+    get_required_model_parameters()
+        Get required material constitutive model parameters.
+    state_init(self)
+        Get initialized material constitutive model state variables.
+    state_update(self, inc_strain, state_variables_old)
+        Perform material constitutive model state update.
+    """
+    def __init__(self, strain_formulation, problem_type, model_parameters,
+                 device_type='cpu'):
+        """Constitutive model constructor.
+
+        Parameters
+        ----------
+        strain_formulation: {'infinitesimal', 'finite'}
+            Problem strain formulation.
+        problem_type : int
+            Problem type: 2D plane strain (1), 2D plane stress (2),
+            2D axisymmetric (3) and 3D (4).
+        model_parameters : dict
+            Material constitutive model parameters.
+        device_type : {'cpu', 'cuda'}, default='cpu'
+            Type of device on which torch.Tensor is allocated.
+        """
+        # Set material constitutive model name
+        self._name = 'lou_zhang_yoon'
+        # Set constitutive model strain formulation
+        self._strain_type = 'infinitesimal'
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set initialization parameters
+        self._strain_formulation = strain_formulation
+        self._problem_type = problem_type
+        self._model_parameters = model_parameters
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set device
+        self.set_device(device_type)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Get problem type parameters
+        self._n_dim, self._comp_order_sym, self._comp_order_nsym = \
+            get_problem_type_parameters(problem_type)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Get elastic symmetry
+        elastic_symmetry = model_parameters['elastic_symmetry']
+        # Compute technical constants of elasticity
+        if elastic_symmetry == 'isotropic':
+            # Compute technical constants of elasticity
+            technical_constants = Elastic.get_technical_from_elastic_moduli(
+                elastic_symmetry, model_parameters)
+            # Assemble technical constants of elasticity
+            self._model_parameters.update(technical_constants)
+        else:
+            raise RuntimeError('The Lou-Zhang-Yoon constitutive model is '
+                               'currently only available for the elastic '
+                               'isotropic case.')
+    # -------------------------------------------------------------------------
+    @staticmethod
+    def get_required_model_parameters():
+        """Get required material constitutive model parameters.
+        
+        Model parameters:
+        
+        - 'elastic_symmetry' : Elastic symmetry (str, {'isotropic',
+          'transverse_isotropic', 'orthotropic', 'monoclinic', 'triclinic'});
+        - 'elastic_moduli' : Elastic moduli (dict, {'Eijkl': float});
+        - 'euler_angles' : Euler angles (degrees) sorted according with Bunge
+           convention (tuple[float]).
+        - 'hardening_law' : Isotropic hardening law (function)
+        - 'hardening_parameters' : Isotropic hardening law parameters (dict)
+        - 'a_hardening_law': Yield parameter hardening law (function)
+        - 'a_hardening_parameters': Yield parameter hardening parameters (dict)
+        - 'b_hardening_law': Yield parameter hardening law (function)
+        - 'b_hardening_parameters': Yield parameter hardening parameters (dict)
+        - 'c_hardening_law': Yield parameter hardening law (function)
+        - 'c_hardening_parameters': Yield parameter hardening parameters (dict)
+        - 'd_hardening_law': Yield parameter hardening law (function)
+        - 'd_hardening_parameters': Yield parameter hardening parameters (dict)
+
+        Returns
+        -------
+        model_parameters_names : tuple[str]
+            Material constitutive model parameters names (str).
+        """
+        # Set material properties names
+        model_parameters_names = ('elastic_symmetry', 'elastic_moduli',
+                                  'euler_angles',
+                                  'hardening_law', 'hardening_parameters',
+                                  'a_hardening_law', 'a_hardening_parameters',
+                                  'b_hardening_law', 'b_hardening_parameters',
+                                  'c_hardening_law', 'c_hardening_parameters',
+                                  'd_hardening_law', 'd_hardening_parameters')
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        return model_parameters_names
+    # -------------------------------------------------------------------------
+    def state_init(self):
+        """Get initialized material constitutive model state variables.
+
+        Constitutive model state variables:
+
+        * ``e_strain_mf``
+
+            * *Infinitesimal strains*: Elastic infinitesimal strain tensor
+              (matricial form).
+
+            * *Symbol*: :math:`\\boldsymbol{\\varepsilon^{e}}`
+
+        * ``acc_p_strain``
+
+            * Accumulated plastic strain.
+
+            * *Symbol*: :math:`\\bar{\\varepsilon}^{p}`
+
+        * ``strain_mf``
+
+            * *Infinitesimal strains*: Infinitesimal strain tensor
+              (matricial form).
+
+            * *Symbol*: :math:`\\boldsymbol{\\varepsilon}`
+
+        * ``stress_mf``
+
+            * *Infinitesimal strains*: Cauchy stress tensor (matricial form).
+
+            * *Symbol*: :math:`\\boldsymbol{\\sigma}`
+
+        * ``is_plastic``
+
+            * Plastic step flag.
+
+        * ``is_su_fail``
+
+            * State update failure flag.
+
+        ----
+
+        Returns
+        -------
+        state_variables_init : dict
+            Initialized material constitutive model state variables.
+        """
+        # Initialize constitutive model state variables
+        state_variables_init = dict()
+        # Initialize strain tensors
+        state_variables_init['e_strain_mf'] = vget_tensor_mf(
+            torch.zeros((self._n_dim, self._n_dim),
+                        dtype=torch.float, device=self._device),
+                        self._n_dim, self._comp_order_sym)
+        state_variables_init['strain_mf'] = \
+            state_variables_init['e_strain_mf'].clone()
+        # Initialize Cauchy stress tensor
+        state_variables_init['stress_mf'] = vget_tensor_mf(
+            torch.zeros((self._n_dim, self._n_dim),
+                        dtype=torch.float, device=self._device),
+                        self._n_dim, self._comp_order_sym)
+        # Initialize internal variables
+        state_variables_init['acc_p_strain'] = \
+            torch.tensor(0.0, dtype=torch.float, device=self._device)
+        # Initialize state flags
+        state_variables_init['is_plast'] = False
+        state_variables_init['is_su_fail'] = False
+        # Set additional out-of-plane strain and stress components
+        if self._problem_type == 1:
+            state_variables_init['e_strain_33'] = 0.0
+            state_variables_init['stress_33'] = 0.0
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Return
+        return state_variables_init
+    # -------------------------------------------------------------------------
+    def state_update(self, inc_strain, state_variables_old):
+        """Perform material constitutive model state update.
+
+        Parameters
+        ----------
+        inc_strain : torch.Tensor(2d)
+            Incremental strain second-order tensor.
+        state_variables_old : dict
+            Last converged constitutive model material state variables.
+
+        Returns
+        -------
+        state_variables : dict
+            Material constitutive model state variables.
+        consistent_tangent_mf : torch.Tensor(2d)
+            Material constitutive model consistent tangent modulus stored in
+            matricial form.
+        """
+        # Set state update convergence tolerance
+        su_conv_tol = 1e-6
+        # Set state update maximum number of iterations
+        su_max_n_iterations = 20
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Build incremental strain tensor matricial form
+        inc_strain_mf = vget_tensor_mf(inc_strain, self._n_dim,
+                                       self._comp_order_sym,
+                                       device=self._device)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Get material properties
+        E = self._model_parameters['E']
+        v = self._model_parameters['v']
+        # Get material isotropic strain hardening law
+        hardening_law = self._model_parameters['hardening_law']
+        hardening_parameters = self._model_parameters['hardening_parameters']
+        # Get yield parameters hardening laws
+        a_hardening_law = self._model_parameters['a_hardening_law']
+        a_hardening_parameters = \
+            self._model_parameters['a_hardening_parameters']
+        b_hardening_law = self._model_parameters['b_hardening_law']
+        b_hardening_parameters = \
+            self._model_parameters['b_hardening_parameters']
+        c_hardening_law = self._model_parameters['c_hardening_law']
+        c_hardening_parameters = \
+            self._model_parameters['c_hardening_parameters']
+        d_hardening_law = self._model_parameters['d_hardening_law']
+        d_hardening_parameters = \
+            self._model_parameters['d_hardening_parameters']
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Compute shear modulus
+        G = E/(2.0*(1.0 + v))
+        # Compute Lamé parameters
+        lam = (E*v)/((1.0 + v)*(1.0 - 2.0*v))
+        miu = E/(2.0*(1.0 + v))
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Get last increment converged state variables
+        e_strain_old_mf = state_variables_old['e_strain_mf']
+        p_strain_old_mf = state_variables_old['strain_mf'] - e_strain_old_mf
+        acc_p_strain_old = state_variables_old['acc_p_strain']
+        if self._problem_type == 1:
+            e_strain_33_old = state_variables_old['e_strain_33']
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Initialize state update failure flag
+        is_su_fail = False
+        # Initialize plastic step flag
+        is_plast = False
+        #
+        #                                                    2D > 3D conversion
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # When the problem type corresponds to a 2D analysis, perform the state
+        # update and consistent tangent computation as in the 3D case,
+        # considering the appropriate out-of-plain strain and stress components
+        if self._problem_type == 4:
+            n_dim = self._n_dim
+            comp_order_sym = self._comp_order_sym
+        else:
+            # Set 3D problem parameters
+            n_dim, comp_order_sym, _ = get_problem_type_parameters(4)
+            # Build strain tensors (matricial form) by including the
+            # appropriate out-of-plain components
+            inc_strain_mf = vget_state_3Dmf_from_2Dmf(
+                inc_strain_mf, comp_33=0.0, device=self._device)
+            e_strain_old_mf = vget_state_3Dmf_from_2Dmf(
+                e_strain_old_mf, e_strain_33_old, device=self._device)
+        #
+        #                                                          State update
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set required fourth-order tensors
+        _, _, _, fosym, fodiagtrace, _, _ = \
+            get_id_operators(n_dim, device=self._device)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Compute elastic trial strain
+        e_trial_strain_mf = e_strain_old_mf + inc_strain_mf
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Compute elastic consistent tangent modulus according to problem type
+        # and store it in matricial form
+        if self._problem_type in [1, 4]:
+            e_consistent_tangent = lam*fodiagtrace + 2.0*miu*fosym
+        e_consistent_tangent_mf = vget_tensor_mf(e_consistent_tangent,
+                                                 n_dim, comp_order_sym,
+                                                 device=self._device)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Compute trial stress
+        trial_stress_mf = torch.matmul(e_consistent_tangent_mf,
+                                       e_trial_strain_mf)
+        trial_stress = vget_tensor_from_mf(trial_stress_mf, n_dim,
+                                           comp_order_sym,
+                                           device=self.get_device)
+        # Compute trial accumulated plastic strain
+        acc_p_trial_strain = acc_p_strain_old
+        # Compute trial yield stress
+        yield_stress, _ = hardening_law(hardening_parameters,
+                                        acc_p_trial_strain)
+        # Compute current yield parameters
+        yield_a, _ = a_hardening_law(a_hardening_parameters,
+                                     acc_p_trial_strain)
+        yield_b, _ = b_hardening_law(b_hardening_parameters,
+                                     acc_p_trial_strain)
+        yield_c, _ = c_hardening_law(c_hardening_parameters,
+                                     acc_p_trial_strain)
+        yield_d, _ = d_hardening_law(d_hardening_parameters,
+                                     acc_p_trial_strain)
+        # Compute trial effective stress
+        effective_trial_stress = self.get_effective_stress(
+            trial_stress, yield_a, yield_b, yield_c, yield_d)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Check yield function
+        yield_function = effective_trial_stress - yield_stress
+        # If the trial stress state lies inside the yield function,
+        # then the state update is purely elastic and coincident with the
+        # elastic trial state. Otherwise, the state update is elastoplastic
+        # and the return-mapping system of nonlinear equations must be solved
+        # in order to update the state variables
+        if yield_function/yield_stress <= su_conv_tol:
+            # Update elastic strain
+            e_strain_mf = e_trial_strain_mf
+            # Update stress
+            stress_mf = trial_stress_mf
+            # Update accumulated plastic strain
+            acc_p_strain = acc_p_strain_old
+        else:
+            # Set plastic step flag
+            is_plast = True
+            # Get elastic trial strain tensor
+            e_trial_strain = vget_tensor_from_mf(e_trial_strain, n_dim,
+                                                 comp_order_sym,
+                                                 device=self._device)
+            # Compute initial yield stress
+            init_yield_stress, _ = hardening_law(acc_p_strain=0)
+            # Set unknowns initial iterative guess
+            e_strain = e_trial_strain
+            acc_p_strain = acc_p_strain_old
+            inc_p_mult = 0
+            # Initialize Newton-Raphson iteration counter
+            nr_iter = 0
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Start Newton-Raphson iterative loop
+            while True:
+                # Compute current stress
+                stress = ddot42_1(e_consistent_tangent, e_strain)
+                # Compute current yield stress and hardening modulus
+                yield_stress, hard_slope = hardening_law(acc_p_strain)
+                # Compute current yield parameters and hardening moduli
+                yield_a, a_hard_slope = a_hardening_law(acc_p_strain)
+                yield_b, b_hard_slope = b_hardening_law(acc_p_strain)
+                yield_c, c_hard_slope = c_hardening_law(acc_p_strain)
+                yield_d, d_hard_slope = d_hardening_law(acc_p_strain)
+                # Compute effective stress
+                effective_stress = self.get_effective_stress(
+                    stress, yield_a, yield_b, yield_c, yield_d)
+                # Compute current flow vector and norm
+                flow_vector = self.get_flow_vector(
+                    stress, yield_a, yield_b, yield_c, yield_d)
+                norm_flow_vector = torch.norm(flow_vector)
+                # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                # Compute residuals
+                residual_1 = e_strain - e_trial_strain + inc_p_mult*flow_vector
+                residual_2 = (acc_p_strain - acc_p_strain_old
+                              - acc_p_strain*(np.sqrt(2/3))*norm_flow_vector)
+                residual_3 = \
+                    (effective_stress - yield_stress)/init_yield_stress
+                # Get residual matrix
+                residual_1_matrix = vget_tensor_mf(
+                    residual_1, n_dim, comp_order_sym,
+                    is_kelvin_notation=False, device=self._device)
+                
+                
+                # PASS TO METHOD
+                
+                
+                # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                # Build residual vector
+                residual = \
+                    torch.cat((residual_1_matrix, residual_2, residual_3))
+                # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                # Compute residuals convergence norm
+                conv_norm_res_1 = \
+                    torch.norm(residual_1)/torch.norm(e_trial_strain)
+                conv_norm_res_2 = abs(residual_2/acc_p_strain_old)
+                conv_norm_res_3 = torch.norm(residual_3)
+                # Compute residual vector convergence norm
+                conv_norm_residual = \
+                    conv_norm_res_1 + conv_norm_res_2 + conv_norm_res_3
+                # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                # Check Newton-Raphson iterative procedure convergence
+                is_converged = conv_norm_residual < su_conv_tol
+                # Control Newton-Raphson iteration loop flow
+                if is_converged:
+                    # Leave Newton-Raphson iterative loop (converged solution)
+                    break
+                elif nr_iter == su_max_n_iterations:
+                    # If the maximum number of Newton-Raphson iterations is
+                    # reached without achieving convergence, recover last
+                    # converged state variables, set state update failure flag
+                    # and return
+                    state_variables = copy.deepcopy(state_variables_old)
+                    state_variables['is_su_fail'] = True
+                    return state_variables, None
+                else:
+                    # Increment iteration counter
+                    nr_iter = nr_iter + 1
+                # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                # Compute return-mapping Jacobian
+                jacobian = self.get_jacobian()                                 # WIP
+                # Solve return-mapping linearized equation
+                d_iter = torch.linalg.solve(jacobian, -residual)
+                # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                # Extract iterative solution
+                e_strain_iter = vget_tensor_from_mf(
+                    d_iter[:len(comp_order_sym)], n_dim, comp_order_sym,
+                    is_kelvin_notation=False, device=self._device)
+                acc_p_strain_iter = d_iter[len(comp_order_sym)]
+                inc_p_mult_iter = d_iter[len(comp_order_sym) + 1]
+                # Update iterative unknowns
+                e_strain = e_strain + e_strain_iter
+                acc_p_strain = acc_p_strain + acc_p_strain_iter
+                inc_p_mult = inc_p_mult + inc_p_mult_iter
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Update elastic strain
+            e_strain_mf = vget_tensor_mf(e_strain, n_dim, comp_order_sym,
+                                         device=self._device)
+            # Update stress
+            stress_mf = torch.matmul(e_consistent_tangent_mf, e_strain_mf)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Get the out-of-plane strain and stress components
+        if self._problem_type == 1:
+            e_strain_33 = e_strain_mf[comp_order_sym.index('33')]
+            stress_33 = stress_mf[comp_order_sym.index('33')]
+        #
+        #                                                    3D > 2D Conversion
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # When the problem type corresponds to a 2D analysis, build the 2D
+        # strain and stress tensors (matricial form) once the state update has
+        # been performed
+        if self._problem_type == 1:
+            # Builds 2D strain and stress tensors (matricial form) from the
+            # associated 3D counterparts
+            e_trial_strain_mf = vget_state_2Dmf_from_3Dmf(
+                e_trial_strain_mf, device=self._device)
+            e_strain_mf = vget_state_2Dmf_from_3Dmf(
+                e_strain_mf, device=self._device)
+            stress_mf = vget_state_2Dmf_from_3Dmf(
+                stress_mf, device=self._device)
+        #
+        #                                                Update state variables
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Initialize state variables dictionary
+        state_variables = self.state_init()
+        # Store updated state variables
+        state_variables['e_strain_mf'] = e_strain_mf
+        state_variables['acc_p_strain'] = acc_p_strain
+        state_variables['strain_mf'] = e_trial_strain_mf + p_strain_old_mf
+        state_variables['stress_mf'] = stress_mf
+        state_variables['is_su_fail'] = is_su_fail
+        state_variables['is_plast'] = is_plast
+        if self._problem_type == 1:
+            state_variables['e_strain_33'] = e_strain_33
+            state_variables['stress_33'] = stress_33
+        #
+        #                                            Consistent tangent modulus
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # If the state update was purely elastic, then the consistent tangent
+        # modulus is the elastic consistent tangent modulus. Otherwise, compute
+        # the elastoplastic consistent tangent modulus
+        consistent_tangent_mf = None
+        #
+        #                                                    3D > 2D Conversion
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # When the problem type corresponds to a 2D analysis, build the 2D
+        # consistent tangent modulus (matricial form) from the 3D counterpart
+        if self._problem_type == 1 and consistent_tangent_mf is not None:
+            consistent_tangent_mf = vget_state_2Dmf_from_3Dmf(
+                consistent_tangent_mf, device=self._device)
+        #
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        return state_variables, consistent_tangent_mf
+    # -------------------------------------------------------------------------
+    def get_stress_invariants(self, stress):
+        """Compute stress principal and main invariants.
+        
+        Parameters
+        ----------
+        stress : torch.Tensor(2d)
+            Stress.
+            
+        Returns
+        -------
+        i1 : torch.Tensor(0d)
+            First (principal) invariant of stress tensor.
+        i2 : torch.Tensor(0d)
+            Second (principal) invariant of stress tensor.
+        i3 : torch.Tensor(0d)
+            Third (principal) invariant of stress tensor.
+        j1 : torch.Tensor(0d)
+            First (main) invariant of stress tensor.
+        j2 : torch.Tensor(0d)
+            Second (main) invariant of stress tensor.
+        j3 : torch.Tensor(0d)
+            Third (main) invariant of stress tensor.
+        """
+        # Compute first (principal) invariant
+        i1 = torch.trace(stress)
+        # Compute second (principal) invariant
+        i2 = 0.5*(torch.trace(stress)**2
+                  - torch.trace(torch.matmul(stress, stress)))
+        # Compute third (principal) invariant
+        i3 = torch.det(stress)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Compute first (main) invariant
+        j1 = i1
+        # Compute second (main) invariant
+        j2 = i1**2 - 2*i2
+        # Compute third (main) invariant
+        j3 = i1**3 - 3*i1*i2 + 3*i3
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        return i1, i2, i3, j1, j2, j3
+    # -------------------------------------------------------------------------
+    def get_effective_stress(self, stress, yield_a, yield_b, yield_c, yield_d):
+        """Compute effective stress.
+        
+        Parameters
+        ----------
+        stress : torch.Tensor(2d)
+            Stress.
+        yield_a : torch.Tensor(0d)
+            Yield parameter.
+        yield_b : torch.Tensor(0d)
+            Yield parameter.
+        yield_c : torch.Tensor(0d)
+            Yield parameter.
+        yield_d : torch.Tensor(0d)
+            Yield parameter.
+            
+        Returns
+        -------
+        effective_stress : torch.Tensor(2d)
+            Effective stress.
+        """
+        # Compute stress invariants
+        i1, _, _, _, j2, j3 = self.get_stress_invariants(stress)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Compute auxiliary terms
+        aux_1 = yield_b*i1
+        aux_2 = j2**3 - yield_c*(j3**2) 
+        aux_3 = yield_d*j3
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Compute effective stress
+        effective_stress = yield_a*(aux_1 + (aux_2 - aux_3)**(1/3))
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        return effective_stress
+    # -------------------------------------------------------------------------
+    def get_flow_vector(self, stress, yield_a, yield_b, yield_c, yield_d):
+        """Compute flow vector.
+        
+        Parameters
+        ----------
+        stress : torch.Tensor(2d)
+            Stress.
+        yield_a : torch.Tensor(0d)
+            Yield parameter.
+        yield_b : torch.Tensor(0d)
+            Yield parameter.
+        yield_c : torch.Tensor(0d)
+            Yield parameter.
+        yield_d : torch.Tensor(0d)
+            Yield parameter.
+            
+        Returns
+        -------
+        flow_vector : torch.Tensor(2d)
+            Flow vector.
+        """
+        # Set number of spatial dimensions
+        n_dim = 3
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set required fourth-order tensors
+        soid, _, _, _, _, _, fodevprojsym = \
+            get_id_operators(n_dim, device=self._device)
+        # Compute deviatoric stress tensor
+        dev_stress = ddot42_1(fodevprojsym, stress)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Compute stress invariants
+        _, _, _, _, j2, j3 = self.get_stress_invariants(stress)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Get first (principal) stress invariant derivative w.t.r. stress
+        di1dstress = soid
+        # Get second (main) stress invariant derivative w.t.r. stress
+        dj2dstress = dev_stress
+        # Get third (main) stress invariant derivative w.t.r. stress
+        dj3dstress = torch.det(dev_stress)*torch.inverse(dev_stress).T
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Compute auxiliary terms
+        aux_1 = j2**3 - yield_c*(j3**2)
+        aux_2 = 3*(j2**2)*dj2dstress - yield_c*2*j3*dj3dstress
+        aux_3 = yield_d*j3
+        aux_4 = yield_d*dj3dstress
+        term_1 = yield_a*yield_b*di1dstress
+        term_2 = yield_a*(1/3)*((aux_1**(1/2) - aux_4)**(-2/3))
+        term_3 = (1/2)*(aux_1**(-1/2))*aux_2 - aux_4
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Compute flow vector
+        flow_vector = term_1 + term_2*term_3
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        return flow_vector
+    # -------------------------------------------------------------------------
+    def get_residual(self, ):
+        """Compute state update residual vector.
+        
+        Parameters
+        ----------
+        
+        Returns
+        -------
+        residual : torch.Tensor(1d)
+            Residual vector.
+        """
+        pass
+    # -------------------------------------------------------------------------
+    def get_jacobian(self, ):
+        """Compute state update Jacobian matrix.
+        
+        Parameters
+        ----------
+        
+        Returns
+        -------
+        jacobian : torch.Tensor(2d)
+            Jacobian matrix.
+        """
+        pass
