@@ -4,6 +4,8 @@ Classes
 -------
 HybridizationModel(torch.nn.Module)
     Hybridization model.
+HMIdentity(torch.nn.Module)
+    Hybridization model: Identity.
 HMAdditive(torch.nn.Module)
     Hybridization model: Additive.
 """
@@ -37,16 +39,13 @@ class HybridizationModel(torch.nn.Module):
         Forward propagation.
 
     """
-    def __init__(self, hybridization_type='additive'):
+    def __init__(self, hybridization_type='identity'):
         """Constructor.
         
         Parameters
         ----------
-        hybridization_type : str, default='additive'
-            Hybridization model type. Default 'additive' corresponds to
-            hybridization model without lernable parameters where the outputs
-            of the different hybridized models are added to compute the hybrid
-            model output.
+        hybridization_type : str, default='identity'
+            Hybridization model type.
         """
         # Initialize from base class
         super(HybridizationModel, self).__init__()
@@ -55,7 +54,9 @@ class HybridizationModel(torch.nn.Module):
         self._hybridization_type = hybridization_type
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Initialize hybridization model
-        if hybridization_type == 'additive':
+        if hybridization_type == 'identity':
+            self.hybridization_model = HMIdentity()
+        elif hybridization_type == 'additive':
             self.hybridization_model = HMAdditive()
         else:
             raise RuntimeError('Unknown hybridization type.')
@@ -81,6 +82,45 @@ class HybridizationModel(torch.nn.Module):
         """
         # Forward propagation
         features_out = self.hybridization_model(list_features_in)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        return features_out
+# =============================================================================
+class HMIdentity(torch.nn.Module):
+    """Hybridization model: Identity.
+    
+    Let first input tensor pass unchanged, discard all remainder input tensors.
+
+    Methods
+    -------
+    forward(self, list_features_in)
+        Forward propagation.
+    """
+    def __init__(self):
+        """Constructor."""
+        # Initialize from base class
+        super(HMIdentity, self).__init__()
+    # -------------------------------------------------------------------------
+    def forward(self, list_features_in):
+        """Forward propagation.
+
+        Parameters
+        ----------
+        list_features_in : list[torch.Tensor]
+            List of similar shaped tensors of input features stored as
+            torch.Tensor(2d) of shape (sequence_length, n_features_in) for
+            unbatched input or torch.Tensor(3d) of shape
+            (sequence_length, batch_size, n_features_in) for batched input.
+
+        Returns
+        -------
+        features_out : torch.Tensor
+            Tensor of output features stored as torch.Tensor(2d) of shape
+            (sequence_length, n_features_in) for unbatched input or
+            torch.Tensor(3d) of shape
+            (sequence_length, batch_size, n_features_in) for batched input.
+        """
+        # Get first input tensor
+        features_out = list_features_in[0]
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         return features_out
 # =============================================================================
