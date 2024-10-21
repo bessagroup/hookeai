@@ -109,8 +109,8 @@ class GRURNNModel(torch.nn.Module):
         Fit model data scalers.
     get_fitted_data_scaler(self, features_type)
         Get fitted model data scalers.
-    get_fitted_data_scaler(self, features_type)
-        Get fitted model data scalers.
+    data_scaler_transform(self, tensor, features_type, mode='normalize')
+        Perform data scaling operation on features PyTorch tensor.
     load_model_data_scalers_from_file(self)
         Load data scalers from model initialization file.
     check_normalized_return(self)
