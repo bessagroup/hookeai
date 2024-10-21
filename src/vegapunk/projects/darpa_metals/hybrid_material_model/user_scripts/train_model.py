@@ -79,9 +79,6 @@ def perform_model_standard_training(train_dataset_file_path, model_directory,
                        'is_data_normalization': True,
                        'device_type': device_type}
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Set hybridization model type
-    model_init_args['hybridization_type'] = 'additive'
-    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set data features for training
     features_option = 'stress'
     if features_option == 'stress':
@@ -103,7 +100,7 @@ def perform_model_standard_training(train_dataset_file_path, model_directory,
     hyb_models_init_args = {}
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set candidate constitutive model name
-    candidate_model_name = 'rc_von_mises_vmap'
+    candidate_model_name = 'rc_drucker_prager_vmap'
     # Get physics-based candidate constitutive model initialization attributes
     candidate_model_init_args = get_candidate_model_init_args(
         candidate_model_name, model_directory, n_features_in, n_features_out,
@@ -112,19 +109,66 @@ def perform_model_standard_training(train_dataset_file_path, model_directory,
     hyb_models_names.append(candidate_model_name)
     hyb_models_init_args[candidate_model_name] = candidate_model_init_args
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Set corrector model name
-    corrector_model_name = 'gru_material_model'
-    # Get corrector model initialization attributes
-    corrector_model_init_args = get_corrector_model_init_args(
-        corrector_model_name, model_directory, n_features_in, n_features_out,
-        device_type=device_type)
-    # Store corrector model
-    hyb_models_names.append(corrector_model_name)
-    hyb_models_init_args[corrector_model_name] = corrector_model_init_args
+    # Set hybridization scheme
+    hybridization_scheme = 0
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Set hybridization scheme transfer-learning and residual models
+    if hybridization_scheme == 0:
+        # Build transfer-learning model parameters
+        tl_models_names = {}
+        tl_models_init_args = {}
+        is_tl_residual_connection = {}
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set residual model name
+        residual_model_name = 'gru_material_model'
+        # Get residual model initialization attributes
+        residual_model_init_args = get_gru_model_init_args(
+            residual_model_name, model_directory, n_features_in,
+            n_features_out, device_type=device_type)
+        # Store residual model
+        hyb_models_names.append(residual_model_name)
+        hyb_models_init_args[residual_model_name] = residual_model_init_args
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set hybridization model type
+        model_init_args['hybridization_type'] = 'additive'
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    elif hybridization_scheme == 1:
+        # Set transfer-learning model name
+        tl_model_name = 'gru_transfer_learning_model'
+        # Set transfer-learning model residual connection
+        is_residual_connection = True
+        # Set transfer-learning model number of features
+        if is_residual_connection:
+            tl_n_features_in = n_features_in + n_features_out
+            tl_n_features_out = n_features_out
+        else:
+            tl_n_features_in = n_features_out
+            tl_n_features_out = n_features_out
+        # Get transfer-learning model initialization attributes
+        tl_model_init_args = get_gru_model_init_args(
+            tl_model_name, model_directory, tl_n_features_in,
+            tl_n_features_out, device_type=device_type)
+        # Build transfer-learning model parameters
+        tl_models_names = {candidate_model_name: tl_model_name}
+        tl_models_init_args = {tl_model_name: tl_model_init_args}
+        is_tl_residual_connection = {tl_model_name: is_residual_connection}
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set residual model name
+        residual_model_name = None
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set hybridization model type
+        model_init_args['hybridization_type'] = 'identity'
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    else:
+        raise RuntimeError('Unknown hybridization scheme.')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Store hybridized material models
     model_init_args['hyb_models_names'] = hyb_models_names
     model_init_args['hyb_models_init_args'] = hyb_models_init_args
+    # Store transfer-learning models
+    model_init_args['tl_models_names'] = tl_models_names
+    model_init_args['tl_models_init_args'] = tl_models_init_args
+    model_init_args['is_tl_residual_connection'] = is_tl_residual_connection
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set model training options:
     # Set number of epochs
@@ -228,18 +272,87 @@ def get_candidate_model_init_args(model_name, model_directory, n_features_in,
     strain_formulation = 'infinitesimal'
     # Set problem type
     problem_type = 4
-    # Set material constitutive model name
-    material_model_name = 'von_mises_vmap'
-    # Set material constitutive model parameters
-    material_model_parameters = \
-        {'elastic_symmetry': 'isotropic',
-            'E': 80e3, 'v': 0.33,
-            'euler_angles': (0.0, 0.0, 0.0),
-            'hardening_law': get_hardening_law('nadai_ludwik'),
-            'hardening_parameters': {'s0': 600,
-                                    'a': 400,
-                                    'b': 0.5,
-                                    'ep0': 1e-5}}
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Set numerical example
+    example = 'learning_drucker_prager_pressure_dependency'
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Set example candidate model
+    if example == 'erroneous_von_mises_properties':
+        # Set material constitutive model name
+        material_model_name = 'von_mises_vmap'
+        # Set best or worst candidate model
+        is_worst_candidate = True
+        # Set material constitutive model parameters
+        if is_worst_candidate:
+            # Worst candidate model
+            material_model_parameters = \
+                {'elastic_symmetry': 'isotropic',
+                 'E': 80e3, 'v': 0.30,
+                 'euler_angles': (0.0, 0.0, 0.0),
+                 'hardening_law': get_hardening_law('linear'),
+                 'hardening_parameters': {'s0': 400,
+                                          'a': 300}}
+        else:
+            # Best candidate model
+            material_model_parameters = \
+                {'elastic_symmetry': 'isotropic',
+                 'E': 100e3, 'v': 0.33,
+                 'euler_angles': (0.0, 0.0, 0.0),
+                 'hardening_law': get_hardening_law('nadai_ludwik'),
+                 'hardening_parameters': {'s0': 700,
+                                          'a': 600,
+                                          'b': 0.5,
+                                          'ep0': 1e-5}}
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    elif example == 'learning_von_mises_hardening':
+        # Set material constitutive model name
+        material_model_name = 'von_mises_mixed_vmap'
+        # Set material constitutive model parameters
+        material_model_parameters = \
+            {'elastic_symmetry': 'isotropic',
+             'E': 110e3, 'v': 0.33,
+             'euler_angles': (0.0, 0.0, 0.0),
+             'hardening_law': get_hardening_law('linear'),
+             'hardening_parameters': {'s0': 900,
+                                      'a': 0},
+             'kinematic_hardening_law': get_hardening_law('linear'),
+             'kinematic_hardening_parameters': {'s0': 0,
+                                                'a': 0}}
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    elif example == 'learning_drucker_prager_pressure_dependency':
+        # Set material constitutive model name
+        material_model_name = 'drucker_prager_vmap'
+        # Set frictional angle
+        friction_angle = np.deg2rad(5)
+        # Set dilatancy angle
+        dilatancy_angle = friction_angle
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Compute angle-related material parameters
+        # (matching with Mohr-Coulomb under uniaxial tension and compression)
+        # Set yield surface cohesion parameter
+        yield_cohesion_parameter = (2.0/np.sqrt(3))*np.cos(friction_angle)
+        # Set yield pressure parameter
+        yield_pressure_parameter = (3.0/np.sqrt(3))*np.sin(friction_angle)
+        # Set plastic flow pressure parameter
+        flow_pressure_parameter = (3.0/np.sqrt(3))*np.sin(dilatancy_angle)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set material constitutive model parameters
+        material_model_parameters = \
+            {'elastic_symmetry': 'isotropic',
+             'E': 110e3, 'v': 0.33,
+             'euler_angles': (0.0, 0.0, 0.0),
+             'hardening_law': get_hardening_law('nadai_ludwik'),
+             'hardening_parameters': {'s0': 900/yield_cohesion_parameter,
+                                      'a': 700/yield_cohesion_parameter,
+                                      'b': 0.5,
+                                      'ep0': 1e-5},
+             'yield_cohesion_parameter': yield_cohesion_parameter,
+             'yield_pressure_parameter': yield_pressure_parameter,
+             'flow_pressure_parameter': flow_pressure_parameter}
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    else:
+        raise RuntimeError('Unknown numerical example.')
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set material constitutive state variables (prediction)
     state_features_out = {}
     # Set parameters normalization
@@ -264,9 +377,9 @@ def get_candidate_model_init_args(model_name, model_directory, n_features_in,
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     return model_init_args
 # =============================================================================
-def get_corrector_model_init_args(model_name, model_directory, n_features_in,
-                                  n_features_out, device_type='cpu'):
-    """Set corrector model parameters.
+def get_gru_model_init_args(model_name, model_directory, n_features_in,
+                            n_features_out, device_type='cpu'):
+    """Set GRU recurrent neural network model parameters.
     
     Parameters
     ----------
@@ -284,13 +397,12 @@ def get_corrector_model_init_args(model_name, model_directory, n_features_in,
     Returns
     -------
     model_init_args : dict
-        Model class initialization parameters (check
-        RecurrentConstitutiveModel).
+        Model class initialization parameters (check GRURNNModel).
     """
     # Set hidden layer size
-    hidden_layer_size = 500
+    hidden_layer_size = 481
     # Set number of recurrent layers (stacked RNN)
-    n_recurrent_layers = 3
+    n_recurrent_layers = 2
     # Set dropout probability
     dropout = 0
     # Set data normalization
@@ -304,6 +416,38 @@ def get_corrector_model_init_args(model_name, model_directory, n_features_in,
                        'dropout': dropout,
                        'model_directory': model_directory,
                        'model_name': model_name,
+                       'is_data_normalization': is_data_normalization,
+                       'device_type': device_type}
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    return model_init_args
+# =============================================================================
+def get_poly_regressor_model_init_args(n_features_in, device_type='cpu'):
+    """Set polynomial linear regression model parameters.
+    
+    Parameters
+    ----------
+    n_features_in : int
+        Number of input features.
+    device_type : {'cpu', 'cuda'}, default='cpu'
+        Type of device on which torch.Tensor is allocated.
+
+    Returns
+    -------
+    model_init_args : dict
+        Model class initialization parameters
+        (check PolynomialLinearRegressor).
+    """
+    # Set degree of polynomial linear regression model
+    poly_degree = 1
+    # Set bias
+    is_bias = True
+    # Set data normalization
+    is_data_normalization = True
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Build model initialization parameters
+    model_init_args = {'n_features_in': n_features_in,
+                       'poly_degree': poly_degree,
+                       'is_bias': is_bias,
                        'is_data_normalization': is_data_normalization,
                        'device_type': device_type}
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
