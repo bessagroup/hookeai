@@ -192,7 +192,7 @@ def predict(dataset, model_directory, model=None, predict_directory=None,
             if loss_nature == 'features_out':
                 # Compute output features
                 features_out = model(batch['features_in'],
-                                     is_normalized=False)
+                                     is_normalized_out=False)
                 # Get output features ground-truth (None if not available)
                 targets = batch['features_out']
                 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -218,7 +218,7 @@ def predict(dataset, model_directory, model=None, predict_directory=None,
                 # Compute sample output features prediction loss
                 loss = compute_sample_prediction_loss(
                     model, loss_nature, loss_function, features_out, targets,
-                    is_normalized=is_normalized_loss)
+                    is_normalized_out=is_normalized_loss)
                 # Store prediction loss data
                 sample_results['prediction_loss_data'] = \
                     (loss_nature, loss_type, loss, is_normalized_loss)
@@ -281,7 +281,8 @@ def predict(dataset, model_directory, model=None, predict_directory=None,
     return predict_subdir, avg_predict_loss
 # =============================================================================
 def compute_sample_prediction_loss(model, loss_nature, loss_function,
-                                   features_out, targets, is_normalized=False):
+                                   features_out, targets,
+                                   is_normalized_out=False):
     """Compute loss of sample output features prediction.
     
     Parameters
@@ -296,7 +297,7 @@ def compute_sample_prediction_loss(model, loss_nature, loss_function,
         Predicted output features stored as a torch.Tensor(2d).
     targets : {torch.Tensor, None}
         Output features ground-truth stored as a torch.Tensor(2d).
-    is_normalized : bool, default=False
+    is_normalized_out : bool, default=False
         If True, get normalized loss according with model fitted features data
         scalers, False otherwise.
     
@@ -311,10 +312,9 @@ def compute_sample_prediction_loss(model, loss_nature, loss_function,
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Compute sample loss
     if is_ground_truth_available:
-        if is_normalized:
+        if is_normalized_out:
             # Check model data normalization
-            if is_normalized:
-                model.check_normalized_return()
+            model.check_normalized_return()
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Get model data scaler
             if loss_nature == 'features_out':

@@ -99,11 +99,11 @@ class HybridMaterialModel(torch.nn.Module):
         Get device on which torch.Tensor is allocated.
     get_hyb_models_dict(self)
         Get hybridized material models dictionary.
-    get_detached_model_parameters(self, is_normalized=False)
+    get_detached_model_parameters(self, is_normalized_out=False)
         Get model parameters detached of gradients.
     get_model_parameters_bounds(self)
         Get model parameters bounds.
-    forward(self, features_in, is_normalized=False)
+    forward(self, features_in, is_normalized_out=False)
         Forward propagation.
     features_out_extractor(cls, model_output)
         Extract output features from generic model output.
@@ -365,7 +365,7 @@ class HybridMaterialModel(torch.nn.Module):
         """
         return dict(zip(self._hyb_models_names, self._hyb_models))
     # -------------------------------------------------------------------------
-    def get_detached_model_parameters(self, is_normalized=False):
+    def get_detached_model_parameters(self, is_normalized_out=False):
         """Get model parameters detached of gradients.
         
         Only collects parameters from hybridized material models with explicit
@@ -374,7 +374,7 @@ class HybridMaterialModel(torch.nn.Module):
         
         Parameters
         ----------
-        is_normalized : bool, default=False
+        is_normalized_out : bool, default=False
             If True, then model parameters are normalized.
 
         Returns
@@ -399,7 +399,7 @@ class HybridMaterialModel(torch.nn.Module):
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Get detached hybridized material model parameters
             detached_parameters = hyb_model.get_detached_model_parameters(
-                is_normalized=is_normalized)
+                is_normalized_out=is_normalized_out)
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Collect parameters (prefix with hybridized model name)
             for param, value in detached_parameters.items():
@@ -451,7 +451,7 @@ class HybridMaterialModel(torch.nn.Module):
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         return model_parameters_bounds
     # -------------------------------------------------------------------------
-    def forward(self, features_in, is_normalized=False):
+    def forward(self, features_in, is_normalized_out=False):
         """Forward propagation.
         
         Parameters
@@ -461,7 +461,7 @@ class HybridMaterialModel(torch.nn.Module):
             (sequence_length, n_features_in) for unbatched input or
             torch.Tensor(3d) of shape
             (sequence_length, batch_size, n_features_in) for batched input.
-        is_normalized : bool, default=False
+        is_normalized_out : bool, default=False
             If True, get normalized output features, False otherwise.
             
         Returns
@@ -477,7 +477,7 @@ class HybridMaterialModel(torch.nn.Module):
             raise RuntimeError('Input features were not provided as '
                                'torch.Tensor.')
         # Check model data normalization
-        if is_normalized:
+        if is_normalized_out:
             self.check_normalized_return()
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Initialize hybridized models outputs
@@ -487,7 +487,7 @@ class HybridMaterialModel(torch.nn.Module):
             # Get hybridized material model name
             hyb_model_name = self._hyb_models_names[i]
             # Compute hybridized material model output features
-            hyb_model_output = hyb_model(features_in, is_normalized=False)
+            hyb_model_output = hyb_model(features_in, is_normalized_out=False)
             # Extract output features
             features_out = self.features_out_extractor(hyb_model_output)
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -508,7 +508,8 @@ class HybridMaterialModel(torch.nn.Module):
                 else:
                     tl_model_input = features_out
                 # Compute transfer-learning model output features
-                tl_model_output = tl_model(tl_model_input, is_normalized=False)
+                tl_model_output = \
+                    tl_model(tl_model_input, is_normalized_out=False)
                 # Extract output features
                 features_out = self.features_out_extractor(tl_model_output) 
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -519,7 +520,7 @@ class HybridMaterialModel(torch.nn.Module):
         features_out = self._hybridization_model(list_features_out)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Normalize output features data
-        if self.is_data_normalization and is_normalized:
+        if self.is_data_normalization and is_normalized_out:
             features_out = \
                 self.data_scaler_transform(tensor=features_out,
                                            features_type='features_out',

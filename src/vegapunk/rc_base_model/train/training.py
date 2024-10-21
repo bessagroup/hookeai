@@ -222,7 +222,7 @@ def train_model(n_max_epochs, dataset, model_init_args, lr_init,
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Initialize model parameters history (per epoch)
     model_init_parameters = \
-        model.get_detached_model_parameters(is_normalized=False)
+        model.get_detached_model_parameters(is_normalized_out=False)
     model_parameters_history_epochs = \
         {key: [val,] for key, val in model_init_parameters.items()}
     # Initialize model parameters history (per training step)
@@ -335,7 +335,7 @@ def train_model(n_max_epochs, dataset, model_init_args, lr_init,
             if loss_nature == 'features_out':
                 # Get output features
                 features_out = model(batch['features_in'],
-                                     is_normalized=is_data_normalization)
+                                     is_normalized_out=is_data_normalization)
                 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                 # Normalize output features (loss computation)
                 if not model.is_data_normalization and is_loss_normalization:
@@ -396,7 +396,7 @@ def train_model(n_max_epochs, dataset, model_init_args, lr_init,
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Save model parameters
             model_parameters_step = \
-                model.get_detached_model_parameters(is_normalized=False)
+                model.get_detached_model_parameters(is_normalized_out=False)
             for key, val in model_parameters_step.items():
                 model_parameters_history_steps[key].append(val)
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -432,7 +432,7 @@ def train_model(n_max_epochs, dataset, model_init_args, lr_init,
                                 epoch=epoch, is_best_state=True)
             # Save model parameters
             best_model_parameters = \
-                model.get_detached_model_parameters(is_normalized=False)
+                model.get_detached_model_parameters(is_normalized_out=False)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Check early stopping criterion
         if is_early_stopping:
@@ -452,8 +452,8 @@ def train_model(n_max_epochs, dataset, model_init_args, lr_init,
                 save_training_state(model, optimizer, epoch=best_epoch,
                                     is_best_state=True)
                 # Save model parameters
-                best_model_parameters = \
-                    model.get_detached_model_parameters(is_normalized=False)
+                best_model_parameters = model.get_detached_model_parameters(
+                    is_normalized_out=False)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Check training process flow
         if epoch >= n_max_epochs:

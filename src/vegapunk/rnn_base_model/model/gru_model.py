@@ -297,7 +297,7 @@ class GRURNNModel(torch.nn.Module):
         return self.device_type, self.device
     # -------------------------------------------------------------------------
     def forward(self, features_in, hidden_features_in=None,
-                is_normalized=False):
+                is_normalized_out=False):
         """Forward propagation.
         
         Parameters
@@ -314,7 +314,7 @@ class GRURNNModel(torch.nn.Module):
             (n_recurrent_layers, batch_size, hidden_layer_size) for batched
             input. If None, initial hidden state features are initialized to
             zero.
-        is_normalized : bool, default=False
+        is_normalized_out : bool, default=False
             If True, get normalized output features, False otherwise.
             
         Returns
@@ -355,7 +355,7 @@ class GRURNNModel(torch.nn.Module):
                                'provided as torch.Tensor.')
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Check model data normalization
-        if is_normalized:
+        if is_normalized_out:
             self.check_normalized_return()
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Normalize input features data
@@ -372,7 +372,7 @@ class GRURNNModel(torch.nn.Module):
         features_out = self._linear_layer(features_out)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Denormalize output features data
-        if self.is_data_normalization and not is_normalized:
+        if self.is_data_normalization and not is_normalized_out:
             features_out = \
                 self.data_scaler_transform(tensor=features_out,
                                            features_type='features_out',

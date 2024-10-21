@@ -307,7 +307,7 @@ def train_model(n_max_epochs, dataset, model_init_args, lr_init,
                 features_out, _ = \
                     model(batch['features_in'],
                           hidden_features_in=batch['hidden_features_in'],
-                          is_normalized=is_data_normalization)
+                          is_normalized_out=is_data_normalization)
                 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~                
                 # Compute loss
                 loss = loss_function(features_out, features_targets)

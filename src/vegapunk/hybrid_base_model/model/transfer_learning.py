@@ -164,7 +164,7 @@ class PolynomialLinearRegressor(torch.nn.Module):
         """
         return self.device_type, self.device
     # -------------------------------------------------------------------------
-    def forward(self, features_in, is_normalized=False):
+    def forward(self, features_in, is_normalized_out=False):
         """Forward propagation.
         
         Parameters
@@ -174,7 +174,7 @@ class PolynomialLinearRegressor(torch.nn.Module):
             (sequence_length, n_features_in) for unbatched input or
             torch.Tensor(3d) of shape
             (sequence_length, batch_size, n_features_in) for batched input.
-        is_normalized : bool, default=False
+        is_normalized_out : bool, default=False
             If True, get normalized output features, False otherwise.
 
         Returns
@@ -191,7 +191,7 @@ class PolynomialLinearRegressor(torch.nn.Module):
                                'torch.Tensor.')
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Check model data normalization
-        if is_normalized:
+        if is_normalized_out:
             self.check_normalized_return()
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Normalize input features data
@@ -252,7 +252,7 @@ class PolynomialLinearRegressor(torch.nn.Module):
             features_out = features_out.squeeze(batch_dim)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Denormalize output features data
-        if self.is_data_normalization and not is_normalized:
+        if self.is_data_normalization and not is_normalized_out:
             features_out = \
                 self.data_scaler_transform(tensor=features_out,
                                            features_type='features_out',

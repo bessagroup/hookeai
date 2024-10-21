@@ -429,7 +429,7 @@ class MaterialModelFinder(torch.nn.Module):
                     # Get detached submodel parameters
                     detached_parameters = \
                         submodel.get_detached_model_parameters(
-                            is_normalized=False)
+                            is_normalized_out=False)
                     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                     # Collect parameters (prefix with model and submodel label)
                     for param, value in detached_parameters.items():
@@ -448,8 +448,8 @@ class MaterialModelFinder(torch.nn.Module):
                     continue
                 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                 # Get detached model parameters
-                detached_parameters = \
-                    model.get_detached_model_parameters(is_normalized=False)
+                detached_parameters = model.get_detached_model_parameters(
+                    is_normalized_out=False)
                 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                 # Collect parameters (prefix with model label)
                 for param, value in detached_parameters.items():
@@ -1199,7 +1199,7 @@ class MaterialModelFinder(torch.nn.Module):
                 raise RuntimeError('Not implemented.')
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Compute output features
-        features_out = constitutive_model(features_in, is_normalized=False)
+        features_out = constitutive_model(features_in, is_normalized_out=False)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Loop over discrete time
         for time_idx in range(n_time):
@@ -1886,7 +1886,7 @@ class MaterialModelFinder(torch.nn.Module):
         features_in = torch.stack(features_in_data, dim=0)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Compute output features
-        features_out = constitutive_model(features_in, is_normalized=False)
+        features_out = constitutive_model(features_in, is_normalized_out=False)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Build state path history
         if strain_formulation == 'infinitesimal':

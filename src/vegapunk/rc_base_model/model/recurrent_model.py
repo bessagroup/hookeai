@@ -147,11 +147,11 @@ class RecurrentConstitutiveModel(torch.nn.Module):
         Get model parameters bounds.
     get_model_parameters_norm_bounds(self)
         Get model parameters normalized bounds.
-    get_detached_model_parameters(self, is_normalized=False)
+    get_detached_model_parameters(self, is_normalized_out=False)
         Get model parameters detached of gradients.
     get_material_model_parameters(self)
         Get current material constitutive model parameters.
-    forward(self, features_in, is_normalized=False)
+    forward(self, features_in, is_normalized_out=False)
         Forward propagation.
     _recurrent_constitutive_model(self, strain_paths)
         Compute material response.
@@ -735,12 +735,12 @@ class RecurrentConstitutiveModel(torch.nn.Module):
         """
         return copy.deepcopy(self._model_parameters_norm_bounds)
     # -------------------------------------------------------------------------
-    def get_detached_model_parameters(self, is_normalized=False):
+    def get_detached_model_parameters(self, is_normalized_out=False):
         """Get model parameters detached of gradients.
         
         Parameters
         ----------
-        is_normalized : bool, default=False
+        is_normalized_out : bool, default=False
             If True, then model parameters are normalized.
 
         Returns
@@ -757,13 +757,13 @@ class RecurrentConstitutiveModel(torch.nn.Module):
         # Normalize/Denormalize model parameters
         if self.is_normalized_parameters:
             # Denormalize model parameters
-            if not is_normalized:
+            if not is_normalized_out:
                 for param, value in base_model_parameters.items():
                     model_parameters[param] = self._transform_parameter(
                         param, value, mode='denormalize')
         else:
             # Normalize model parameters
-            if is_normalized:
+            if is_normalized_out:
                 for param, value in base_model_parameters.items():
                     model_parameters[param] = self._transform_parameter(
                         param, value, mode='normalize')
@@ -780,7 +780,7 @@ class RecurrentConstitutiveModel(torch.nn.Module):
         """
         return self._constitutive_model._model_parameters
     # -------------------------------------------------------------------------
-    def forward(self, features_in, is_normalized=False):
+    def forward(self, features_in, is_normalized_out=False):
         """Forward propagation.
         
         Parameters
@@ -790,7 +790,7 @@ class RecurrentConstitutiveModel(torch.nn.Module):
             (sequence_length, n_features_in) for unbatched input or
             torch.Tensor(3d) of shape
             (sequence_length, batch_size, n_features_in) for batched input.
-        is_normalized : bool, default=False
+        is_normalized_out : bool, default=False
             If True, get normalized output features, False otherwise.
             
         Returns
@@ -806,7 +806,7 @@ class RecurrentConstitutiveModel(torch.nn.Module):
             raise RuntimeError('Input features were not provided as '
                                'torch.Tensor.')
         # Check model data normalization
-        if is_normalized:
+        if is_normalized_out:
             self.check_normalized_return()
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Normalize input features data
@@ -824,7 +824,7 @@ class RecurrentConstitutiveModel(torch.nn.Module):
         features_out = self._vrecurrent_constitutive_model(features_in)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Denormalize output features data
-        if self.is_data_normalization and not is_normalized:
+        if self.is_data_normalization and not is_normalized_out:
             features_out = \
                 self.data_scaler_transform(tensor=features_out,
                                            features_type='features_out',
