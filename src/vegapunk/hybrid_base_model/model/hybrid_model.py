@@ -24,9 +24,10 @@ import sklearn.preprocessing
 # Local
 from rc_base_model.model.recurrent_model import RecurrentConstitutiveModel
 from rnn_base_model.model.gru_model import GRURNNModel
+from hybrid_base_model.model.transfer_learning import PolynomialLinearRegressor
 from hybrid_base_model.model.hybridization import HybridizationModel
 from rnn_base_model.data.time_dataset import get_time_series_data_loader
-from gnn_base_model.model.gnn_model import TorchStandardScaler
+from utilities.data_scalers import TorchStandardScaler
 #
 #                                                          Authorship & Credits
 # =============================================================================
@@ -54,10 +55,28 @@ class HybridMaterialModel(torch.nn.Module):
     _hyb_models_init_args : dict
         Hybridized material models (key, str) initialization attributes
         (value, dict).
-    _hyb_models : list
+    _hyb_models : torch.nn.ModuleList
         Hybridized material models.
+    _hybridization_type : str
+        Hybridization model type.
     _hybridization_model : HybridizationModel
         Hybridization model.
+    _is_assigned_tl_model : dict[bool]
+        Sets transfer-learning model assignment (item, bool) to each
+        hybridized model (key, str).
+    _tl_models_names : dict
+        Transfer-learning model name (item, str) associated with given
+        hybridized model (key, str).
+    _tl_models_init_args : dict
+        Transfer-learning models (key, str) initialization attributes
+        (value, dict).
+    _tl_models : torch.nn.ModuleList
+        Transfer-learning models sorted according with hybridized models.
+        An identity model is assigned as a placeholder for hybridized
+        models without an assigned transfer-learning model.
+    _is_tl_residual_connection : dict
+        Sets residual connection (item, bool) to each transfer-learning model
+        (key, str).
     _device_type : {'cpu', 'cuda'}
         Type of device on which torch.Tensor is allocated.
     _device : torch.device
@@ -86,12 +105,19 @@ class HybridMaterialModel(torch.nn.Module):
         Get model parameters bounds.
     forward(self, features_in, is_normalized=False)
         Forward propagation.
+    features_out_extractor(cls, model_output)
+        Extract output features from generic model output.
+    set_transfer_learning_models(self, tl_models_names, tl_models_init_args,
+                                 is_tl_residual_connection)
+        Set transfer-learning models for hybridized models.
     save_model_init_file(self)
         Save model initialization file.
     sync_material_model_parameters(self)
         Synchronize material model parameters with learnable parameters.
     sync_hyb_models_data_scalers(self)
         Synchronize data scalers with hybridized models.
+    sync_tl_models_data_scalers(self)
+        Synchronize data scalers with transfer-learning models.
     save_model_state(self, epoch=None, is_best_state=False, \
                      is_remove_posterior=True)
         Save model state to file.
@@ -123,7 +149,10 @@ class HybridMaterialModel(torch.nn.Module):
     def __init__(self, n_features_in, n_features_out, hyb_models_names,
                  hyb_models_init_args, model_directory,
                  model_name='hybrid_material_model',
-                 hybridization_type='additive', is_data_normalization=False,
+                 hybridization_type='identity',
+                 tl_models_names={}, tl_models_init_args={}, 
+                 is_tl_residual_connection={},
+                 is_data_normalization=False,
                  is_save_model_init_file=True, device_type='cpu'):
         """Constructor.
         
@@ -142,11 +171,17 @@ class HybridMaterialModel(torch.nn.Module):
             Directory where model is stored.
         model_name : str, default='hybrid_material_model'
             Name of model.
-        hybridization_type : str, default='additive'
-            Hybridization model type. Default 'additive' corresponds to
-            hybridization model without lernable parameters where the outputs
-            of the different hybridized models are added to compute the hybrid
-            model output.
+        hybridization_type : str, default='identity'
+            Hybridization model type.
+        tl_models_names : dict, default={}
+            Transfer-learning model name (item, str) associated with given
+            hybridized model (key, str).
+        tl_models_init_args : dict, default={}
+            Transfer-learning models (key, str) initialization attributes
+            (value, dict).
+        is_tl_residual_connection : dict, default={}
+            Sets residual connection (item, bool) to each transfer-learning
+            model (key, str).
         is_data_normalization : bool, default=False
             If True, then input and output features are normalized for
             training, False otherwise. Data scalers need to be fitted with
@@ -199,7 +234,7 @@ class HybridMaterialModel(torch.nn.Module):
                 constitutive_model = \
                     RecurrentConstitutiveModel(**model_init_args,
                                                is_save_model_init_file=False)
-            elif model_name == 'gru_material_model':
+            elif bool(re.search(r'^gru.*$', model_name)):
                 constitutive_model = \
                     GRURNNModel(**model_init_args,
                                 is_save_model_init_file=False)
@@ -213,6 +248,10 @@ class HybridMaterialModel(torch.nn.Module):
         # Initialize hybridization model
         self._hybridization_model = \
             HybridizationModel(hybridization_type=hybridization_type)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set transfer-learning models for hybridized models
+        self.set_transfer_learning_models(tl_models_names, tl_models_init_args,
+                                          is_tl_residual_connection)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Initialize data scalers
         self._data_scalers = None
@@ -270,6 +309,8 @@ class HybridMaterialModel(torch.nn.Module):
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Synchronize data scalers with hybridized models
         model.sync_hyb_models_data_scalers()
+        # Synchronize data scalers with transfer-learning models
+        model.sync_tl_models_data_scalers()
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         return model
     # -------------------------------------------------------------------------
@@ -442,16 +483,35 @@ class HybridMaterialModel(torch.nn.Module):
         # Initialize hybridized models outputs
         list_features_out = []
         # Loop over hybridized material models
-        for hyb_model in self._hyb_models:
+        for i, hyb_model in enumerate(self._hyb_models):
+            # Get hybridized material model name
+            hyb_model_name = self._hyb_models_names[i]
             # Compute hybridized material model output features
             hyb_model_output = hyb_model(features_in, is_normalized=False)
             # Extract output features
-            if isinstance(hyb_model_output, tuple):
-                # Assume output features are stored in the first output index
-                # of model output
-                features_out = hyb_model_output[0]
-            else:
-                features_out = hyb_model_output
+            features_out = self.features_out_extractor(hyb_model_output)
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Propagate hybridized material model output features through
+            # transfer-learning model
+            if self._is_assigned_tl_model[hyb_model_name]:
+                # Get transfer-learning model name
+                tl_model_name = self._tl_models_names[hyb_model_name]
+                # Get transfer-learning model
+                tl_model = self._tl_models[i]
+                # Check if transfer-learning model has residual connection
+                is_tl_residual_connection = \
+                    self._is_tl_residual_connection[tl_model_name]
+                # Build transfer-learning model input features
+                if is_tl_residual_connection:
+                    tl_model_input = torch.cat(
+                        (features_in, features_out), dim=-1)
+                else:
+                    tl_model_input = features_out
+                # Compute transfer-learning model output features
+                tl_model_output = tl_model(tl_model_input, is_normalized=False)
+                # Extract output features
+                features_out = self.features_out_extractor(tl_model_output) 
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Store hybridized material model output features
             list_features_out.append(features_out)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -466,6 +526,107 @@ class HybridMaterialModel(torch.nn.Module):
                                            mode='normalize')
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         return features_out
+    # -------------------------------------------------------------------------
+    @classmethod
+    def features_out_extractor(cls, model_output):
+        """Extract output features from generic model output.
+        
+        Parameters
+        ----------
+        model_output : {torch.Tensor, tuple}
+            Model output.
+        
+        Returns
+        -------
+        features_out : torch.Tensor
+            Tensor of output features stored as torch.Tensor(2d) of shape
+            (sequence_length, n_features_out) for unbatched input or
+            torch.Tensor(3d) of shape
+            (sequence_length, batch_size, n_features_out) for batched input.
+        """
+        # Extract output features
+        if isinstance(model_output, tuple):
+            # Assume output features are stored in the first output index
+            # of model output
+            features_out = model_output[0]
+        elif isinstance(model_output, torch.Tensor):
+            # Output features correspond directly to model output
+            features_out = model_output
+        else:
+            raise RuntimeError(f'Unexpected model output of type '
+                               f'({type(model_output)}). Output features '
+                               f'extraction is not implemented.')
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        return features_out
+    # -------------------------------------------------------------------------
+    def set_transfer_learning_models(self, tl_models_names,
+                                     tl_models_init_args,
+                                     is_tl_residual_connection):
+        """Set transfer-learning models for hybridized models.
+        
+        Parameters
+        ----------
+        tl_models_names : dict
+            Transfer-learning model name (item, str) associated with given
+            hybridized model (key, str).
+        tl_models_init_args : dict
+            Transfer-learning models (key, str) initialization attributes
+            (value, dict).
+        is_tl_residual_connection : dict
+            Sets residual connection (item, bool) to each transfer-learning
+            model (key, str).
+        """
+        # Set transfer-learning models names
+        self._tl_models_names = tl_models_names
+        # Set transfer-learning models initialization attributes 
+        self._tl_models_init_args = tl_models_init_args
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Initialize transfer-learning models assignment
+        self._is_assigned_tl_model = {}
+        # Loop over hybridized material models
+        for model_name in self._hyb_models_names:
+            # Assign transfer-learning model
+            if model_name in self._tl_models_names.keys():
+                self._is_assigned_tl_model[model_name] = True
+            else:
+                self._is_assigned_tl_model[model_name] = False
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Initialize transfer-learning models
+        self._tl_models = torch.nn.ModuleList()
+        # Loop over hybridized material models
+        for model_name in self._hyb_models_names:
+            # Set transfer-learning model
+            if self._is_assigned_tl_model[model_name]:
+                # Get transfer-learning model name
+                tl_model_name = self._tl_models_names[model_name]
+                # Get transfer-learning model initialization attributes
+                tl_model_init_args = self._tl_models_init_args[tl_model_name]
+                # Initialize material model
+                if bool(re.search(r'^gru.*$', tl_model_name)):
+                    tl_model = GRURNNModel(**tl_model_init_args,
+                                           is_save_model_init_file=False)
+                elif bool(re.search(r'^poly_regressor.*', tl_model_name)):
+                    tl_model = PolynomialLinearRegressor(**tl_model_init_args)
+                else:
+                    raise RuntimeError(f'Unknown or unavailable transfer-'
+                                       f'learning model \'{model_name}\' '
+                                       f'assigned to hybridized model '
+                                       f'\'{model_name}\'.')
+            else:
+                tl_model = torch.nn.Identity()
+            # Store transfer-learning model
+            self._tl_models.append(tl_model)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Initialize transfer-learning residual connection
+        self._is_tl_residual_connection = {}
+        # Loop over transfer-learning models
+        for _, tl_model_name in self._tl_models_names.items():
+            # Set residual connection of transfer-learning model
+            if tl_model_name in is_tl_residual_connection.keys():
+                self._is_tl_residual_connection[tl_model_name] = \
+                    bool(is_tl_residual_connection[tl_model_name])
+            else:
+                self._is_tl_residual_connection[tl_model_name] = False
     # -------------------------------------------------------------------------
     def save_model_init_file(self):
         """Save model initialization file.
@@ -494,6 +655,11 @@ class HybridMaterialModel(torch.nn.Module):
         model_init_args['n_features_out'] = self._n_features_out
         model_init_args['hyb_models_names'] = self._hyb_models_names
         model_init_args['hyb_models_init_args'] = self._hyb_models_init_args
+        model_init_args['hybridization_type'] = self._hybridization_type
+        model_init_args['tl_models_names'] = self._tl_models_names
+        model_init_args['tl_models_init_args'] = self._tl_models_init_args
+        model_init_args['is_tl_residual_connection'] = \
+            self._is_tl_residual_connection
         model_init_args['model_directory'] = self.model_directory
         model_init_args['model_name'] = self.model_name
         model_init_args['is_data_normalization'] = self.is_data_normalization
@@ -538,6 +704,64 @@ class HybridMaterialModel(torch.nn.Module):
                 # Synchronize data scalers
                 hyb_model.set_data_scalers(scaler_features_in,
                                            scaler_features_out)
+    # -------------------------------------------------------------------------
+    def sync_tl_models_data_scalers(self):
+        """Synchronize data scalers with transfer-learning models."""
+        # Get fitted data scalers
+        scaler_features_in = self._data_scalers['features_in']
+        scaler_features_out = self._data_scalers['features_out']
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Loop over hybridized material models
+        for i, model_name in enumerate(self._hyb_models_names):
+            # Skip hybridized model if transfer-learning model is not assigned
+            if not self._is_assigned_tl_model[model_name]:
+                continue
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Get transfer-learning model name
+            tl_model_name = self._tl_models_names[model_name]
+            # Get transfer-learning model
+            tl_model = self._tl_models[i]
+            # Check if transfer-learning model has residual connection
+            is_tl_residual_connection = \
+                self._is_tl_residual_connection[tl_model_name]
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Check transfer-learning model data normalization
+            if (hasattr(tl_model, 'is_data_normalization')
+                    and tl_model.is_data_normalization):
+                # Synchronize data scalers according with residual connection
+                if is_tl_residual_connection:
+                    # Check concatenated features data scalers
+                    type_scaler_in = type(scaler_features_in)
+                    type_scaler_out = type(scaler_features_out)
+                    if ((not type_scaler_in == TorchStandardScaler)
+                            or (not type_scaler_out == TorchStandardScaler)):
+                        raise RuntimeError(
+                            'Handling of transfer-learning model residual '
+                            'connection requires that the hybrid model '
+                            'input and output features data scalers are '
+                            'of type TorchStandardScaler.')
+                    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                    # Get concatenated features data scalers parameters
+                    mean_in, std_in = scaler_features_in.get_mean_and_std()
+                    mean_out, std_out = scaler_features_out.get_mean_and_std()
+                    # Concatenate features data scalers parameters
+                    cat_mean = torch.cat((mean_in, mean_out))
+                    cat_std = torch.cat((std_in, std_out))
+                    # Set transfer-learning model concatenated data scaler
+                    cat_scaler_features_in = TorchStandardScaler(
+                        n_features=self._n_features_in + self._n_features_out,
+                        mean=cat_mean, std=cat_std,
+                        device_type=self._device_type)
+                    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                    # Synchronize concatenated data scalers
+                    tl_model.set_data_scalers(
+                        scaler_features_in=cat_scaler_features_in,
+                        scaler_features_out=scaler_features_out)
+                else:
+                    # Synchronize data scalers
+                    tl_model.set_data_scalers(
+                        scaler_features_in=scaler_features_out,
+                        scaler_features_out=scaler_features_out)
     # -------------------------------------------------------------------------
     def save_model_state(self, epoch=None, is_best_state=False,
                          is_remove_posterior=True):
@@ -842,6 +1066,11 @@ class HybridMaterialModel(torch.nn.Module):
         # Update model initialization file with fitted data scalers
         if self._is_save_model_init_file:
             self.save_model_init_file()
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Synchronize data scalers with hybridized models
+        self.sync_hyb_models_data_scalers()
+        # Synchronize data scalers with transfer-learning models
+        self.sync_tl_models_data_scalers()
     # -------------------------------------------------------------------------
     def fit_data_scalers(self, dataset, is_verbose=False):
         """Fit model data scalers.
@@ -897,6 +1126,8 @@ class HybridMaterialModel(torch.nn.Module):
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Synchronize data scalers with hybridized models
         self.sync_hyb_models_data_scalers()
+        # Synchronize data scalers with transfer-learning models
+        self.sync_tl_models_data_scalers()
     # -------------------------------------------------------------------------
     def get_fitted_data_scaler(self, features_type):
         """Get fitted model data scalers.
