@@ -1,4 +1,4 @@
-"""Transfer-learning models.
+"""Transfer-learning models for hybrid material model (HybridMaterialModel).
 
 Classes
 -------
@@ -21,6 +21,9 @@ __status__ = 'Planning'
 # =============================================================================
 class PolynomialLinearRegressor(torch.nn.Module):
     """Polynomial linear regression model.
+    
+    This model is implemented exclusively to be employed as a transfer-learning
+    model of a hybrid material constitutive model (HybridMaterialModel). 
     
     Attributes
     ----------
