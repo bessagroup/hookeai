@@ -43,9 +43,9 @@ class PolynomialLinearRegressor(torch.nn.Module):
     _device : torch.device
         Device on which torch.Tensor is allocated.
     is_data_normalization : bool
-        If True, then input and output features are normalized for training
-        False otherwise. Data scalers need to be fitted with fit_data_scalers()
-        and are stored as model attributes.
+        If True, then input features are normalized prior to forward
+        propagation, False otherwise. Fitted data scalers need to be stored
+        as model attributes to carry out data normalization procedures.
     _data_scalers : dict
         Data scaler (item, TorchStandardScaler) for each feature data
         (key, str).
@@ -83,9 +83,9 @@ class PolynomialLinearRegressor(torch.nn.Module):
             If True, then account for bias weight in polynomial regression,
             otherwise False.
         is_data_normalization : bool, default=False
-            If True, then input and output features are normalized for
-            training, False otherwise. Data scalers need to be fitted with
-            fit_data_scalers() and are stored as model attributes.
+            If True, then input features are normalized prior to forward
+            propagation, False otherwise. Fitted data scalers need to be stored
+            as model attributes to carry out data normalization procedures.
         device_type : {'cpu', 'cuda'}, default='cpu'
             Type of device on which torch.Tensor is allocated.
         """

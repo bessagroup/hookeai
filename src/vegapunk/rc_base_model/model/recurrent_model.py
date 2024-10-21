@@ -112,9 +112,9 @@ class RecurrentConstitutiveModel(torch.nn.Module):
     is_explicit_parameters : bool
         True if model learnable parameters are explicit, False otherwise.
     is_data_normalization : bool
-        If True, then input and output features are normalized for training
-        False otherwise. Data scalers need to be fitted with fit_data_scalers()
-        and are stored as model attributes.
+        If True, then input features are normalized prior to forward
+        propagation, False otherwise. Fitted data scalers need to be stored
+        as model attributes to carry out data normalization procedures.
     _is_save_model_init_file: bool, default=True
         If True, saves model initialization file when model is initialized
         (overwritting existent initialization file), False otherwise.
@@ -257,9 +257,9 @@ class RecurrentConstitutiveModel(torch.nn.Module):
             False otherwise. The initial values and bounds of each parameter
             are normalized accordingly.
         is_data_normalization : bool, default=False
-            If True, then input and output features are normalized for
-            training, False otherwise. Data scalers need to be fitted with
-            fit_data_scalers() and are stored as model attributes.
+            If True, then input features are normalized prior to forward
+            propagation, False otherwise. Fitted data scalers need to be stored
+            as model attributes to carry out data normalization procedures.
         is_save_model_init_file: bool, default=True
             If True, saves model initialization file when model is initialized
             (overwritting existent initialization file), False otherwise. When

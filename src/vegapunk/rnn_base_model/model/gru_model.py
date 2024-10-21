@@ -69,9 +69,9 @@ class GRURNNModel(torch.nn.Module):
     is_explicit_parameters : bool
         True if model learnable parameters are explicit, False otherwise.
     is_data_normalization : bool
-        If True, then input and output features are normalized for training
-        False otherwise. Data scalers need to be fitted with fit_data_scalers()
-        and are stored as model attributes.
+        If True, then input features are normalized prior to forward
+        propagation, False otherwise. Fitted data scalers need to be stored as 
+        model attributes to carry out data normalization procedures.
     _is_save_model_init_file: bool, default=True
         If True, saves model initialization file when model is initialized
         (overwritting existent initialization file), False otherwise.
@@ -135,9 +135,9 @@ class GRURNNModel(torch.nn.Module):
         model_name : str, default='gru_material_model'
             Name of model.
         is_data_normalization : bool, default=False
-            If True, then input and output features are normalized for
-            training, False otherwise. Data scalers need to be fitted with
-            fit_data_scalers() and are stored as model attributes.
+            If True, then input features are normalized prior to forward
+            propagation, False otherwise. Fitted data scalers need to be stored
+            as model attributes to carry out data normalization procedures.
         n_recurrent_layers : int, default=1
             Number of recurrent layers. A number of recurrent layers greater
             than 1 results in a stacked GRU (output of GRU in each time t is
