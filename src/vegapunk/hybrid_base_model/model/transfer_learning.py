@@ -34,7 +34,7 @@ class PolynomialLinearRegressor(torch.nn.Module):
     _is_bias : bool
         If True, then account for bias in polynomial expansion, False
         otherwise.
-    _n_poly : int
+    _n_poly_coeff : int
         Effective number of polynomial expansion coefficients.
     _polynomial_layers : torch.nn.ModuleList
         Features polynomial linear regression layers.
@@ -105,9 +105,9 @@ class PolynomialLinearRegressor(torch.nn.Module):
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Set number of polynomial coefficients
         if self._is_bias:
-            self._n_poly = self._poly_degree + 1
+            self._n_poly_coeff = self._poly_degree + 1
         else:
-            self._n_poly = self._poly_degree
+            self._n_poly_coeff = self._poly_degree
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Initialize features polynomial linear regression layers
         self._polynomial_layers = torch.nn.ModuleList()
@@ -116,7 +116,7 @@ class PolynomialLinearRegressor(torch.nn.Module):
             # Set (independent) linear regression layer for each feature
             # (bias is explicitly accounted for in polynomial expansion)
             self._polynomial_layers.append(
-                torch.nn.Linear(self._n_poly, 1, bias=False))
+                torch.nn.Linear(self._n_poly_coeff, 1, bias=False))
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Initialize data scalers
         self._data_scalers = None
@@ -217,9 +217,12 @@ class PolynomialLinearRegressor(torch.nn.Module):
         # (shape: sequence_length*batch_size x n_features_in)
         features_in = features_in.view(-1, n_features_in)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        # Set polynomial expansion degree bounds
-        ini_deg = self._n_poly - self._poly_degree
-        end_deg = self._n_poly
+        # Set degree bounds of polynomial expansion
+        if self._n_poly_coeff == self._poly_degree:
+            ini_deg = 1
+        else:
+            ini_deg = 0
+        end_deg = ini_deg + self._n_poly_coeff
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Initialize features output data
         features_out_data = []
