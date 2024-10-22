@@ -122,14 +122,15 @@ def generate_convergence_plots(models_base_dirs, training_dirs, testing_dirs,
 # =============================================================================
 if __name__ == "__main__":
     # Set computation processes
-    is_uncertainty_quantification = True
+    is_uncertainty_quantification = False
     # Set testing type
     testing_type = ('in_distribution', 'out_distribution')[0]
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set convergence analysis base directory
     base_dir = ('/home/bernardoferreira/Documents/brown/projects/'
-                'darpa_project/6_local_rnn_training_noisy/von_mises/'
-                'convergence_analyses_homoscedastic_gaussian/noiseless')
+                'darpa_project/7_local_hybrid_training/'
+                'case_learning_drucker_prager_pressure_dependency/'
+                '3_hybrid_model_convergence_analysis/')
     # Set training data set sizes
     training_sizes = (10, 20, 40, 80, 160, 320, 640, 1280, 2560)
     # Set convergence analyses models base directories
