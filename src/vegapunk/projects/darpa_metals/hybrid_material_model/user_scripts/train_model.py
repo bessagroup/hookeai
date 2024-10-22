@@ -134,7 +134,7 @@ def perform_model_standard_training(train_dataset_file_path, model_directory,
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     elif hybridization_scheme == 1:
         # Set transfer-learning model name
-        tl_model_name = 'gru_transfer_learning_model'
+        tl_model_name = 'gru_tl_model'
         # Set transfer-learning model residual connection
         is_residual_connection = True
         # Set transfer-learning model number of features
@@ -158,6 +158,98 @@ def perform_model_standard_training(train_dataset_file_path, model_directory,
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Set hybridization model type
         model_init_args['hybridization_type'] = 'identity'
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    elif hybridization_scheme == 2:
+        # Set transfer-learning model name
+        tl_model_name = 'poly_regressor_tl_model'
+        # Set transfer-learning model residual connection
+        is_residual_connection = False
+        # Set transfer-learning model number of features
+        if is_residual_connection:
+            tl_n_features_in = n_features_in + n_features_out
+        else:
+            tl_n_features_in = n_features_out
+        # Get transfer-learning model initialization attributes
+        tl_model_init_args = get_poly_regressor_model_init_args(
+            tl_n_features_in, device_type=device_type)
+        # Build transfer-learning model parameters
+        tl_models_names = {candidate_model_name: tl_model_name}
+        tl_models_init_args = {tl_model_name: tl_model_init_args}
+        is_tl_residual_connection = {tl_model_name: is_residual_connection}
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set residual model name
+        residual_model_name = 'gru_material_model'
+        # Get residual model initialization attributes
+        residual_model_init_args = get_gru_model_init_args(
+            residual_model_name, model_directory, n_features_in,
+            n_features_out, device_type=device_type)
+        # Store residual model
+        hyb_models_names.append(residual_model_name)
+        hyb_models_init_args[residual_model_name] = residual_model_init_args
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set hybridization model type
+        model_init_args['hybridization_type'] = 'additive'
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    elif hybridization_scheme == 3:
+        # Set transfer-learning model name
+        tl_model_name = 'gru_tl_model'
+        # Set transfer-learning model residual connection
+        is_residual_connection = True
+        # Set transfer-learning model number of features
+        if is_residual_connection:
+            tl_n_features_in = n_features_in + n_features_out
+            tl_n_features_out = n_features_out
+        else:
+            tl_n_features_in = n_features_out
+            tl_n_features_out = n_features_out
+        # Get transfer-learning model initialization attributes
+        tl_model_init_args = get_gru_model_init_args(
+            tl_model_name, model_directory, tl_n_features_in,
+            tl_n_features_out, device_type=device_type)
+        # Build transfer-learning model parameters
+        tl_models_names = {candidate_model_name: tl_model_name}
+        tl_models_init_args = {tl_model_name: tl_model_init_args}
+        is_tl_residual_connection = {tl_model_name: is_residual_connection}
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set elastic candidate constitutive model name
+        candidate_model_name = 'rc_elastic'
+        # Set elastic candidate constitutive model initialization attributes
+        candidate_model_init_args = get_elastic_model_init_args(
+            candidate_model_name, model_directory, n_features_in,
+            n_features_out, device_type=device_type)
+        # Store elastic candidate constitutive model
+        hyb_models_names.append(candidate_model_name)
+        hyb_models_init_args[candidate_model_name] = candidate_model_init_args
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set residual model name
+        residual_model_name = None
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set hybridization model type
+        model_init_args['hybridization_type'] = 'additive'
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    elif hybridization_scheme == 4:
+        # Set elastic candidate constitutive model name
+        candidate_model_name = 'rc_elastic'
+        # Set elastic candidate constitutive model initialization attributes
+        candidate_model_init_args = get_elastic_model_init_args(
+            candidate_model_name, model_directory, n_features_in,
+            n_features_out, device_type=device_type)
+        # Store elastic candidate constitutive model
+        hyb_models_names.append(candidate_model_name)
+        hyb_models_init_args[candidate_model_name] = candidate_model_init_args
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set residual model name
+        residual_model_name = 'gru_material_model'
+        # Get residual model initialization attributes
+        residual_model_init_args = get_gru_model_init_args(
+            residual_model_name, model_directory, n_features_in,
+            n_features_out, device_type=device_type)
+        # Store residual model
+        hyb_models_names.append(residual_model_name)
+        hyb_models_init_args[residual_model_name] = residual_model_init_args
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set hybridization model type
+        model_init_args['hybridization_type'] = 'additive'
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     else:
         raise RuntimeError('Unknown hybridization scheme.')
@@ -323,7 +415,7 @@ def get_candidate_model_init_args(model_name, model_directory, n_features_in,
         # Set material constitutive model name
         material_model_name = 'drucker_prager_vmap'
         # Set frictional angle
-        friction_angle = np.deg2rad(5)
+        friction_angle = np.deg2rad(1)
         # Set dilatancy angle
         dilatancy_angle = friction_angle
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -352,6 +444,67 @@ def get_candidate_model_init_args(model_name, model_directory, n_features_in,
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     else:
         raise RuntimeError('Unknown numerical example.')
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Set material constitutive state variables (prediction)
+    state_features_out = {}
+    # Set parameters normalization
+    is_normalized_parameters = True
+    # Set data normalization
+    is_data_normalization = False
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Build model initialization parameters
+    model_init_args = {'n_features_in': n_features_in,
+                       'n_features_out': n_features_out,
+                       'learnable_parameters': learnable_parameters,
+                       'strain_formulation': strain_formulation,
+                       'problem_type': problem_type,
+                       'material_model_name': material_model_name,
+                       'material_model_parameters': material_model_parameters,
+                       'state_features_out': state_features_out,
+                       'model_directory': model_directory,
+                       'model_name': model_name,
+                       'is_normalized_parameters': is_normalized_parameters,
+                       'is_data_normalization': is_data_normalization,
+                       'device_type': device_type}
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    return model_init_args
+# =============================================================================
+def get_elastic_model_init_args(model_name, model_directory, n_features_in,
+                                n_features_out, device_type='cpu'):
+    """Set elastic constitutive model parameters.
+    
+    Parameters
+    ----------
+    model_name : str
+        Model name.
+    model_directory : str
+        Directory where model is stored.
+    n_features_in : int
+        Number of input features.
+    n_features_out : int
+        Number of output features.
+    device_type : {'cpu', 'cuda'}, default='cpu'
+        Type of device on which torch.Tensor is allocated.
+    
+    Returns
+    -------
+    model_init_args : dict
+        Model class initialization parameters (check
+        RecurrentConstitutiveModel).
+    """
+    # Set learnable parameters
+    learnable_parameters = {}
+    # Set strain formulation
+    strain_formulation = 'infinitesimal'
+    # Set problem type
+    problem_type = 4
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Set material constitutive model name
+    material_model_name = 'elastic'
+    # Set material constitutive model parameters
+    material_model_parameters = {'elastic_symmetry': 'isotropic',
+                                 'E': 110e3, 'v': 0.33,
+                                 'euler_angles': (0.0, 0.0, 0.0)}
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set material constitutive state variables (prediction)
     state_features_out = {}
