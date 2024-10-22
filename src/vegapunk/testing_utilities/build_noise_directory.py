@@ -21,11 +21,12 @@ is_set_shared_testing_dataset = True
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Set source directory
 src_dir = ('/home/bernardoferreira/Documents/brown/projects/darpa_project/'
-           '6_local_rnn_training_noisy/von_mises/datasets_base')
+           '7_local_hybrid_training/'
+           'case_learning_drucker_prager_pressure_dependency/datasets_base')
 # Set destination directory
 dest_dir = ('/home/bernardoferreira/Documents/brown/projects/darpa_project/'
-            '6_local_rnn_training_noisy/von_mises/'
-            'convergence_analyses_homoscedastic_gaussian')
+            '7_local_hybrid_training/'
+            'case_learning_drucker_prager_pressure_dependency/0_datasets')
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Initialize source directory data sets directories
 src_dataset_dirs = []
@@ -84,8 +85,9 @@ if is_set_shared_testing_dataset:
     # Set source testing data set directory
     src_testing_dataset_dir = \
         ('/home/bernardoferreira/Documents/brown/projects/darpa_project/'
-         '6_local_rnn_training_noisy/von_mises/datasets_base/'
-         'noiseless_testing_dataset/5_testing_id_dataset')
+         '7_local_hybrid_training/'
+         'case_learning_drucker_prager_pressure_dependency/'
+         'datasets_base/n512/noiseless/5_testing_id_dataset')
     # Set testing data set type
     dataset_type = ('testing_id', 'testing_od')[0]
     # Set testing data set type base name
