@@ -237,6 +237,10 @@ def perform_model_standard_training(train_dataset_file_path, model_directory,
         # Store elastic candidate constitutive model
         hyb_models_names.append(candidate_model_name)
         hyb_models_init_args[candidate_model_name] = candidate_model_init_args
+        # Build transfer-learning model parameters
+        tl_models_names = {}
+        tl_models_init_args = {}
+        is_tl_residual_connection = {}
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Set residual model name
         residual_model_name = 'gru_material_model'
