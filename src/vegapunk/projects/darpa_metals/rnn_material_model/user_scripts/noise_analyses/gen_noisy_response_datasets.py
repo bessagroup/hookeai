@@ -926,7 +926,7 @@ class NoiseGenerator:
 # =============================================================================
 if __name__ == '__main__':
     # Set data set type
-    dataset_type = ('training', 'validation', 'testing_id', 'testing_od')[1]
+    dataset_type = ('training', 'validation', 'testing_id', 'testing_od')[2]
     # Set save dataset plots flags
     is_save_dataset_plots = True
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -958,9 +958,10 @@ if __name__ == '__main__':
     # Loop over data set sizes
     for i, n_path in enumerate(n_paths):
         # Set data sets base directory
-        datasets_base_dir = ('/home/bernardoferreira/Documents/brown/projects/'
-                             'darpa_project/6_local_rnn_training_noisy/'
-                             'von_mises/datasets_base/')
+        datasets_base_dir = \
+            ('/home/bernardoferreira/Documents/brown/projects/darpa_project/'
+             '7_local_hybrid_training/'
+             'case_learning_drucker_prager_pressure_dependency/datasets_base')
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Check data sets directory
         if not os.path.isdir(datasets_base_dir):
@@ -1018,7 +1019,7 @@ if __name__ == '__main__':
         is_cyclic_loading = False
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Set constitutive model
-        model_name = 'von_mises'
+        model_name = 'drucker_prager'
         # Set constitutive model parameters:
         if model_name == 'von_mises':
             # Set constitutive model parameters
