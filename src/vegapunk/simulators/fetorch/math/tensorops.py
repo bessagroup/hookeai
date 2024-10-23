@@ -89,6 +89,7 @@ dot24_4 = lambda a2, b4: torch.einsum('lm,ijkm -> ijkl', a2, b4)
 ddot22_1 = lambda a2, b2: torch.einsum('ij,ij', a2, b2)
 ddot42_1 = lambda a4, b2: torch.einsum('ijkl,kl -> ij', a4, b2)
 ddot44_1 = lambda a4, b4: torch.einsum('ijmn,mnkl -> ijkl', a4, b4)
+ddot24_1 = lambda a2, b4: torch.einsum('kl,klij -> ij', a2, b4)
 #
 #                                                                     Operators
 # =============================================================================
