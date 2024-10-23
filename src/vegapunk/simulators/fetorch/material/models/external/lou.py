@@ -22,7 +22,7 @@ from simulators.fetorch.math.matrixops import get_problem_type_parameters, \
     vget_tensor_mf, vget_tensor_from_mf, vget_state_3Dmf_from_2Dmf, \
     vget_state_2Dmf_from_3Dmf
 from simulators.fetorch.math.tensorops import get_id_operators, dyad22_1, \
-    ddot42_1
+    ddot42_1, ddot24_1, ddot22_1
 #
 #                                                          Authorship & Credits
 # =============================================================================
@@ -400,21 +400,14 @@ class LouZhangYoon(ConstitutiveModel):
                 norm_flow_vector = torch.norm(flow_vector)
                 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                 # Compute residuals
-                residual_1 = e_strain - e_trial_strain + inc_p_mult*flow_vector
-                residual_2 = (acc_p_strain - acc_p_strain_old
-                              - acc_p_strain*(np.sqrt(2/3))*norm_flow_vector)
-                residual_3 = \
-                    (effective_stress - yield_stress)/init_yield_stress
-                # Get residual matrix
+                residual_1, residual_2, residual_3 = self.get_residual(
+                    e_strain, e_trial_strain, acc_p_strain, acc_p_strain_old,
+                    inc_p_mult, effective_stress, yield_stress,
+                    init_yield_stress, flow_vector, norm_flow_vector)
+                # Get first residual vector
                 residual_1_matrix = vget_tensor_mf(
                     residual_1, n_dim, comp_order_sym,
                     is_kelvin_notation=False, device=self._device)
-                
-                
-                # PASS TO METHOD
-                
-                
-                # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                 # Build residual vector
                 residual = \
                     torch.cat((residual_1_matrix, residual_2, residual_3))
@@ -447,7 +440,11 @@ class LouZhangYoon(ConstitutiveModel):
                     nr_iter = nr_iter + 1
                 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                 # Compute return-mapping Jacobian
-                jacobian = self.get_jacobian()                                 # WIP
+                jacobian = self.get_jacobian(
+                    n_dim, comp_order_sym, stress, inc_p_mult, flow_vector,
+                    norm_flow_vector, init_yield_stress, hard_slope, yield_a,
+                    a_hard_slope, yield_b, b_hard_slope, yield_c, c_hard_slope,
+                    yield_d, d_hard_slope, e_consistent_tangent)
                 # Solve return-mapping linearized equation
                 d_iter = torch.linalg.solve(jacobian, -residual)
                 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -628,49 +625,261 @@ class LouZhangYoon(ConstitutiveModel):
         # Compute stress invariants
         _, _, _, _, j2, j3 = self.get_stress_invariants(stress)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        # Get first (principal) stress invariant derivative w.t.r. stress
-        di1dstress = soid
-        # Get second (main) stress invariant derivative w.t.r. stress
-        dj2dstress = dev_stress
-        # Get third (main) stress invariant derivative w.t.r. stress
-        dj3dstress = torch.det(dev_stress)*torch.inverse(dev_stress).T
+        # Get first (principal) stress invariant derivative w.r.t. stress
+        di1_dstress = soid
+        # Get second (main) stress invariant derivative w.r.t. stress
+        dj2_dstress = dev_stress
+        # Get third (main) stress invariant derivative w.r.t. stress
+        dj3_dstress = torch.det(dev_stress)*torch.inverse(dev_stress).T
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Compute auxiliary terms
         aux_1 = j2**3 - yield_c*(j3**2)
-        aux_2 = 3*(j2**2)*dj2dstress - yield_c*2*j3*dj3dstress
-        aux_3 = yield_d*j3
-        aux_4 = yield_d*dj3dstress
-        term_1 = yield_a*yield_b*di1dstress
-        term_2 = yield_a*(1/3)*((aux_1**(1/2) - aux_4)**(-2/3))
-        term_3 = (1/2)*(aux_1**(-1/2))*aux_2 - aux_4
+        aux_2 = 3*(j2**2)*dj2_dstress - yield_c*2*j3*dj3_dstress
+        aux_3 = yield_d*dj3_dstress
+        term_1 = yield_a*yield_b*di1_dstress
+        term_2 = yield_a*(1/3)*((aux_1**(1/2) - aux_3)**(-2/3))
+        term_3 = (1/2)*(aux_1**(-1/2))*aux_2 - aux_3
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Compute flow vector
         flow_vector = term_1 + term_2*term_3
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         return flow_vector
     # -------------------------------------------------------------------------
-    def get_residual(self, ):
-        """Compute state update residual vector.
+    def get_residual(self, e_strain, e_trial_strain, acc_p_strain,
+                     acc_p_strain_old, inc_p_mult, effective_stress,
+                     yield_stress, init_yield_stress, flow_vector,
+                     norm_flow_vector):
+        """Compute state update residuals.
         
         Parameters
         ----------
-        
+        e_strain : torch.Tensor(2d)
+            Elastic strain.
+        e_trial_strain : torch.Tensor(2d)
+            Elastic trial strain.
+        acc_p_strain : torch.Tensor(0d)
+            Accumulated plastic strain.
+        acc_p_strain_old : torch.Tensor(0d)
+            Last converged accumulated plastic strain.
+        inc_p_mult : torch.Tensor(0d)
+            Incremental plastic multiplier.
+        effective_stress : torch.Tensor(0d)
+            Effective stress.
+        yield_stress : torch.Tensor(0d)
+            Yield stress.
+        init_yield_stress : torch.Tensor(0d)
+            Initial yield stress.
+        flow_vector : torch.Tensor(2d)
+            Flow vector.
+        norm_flow_vector : torch.Tensor(0d)
+            Flow vector norm.
+
         Returns
         -------
-        residual : torch.Tensor(1d)
-            Residual vector.
+        residual_1 : torch.Tensor(2d)
+            First residual.
+        residual_2 : torch.Tensor(2d)
+            Second residual.
+        residual_3 : torch.Tensor(2d)
+            Third residual.
         """
-        pass
+        # Compute first residual
+        residual_1 = e_strain - e_trial_strain + inc_p_mult*flow_vector
+        # Compute second residual
+        residual_2 = (acc_p_strain - acc_p_strain_old
+                      - acc_p_strain*(np.sqrt(2/3))*norm_flow_vector)
+        # Compute third residual
+        residual_3 = (effective_stress - yield_stress)/init_yield_stress
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        return residual_1, residual_2, residual_3
     # -------------------------------------------------------------------------
-    def get_jacobian(self, ):
+    def get_jacobian(self, n_dim, comp_order_sym, stress, inc_p_mult,
+                     flow_vector, norm_flow_vector, init_yield_stress,
+                     hard_slope, yield_a, a_hard_slope, yield_b, b_hard_slope,
+                     yield_c, c_hard_slope, yield_d, d_hard_slope,
+                     e_consistent_tangent):
         """Compute state update Jacobian matrix.
         
         Parameters
         ----------
-        
+        n_dim : int
+            Problem number of spatial dimensions.
+        comp_order_sym : list
+            Strain/Stress components symmetric order.
+        stress : torch.Tensor(2d)
+            Stress.
+        inc_p_mult : torch.Tensor(0d)
+            Incremental plastic multiplier. 
+        flow_vector : torch.Tensor(2d)
+            Flow vector.
+        norm_flow_vector : torch.Tensor(0d)
+            Flow vector norm.
+        init_yield_stress : torch.Tensor(0d)
+            Initial yield stress.
+        hard_slope : torch.Tensor(0d)
+            Hardening modulus.
+        yield_a : torch.Tensor(0d)
+            Yield parameter.
+        a_hard_slope : torch.Tensor(0d)
+            Yield parameter hardening modulus.
+        yield_b : torch.Tensor(0d)
+            Yield parameter.
+        b_hard_slope : torch.Tensor(0d)
+            Yield parameter hardening modulus.
+        yield_c : torch.Tensor(0d)
+            Yield parameter.
+        c_hard_slope : torch.Tensor(0d)
+            Yield parameter hardening modulus.
+        yield_d : torch.Tensor(0d)
+            Yield parameter.
+        d_hard_slope : torch.Tensor(0d)
+            Yield parameter hardening modulus.
+        e_consistent_tangent : torch.Tensor(4d)
+            Elastic consistent tangent modulus.
+
         Returns
         -------
         jacobian : torch.Tensor(2d)
             Jacobian matrix.
         """
-        pass
+        # Set number of spatial dimensions
+        n_dim = 3
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set required fourth-order tensors
+        soid, _, _, fosym, _, _, fodevprojsym = \
+            get_id_operators(n_dim, device=self._device)
+        # Compute deviatoric stress tensor
+        dev_stress = ddot42_1(fodevprojsym, stress)
+        # Compute transpose of inverse deviatoric stress tensor
+        dev_stress_invt = torch.transpose(torch.inverse(dev_stress))
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Compute stress invariants
+        i1, _, _, _, j2, j3 = self.get_stress_invariants(stress)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Get first (principal) stress invariant derivative w.r.t. stress
+        di1_dstress = soid
+        # Get second (main) stress invariant derivative w.r.t. stress
+        dj2_dstress = dev_stress
+        # Get third (main) stress invariant derivative w.r.t. stress
+        dj3_dstress = torch.det(dev_stress)*torch.inverse(dev_stress).T
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Get second (main) stress invariant second-order derivative w.r.t.
+        # stress
+        d2j2_dstress2 = fodevprojsym
+        # Get third (main) stress invariant second-order derivative w.r.t.
+        # stress
+        d2j3_dstress2 = ddot42_1(
+            torch.det(dev_stress)*(-dyad22_1(dev_stress_invt, dev_stress_invt))
+            + dyad22_1(dev_stress_invt, dj3_dstress), fodevprojsym)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Compute auxiliar terms a, b and c
+        auxa = yield_b*soid
+        auxb = j2**3 - yield_c*(j3**2)
+        auxc = yield_d*j3
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Compute auxiliar term b derivatives
+        dauxb_dstress = 3*(j2**2)*dj2_dstress - yield_c*2*j3*dj3_dstress
+        dauxb_daccpstr = -c_hard_slope*(j3**2)
+        d2auxb_dstress2 = (3*(2*j2*dyad22_1(dj2_dstress, dj2_dstress)
+                              + (j2**2)*d2j2_dstress2)
+                           - yield_c*2*(dyad22_1(dj3_dstress, dj3_dstress)
+                                        + j3*d2j3_dstress2))
+        d2auxb_daccpstrdstress = -c_hard_slope*2*j3*dj3_dstress
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Compute auxiliar term
+        aux_1 = yield_a*(1/3)*((auxb**(-1/2) - auxc)**(-2/3))
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Compute derivative of flow vector w.r.t. stress
+        dflow_dstress = \
+            (aux_1*((1/2)*(-(1/2)*(auxb**(-2/3))*dyad22_1(dauxb_dstress,
+                                                          dauxb_dstress)
+                           + (1/2)*(auxb**(-1/2))*d2auxb_dstress2)
+                    - yield_d*d2j3_dstress2)
+             + yield_a*(1/3)*dyad22_1(
+                (1/2)*(auxb**(-1/2))*dauxb_dstress - yield_d*dj3_dstress,
+                (-2/3)*((auxb**(-1/2) - auxc)**(-5/3))*(
+                -(1/2)*(auxb**(-2/3))*dauxb_dstress - yield_d*dj3_dstress)))
+        # Compute derivative of flow vector w.r.t. elastic strain
+        dflow_destrain = ddot24_1(dflow_dstress, e_consistent_tangent)
+        # Compute derivative of flow vector w.r.t. accumulated plastic strain
+        dflow_daccpstr = \
+            ((a_hard_slope*yield_b + yield_a*b_hard_slope)*di1_dstress) \
+             + (aux_1*((1/2)*(
+                 (-1/2)*(auxb**(-2/3))*dauxb_daccpstr*dauxb_dstress
+                 + (1/2)*(auxb**(-1/2))*d2auxb_daccpstrdstress)
+                 - d_hard_slope*dj3_dstress)) \
+             + yield_a*(1/3)*dyad22_1((1/2)*(auxb**(-1/2))*dauxb_dstress
+                                      - yield_d*dj3_dstress,
+                                      d_hard_slope*dj3_dstress)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Compute derivative of effective stress w.r.t. stress
+        deff_dstress = \
+            (yield_a*yield_b*di1_dstress
+             + aux_1*((1/2)*(auxb**(-1/2))*dauxb_dstress
+                      - yield_d*dj3_dstress))
+        # Compute derivative of effective stress w.r.t. elastic strain
+        deff_destrain = ddot24_1(deff_dstress, e_consistent_tangent)
+        # Compute derivative of effective stress w.r.t. accumulated plastic
+        # strain
+        deff_daccpstr = \
+            (a_hard_slope*(auxa + ((auxb**(1/2)) - auxc)**(1/3))
+             + yield_a*b_hard_slope*i1
+             + aux_1*((1/2)*(auxb**(-1/2))*dauxb_daccpstr - d_hard_slope*j3))
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Compute derive of first residual w.r.t. to elastic strain
+        dr1_destrain = fosym + inc_p_mult*dflow_destrain
+        # Compute derive of first residual w.r.t. to accumulated plastic strain
+        dr1_daccpstr = inc_p_mult*dflow_daccpstr
+        # Compute derive of first residual w.r.t. to incremental plastic
+        # multiplier
+        dr1_dincpm = flow_vector
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Compute derive of second residual w.r.t. to elastic strain
+        dr2_destrain = \
+            -inc_p_mult*np.sqrt(2/3)*(1/norm_flow_vector)*ddot24_1(
+                flow_vector, dflow_destrain)
+        # Compute derive of second residual w.r.t. to accumulated plastic
+        # strain
+        dr2_daccpstr = \
+            1.0 - inc_p_mult*np.sqrt(2/3)*(1/norm_flow_vector)*ddot22_1(
+                flow_vector, dflow_daccpstr)
+        # Compute derive of second residual w.r.t. to incremental plastic
+        # multiplier
+        dr2_dincpm = np.sqrt(2/3)*norm_flow_vector
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Compute derive of third residual w.r.t. to elastic strain
+        dr3_destrain = (1/init_yield_stress)*deff_destrain
+        # Compute derive of third residual w.r.t. to accumulated plastic strain
+        dr3_daccpstr = (1/init_yield_stress)*(deff_daccpstr - hard_slope)
+        # Compute derive of third residual w.r.t. to incremental plastic
+        # multiplier
+        dr3_dincpm = 0.0
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Build first residual derivatives matrices
+        j11 = vget_tensor_mf(dr1_destrain, n_dim, comp_order_sym,
+                             is_kelvin_notation=False, device=self._device)
+        j12 = vget_tensor_mf(dr1_daccpstr, n_dim, comp_order_sym,
+                             is_kelvin_notation=False,
+                             device=self._device).reshape(-1, 1)
+        j13 = vget_tensor_mf(dr1_dincpm, n_dim, comp_order_sym,
+                             is_kelvin_notation=False,
+                             device=self._device).reshape(-1, 1)
+        # Build second residual derivatives matrices
+        j21 = vget_tensor_mf(dr2_destrain, n_dim, comp_order_sym,
+                             is_kelvin_notation=False,
+                             device=self._device).reshape(1, -1)
+        j22 = dr2_daccpstr.reshape(1, 1)
+        j23 = dr2_dincpm.reshape(1, 1)
+        # Build third residual derivatives matrices
+        j31 = vget_tensor_mf(dr3_destrain, n_dim, comp_order_sym,
+                             is_kelvin_notation=False,
+                             device=self._device).reshape(1, -1)
+        j32 = dr3_daccpstr.reshape(1, 1)
+        j33 = dr3_dincpm.reshape(1, 1)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Build Jacobian matrix
+        jacobian = torch.cat((torch.cat((j11, j12, j13), dim=1),
+                              torch.cat((j21, j22, j23), dim=1),
+                              torch.cat((j31, j32, j33), dim=1)), dim=0)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        return jacobian
