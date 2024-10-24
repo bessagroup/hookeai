@@ -89,6 +89,8 @@ class GRURNNModel(torch.nn.Module):
         Forward propagation.
     save_model_init_file(self)
         Save model class initialization attributes.
+    save_model_init_state(self)
+        Save model initial state to file.
     save_model_state(self, epoch=None, is_best_state=False, \
                      is_remove_posterior=True)
     load_model_state(self, load_model_state=None, is_remove_posterior=True)
@@ -477,6 +479,28 @@ class GRURNNModel(torch.nn.Module):
         if isinstance(epoch, int) and is_remove_posterior:
             self._remove_posterior_state_files(epoch)
     # -------------------------------------------------------------------------
+    def save_model_init_state(self):
+        """Save model initial state to file.
+        
+        Model state file is stored in model_directory under the name
+        < model_name >-init.pt.
+
+        """
+        # Check model directory
+        if not os.path.isdir(self.model_directory):
+            raise RuntimeError('The model directory has not been found:\n\n'
+                               + self.model_directory)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set model state filename
+        model_state_file = self.model_name + '-init'
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set model state file path
+        model_path = os.path.join(self.model_directory,
+                                  model_state_file + '.pt')
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Save model state
+        torch.save(self.state_dict(), model_path)
+    # -------------------------------------------------------------------------
     def load_model_state(self, load_model_state=None,
                          is_remove_posterior=True):
         """Load model state from file.
@@ -488,9 +512,12 @@ class GRURNNModel(torch.nn.Module):
         model_directory under the name < model_name >-best.pt or
         < model_name >-< epoch >-best.pt if epoch if known.
         
+        Model initial state file is stored in model directory under the name
+        < model_name >-init.pt
+        
         Parameters
         ----------
-        load_model_state : {'best', 'last', int, None}, default=None
+        load_model_state : {'best', 'last', int, 'init', None}, default=None
             Load available model state from the model directory.
             Options:
             
@@ -499,6 +526,8 @@ class GRURNNModel(torch.nn.Module):
             'last'      : Model state corresponding to highest training epoch
             
             int         : Model state corresponding to given training epoch
+            
+            'init'      : Model initial state
             
             None        : Model default state file
         
@@ -587,6 +616,16 @@ class GRURNNModel(torch.nn.Module):
             epoch = load_model_state
             # Set model state filename with epoch
             model_state_file = self.model_name + '-' + str(int(epoch))
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Delete model epoch state files posterior to loaded epoch
+            if is_remove_posterior:
+                self._remove_posterior_state_files(epoch)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        elif load_model_state == 'init':
+            # Set model initial state file
+            model_state_file = self.model_name + '-init'
+            # Set epoch as unknown
+            epoch = 0
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Delete model epoch state files posterior to loaded epoch
             if is_remove_posterior:

@@ -27,9 +27,8 @@ from rnn_base_model.data.time_dataset import get_time_series_data_loader
 from rnn_base_model.model.gru_model import GRURNNModel
 from rnn_base_model.predict.prediction import predict
 from gnn_base_model.train.training import get_pytorch_optimizer, \
-    get_learning_rate_scheduler, save_training_state, load_training_state, \
-    save_loss_history, load_loss_history, load_lr_history, seed_worker, \
-    write_training_summary_file
+    get_learning_rate_scheduler, save_training_state, save_loss_history, \
+    seed_worker, write_training_summary_file
 from gnn_base_model.train.torch_loss import get_pytorch_loss
 from gnn_base_model.model.model_summary import get_model_summary
 #
@@ -102,7 +101,7 @@ def train_model(n_max_epochs, dataset, model_init_args, lr_init,
         is triggered.
     early_stopping_kwargs : dict, default={}
         Early stopping criterion parameters (key, str, item, value).
-    load_model_state : {'best', 'last', int, None}, default=None
+    load_model_state : {'best', 'last', 'init', int, None}, default=None
         Load available model state from the model directory. Data scalers are
         also loaded from model initialization file.
         Options:
@@ -112,6 +111,8 @@ def train_model(n_max_epochs, dataset, model_init_args, lr_init,
         'last'      : Model state corresponding to highest training epoch
         
         int         : Model state corresponding to given training epoch
+        
+        'init'      : Model state corresponding to initial state
         
         None        : Model default state file
 
@@ -154,23 +155,49 @@ def train_model(n_max_epochs, dataset, model_init_args, lr_init,
         print('\nRecurrent Neural Network model training'
               '\n---------------------------------------')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Initialize recurrent neural network model
-    model = GRURNNModel(**model_init_args)    
-    # Set model device
-    model.set_device(device_type)
+    # Initialize recurrent neural network model state
+    if load_model_state is not None:
+        if is_verbose:
+            print('\n> Initializing model...')
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Initialize recurrent neural network model
+        # (includes loading of data scalers)
+        model = GRURNNModel.init_model_from_file(
+            model_init_args['model_directory'])
+        # Set model device
+        model.set_device(device_type)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Get model data normalization
+        is_data_normalization = model.is_data_normalization
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        if is_verbose:
+            print('\n> Loading model state...')
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Load recurrent neural network model state
+        _ = model.load_model_state(load_model_state=load_model_state,
+                                   is_remove_posterior=True)
+    else:
+        if is_verbose:
+            print('\n> Initializing model...')
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Initialize recurrent neural network model
+        model = GRURNNModel(**model_init_args)    
+        # Set model device
+        model.set_device(device_type)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Get model data normalization
+        is_data_normalization = model.is_data_normalization
+        # Fit model data scalers  
+        if is_data_normalization:
+            model.fit_data_scalers(dataset)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Get model parameters
+    model_parameters = model.parameters(recurse=True)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~  
     # Move model to device
     model.to(device=device)
     # Set model in training mode
     model.train()
-    # Get model parameters
-    model_parameters = model.parameters(recurse=True)
-    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Get model data normalization
-    is_data_normalization = model.is_data_normalization
-    # Fit model data scalers  
-    if is_data_normalization and load_model_state is None:
-        model.fit_data_scalers(dataset)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Initialize learning rate
     learning_rate = lr_init
@@ -211,33 +238,7 @@ def train_model(n_max_epochs, dataset, model_init_args, lr_init,
     # Initialize number of training steps
     step = 0
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Load recurrent neural network model state
-    if load_model_state is not None:
-        # Initialize recurrent neural network model
-        # (includes loading of data scalers)
-        model = GRURNNModel.init_model_from_file(
-            model_init_args['model_directory'])
-        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        # Move model to device
-        model.to(device=device)
-        # Set model in training mode
-        model.train()
-        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        if is_verbose:
-            print('\n> Loading model state...')
-        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        # Load recurrent neural network model state
-        loaded_epoch = load_training_state(model, opt_algorithm, optimizer,
-                                           load_model_state)
-        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        # Load loss history
-        loss_history_epochs = load_loss_history(model, loss_nature, loss_type,
-                                                epoch=loaded_epoch)
-        # Load learning rate history
-        lr_history_epochs = load_lr_history(model, epoch=loaded_epoch)
-        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        # Update training epoch counter
-        epoch = int(loaded_epoch)
+
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Initialize validation loss history
     validation_loss_history = None
