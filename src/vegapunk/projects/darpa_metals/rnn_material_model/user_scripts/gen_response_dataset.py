@@ -49,6 +49,7 @@ from simulators.fetorch.material.models.standard.elastic import Elastic
 from simulators.fetorch.material.models.standard.von_mises import VonMises
 from simulators.fetorch.material.models.standard.drucker_prager import \
     DruckerPrager
+from simulators.fetorch.material.models.external.lou import LouZhangYoon
 from simulators.fetorch.material.models.external.bazant_m7 import BazantM7
 from simulators.fetorch.material.models.standard.hardening import \
     get_hardening_law
@@ -234,6 +235,9 @@ class MaterialResponseDatasetGenerator():
                 self._strain_formulation, self._problem_type, model_parameters)
         elif model_name == 'drucker_prager':
             constitutive_model = DruckerPrager(
+                self._strain_formulation, self._problem_type, model_parameters)
+        elif model_name == 'lou_zhang_yoon':
+            constitutive_model = LouZhangYoon(
                 self._strain_formulation, self._problem_type, model_parameters)
         elif model_name == 'bazant_m7':
             constitutive_model = BazantM7(
@@ -1689,18 +1693,17 @@ def generate_dataset_plots(strain_formulation, n_dim, dataset,
 # =============================================================================
 if __name__ == '__main__':
     # Set data set type
-    dataset_type = ('training', 'validation', 'testing_id', 'testing_od')[2]
+    dataset_type = ('training', 'validation', 'testing_id', 'testing_od')[0]
     # Set data set storage type
-    is_in_memory_dataset = False
+    is_in_memory_dataset = True
     # Set save dataset plots flags
     is_save_dataset_plots = True
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set case studies base directory
     base_dir = ('/home/bernardoferreira/Documents/brown/projects/'
-                'darpa_project/6_local_rnn_training_noisy/von_mises/'
-                'datasets_base/')
+                'darpa_project/3_local_rc_training/')
     # Set case study directory
-    case_study_name = 'noiseless_testing_dataset'
+    case_study_name = 'lou'
     case_study_dir = os.path.join(os.path.normpath(base_dir),
                                   f'{case_study_name}')
     # Set data set file basename
@@ -1756,7 +1759,7 @@ if __name__ == '__main__':
     is_cyclic_loading = False
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set constitutive model
-    model_name = 'von_mises'
+    model_name = 'lou_zhang_yoon'
     # Set constitutive model parameters:
     if model_name == 'von_mises':
         # Set constitutive model parameters
@@ -1791,15 +1794,49 @@ if __name__ == '__main__':
         # (matching Von Mises yield surface for null pressure)
         model_parameters = {
             'elastic_symmetry': 'isotropic',
-            'E': 100.0, 'v': 0.3,
+            'E': 110e3, 'v': 0.33,
             'euler_angles': (0.0, 0.0, 0.0),
-            'hardening_law': get_hardening_law('linear'),
-            'hardening_parameters':{'s0': 2.0/yield_cohesion_parameter,
-                                    'a': 2.0/yield_cohesion_parameter,},
+            'hardening_law': get_hardening_law('nadai_ludwik'),
+            'hardening_parameters':
+                {'s0': 900/yield_cohesion_parameter,
+                 'a': 700/yield_cohesion_parameter,
+                 'b': 0.5,
+                 'ep0': 1e-5},
             'yield_cohesion_parameter': yield_cohesion_parameter,
             'yield_pressure_parameter': yield_pressure_parameter,
             'flow_pressure_parameter': flow_pressure_parameter,
             'friction_angle': friction_angle}
+        # Set constitutive state variables to be additionally included in the
+        # data set
+        state_features = {}
+    elif model_name == 'lou_zhang_yoon':
+        # Set constitutive model parameters
+        model_parameters = \
+            {'elastic_symmetry': 'isotropic',
+             'E': 110e3, 'v': 0.33,
+             'euler_angles': (0.0, 0.0, 0.0),
+             'hardening_law': get_hardening_law('nadai_ludwik'),
+             'hardening_parameters':
+                 {'s0': 900,
+                  'a': 700,
+                  'b': 0.5,
+                  'ep0': 1e-5},
+             'a_hardening_law': get_hardening_law('linear'),
+             'a_hardening_parameters':
+                 {'s0': np.sqrt(3),
+                   'a': 0},
+             'b_hardening_law': get_hardening_law('linear'),
+             'b_hardening_parameters':
+                 {'s0': 0,
+                   'a': 0},
+             'c_hardening_law': get_hardening_law('linear'),
+             'c_hardening_parameters':
+                 {'s0': 0,
+                   'a': 0},
+             'd_hardening_law': get_hardening_law('linear'),
+             'd_hardening_parameters':
+                 {'s0': 0,
+                   'a': 0}}
         # Set constitutive state variables to be additionally included in the
         # data set
         state_features = {}
@@ -1817,7 +1854,7 @@ if __name__ == '__main__':
         state_features = {}
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set number of strain-stress paths of each type
-    n_path_type = {'proportional': 0, 'random': 512}
+    n_path_type = {'proportional': 1, 'random': 0}
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set strain path generators parameters
     strain_path_kwargs_type = {}
