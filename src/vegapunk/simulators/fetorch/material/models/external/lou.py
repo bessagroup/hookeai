@@ -22,7 +22,7 @@ from simulators.fetorch.math.matrixops import get_problem_type_parameters, \
     vget_tensor_mf, vget_tensor_from_mf, vget_state_3Dmf_from_2Dmf, \
     vget_state_2Dmf_from_3Dmf
 from simulators.fetorch.math.tensorops import get_id_operators, dyad22_1, \
-    ddot42_1, ddot24_1, ddot22_1
+    ddot42_1, ddot24_1, ddot22_1, ddot44_1
 #
 #                                                          Authorship & Credits
 # =============================================================================
@@ -331,7 +331,7 @@ class LouZhangYoon(ConstitutiveModel):
                                        e_trial_strain_mf)
         trial_stress = vget_tensor_from_mf(trial_stress_mf, n_dim,
                                            comp_order_sym,
-                                           device=self.get_device)
+                                           device=self._device)
         # Compute trial accumulated plastic strain
         acc_p_trial_strain = acc_p_strain_old
         # Compute trial yield stress
@@ -368,11 +368,12 @@ class LouZhangYoon(ConstitutiveModel):
             # Set plastic step flag
             is_plast = True
             # Get elastic trial strain tensor
-            e_trial_strain = vget_tensor_from_mf(e_trial_strain, n_dim,
+            e_trial_strain = vget_tensor_from_mf(e_trial_strain_mf, n_dim,
                                                  comp_order_sym,
                                                  device=self._device)
             # Compute initial yield stress
-            init_yield_stress, _ = hardening_law(acc_p_strain=0)
+            init_yield_stress, _ = \
+                hardening_law(hardening_parameters, acc_p_strain=0)
             # Set unknowns initial iterative guess
             e_strain = e_trial_strain
             acc_p_strain = acc_p_strain_old
@@ -385,12 +386,17 @@ class LouZhangYoon(ConstitutiveModel):
                 # Compute current stress
                 stress = ddot42_1(e_consistent_tangent, e_strain)
                 # Compute current yield stress and hardening modulus
-                yield_stress, hard_slope = hardening_law(acc_p_strain)
+                yield_stress, hard_slope = \
+                    hardening_law(hardening_parameters, acc_p_strain)
                 # Compute current yield parameters and hardening moduli
-                yield_a, a_hard_slope = a_hardening_law(acc_p_strain)
-                yield_b, b_hard_slope = b_hardening_law(acc_p_strain)
-                yield_c, c_hard_slope = c_hardening_law(acc_p_strain)
-                yield_d, d_hard_slope = d_hardening_law(acc_p_strain)
+                yield_a, a_hard_slope = \
+                    a_hardening_law(a_hardening_parameters, acc_p_strain)
+                yield_b, b_hard_slope = \
+                    b_hardening_law(b_hardening_parameters, acc_p_strain)
+                yield_c, c_hard_slope = \
+                    c_hardening_law(c_hardening_parameters, acc_p_strain)
+                yield_d, d_hard_slope = \
+                    d_hardening_law(d_hardening_parameters, acc_p_strain)
                 # Compute effective stress
                 effective_stress = self.get_effective_stress(
                     stress, yield_a, yield_b, yield_c, yield_d)
@@ -404,13 +410,14 @@ class LouZhangYoon(ConstitutiveModel):
                     e_strain, e_trial_strain, acc_p_strain, acc_p_strain_old,
                     inc_p_mult, effective_stress, yield_stress,
                     init_yield_stress, flow_vector, norm_flow_vector)
-                # Get first residual vector
-                residual_1_matrix = vget_tensor_mf(
-                    residual_1, n_dim, comp_order_sym,
-                    is_kelvin_notation=False, device=self._device)
+                # Build residuals matrices
+                r1 = vget_tensor_mf(residual_1, n_dim, comp_order_sym,
+                                    is_kelvin_notation=False,
+                                    device=self._device)
+                r2 = residual_2.reshape(-1)
+                r3 = residual_3.reshape(-1)
                 # Build residual vector
-                residual = \
-                    torch.cat((residual_1_matrix, residual_2, residual_3))
+                residual = torch.cat((r1, r2, r3), dim=0)
                 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                 # Compute residuals convergence norm
                 conv_norm_res_1 = \
@@ -751,7 +758,7 @@ class LouZhangYoon(ConstitutiveModel):
         # Compute deviatoric stress tensor
         dev_stress = ddot42_1(fodevprojsym, stress)
         # Compute transpose of inverse deviatoric stress tensor
-        dev_stress_invt = torch.transpose(torch.inverse(dev_stress))
+        dev_stress_invt = torch.inverse(dev_stress).T
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Compute stress invariants
         i1, _, _, _, j2, j3 = self.get_stress_invariants(stress)
@@ -768,12 +775,12 @@ class LouZhangYoon(ConstitutiveModel):
         d2j2_dstress2 = fodevprojsym
         # Get third (main) stress invariant second-order derivative w.r.t.
         # stress
-        d2j3_dstress2 = ddot42_1(
+        d2j3_dstress2 = ddot44_1(
             torch.det(dev_stress)*(-dyad22_1(dev_stress_invt, dev_stress_invt))
             + dyad22_1(dev_stress_invt, dj3_dstress), fodevprojsym)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Compute auxiliar terms a, b and c
-        auxa = yield_b*soid
+        auxa = yield_b*i1
         auxb = j2**3 - yield_c*(j3**2)
         auxc = yield_d*j3
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -800,7 +807,7 @@ class LouZhangYoon(ConstitutiveModel):
                 (-2/3)*((auxb**(-1/2) - auxc)**(-5/3))*(
                 -(1/2)*(auxb**(-2/3))*dauxb_dstress - yield_d*dj3_dstress)))
         # Compute derivative of flow vector w.r.t. elastic strain
-        dflow_destrain = ddot24_1(dflow_dstress, e_consistent_tangent)
+        dflow_destrain = ddot44_1(dflow_dstress, e_consistent_tangent)
         # Compute derivative of flow vector w.r.t. accumulated plastic strain
         dflow_daccpstr = \
             ((a_hard_slope*yield_b + yield_a*b_hard_slope)*di1_dstress) \
@@ -808,9 +815,8 @@ class LouZhangYoon(ConstitutiveModel):
                  (-1/2)*(auxb**(-2/3))*dauxb_daccpstr*dauxb_dstress
                  + (1/2)*(auxb**(-1/2))*d2auxb_daccpstrdstress)
                  - d_hard_slope*dj3_dstress)) \
-             + yield_a*(1/3)*dyad22_1((1/2)*(auxb**(-1/2))*dauxb_dstress
-                                      - yield_d*dj3_dstress,
-                                      d_hard_slope*dj3_dstress)
+             + yield_a*(1/3)*((1/2)*(auxb**(-1/2))*dauxb_dstress
+                              - yield_d*dj3_dstress)*d_hard_slope*dj3_dstress
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Compute derivative of effective stress w.r.t. stress
         deff_dstress = \
@@ -853,7 +859,7 @@ class LouZhangYoon(ConstitutiveModel):
         dr3_daccpstr = (1/init_yield_stress)*(deff_daccpstr - hard_slope)
         # Compute derive of third residual w.r.t. to incremental plastic
         # multiplier
-        dr3_dincpm = 0.0
+        dr3_dincpm = torch.tensor(0.0, dtype=torch.float, device=self._device)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Build first residual derivatives matrices
         j11 = vget_tensor_mf(dr1_destrain, n_dim, comp_order_sym,
