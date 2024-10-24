@@ -220,7 +220,8 @@ def predict(dataset, model_directory, model=None, predict_directory=None,
             for sample_results in samples_results:
                 # Compute sample output features prediction loss
                 loss = compute_sample_prediction_loss(
-                    model, loss_nature, loss_function, features_out, targets,
+                    model, loss_nature, loss_function,
+                    sample_results['features_out'], sample_results['targets'],
                     is_normalized_out=is_normalized_loss)
                 # Store prediction loss data
                 sample_results['prediction_loss_data'] = \
