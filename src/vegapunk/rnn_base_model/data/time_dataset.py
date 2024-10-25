@@ -23,6 +23,9 @@ add_dataset_feature_init
     Add feature initialization to all samples of time series data set.
 concatenate_dataset_features
     Concatenate existing features of time series data set into new feature.
+sum_dataset_features(dataset, new_feature_label, sum_features_labels,
+                     features_weights=None, is_remove_features=False)
+    Sum existing features of time series data set into new feature.
 write_time_series_dataset_summary_file
     Write summary data file for time series data set generation.
 """
@@ -335,6 +338,91 @@ def concatenate_dataset_features(dataset, new_feature_label,
         if is_remove_features and is_in_memory_dataset:
             # Loop over concatenated features
             for label in cat_features_labels:
+                sample.pop(label)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Update data set sample
+        if isinstance(dataset, TimeSeriesDataset):
+            dataset.update_dataset_sample(i, sample)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    return dataset
+# =============================================================================
+def sum_dataset_features(dataset, new_feature_label, sum_features_labels,
+                         features_weights=None, is_remove_features=False):
+    """Sum existing features of time series data set into new feature.
+    
+    The new feature is stored as a torch.Tensor(2d) of shape
+    (sequence_length, n_features) resulting from the sum of the existing
+    features tensors along the second dimension.
+    
+    Parameters
+    ----------
+    dataset : torch.utils.data.Dataset
+        Time series data set. Each sample is stored as a dictionary where
+        each feature (key, str) data is a torch.Tensor(2d) of shape
+        (sequence_length, n_features).
+    new_feature_label : str
+        New feature label.
+    sum_features_labels : tuple[str]
+        Labels of existing features to be summed into new feature.
+    features_weights : dict, default=None
+        Scalar weights (item, float) multiplied by each existing feature
+        (key, str) in the summing process. If None, then defaults to 1.0 for
+        all features.
+    is_remove_features : bool, default=False
+        If True, then remove summed features from data set after computing the
+        new feature.
+    
+    Returns
+    -------
+    dataset : torch.utils.data.Dataset
+        Time series data set. Each sample is stored as a dictionary where
+        each feature (key, str) data is a torch.Tensor(2d) of shape
+        (sequence_length, n_features).
+    """
+    # Check summing features
+    for label in sum_features_labels:
+        # Probe sample existence from first sample
+        if label not in dataset[0].keys():
+            raise RuntimeError(f'The feature "{label}" cannot be summed '
+                               f'because it does not exist in the data set.')
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Initialize sum weights
+    sum_weights = {}
+    # Set sum weights
+    for feature_label in sum_features_labels:
+        if feature_label in features_weights.keys():
+            sum_weights[feature_label] = float(features_weights[feature_label])
+        else:
+            sum_weights[feature_label] = 1.0
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Set data set storage type
+    if isinstance(dataset, TimeSeriesDataset):
+        is_in_memory_dataset = False
+    else:
+        is_in_memory_dataset = True
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Loop over samples
+    for i in range(len(dataset)):
+        # Get sample
+        sample = dataset[i]
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Add features
+        if len(sum_features_labels) > 1:
+            # Compute new feature
+            sample[str(new_feature_label)] = \
+                torch.sum(torch.stack([sum_weights[label]*sample[label]
+                                       for label in sum_features_labels],
+                                      dim=0), dim=0)
+        else:
+            # Get feature label
+            label = sum_features_labels[0]
+            # Set new feature
+            sample[str(new_feature_label)] = sum_weights[label]*sample[label]
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Remove summed features (in-memory data set only)
+        if is_remove_features and is_in_memory_dataset:
+            # Loop over summed features
+            for label in sum_features_labels:
                 sample.pop(label)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Update data set sample
