@@ -1,0 +1,149 @@
+# Standard
+import sys
+import pathlib
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# Add project root directory to sys.path
+root_dir = str(pathlib.Path(__file__).parents[1])
+if root_dir not in sys.path:
+    sys.path.insert(0, root_dir)
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# Third-party
+import torch
+# Local
+from rnn_base_model.data.time_dataset import get_time_series_data_loader, \
+    load_dataset, concatenate_dataset_features, sum_dataset_features
+from rc_base_model.model.recurrent_model import RecurrentConstitutiveModel
+from hybrid_base_model.model.transfer_learning import BatchedElasticModel
+# =============================================================================
+# Summary: Validate elastic constitutive model for batched time series data
+# =============================================================================
+# Set model directory
+model_directory = ('/home/bernardoferreira/Documents/brown/projects/'
+                   'darpa_project/7_local_hybrid_training/'
+                   'case_learning_drucker_prager_pressure_dependency/'
+                   'w_candidate_dp_model_testing/'
+                   '5_hybrid_model_elastic_tl_model_convergence_analysis/'
+                   '3_model')
+# Set training data set file path
+train_dataset_file_path = \
+    ('/home/bernardoferreira/Documents/brown/projects/darpa_project/'
+     '7_local_hybrid_training/'
+     'case_learning_drucker_prager_pressure_dependency/'
+     'w_candidate_dp_model_testing/'
+     '5_hybrid_model_elastic_tl_model_convergence_analysis/'
+     '1_training_dataset/ss_paths_dataset_n10.pkl')
+# Load training data set
+train_dataset = load_dataset(train_dataset_file_path)
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# Set device type
+device_type = 'cpu'
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# Set model name
+model_name = 'material_rc_model'
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# Set number of input features
+n_features_in = 6
+# Set number of output features
+n_features_out = 6
+# Set learnable parameters
+learnable_parameters = {}
+# Set strain formulation
+strain_formulation = 'infinitesimal'
+# Set problem type
+problem_type = 4
+# Set material constitutive model name
+material_model_name = 'elastic'
+# Set material constitutive model parameters
+material_model_parameters = {'elastic_symmetry': 'isotropic',
+                             'E': 110e3, 'v': 0.33,
+                             'euler_angles': (0.0, 0.0, 0.0)}
+# Set material constitutive state variables (prediction)
+state_features_out = {}
+# Set parameters normalization
+is_normalized_parameters = True
+# Set data normalization
+is_data_normalization = False
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# Build model initialization parameters
+model_init_args = {'n_features_in': n_features_in,
+                   'n_features_out': n_features_out,
+                   'learnable_parameters': learnable_parameters,
+                   'strain_formulation': strain_formulation,
+                   'problem_type': problem_type,
+                   'material_model_name': material_model_name,
+                   'material_model_parameters': material_model_parameters,
+                   'state_features_out': state_features_out,
+                   'model_directory': model_directory,
+                   'model_name': model_name,
+                   'is_normalized_parameters': is_normalized_parameters,
+                   'is_data_normalization': is_data_normalization,
+                   'device_type': device_type}
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# Set new feature (plastic strain)
+new_label = 'p_strain_mf'
+sum_features_labels = ('strain_path', 'e_strain_mf')
+features_weights = {'strain_path': 1.0, 'e_strain_mf': -1.0}
+# Set training data set new feature
+train_dataset = sum_dataset_features(train_dataset, new_label,
+                                     sum_features_labels, features_weights,
+                                     is_remove_features=False)
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# Set new feature (concatenated strain and plastic strain)
+new_label = 'cat_strain'
+cat_features_in = ('strain_path', 'p_strain_mf')
+# Set training data set new feature
+train_dataset = concatenate_dataset_features(train_dataset, new_label,
+                                             cat_features_in, 
+                                             is_remove_features=False)
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# Set input features
+new_label_in = 'features_in'
+cat_features_in = ('e_strain_mf',)
+# Set training data set features
+train_dataset = concatenate_dataset_features(train_dataset, new_label_in,
+                                             cat_features_in,
+                                             is_remove_features=False)
+# Set output features
+new_label_out = 'features_out'
+cat_features_out = ('stress_path',)
+# Set training data set features
+train_dataset = concatenate_dataset_features(train_dataset, new_label_out,
+                                             cat_features_out,
+                                             is_remove_features=False)
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# Set data loader
+data_loader = get_time_series_data_loader(dataset=train_dataset,
+                                          batch_size=len(train_dataset))
+# Get data batch
+batch = [x for x in data_loader][0]
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# Get batched data
+strain = batch['strain_path']
+e_strain_in = batch['e_strain_mf']
+p_strain_in = batch['p_strain_mf']
+cat_strain_in = batch['cat_strain']
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# Check infinitesimal strain elastoplastic decomposition
+if not torch.allclose(strain, e_strain_in + p_strain_in):
+    raise RuntimeError('Infinitesimal strains additive elastoplastic '
+                       'decomposition was not satisfied.')
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# Initialize elastic recurrent constitutive model
+rc_elastic_model = RecurrentConstitutiveModel(**model_init_args)
+# Compute elastic recurrent constitutive model prediction
+rc_elastic_features_out = rc_elastic_model(e_strain_in)
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# Initialize batched elastic constitutive model
+batch_elastic_model = BatchedElasticModel(
+    problem_type, elastic_properties=material_model_parameters,
+    elastic_symmetry=material_model_parameters['elastic_symmetry'],
+    device_type=device_type)
+# Compute batched elastic constitutive model prediction
+batch_elastic_features_out = batch_elastic_model(cat_strain_in)
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# Check results
+if not torch.allclose(rc_elastic_features_out, batch_elastic_features_out,
+                      rtol=1e-3):
+    raise RuntimeError('Elastic recurrent constitutive model and batched '
+                       'elastic constitutive model prediction results '
+                       'do not match!')
