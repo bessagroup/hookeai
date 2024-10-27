@@ -17,6 +17,30 @@ from hybrid_base_model.model.transfer_learning import BatchedElasticModel
 # =============================================================================
 # Summary: Validate elastic constitutive model for batched time series data
 # =============================================================================
+# Expecting training data set file generated with von Mises and where the
+# outputs include both stress and e_strain_mf. The later can be obtained by
+# setting state_features = {'e_strain_mf': len(strain_comps_order)} in the
+# material response data set generation process.
+#
+# Example:
+#
+## Set constitutive model parameters:
+#if model_name == 'von_mises':
+#    # Set constitutive model parameters
+#    model_parameters = {'elastic_symmetry': 'isotropic',
+#                        'E': 110e3, 'v': 0.33,
+#                        'euler_angles': (0.0, 0.0, 0.0),
+#                        'hardening_law': get_hardening_law('nadai_ludwik'),
+#                        'hardening_parameters':
+#                            {'s0': 900,
+#                             'a': 700,
+#                             'b': 0.5,
+#                             'ep0': 1e-5}}
+#    # Set constitutive state variables to be additionally included in the
+#    # data set
+#    state_features = {'e_strain_mf': len(strain_comps_order)}
+#
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Set model directory
 model_directory = ('/home/bernardoferreira/Documents/brown/projects/'
                    'darpa_project/7_local_hybrid_training/'
