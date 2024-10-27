@@ -174,8 +174,10 @@ class MaterialResponseDatasetGenerator():
         state_features : dict, default={}
             FETorch material constitutive model state variables (key, str) and
             corresponding dimensionality (item, int) for which the path history
-            is additionally included in the data set. Unavailable state
-            variables are ignored.
+            is additionally included in the data set. Tensorial state variables
+            stored in matricial form are included in the data set without any
+            matricial form coefficients (true components are extracted).
+            Unavailable state variables are ignored.
         is_in_memory_dataset : bool, default=True
             If True, then generate in-memory time series data set, otherwise
             time series data set samples are stored in local directory.
@@ -372,7 +374,10 @@ class MaterialResponseDatasetGenerator():
         state_features : dict, default={}
             FETorch material constitutive model state variables (key, str) and
             corresponding dimensionality (item, int) for which the path history
-            is additionally output. Unavailable state variables are ignored.
+            is additionally included in the data set. Tensorial state variables
+            stored in matricial form are included in the data set without any
+            matricial form coefficients (true components are extracted).
+            Unavailable state variables are ignored.
 
         Returns
         -------
