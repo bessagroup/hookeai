@@ -1741,8 +1741,14 @@ if __name__ == '__main__':
     strain_formulation = 'infinitesimal'
     # Set problem type
     problem_type = 4
-    # Set number of spatial dimensions
-    n_dim = 3
+    # Get problem type parameters
+    n_dim, comp_order_sym, comp_order_nsym = \
+        get_problem_type_parameters(problem_type)
+    # Set strain components order
+    if strain_formulation == 'infinitesimal':
+        strain_comps_order = comp_order_sym
+    else:
+        raise RuntimeError('Not implemented.')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set number of discrete times
     n_time = 100
@@ -1751,11 +1757,7 @@ if __name__ == '__main__':
     time_end = 1.0
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set strain components bounds
-    if n_dim == 2:
-        strain_bounds = {x: (-0.05, 0.05) for x in ('11', '22', '12')}
-    else:
-        strain_bounds = \
-            {x: (-0.05, 0.05) for x in ('11', '22', '33', '12', '23', '13')}
+    strain_bounds = {x: (-0.05, 0.05) for x in strain_comps_order}
     # Set incremental strain norm
     inc_strain_norm = None
     # Set strain noise
