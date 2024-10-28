@@ -259,8 +259,9 @@ def set_default_model_parameters(model_directory, device_type='cpu'):
     n_recurrent_layers = 3
     # Set dropout probability
     dropout = 0
-    # Set data normalization
-    is_data_normalization = True
+    # Set model input and output features normalization
+    is_model_in_normalized = True
+    is_model_out_normalized = True
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Build model initialization parameters
     model_init_args = {'n_features_in': n_features_in,
@@ -270,7 +271,8 @@ def set_default_model_parameters(model_directory, device_type='cpu'):
                        'dropout': dropout,
                        'model_directory': model_directory,
                        'model_name': model_name,
-                       'is_data_normalization': is_data_normalization,
+                       'is_model_in_normalized': is_model_in_normalized,
+                       'is_model_out_normalized': is_model_out_normalized,
                        'device_type': device_type}
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     return model_init_args

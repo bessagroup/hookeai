@@ -50,10 +50,12 @@ class PolynomialLinearRegressor(torch.nn.Module):
         Type of device on which torch.Tensor is allocated.
     _device : torch.device
         Device on which torch.Tensor is allocated.
-    is_data_normalization : bool
-        If True, then input features are normalized prior to forward
-        propagation, False otherwise. Fitted data scalers need to be stored
-        as model attributes to carry out data normalization procedures.
+    is_model_in_normalized : bool, default=False
+        If True, then model input features are assumed to be normalized
+        (normalized input data has been seen during model training).
+    is_model_out_normalized : bool, default=False
+        If True, then model output features are assumed to be normalized
+        (normalized output data has been seen during model training).
     _data_scalers : dict
         Data scaler (item, TorchStandardScaler) for each feature data
         (key, str).
@@ -78,7 +80,8 @@ class PolynomialLinearRegressor(torch.nn.Module):
         Check if model data normalization is available.
     """
     def __init__(self, n_features_in, poly_degree=1, is_bias=True,
-                 is_data_normalization=False, device_type='cpu'):
+                 is_model_in_normalized=False, is_model_out_normalized=False,
+                 device_type='cpu'):
         """Constructor.
         
         Parameters
@@ -90,10 +93,12 @@ class PolynomialLinearRegressor(torch.nn.Module):
         is_bias : bool, default=True
             If True, then account for bias weight in polynomial regression,
             otherwise False.
-        is_data_normalization : bool, default=False
-            If True, then input features are normalized prior to forward
-            propagation, False otherwise. Fitted data scalers need to be stored
-            as model attributes to carry out data normalization procedures.
+        is_model_in_normalized : bool, default=False
+            If True, then model input features are assumed to be normalized
+            (normalized input data has been seen during model training).
+        is_model_out_normalized : bool, default=False
+            If True, then model output features are assumed to be normalized
+            (normalized output data has been seen during model training).
         device_type : {'cpu', 'cuda'}, default='cpu'
             Type of device on which torch.Tensor is allocated.
         """
@@ -106,8 +111,9 @@ class PolynomialLinearRegressor(torch.nn.Module):
         self._poly_degree = poly_degree
         # Set bias
         self._is_bias = is_bias
-        # Set normalization flag
-        self.is_data_normalization = is_data_normalization
+        # Set model input and output features normalization
+        self.is_model_in_normalized = is_model_in_normalized
+        self.is_model_out_normalized = is_model_out_normalized
         # Set device
         self.set_device(device_type)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -127,9 +133,7 @@ class PolynomialLinearRegressor(torch.nn.Module):
                 torch.nn.Linear(self._n_poly_coeff, 1, bias=False))
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Initialize data scalers
-        self._data_scalers = None
-        if self.is_data_normalization:
-            self._init_data_scalers()
+        self._init_data_scalers()
     # -------------------------------------------------------------------------
     def set_device(self, device_type):
         """Set device on which torch.Tensor is allocated.
@@ -172,7 +176,7 @@ class PolynomialLinearRegressor(torch.nn.Module):
         """
         return self.device_type, self.device
     # -------------------------------------------------------------------------
-    def forward(self, features_in, is_normalized_out=False):
+    def forward(self, features_in):
         """Forward propagation.
         
         Parameters
@@ -182,8 +186,6 @@ class PolynomialLinearRegressor(torch.nn.Module):
             (sequence_length, n_features_in) for unbatched input or
             torch.Tensor(3d) of shape
             (sequence_length, batch_size, n_features_in) for batched input.
-        is_normalized_out : bool, default=False
-            If True, get normalized output features, False otherwise.
 
         Returns
         -------
@@ -197,17 +199,6 @@ class PolynomialLinearRegressor(torch.nn.Module):
         if not isinstance(features_in, torch.Tensor):
             raise RuntimeError('Input features were not provided as '
                                'torch.Tensor.')
-        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        # Check model data normalization
-        if is_normalized_out:
-            self.check_normalized_return()
-        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        # Normalize input features data
-        if self.is_data_normalization:
-            features_in = \
-                self.data_scaler_transform(tensor=features_in,
-                                           features_type='features_in',
-                                           mode='normalize')
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Check if batched input
         is_batched = features_in.dim() == 3
@@ -262,13 +253,6 @@ class PolynomialLinearRegressor(torch.nn.Module):
         if not is_batched:
             features_out = features_out.squeeze(batch_dim)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        # Denormalize output features data
-        if self.is_data_normalization and not is_normalized_out:
-            features_out = \
-                self.data_scaler_transform(tensor=features_out,
-                                           features_type='features_out',
-                                           mode='denormalize')
-        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         return features_out
     # -------------------------------------------------------------------------
     def _init_data_scalers(self):
@@ -287,6 +271,9 @@ class PolynomialLinearRegressor(torch.nn.Module):
         scaler_features_out : {TorchMinMaxScaler, TorchMinMaxScaler}
             Data scaler for output features.
         """
+        # Initialize data scalers
+        self._init_data_scalers()
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Set fitted data scalers
         self._data_scalers['features_in'] = scaler_features_in
         self._data_scalers['features_out'] = scaler_features_out
@@ -378,16 +365,16 @@ class PolynomialLinearRegressor(torch.nn.Module):
     # -------------------------------------------------------------------------
     def check_normalized_return(self):
         """Check if model data normalization is available."""
-        if not self.is_data_normalization or self._data_scalers is None:
+        if self._data_scalers is None:
             raise RuntimeError('Data scalers for model features have not '
-                               'been fitted. Fit data scalers by calling '
-                               'method fit_data_scalers() before training '
-                               'or predicting with the model.')
+                               'been set or fitted. Call set_data_scalers() '
+                               'to make model normalization procedures '
+                               'available.')
         if all([x is None for x in self._data_scalers.values()]):
             raise RuntimeError('Data scalers for model features have not '
-                               'been fitted. Fit data scalers by calling '
-                               'method fit_data_scalers() before training '
-                               'or predicting with the model.')
+                               'been set or fitted. Call set_data_scalers() '
+                               'to make model normalization procedures '
+                               'available.')
 # =============================================================================
 class BatchedElasticModel(torch.nn.Module):
     """Linear elastic constitutive model for batched time series data.
@@ -436,7 +423,7 @@ class BatchedElasticModel(torch.nn.Module):
         Set device on which torch.Tensor is allocated.
     get_device(self)
         Get device on which torch.Tensor is allocated.
-    forward(self, features_in, is_normalized_out=False)
+    forward(self, features_in)
         Forward propagation.
     """
     def __init__(self, problem_type, elastic_properties, elastic_symmetry,
@@ -536,7 +523,7 @@ class BatchedElasticModel(torch.nn.Module):
         """
         return self.device_type, self.device
     # -------------------------------------------------------------------------
-    def forward(self, features_in, is_normalized_out=False):
+    def forward(self, features_in):
         """Forward propagation.
         
         The tensor of input features can be one of two (infered from number of
@@ -554,8 +541,6 @@ class BatchedElasticModel(torch.nn.Module):
             (sequence_length, n_features_in) for unbatched input or
             torch.Tensor(3d) of shape
             (sequence_length, batch_size, n_features_in) for batched input.
-        is_normalized_out : bool, default=False
-            Deprecated, kept for legacy compatibility only.
 
         Returns
         -------

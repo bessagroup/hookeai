@@ -217,8 +217,9 @@ class StructureMaterialState:
             model_directory = model_kwargs['model_directory']
             # Get parameters normalization
             is_normalized_parameters = model_kwargs['is_normalized_parameters']
-            # Get data normalization
-            is_data_normalization = model_kwargs['is_data_normalization']
+            # Get model input and output features normalization
+            is_model_in_normalized = model_kwargs['is_model_in_normalized']
+            is_model_out_normalized = model_kwargs['is_model_out_normalized']
             # Get device type
             device_type = model_kwargs['device_type']
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -237,7 +238,8 @@ class StructureMaterialState:
                 'model_directory': model_directory,
                 'model_name': model_name,
                 'is_normalized_parameters': is_normalized_parameters,
-                'is_data_normalization': is_data_normalization,
+                'is_model_in_normalized': is_model_in_normalized,
+                'is_model_out_normalized': is_model_out_normalized,
                 'device_type': device_type}
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Initialize constitutive model
@@ -255,8 +257,9 @@ class StructureMaterialState:
             n_recurrent_layers = model_kwargs['n_recurrent_layers']
             # Get dropout probability
             dropout = model_kwargs['dropout']
-            # Get data normalization
-            is_data_normalization = model_kwargs['is_data_normalization']
+            # Get model input and output features normalization
+            is_model_in_normalized = model_kwargs['is_model_in_normalized']
+            is_model_out_normalized = model_kwargs['is_model_out_normalized']
             # Get device type
             device_type = model_kwargs['device_type']
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -267,7 +270,8 @@ class StructureMaterialState:
                 'hidden_layer_size': hidden_layer_size,
                 'n_recurrent_layers': n_recurrent_layers,
                 'dropout': dropout,
-                'is_data_normalization': is_data_normalization,
+                'is_model_in_normalized': is_model_in_normalized,
+                'is_model_out_normalized': is_model_out_normalized,
                 'device_type': device_type}
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Initialize constitutive model

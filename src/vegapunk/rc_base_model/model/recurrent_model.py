@@ -111,10 +111,12 @@ class RecurrentConstitutiveModel(torch.nn.Module):
         are normalized accordingly.
     is_explicit_parameters : bool
         True if model learnable parameters are explicit, False otherwise.
-    is_data_normalization : bool
-        If True, then input features are normalized prior to forward
-        propagation, False otherwise. Fitted data scalers need to be stored
-        as model attributes to carry out data normalization procedures.
+    is_model_in_normalized : bool, default=False
+        If True, then model input features are assumed to be normalized
+        (normalized input data has been seen during model training).
+    is_model_out_normalized : bool, default=False
+        If True, then model output features are assumed to be normalized
+        (normalized output data has been seen during model training).
     _is_save_model_init_file: bool, default=True
         If True, saves model initialization file when model is initialized
         (overwritting existent initialization file), False otherwise.
@@ -151,7 +153,7 @@ class RecurrentConstitutiveModel(torch.nn.Module):
         Get model parameters detached of gradients.
     get_material_model_parameters(self)
         Get current material constitutive model parameters.
-    forward(self, features_in, is_normalized_out=False)
+    forward(self, features_in)
         Forward propagation.
     _recurrent_constitutive_model(self, strain_paths)
         Compute material response.
@@ -211,9 +213,9 @@ class RecurrentConstitutiveModel(torch.nn.Module):
                  material_model_parameters, model_directory,
                  model_name='wrapper_recurrent_model',
                  is_auto_sync_parameters=True, is_check_su_fail=True,
-                 state_features_out={}, is_data_normalization=False,
-                 is_normalized_parameters=False, is_save_model_init_file=True,
-                 device_type='cpu'):
+                 state_features_out={}, is_model_in_normalized=False,
+                 is_model_out_normalized=False, is_normalized_parameters=False,
+                 is_save_model_init_file=True, device_type='cpu'):
         """Constructor.
         
         Parameters
@@ -256,10 +258,12 @@ class RecurrentConstitutiveModel(torch.nn.Module):
             If True, then learnable parameters are normalized for optimization,
             False otherwise. The initial values and bounds of each parameter
             are normalized accordingly.
-        is_data_normalization : bool, default=False
-            If True, then input features are normalized prior to forward
-            propagation, False otherwise. Fitted data scalers need to be stored
-            as model attributes to carry out data normalization procedures.
+        is_model_in_normalized : bool, default=False
+            If True, then model input features are assumed to be normalized
+            (normalized input data has been seen during model training).
+        is_model_out_normalized : bool, default=False
+            If True, then model output features are assumed to be normalized
+            (normalized output data has been seen during model training).
         is_save_model_init_file: bool, default=True
             If True, saves model initialization file when model is initialized
             (overwritting existent initialization file), False otherwise. When
@@ -309,8 +313,9 @@ class RecurrentConstitutiveModel(torch.nn.Module):
             raise RuntimeError('The model name must be a string.')
         else:
             self.model_name = model_name
-        # Set normalization flag
-        self.is_data_normalization = is_data_normalization
+        # Set model input and output features normalization
+        self.is_model_in_normalized = is_model_in_normalized
+        self.is_model_out_normalized = is_model_out_normalized
         # Set save initialization file flag
         self._is_save_model_init_file = is_save_model_init_file
         # Set device
@@ -366,9 +371,7 @@ class RecurrentConstitutiveModel(torch.nn.Module):
         self.is_explicit_parameters = True
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Initialize data scalers
-        self._data_scalers = None
-        if self.is_data_normalization:
-            self._init_data_scalers()
+        self._init_data_scalers()
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~        
         # Save model initialization file
         if self._is_save_model_init_file:
@@ -780,7 +783,7 @@ class RecurrentConstitutiveModel(torch.nn.Module):
         """
         return self._constitutive_model._model_parameters
     # -------------------------------------------------------------------------
-    def forward(self, features_in, is_normalized_out=False):
+    def forward(self, features_in):
         """Forward propagation.
         
         Parameters
@@ -790,8 +793,6 @@ class RecurrentConstitutiveModel(torch.nn.Module):
             (sequence_length, n_features_in) for unbatched input or
             torch.Tensor(3d) of shape
             (sequence_length, batch_size, n_features_in) for batched input.
-        is_normalized_out : bool, default=False
-            If True, get normalized output features, False otherwise.
             
         Returns
         -------
@@ -805,16 +806,6 @@ class RecurrentConstitutiveModel(torch.nn.Module):
         if not isinstance(features_in, torch.Tensor):
             raise RuntimeError('Input features were not provided as '
                                'torch.Tensor.')
-        # Check model data normalization
-        if is_normalized_out:
-            self.check_normalized_return()
-        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        # Normalize input features data
-        if self.is_data_normalization:
-            features_in = \
-                self.data_scaler_transform(tensor=features_in,
-                                           features_type='features_in',
-                                           mode='normalize')
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Synchronize material model parameters with learnable parameters
         if self._is_auto_sync_parameters:
@@ -822,13 +813,6 @@ class RecurrentConstitutiveModel(torch.nn.Module):
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~        
         # Forward propagation: Material constitutive model
         features_out = self._vrecurrent_constitutive_model(features_in)
-        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        # Denormalize output features data
-        if self.is_data_normalization and not is_normalized_out:
-            features_out = \
-                self.data_scaler_transform(tensor=features_out,
-                                           features_type='features_out',
-                                           mode='denormalize')
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         return features_out
     # -------------------------------------------------------------------------
@@ -1525,7 +1509,9 @@ class RecurrentConstitutiveModel(torch.nn.Module):
         model_init_args['state_features_out'] = self._state_features_out
         model_init_args['is_normalized_parameters'] = \
             self.is_normalized_parameters
-        model_init_args['is_data_normalization'] = self.is_data_normalization
+        model_init_args['is_model_in_normalized'] = self.is_model_in_normalized
+        model_init_args['is_model_out_normalized'] = \
+            self.is_model_out_normalized
         model_init_args['device_type'] = self._device_type
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Assemble initialization parameters
@@ -1868,6 +1854,9 @@ class RecurrentConstitutiveModel(torch.nn.Module):
         scaler_features_out : {TorchMinMaxScaler, TorchMinMaxScaler}
             Data scaler for output features.
         """
+        # Initialize data scalers
+        self._init_data_scalers()
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Set fitted data scalers
         self._data_scalers['features_in'] = scaler_features_in
         self._data_scalers['features_out'] = scaler_features_out
@@ -2087,13 +2076,17 @@ class RecurrentConstitutiveModel(torch.nn.Module):
         self._data_scalers = model_data_scalers
     # -------------------------------------------------------------------------
     def check_normalized_return(self):
-        """Check if model data scalers available."""
+        """Check if model data normalization is available."""
         if self._data_scalers is None:
             raise RuntimeError('Data scalers for model features have not '
-                               'been fitted.')
+                               'been set or fitted. Call set_data_scalers() '
+                               'or fit_data_scalers() to make model '
+                               'normalization procedures available.')
         if all([x is None for x in self._data_scalers.values()]):
             raise RuntimeError('Data scalers for model features have not '
-                               'been fitted.')
+                               'been set or fitted. Call set_data_scalers() '
+                               'or fit_data_scalers() to make model '
+                               'normalization procedures available.')
 # =============================================================================
 def standard_partial_fit(dataset, features_type, n_features, is_verbose=False):
     """Perform batch fitting of standardization data scalers.

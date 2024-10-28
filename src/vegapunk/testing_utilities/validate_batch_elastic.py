@@ -85,8 +85,9 @@ material_model_parameters = {'elastic_symmetry': 'isotropic',
 state_features_out = {}
 # Set parameters normalization
 is_normalized_parameters = True
-# Set data normalization
-is_data_normalization = False
+# Set model input and output features normalization
+is_model_in_normalized = False
+is_model_out_normalized = False
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Build model initialization parameters
 model_init_args = {'n_features_in': n_features_in,
@@ -100,7 +101,8 @@ model_init_args = {'n_features_in': n_features_in,
                    'model_directory': model_directory,
                    'model_name': model_name,
                    'is_normalized_parameters': is_normalized_parameters,
-                   'is_data_normalization': is_data_normalization,
+                   'is_model_in_normalized': is_model_in_normalized,
+                   'is_model_out_normalized': is_model_out_normalized,
                    'device_type': device_type}
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Set new feature (plastic strain)

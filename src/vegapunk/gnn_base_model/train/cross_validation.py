@@ -271,9 +271,9 @@ def kfold_cross_validation(cross_validation_dir, n_fold, n_max_epochs,
 # =============================================================================
 def write_cross_validation_summary_file(
     cross_validation_dir, device_type, n_fold, n_max_epochs,
-    is_data_normalization, batch_size, loss_nature, loss_type, loss_kwargs,
-    dataset_file_path, dataset, k_fold_loss_array, total_time_sec,
-    avg_time_fold):
+    is_model_in_normalized, is_model_out_normalized, batch_size, loss_nature,
+    loss_type, loss_kwargs, dataset_file_path, dataset, k_fold_loss_array,
+    total_time_sec, avg_time_fold):
     """Write summary data file for model cross-validation process.
     
     Parameters
@@ -287,10 +287,12 @@ def write_cross_validation_summary_file(
         cross-validation.
     n_max_epochs : int
         Maximum number of training epochs.
-    is_data_normalization : bool
-        If True, then input and output features are normalized for training
-        False otherwise. Data scalers need to be fitted with fit_data_scalers()
-        and are stored as model attributes.
+    is_model_in_normalized : bool, default=False
+        If True, then model input features are assumed to be normalized
+        (normalized input data has been seen during model training).
+    is_model_out_normalized : bool, default=False
+        If True, then model output features are assumed to be normalized
+        (normalized output data has been seen during model training).
     batch_size : int
         Number of samples loaded per batch.
     loss_nature : str
@@ -317,7 +319,8 @@ def write_cross_validation_summary_file(
     summary_data['device_type'] = device_type
     summary_data['n_fold'] = n_fold
     summary_data['n_max_epochs'] = n_max_epochs
-    summary_data['is_data_normalization'] = is_data_normalization
+    summary_data['is_model_in_normalized'] = is_model_in_normalized
+    summary_data['is_model_out_normalized'] = is_model_out_normalized
     summary_data['batch_size'] = batch_size
     summary_data['loss_nature'] = loss_nature
     summary_data['loss_type'] = loss_type

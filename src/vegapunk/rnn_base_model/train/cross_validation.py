@@ -153,10 +153,9 @@ def kfold_cross_validation(cross_validation_dir, n_fold, n_max_epochs,
     folds_training_losses = []
     folds_validation_losses = []
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Get model data normalization
-    is_data_normalization = False
-    if 'is_data_normalization' in model_init_args.keys():
-        is_data_normalization = model_init_args['is_data_normalization']
+    # Get model input and output features normalization
+    is_model_in_normalized = model.is_model_in_normalized
+    is_model_out_normalized = model.is_model_out_normalized
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     if is_verbose:
         print('\n\n> Starting k-fold cross-validation process...')
@@ -201,7 +200,8 @@ def kfold_cross_validation(cross_validation_dir, n_fold, n_max_epochs,
             validation_dataset, model.model_directory,
             predict_directory=fold_validation_dir, load_model_state='best',
             loss_nature=loss_nature, loss_type=loss_type,
-            loss_kwargs=loss_kwargs, is_normalized_loss=is_data_normalization,
+            loss_kwargs=loss_kwargs,
+            is_normalized_loss=is_model_out_normalized,
             device_type=device_type, seed=None, is_verbose=False)
         # Check average validation loss
         if avg_valid_loss_sample is None:
@@ -221,7 +221,7 @@ def kfold_cross_validation(cross_validation_dir, n_fold, n_max_epochs,
             # Set losses output format
             train_loss_str = f'{best_training_loss:.8e}'
             valid_loss_str = f'{avg_valid_loss_sample:.8e}'
-            if is_data_normalization:
+            if is_model_out_normalized:
                 train_loss_str += ' (normalized)'
                 valid_loss_str += ' (normalized)'
             # Display fold losses
@@ -241,7 +241,7 @@ def kfold_cross_validation(cross_validation_dir, n_fold, n_max_epochs,
         # Set losses output format
         train_loss_str = f'{avg_best_training_loss:.8e}'
         valid_loss_str = f'{avg_validation_loss:.8e}'
-        if is_data_normalization:
+        if is_model_out_normalized:
             train_loss_str += ' (normalized)'
             valid_loss_str += ' (normalized)'
         # Display cross-validation losses
@@ -264,8 +264,8 @@ def kfold_cross_validation(cross_validation_dir, n_fold, n_max_epochs,
     # Write summary data file for model cross-validation
     write_cross_validation_summary_file(
         cross_validation_dir, device_type, n_fold, n_max_epochs,
-        is_data_normalization, batch_size, loss_nature, loss_type, loss_kwargs,
-        dataset_file_path, dataset, k_fold_loss_array, total_time_sec,
-        avg_time_fold)
+        is_model_in_normalized, is_model_out_normalized, batch_size,
+        loss_nature, loss_type, loss_kwargs, dataset_file_path, dataset,
+        k_fold_loss_array, total_time_sec, avg_time_fold)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     return k_fold_loss_array

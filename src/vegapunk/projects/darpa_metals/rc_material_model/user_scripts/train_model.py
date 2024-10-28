@@ -413,8 +413,9 @@ def set_default_model_parameters(model_directory, device_type='cpu'):
     state_features_out = {}
     # Set parameters normalization
     is_normalized_parameters = True
-    # Set data normalization
-    is_data_normalization = False
+    # Set model input and output features normalization
+    is_model_in_normalized = False
+    is_model_out_normalized = False
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Build model initialization parameters
     model_init_args = {'n_features_in': n_features_in,
@@ -428,7 +429,8 @@ def set_default_model_parameters(model_directory, device_type='cpu'):
                        'model_directory': model_directory,
                        'model_name': model_name,
                        'is_normalized_parameters': is_normalized_parameters,
-                       'is_data_normalization': is_data_normalization,
+                       'is_model_in_normalized': is_model_in_normalized,
+                       'is_model_out_normalized': is_model_out_normalized,
                        'device_type': device_type}
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     return model_init_args
@@ -469,11 +471,6 @@ def set_default_training_options():
         
     loss_kwargs : dict
         Arguments of torch.nn._Loss initializer.
-    is_loss_normalization : bool
-        If True, then output features are normalized for loss computation,
-        False otherwise. Ignored if model is_data_normalization is set to True.
-        The model data scalers are fitted and employed to normalize the
-        output features.
     is_sampler_shuffle : bool
         If True, shuffles data set samples at every epoch.
     is_early_stopping : bool
@@ -489,18 +486,16 @@ def set_default_training_options():
     loss_nature = 'features_out'
     loss_type = 'mse'
     loss_kwargs = {}
-    is_loss_normalization = True
     is_sampler_shuffle = False
     is_early_stopping = True
     early_stopping_kwargs = {'validation_dataset': None,
                              'validation_frequency': 1,
                              'trigger_tolerance': 20,
-                             'improvement_tolerance': 1e-2,
-                             'is_normalized_loss': is_loss_normalization}
+                             'improvement_tolerance': 1e-2}
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     return opt_algorithm, lr_init, lr_scheduler_type, lr_scheduler_kwargs, \
         loss_nature, loss_type, loss_kwargs, is_sampler_shuffle, \
-        is_early_stopping, early_stopping_kwargs, is_loss_normalization
+        is_early_stopping, early_stopping_kwargs
 # =============================================================================
 if __name__ == "__main__":
     # Set computation processes

@@ -167,8 +167,9 @@ def train_model(n_max_epochs, dataset, model_init_args, lr_init,
         # Set model device
         model.set_device(device_type)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        # Get model data normalization
-        is_data_normalization = model.is_data_normalization
+        # Get model input and output features normalization
+        is_model_in_normalized = model.is_model_in_normalized
+        is_model_out_normalized = model.is_model_out_normalized
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         if is_verbose:
             print('\n> Loading model state...')
@@ -185,10 +186,11 @@ def train_model(n_max_epochs, dataset, model_init_args, lr_init,
         # Set model device
         model.set_device(device_type)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        # Get model data normalization
-        is_data_normalization = model.is_data_normalization
+        # Get model input and output features normalization
+        is_model_in_normalized = model.is_model_in_normalized
+        is_model_out_normalized = model.is_model_out_normalized
         # Fit model data scalers  
-        if is_data_normalization:
+        if is_model_in_normalized or is_model_out_normalized:
             model.fit_data_scalers(dataset)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Get model parameters
@@ -238,8 +240,6 @@ def train_model(n_max_epochs, dataset, model_init_args, lr_init,
     # Initialize number of training steps
     step = 0
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Initialize validation loss history
     validation_loss_history = None
     # Initialize early stopping criterion
@@ -268,8 +268,10 @@ def train_model(n_max_epochs, dataset, model_init_args, lr_init,
             is_shuffle=is_sampler_shuffle)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     if is_verbose:
-        normalization_str = 'Yes' if is_data_normalization else 'No'
-        print(f'\n> Data normalization: {normalization_str}')
+        input_normalization_str = 'Yes' if is_model_in_normalized else 'No'
+        print(f'\n> Input data normalization: {input_normalization_str}')
+        output_normalization_str = 'Yes' if is_model_out_normalized else 'No'
+        print(f'\n> Output data normalization: {output_normalization_str}')
         print('\n\n> Starting training process...\n')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Loop over training iterations
@@ -283,15 +285,30 @@ def train_model(n_max_epochs, dataset, model_init_args, lr_init,
             for key in batch.keys():
                 batch[key] = batch[key].to(device)
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            # Get output features ground-truth
-            if is_data_normalization:
+            # Get input features
+            if is_model_in_normalized:
                 # Normalize features ground-truth
-                features_targets = \
+                features_in = \
+                    model.data_scaler_transform(tensor=batch['features_in'],
+                                                features_type='features_in',
+                                                mode='normalize')
+            else:
+                features_in = batch['features_in']
+            # Get initial hidden state features
+            if 'hidden_features_in' in batch.keys():
+                hidden_features_in = batch['hidden_features_in']
+            else:
+                hidden_features_in = None
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Get output features ground-truth
+            if is_model_out_normalized:
+                # Normalize features ground-truth
+                targets = \
                     model.data_scaler_transform(tensor=batch['features_out'],
                                                 features_type='features_out',
                                                 mode='normalize')
             else:
-                features_targets = batch['features_out']
+                targets = batch['features_out']
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Compute output features predictions (forward propagation).
             # During the foward pass, PyTorch creates a computation graph for
@@ -305,13 +322,10 @@ def train_model(n_max_epochs, dataset, model_init_args, lr_init,
             # graph or for tensors with the gradient flag set to False.
             if loss_nature == 'features_out':
                 # Get output features
-                features_out, _ = \
-                    model(batch['features_in'],
-                          hidden_features_in=batch['hidden_features_in'],
-                          is_normalized_out=is_data_normalization)
+                features_out, _ = model(features_in, hidden_features_in)
                 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~                
                 # Compute loss
-                loss = loss_function(features_out, features_targets)
+                loss = loss_function(features_out, targets)
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             else:
                 raise RuntimeError('Unknown loss nature.')
@@ -431,8 +445,12 @@ def train_model(n_max_epochs, dataset, model_init_args, lr_init,
     best_training_epoch = loss_history_epochs.index(best_loss)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     if is_verbose:
-        print('\n\n> Minimum training loss: {:.8e} | Epoch: {:d}'.format(
-              best_loss, best_training_epoch))
+        if is_model_out_normalized:
+            min_loss_str = 'Minimum training loss (normalized)'
+        else:
+            min_loss_str = 'Minimum training loss'
+        print(f'\n\n> {min_loss_str}: {best_loss:.8e} | '
+              f'Epoch: {best_training_epoch:d}')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Compute total training time and average training time per epoch
     total_time_sec = time.time() - start_time_sec
@@ -451,11 +469,12 @@ def train_model(n_max_epochs, dataset, model_init_args, lr_init,
     # Write summary data file for model training process
     write_training_summary_file(
         device_type, seed, model.model_directory, load_model_state,
-        n_max_epochs, is_data_normalization, batch_size, is_sampler_shuffle,
-        loss_nature, loss_type, loss_kwargs, opt_algorithm, lr_init,
-        lr_scheduler_type, lr_scheduler_kwargs, epoch, dataset_file_path,
-        dataset, best_loss, best_training_epoch, total_time_sec,
-        avg_time_epoch, torchinfo_summary=str(model_statistics))
+        n_max_epochs, is_model_in_normalized, is_model_out_normalized,
+        batch_size, is_sampler_shuffle, loss_nature, loss_type, loss_kwargs,
+        opt_algorithm, lr_init, lr_scheduler_type, lr_scheduler_kwargs, epoch,
+        dataset_file_path, dataset, best_loss, best_training_epoch,
+        total_time_sec, avg_time_epoch,
+        torchinfo_summary=str(model_statistics))
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     return model, best_loss, best_training_epoch
 # =============================================================================
@@ -723,7 +742,7 @@ class EarlyStopper:
             model=model, predict_directory=None, load_model_state=epoch,
             loss_nature=loss_nature, loss_type=loss_type,
             loss_kwargs=loss_kwargs,
-            is_normalized_loss=model.is_data_normalization,
+            is_normalized_loss=model.is_model_out_normalized,
             batch_size=batch_size,
             device_type=device_type, seed=None, is_verbose=False)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

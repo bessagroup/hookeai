@@ -516,8 +516,9 @@ if __name__ == "__main__":
         is_check_su_fail = False
         # Set parameters normalization
         is_normalized_parameters = True
-        # Set data normalization
-        is_data_normalization = False
+        # Set model input and output features normalization
+        is_model_in_normalized = False
+        is_model_out_normalized = False
         # Set device type
         if torch.cuda.is_available():
             device_type = 'cuda'
@@ -539,7 +540,8 @@ if __name__ == "__main__":
             'model_directory': None,
             'model_name': model_name,
             'is_normalized_parameters': is_normalized_parameters,
-            'is_data_normalization': is_data_normalization,
+            'is_model_in_normalized': is_model_in_normalized,
+            'is_model_out_normalized': is_model_out_normalized,
             'device_type': device_type}
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     elif model_name == 'gru_material_model':
@@ -556,8 +558,9 @@ if __name__ == "__main__":
         n_recurrent_layers = 3
         # Set dropout probability
         dropout = 0
-        # Set data normalization
-        is_data_normalization = True
+        # Set model input and output features normalization
+        is_model_in_normalized = True
+        is_model_out_normalized = True
         # Set device type
         if torch.cuda.is_available():
             device_type = 'cuda'
@@ -572,7 +575,8 @@ if __name__ == "__main__":
                         'dropout': dropout,
                         'model_directory': None,
                         'model_name': model_name,
-                        'is_data_normalization': is_data_normalization,
+                        'is_model_in_normalized': is_model_in_normalized,
+                        'is_model_out_normalized': is_model_out_normalized,
                         'device_type': device_type}
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Check case study directory

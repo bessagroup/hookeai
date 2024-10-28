@@ -70,13 +70,14 @@ def perform_model_standard_training(train_dataset_file_path, model_directory,
     # Set default model training options
     opt_algorithm, lr_init, lr_scheduler_type, lr_scheduler_kwargs, \
         loss_nature, loss_type, loss_kwargs, is_sampler_shuffle, \
-            is_early_stopping, early_stopping_kwargs, is_loss_normalization = \
+            is_early_stopping, early_stopping_kwargs = \
                 set_default_training_options()
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Initialize model initialization parameters
     model_init_args = {'model_directory': model_directory,
                        'model_name': 'hybrid_material_model',
-                       'is_data_normalization': True,
+                       'is_model_in_normalized': True,
+                       'is_model_out_normalized': True,
                        'device_type': device_type}
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set data features for training
@@ -255,6 +256,37 @@ def perform_model_standard_training(train_dataset_file_path, model_directory,
         # Set hybridization model type
         model_init_args['hybridization_type'] = 'additive'
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    elif hybridization_scheme == 5:
+        # Initialize hybridized material models names
+        hyb_models_names = []
+        # Initialize hybridized material models initialization attributes
+        hyb_models_init_args = {}
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set residual model name
+        residual_model_name = 'gru_material_model'
+        # Get residual model initialization attributes
+        residual_model_init_args = get_gru_model_init_args(
+            residual_model_name, model_directory, n_features_in,
+            n_features_out, device_type=device_type)
+        # Store residual model
+        hyb_models_names.append(residual_model_name)
+        hyb_models_init_args[residual_model_name] = residual_model_init_args
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set transfer-learning model name
+        tl_model_name = 'elastic_tl_model'
+        # Set transfer-learning model residual connection
+        is_residual_connection = True
+        # Get transfer-learning model initialization attributes
+        tl_model_init_args = \
+            get_batched_elastic_model_init_args(device_type=device_type)
+        # Build transfer-learning model parameters
+        tl_models_names = {residual_model_name: tl_model_name}
+        tl_models_init_args = {tl_model_name: tl_model_init_args}
+        is_tl_residual_connection = {tl_model_name: is_residual_connection}
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set hybridization model type
+        model_init_args['hybridization_type'] = 'identity'
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     else:
         raise RuntimeError('Unknown hybridization scheme.')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -322,7 +354,6 @@ def perform_model_standard_training(train_dataset_file_path, model_directory,
                               lr_scheduler_kwargs=lr_scheduler_kwargs,
                               loss_nature=loss_nature, loss_type=loss_type,
                               loss_kwargs=loss_kwargs,
-                              is_loss_normalization=is_loss_normalization,
                               batch_size=batch_size,
                               is_sampler_shuffle=is_sampler_shuffle,
                               is_early_stopping=is_early_stopping,
@@ -453,8 +484,9 @@ def get_candidate_model_init_args(model_name, model_directory, n_features_in,
     state_features_out = {}
     # Set parameters normalization
     is_normalized_parameters = True
-    # Set data normalization
-    is_data_normalization = False
+    # Set model input and output features normalization
+    is_model_in_normalized = False
+    is_model_out_normalized = False
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Build model initialization parameters
     model_init_args = {'n_features_in': n_features_in,
@@ -468,7 +500,8 @@ def get_candidate_model_init_args(model_name, model_directory, n_features_in,
                        'model_directory': model_directory,
                        'model_name': model_name,
                        'is_normalized_parameters': is_normalized_parameters,
-                       'is_data_normalization': is_data_normalization,
+                       'is_model_in_normalized': is_model_in_normalized,
+                       'is_model_out_normalized': is_model_out_normalized,
                        'device_type': device_type}
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     return model_init_args
@@ -514,8 +547,9 @@ def get_elastic_model_init_args(model_name, model_directory, n_features_in,
     state_features_out = {}
     # Set parameters normalization
     is_normalized_parameters = True
-    # Set data normalization
-    is_data_normalization = False
+    # Set model input and output features normalization
+    is_model_in_normalized = False
+    is_model_out_normalized = False
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Build model initialization parameters
     model_init_args = {'n_features_in': n_features_in,
@@ -529,7 +563,8 @@ def get_elastic_model_init_args(model_name, model_directory, n_features_in,
                        'model_directory': model_directory,
                        'model_name': model_name,
                        'is_normalized_parameters': is_normalized_parameters,
-                       'is_data_normalization': is_data_normalization,
+                       'is_model_in_normalized': is_model_in_normalized,
+                       'is_model_out_normalized': is_model_out_normalized,
                        'device_type': device_type}
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     return model_init_args
@@ -562,8 +597,9 @@ def get_gru_model_init_args(model_name, model_directory, n_features_in,
     n_recurrent_layers = 2
     # Set dropout probability
     dropout = 0
-    # Set data normalization
-    is_data_normalization = True
+    # Set model input and output features normalization
+    is_model_in_normalized = True
+    is_model_out_normalized = True
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Build model initialization parameters
     model_init_args = {'n_features_in': n_features_in,
@@ -573,7 +609,8 @@ def get_gru_model_init_args(model_name, model_directory, n_features_in,
                        'dropout': dropout,
                        'model_directory': model_directory,
                        'model_name': model_name,
-                       'is_data_normalization': is_data_normalization,
+                       'is_model_in_normalized': is_model_in_normalized,
+                       'is_model_out_normalized': is_model_out_normalized,
                        'device_type': device_type}
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     return model_init_args
@@ -598,14 +635,45 @@ def get_poly_regressor_model_init_args(n_features_in, device_type='cpu'):
     poly_degree = 1
     # Set bias
     is_bias = True
-    # Set data normalization
-    is_data_normalization = True
+    # Set model input and output features normalization
+    is_model_in_normalized = True
+    is_model_out_normalized = True
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Build model initialization parameters
     model_init_args = {'n_features_in': n_features_in,
                        'poly_degree': poly_degree,
                        'is_bias': is_bias,
-                       'is_data_normalization': is_data_normalization,
+                       'is_model_in_normalized': is_model_in_normalized,
+                       'is_model_out_normalized': is_model_out_normalized,
+                       'device_type': device_type}
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    return model_init_args
+# =============================================================================
+def get_batched_elastic_model_init_args(device_type='cpu'):
+    """Set batched linear elastic constitutive model parameters.
+    
+    Parameters
+    ----------
+    device_type : {'cpu', 'cuda'}, default='cpu'
+        Type of device on which torch.Tensor is allocated.
+    
+    Returns
+    -------
+    model_init_args : dict
+        Model class initialization parameters (check BatchedElasticModel).
+    """
+    # Set problem type
+    problem_type = 4
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Set elastic material properties
+    elastic_properties = {'E': 110e3, 'v': 0.33}
+    # Set elastic symmetry
+    elastic_symmetry = 'isotropic'
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Build model initialization parameters
+    model_init_args = {'problem_type': problem_type,
+                       'elastic_properties': elastic_properties,
+                       'elastic_symmetry': elastic_symmetry,
                        'device_type': device_type}
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     return model_init_args
@@ -686,11 +754,6 @@ def set_default_training_options():
         
     loss_kwargs : dict
         Arguments of torch.nn._Loss initializer.
-    is_loss_normalization : bool
-        If True, then output features are normalized for loss computation,
-        False otherwise. Ignored if model is_data_normalization is set to True.
-        The model data scalers are fitted and employed to normalize the
-        output features.
     is_sampler_shuffle : bool
         If True, shuffles data set samples at every epoch.
     is_early_stopping : bool
@@ -706,7 +769,6 @@ def set_default_training_options():
     loss_nature = 'features_out'
     loss_type = 'mse'
     loss_kwargs = {}
-    is_loss_normalization = True
     is_sampler_shuffle = False
     is_early_stopping = True
     early_stopping_kwargs = {'validation_dataset': None,
@@ -716,7 +778,7 @@ def set_default_training_options():
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     return opt_algorithm, lr_init, lr_scheduler_type, lr_scheduler_kwargs, \
         loss_nature, loss_type, loss_kwargs, is_sampler_shuffle, \
-        is_early_stopping, early_stopping_kwargs, is_loss_normalization
+        is_early_stopping, early_stopping_kwargs
 # =============================================================================
 if __name__ == "__main__":
     # Set computation processes

@@ -68,10 +68,12 @@ class GRURNNModel(torch.nn.Module):
         Device on which torch.Tensor is allocated.
     is_explicit_parameters : bool
         True if model learnable parameters are explicit, False otherwise.
-    is_data_normalization : bool
-        If True, then input features are normalized prior to forward
-        propagation, False otherwise. Fitted data scalers need to be stored as 
-        model attributes to carry out data normalization procedures.
+    is_model_in_normalized : bool, default=False
+        If True, then model input features are assumed to be normalized
+        (normalized input data has been seen during model training).
+    is_model_out_normalized : bool, default=False
+        If True, then model output features are assumed to be normalized
+        (normalized output data has been seen during model training).
     _is_save_model_init_file: bool, default=True
         If True, saves model initialization file when model is initialized
         (overwritting existent initialization file), False otherwise.
@@ -85,7 +87,7 @@ class GRURNNModel(torch.nn.Module):
         Set device on which torch.Tensor is allocated.
     get_device(self)
         Get device on which torch.Tensor is allocated.
-    forward(self)
+    forward(self, features_in, hidden_features_in=None)
         Forward propagation.
     save_model_init_file(self)
         Save model class initialization attributes.
@@ -120,8 +122,9 @@ class GRURNNModel(torch.nn.Module):
     """
     def __init__(self, n_features_in, n_features_out, hidden_layer_size,
                  model_directory, model_name='gru_material_model',
-                 is_data_normalization=False, n_recurrent_layers=1, dropout=0,
-                 is_save_model_init_file=True, device_type='cpu'):
+                 is_model_in_normalized=False, is_model_out_normalized=False,
+                 n_recurrent_layers=1, dropout=0, is_save_model_init_file=True,
+                 device_type='cpu'):
         """Constructor.
         
         Parameters
@@ -136,10 +139,12 @@ class GRURNNModel(torch.nn.Module):
             Directory where model is stored.
         model_name : str, default='gru_material_model'
             Name of model.
-        is_data_normalization : bool, default=False
-            If True, then input features are normalized prior to forward
-            propagation, False otherwise. Fitted data scalers need to be stored
-            as model attributes to carry out data normalization procedures.
+        is_model_in_normalized : bool, default=False
+            If True, then model input features are assumed to be normalized
+            (normalized input data has been seen during model training).
+        is_model_out_normalized : bool, default=False
+            If True, then model output features are assumed to be normalized
+            (normalized output data has been seen during model training).
         n_recurrent_layers : int, default=1
             Number of recurrent layers. A number of recurrent layers greater
             than 1 results in a stacked GRU (output of GRU in each time t is
@@ -175,8 +180,9 @@ class GRURNNModel(torch.nn.Module):
             raise RuntimeError('The model name must be a string.')
         else:
             self.model_name = model_name
-        # Set normalization flag
-        self.is_data_normalization = is_data_normalization
+        # Set model input and output features normalization
+        self.is_model_in_normalized = is_model_in_normalized
+        self.is_model_out_normalized = is_model_out_normalized
         # Set save initialization file flag
         self._is_save_model_init_file = is_save_model_init_file
         # Set device
@@ -201,9 +207,7 @@ class GRURNNModel(torch.nn.Module):
         self.is_explicit_parameters = False
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Initialize data scalers
-        self._data_scalers = None
-        if self.is_data_normalization:
-            self._init_data_scalers()
+        self._init_data_scalers()
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Save model initialization file
         if self._is_save_model_init_file:
@@ -298,8 +302,7 @@ class GRURNNModel(torch.nn.Module):
         """
         return self.device_type, self.device
     # -------------------------------------------------------------------------
-    def forward(self, features_in, hidden_features_in=None,
-                is_normalized_out=False):
+    def forward(self, features_in, hidden_features_in=None):
         """Forward propagation.
         
         Parameters
@@ -316,8 +319,6 @@ class GRURNNModel(torch.nn.Module):
             (n_recurrent_layers, batch_size, hidden_layer_size) for batched
             input. If None, initial hidden state features are initialized to
             zero.
-        is_normalized_out : bool, default=False
-            If True, get normalized output features, False otherwise.
             
         Returns
         -------
@@ -355,30 +356,12 @@ class GRURNNModel(torch.nn.Module):
         if not isinstance(hidden_features_in, torch.Tensor):
             raise RuntimeError('Initial hidden state features were not '
                                'provided as torch.Tensor.')
-        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        # Check model data normalization
-        if is_normalized_out:
-            self.check_normalized_return()
-        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        # Normalize input features data
-        if self.is_data_normalization:
-            features_in = \
-                self.data_scaler_transform(tensor=features_in,
-                                           features_type='features_in',
-                                           mode='normalize')
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~        
         # Forward propagation: Multi-layer GRU
         features_out, hidden_features_out = self._gru_rnn_model(
             features_in, hidden_features_in)
         # Forward propagation: Linear layer
         features_out = self._linear_layer(features_out)
-        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        # Denormalize output features data
-        if self.is_data_normalization and not is_normalized_out:
-            features_out = \
-                self.data_scaler_transform(tensor=features_out,
-                                           features_type='features_out',
-                                           mode='denormalize')
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         return features_out, hidden_features_out
     # -------------------------------------------------------------------------
@@ -412,7 +395,9 @@ class GRURNNModel(torch.nn.Module):
         model_init_args['dropout'] = self._dropout
         model_init_args['model_directory'] = self.model_directory
         model_init_args['model_name'] = self.model_name
-        model_init_args['is_data_normalization'] = self.is_data_normalization
+        model_init_args['is_model_in_normalized'] = self.is_model_in_normalized
+        model_init_args['is_model_out_normalized'] = \
+            self.is_model_out_normalized
         model_init_args['device_type'] = self._device_type
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Assemble initialization parameters
@@ -760,6 +745,9 @@ class GRURNNModel(torch.nn.Module):
         scaler_features_out : {TorchMinMaxScaler, TorchMinMaxScaler}
             Data scaler for output features.
         """
+        # Initialize data scalers
+        self._init_data_scalers()
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Set fitted data scalers
         self._data_scalers['features_in'] = scaler_features_in
         self._data_scalers['features_out'] = scaler_features_out
@@ -774,8 +762,6 @@ class GRURNNModel(torch.nn.Module):
         Data scalers are set a standard scalers where features are normalized
         by removing the mean and scaling to unit variance.
         
-        Calling this method turns on model data normalization.
-        
         Parameters
         ----------
         dataset : torch.utils.data.Dataset
@@ -789,8 +775,6 @@ class GRURNNModel(torch.nn.Module):
             print('\nFitting model data scalers'
                   '\n--------------------------\n')
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        # Set model data normalization
-        self.is_data_normalization = True
         # Initialize data scalers
         self._init_data_scalers()
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -931,16 +915,16 @@ class GRURNNModel(torch.nn.Module):
     # -------------------------------------------------------------------------
     def check_normalized_return(self):
         """Check if model data normalization is available."""
-        if not self.is_data_normalization or self._data_scalers is None:
+        if self._data_scalers is None:
             raise RuntimeError('Data scalers for model features have not '
-                               'been fitted. Fit data scalers by calling '
-                               'method fit_data_scalers() before training '
-                               'or predicting with the model.')
+                               'been set or fitted. Call set_data_scalers() '
+                               'or fit_data_scalers() to make model '
+                               'normalization procedures available.')
         if all([x is None for x in self._data_scalers.values()]):
             raise RuntimeError('Data scalers for model features have not '
-                               'been fitted. Fit data scalers by calling '
-                               'method fit_data_scalers() before training '
-                               'or predicting with the model.')
+                               'been set or fitted. Call set_data_scalers() '
+                               'or fit_data_scalers() to make model '
+                               'normalization procedures available.')
 # =============================================================================
 def standard_partial_fit(dataset, features_type, n_features, is_verbose=False):
     """Perform batch fitting of standardization data scalers.

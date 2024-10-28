@@ -1101,11 +1101,11 @@ def read_lr_history_from_file(loss_record_path):
 # =============================================================================
 def write_training_summary_file(
     device_type, seed, model_directory, load_model_state, n_max_epochs,
-    is_data_normalization, batch_size, is_sampler_shuffle, loss_nature,
-    loss_type, loss_kwargs, opt_algorithm, lr_init, lr_scheduler_type,
-    lr_scheduler_kwargs, n_epochs, dataset_file_path, dataset, best_loss,
-    best_training_epoch, total_time_sec, avg_time_epoch,
-    best_model_parameters=None, torchinfo_summary=None):
+    is_model_in_normalized, is_model_out_normalized, batch_size,
+    is_sampler_shuffle, loss_nature, loss_type, loss_kwargs, opt_algorithm,
+    lr_init, lr_scheduler_type, lr_scheduler_kwargs, n_epochs,
+    dataset_file_path, dataset, best_loss, best_training_epoch, total_time_sec,
+    avg_time_epoch, best_model_parameters=None, torchinfo_summary=None):
     """Write summary data file for model training process.
     
     Parameters
@@ -1123,10 +1123,12 @@ def write_training_summary_file(
         directory. Data scalers are also loaded from model initialization file.
     n_max_epochs : int
         Maximum number of training epochs.
-    is_data_normalization : bool
-        If True, then input and output features are normalized for training
-        False otherwise. Data scalers need to be fitted with fit_data_scalers()
-        and are stored as model attributes.
+    is_model_in_normalized : bool, default=False
+        If True, then model input features are assumed to be normalized
+        (normalized input data has been seen during model training).
+    is_model_out_normalized : bool, default=False
+        If True, then model output features are assumed to be normalized
+        (normalized output data has been seen during model training).
     batch_size : int
         Number of samples loaded per batch.
     is_sampler_shuffle : bool
@@ -1175,7 +1177,8 @@ def write_training_summary_file(
     summary_data['load_model_state'] = \
         load_model_state if load_model_state else None
     summary_data['n_max_epochs'] = n_max_epochs
-    summary_data['is_data_normalization'] = is_data_normalization
+    summary_data['is_model_in_normalized'] = is_model_in_normalized
+    summary_data['is_model_out_normalized'] = is_model_out_normalized
     summary_data['batch_size'] = batch_size
     summary_data['is_sampler_shuffle'] = is_sampler_shuffle
     summary_data['loss_nature'] = loss_nature
@@ -1190,7 +1193,7 @@ def write_training_summary_file(
     summary_data['Number of completed epochs'] = n_epochs
     summary_data['Training data set file'] = \
         dataset_file_path if dataset_file_path else None
-    summary_data['Training data set (effective) size'] = len(dataset)
+    summary_data['Training data set size'] = len(dataset)
     summary_data['Best loss: '] = \
         f'{best_loss:.8e} (training epoch {best_training_epoch})'
     summary_data['Total training time'] = \

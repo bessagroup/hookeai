@@ -89,7 +89,8 @@ def hydra_wrapper(process, dataset_paths, device_type='cpu'):
         model_init_args['hidden_layer_size'] = cfg.hidden_layer_size
         model_init_args['model_directory'] = job_dir
         model_init_args['model_name'] = 'gru_material_model'
-        model_init_args['is_data_normalization'] = True
+        model_init_args['is_model_in_normalized'] = True
+        model_init_args['is_model_out_normalized'] = True
         model_init_args['n_recurrent_layers'] = cfg.n_recurrent_layers
         model_init_args['dropout'] = cfg.dropout
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

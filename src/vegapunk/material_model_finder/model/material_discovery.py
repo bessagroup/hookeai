@@ -1199,7 +1199,7 @@ class MaterialModelFinder(torch.nn.Module):
                 raise RuntimeError('Not implemented.')
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Compute output features
-        features_out = constitutive_model(features_in, is_normalized_out=False)
+        features_out = constitutive_model(features_in)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Loop over discrete time
         for time_idx in range(n_time):
@@ -1886,7 +1886,7 @@ class MaterialModelFinder(torch.nn.Module):
         features_in = torch.stack(features_in_data, dim=0)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Compute output features
-        features_out = constitutive_model(features_in, is_normalized_out=False)
+        features_out = constitutive_model(features_in)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Build state path history
         if strain_formulation == 'infinitesimal':
@@ -2385,13 +2385,14 @@ class MaterialModelFinder(torch.nn.Module):
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Loop over material models
         for model_key, model in self.get_material_models().items():
-            # Check if material model supports data normalization
-            if not hasattr(model, 'is_data_normalization'):
+            # Check if material model supports features normalization
+            if ((not hasattr(model, 'is_model_in_normalized'))
+                 and (not hasattr(model, 'is_model_out_normalized'))):
                 continue
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            # Check material model data normalization
-            if not (model.is_data_normalization
-                    and model_key in models_scaling_type.keys()):
+            # Check material model features normalization
+            if ((not model.is_model_in_normalized)
+                    and (not model.is_model_out_normalized)):
                 continue
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Get material model data scaling type

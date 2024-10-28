@@ -80,9 +80,9 @@ def predict(dataset, model_directory, model=None, predict_directory=None,
     loss_kwargs : dict, default={}
         Arguments of torch.nn._Loss initializer.
     is_normalized_loss : bool, default=False
-        If True, then samples prediction loss are computed from the normalized
-        data, False otherwise. Normalization requires that model features data
-        scalers are fitted.
+        If True, then samples prediction loss are computed from normalized
+        output data, False otherwise. Normalization of output data requires
+        that model data scalers are available.
     batch_size : int, default=1
         Number of samples loaded per batch.
     dataset_file_path : str, default=None
@@ -142,6 +142,10 @@ def predict(dataset, model_directory, model=None, predict_directory=None,
         _ = model.load_model_state(load_model_state=load_model_state,
                                    is_remove_posterior=False)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Get model input and output features normalization
+    is_model_in_normalized = model.is_model_in_normalized
+    is_model_out_normalized = model.is_model_out_normalized
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Move model to device
     model.to(device=device)
     # Set model in evaluation mode
@@ -182,6 +186,24 @@ def predict(dataset, model_directory, model=None, predict_directory=None,
             for key in batch.keys():
                 batch[key] = batch[key].to(device)
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Get input features
+            if is_model_in_normalized:
+                # Normalize features ground-truth
+                features_in = \
+                    model.data_scaler_transform(tensor=batch['features_in'],
+                                                features_type='features_in',
+                                                mode='normalize')
+            else:
+                features_in = batch['features_in']
+            # Get initial hidden state features
+            if 'hidden_features_in' in batch.keys():
+                hidden_features_in = batch['hidden_features_in']
+            else:
+                hidden_features_in = None
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Get output features ground-truth (None if not available)
+            targets = batch['features_out']
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Get number of batched samples
             batch_n_sample = batch['features_in'].shape[1]
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -191,12 +213,13 @@ def predict(dataset, model_directory, model=None, predict_directory=None,
             # Compute output features predictions (forward propagation)
             if loss_nature == 'features_out':
                 # Compute output features
-                features_out, _ = model(
-                    batch['features_in'],
-                    hidden_features_in=batch['hidden_features_in'],
-                    is_normalized_out=False)
-                # Get output features ground-truth (None if not available)
-                targets = batch['features_out']
+                features_out, _ = model(features_in, hidden_features_in)
+                # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                # Denormalize output features data
+                if is_model_out_normalized:
+                    features_out = model.data_scaler_transform(
+                        tensor=features_out, features_type='features_out',
+                        mode='denormalize')
                 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                 # Loop over batched samples
                 for j in range(batch_n_sample):
@@ -219,9 +242,9 @@ def predict(dataset, model_directory, model=None, predict_directory=None,
             for sample_results in samples_results:
                 # Compute sample output features prediction loss
                 loss = compute_sample_prediction_loss(
-                    model, loss_nature, loss_function,
-                    sample_results['features_out'], sample_results['targets'],
-                    is_normalized_out=is_normalized_loss)
+                    model, loss_function, sample_results['features_out'],
+                    sample_results['targets'],
+                    is_normalized_loss=is_normalized_loss)
                 # Store prediction loss data
                 sample_results['prediction_loss_data'] = \
                     (loss_nature, loss_type, loss, is_normalized_loss)
@@ -283,26 +306,26 @@ def predict(dataset, model_directory, model=None, predict_directory=None,
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     return predict_subdir, avg_predict_loss
 # =============================================================================
-def compute_sample_prediction_loss(model, loss_nature, loss_function,
-                                   features_out, targets,
-                                   is_normalized_out=False):
+def compute_sample_prediction_loss(model, loss_function, features_out, targets,
+                                   is_normalized_loss=False):
     """Compute loss of sample output features prediction.
     
+    Assumes that provided output features and targets are denormalized.
+
     Parameters
     ----------
     model : torch.nn.Module
         Recurrent neural network model.
-    loss_nature : {'features_out',}
-        Loss nature.
     loss_function : torch.nn._Loss
         PyTorch loss function.
     features_out : torch.Tensor
         Predicted output features stored as a torch.Tensor(2d).
     targets : {torch.Tensor, None}
         Output features ground-truth stored as a torch.Tensor(2d).
-    is_normalized_out : bool, default=False
-        If True, get normalized loss according with model fitted features data
-        scalers, False otherwise.
+    is_normalized_loss : bool, default=False
+        If True, then samples prediction loss are computed from normalized
+        output data, False otherwise. Normalization of output data requires
+        that model data scalers are available.
     
     Returns
     -------
@@ -313,30 +336,23 @@ def compute_sample_prediction_loss(model, loss_nature, loss_function,
     # Check if output features ground-truth is available
     is_ground_truth_available = targets is not None
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Compute sample loss
+    # Compute sample loss if ground-truth is available
     if is_ground_truth_available:
-        if is_normalized_out:
-            # Check model data normalization
-            model.check_normalized_return()
-            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            # Get model data scaler
-            if loss_nature == 'features_out':
-                scaler = model.get_fitted_data_scaler('features_out')
-            else:
-                raise RuntimeError('Unknown loss nature.')
-            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            # Get normalized output features predictions
-            norm_features_out = scaler.transform(features_out)
-            # Get normalized output features ground-truth
-            norm_targets = scaler.transform(targets)
-            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            # Compute sample loss (normalized data)
-            loss = loss_function(norm_features_out, norm_targets)
-        else:
-            # Compute sample loss
-            loss = loss_function(features_out, targets)
+        # Normalize output features
+        if is_normalized_loss:
+            # Normalize output features predictions
+            features_out = model.data_scaler_transform(
+                tensor=features_out, features_type='features_out',
+                mode='normalize')
+            # Normalize output features ground-truth
+            targets = model.data_scaler_transform(
+                tensor=targets, features_type='features_out',
+                mode='normalize')
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Compute sample loss
+        loss = loss_function(features_out, targets)
     else:
-        # Set loss to None if ground-truth is not available
+        # Set sample loss to None if ground-truth is not available
         loss = None
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     return loss

@@ -36,9 +36,8 @@ from rnn_base_model.data.time_dataset import get_time_series_data_loader
 from hybrid_base_model.model.hybrid_model import HybridMaterialModel
 from hybrid_base_model.predict.prediction import predict
 from gnn_base_model.train.training import get_pytorch_optimizer, \
-    get_learning_rate_scheduler, save_training_state, load_training_state, \
-    save_loss_history, load_loss_history, load_lr_history, seed_worker, \
-    write_training_summary_file
+    get_learning_rate_scheduler, save_training_state, save_loss_history, \
+    seed_worker, write_training_summary_file
 from gnn_base_model.train.torch_loss import get_pytorch_loss
 from gnn_base_model.model.model_summary import get_model_summary
 #
@@ -53,11 +52,11 @@ __status__ = 'Planning'
 def train_model(n_max_epochs, dataset, model_init_args, lr_init,
                 opt_algorithm='adam', lr_scheduler_type=None,
                 lr_scheduler_kwargs={}, loss_nature='features_out',
-                loss_type='mse', loss_kwargs={}, is_loss_normalization=True,
-                batch_size=1, is_sampler_shuffle=False,
-                is_early_stopping=False, early_stopping_kwargs={},
-                load_model_state=None, save_every=None, dataset_file_path=None,
-                device_type='cpu', seed=None, is_verbose=False):
+                loss_type='mse', loss_kwargs={}, batch_size=1,
+                is_sampler_shuffle=False, is_early_stopping=False,
+                early_stopping_kwargs={}, load_model_state=None,
+                save_every=None, dataset_file_path=None, device_type='cpu',
+                seed=None, is_verbose=False):
     """Training of hybrid material constitutive model.
     
     Parameters
@@ -102,11 +101,6 @@ def train_model(n_max_epochs, dataset, model_init_args, lr_init,
         
     loss_kwargs : dict, default={}
         Arguments of torch.nn._Loss initializer.
-    is_loss_normalization : bool, default=True
-        If True, then output features are normalized for loss computation,
-        False otherwise. Ignored if model is_data_normalization is set to True.
-        The model data scalers are fitted and employed to normalize the
-        output features.
     batch_size : int, default=1
         Number of samples loaded per batch.
     is_sampler_shuffle : bool, default=False
@@ -168,25 +162,49 @@ def train_model(n_max_epochs, dataset, model_init_args, lr_init,
         print('\nHybrid material constitutive model training'
               '\n-------------------------------------------')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Initialize hybrid material constitutive model
-    model = HybridMaterialModel(**model_init_args)    
-    # Set model device
-    model.set_device(device_type)
-    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~  
+    # Initialize recurrent neural network model state
+    if load_model_state is not None:
+        if is_verbose:
+            print('\n> Initializing model...')
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Initialize recurrent neural network model
+        # (includes loading of data scalers)
+        model = HybridMaterialModel.init_model_from_file(
+            model_init_args['model_directory'])
+        # Set model device
+        model.set_device(device_type)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Get model input and output features normalization
+        is_model_in_normalized = model.is_model_in_normalized
+        is_model_out_normalized = model.is_model_out_normalized
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        if is_verbose:
+            print('\n> Loading model state...')
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Load recurrent neural network model state
+        _ = model.load_model_state(load_model_state=load_model_state,
+                                   is_remove_posterior=True)
+    else:
+        # Initialize hybrid material constitutive model
+        model = HybridMaterialModel(**model_init_args)    
+        # Set model device
+        model.set_device(device_type)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Get model input and output features normalization
+        is_model_in_normalized = model.is_model_in_normalized
+        is_model_out_normalized = model.is_model_out_normalized
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Fit model data scalers
+        if is_model_in_normalized or is_model_out_normalized:
+            model.fit_data_scalers(dataset)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Get model parameters
+    model_parameters = model.parameters(recurse=True)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ 
     # Move model to device
     model.to(device=device)
     # Set model in training mode
     model.train()
-    # Get model parameters
-    model_parameters = model.parameters(recurse=True)
-    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Get model data normalization
-    is_data_normalization = model.is_data_normalization
-    # Fit model data scalers  
-    if is_data_normalization and load_model_state is None:
-        model.fit_data_scalers(dataset)
-    elif is_loss_normalization:
-        model.fit_data_scalers(dataset)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Initialize learning rate
     learning_rate = lr_init
@@ -238,37 +256,6 @@ def train_model(n_max_epochs, dataset, model_init_args, lr_init,
     # Initialize number of training steps
     step = 0
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Load recurrent constitutive model state
-    if load_model_state is not None:
-        # Initialize recurrent constitutive model
-        # (includes loading of data scalers)
-        model = HybridMaterialModel.init_model_from_file(
-            model_init_args['model_directory'])
-        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        # Move model to device
-        model.to(device=device)
-        # Set model in training mode
-        model.train()
-        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        if is_verbose:
-            print('\n> Loading model state...')
-        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        # Load recurrent constitutive model state
-        loaded_epoch = load_training_state(model, opt_algorithm, optimizer,
-                                           load_model_state)
-        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        # Load loss history
-        loss_history_epochs = load_loss_history(model, loss_nature, loss_type,
-                                                epoch=loaded_epoch)
-        # Load learning rate history
-        lr_history_epochs = load_lr_history(model, epoch=loaded_epoch)
-        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        # Set model parameters history flag (not available)
-        is_save_model_parameters = False
-        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        # Update training epoch counter
-        epoch = int(loaded_epoch)
-    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Initialize validation loss history
     validation_loss_history = None
     # Initialize early stopping criterion
@@ -297,8 +284,10 @@ def train_model(n_max_epochs, dataset, model_init_args, lr_init,
             is_shuffle=is_sampler_shuffle)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     if is_verbose:
-        normalization_str = 'Yes' if is_data_normalization else 'No'
-        print(f'\n> Data normalization: {normalization_str}')
+        input_normalization_str = 'Yes' if is_model_in_normalized else 'No'
+        print(f'\n> Input data normalization: {input_normalization_str}')
+        output_normalization_str = 'Yes' if is_model_out_normalized else 'No'
+        print(f'\n> Output data normalization: {output_normalization_str}')
         print('\n\n> Starting training process...\n')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Loop over training iterations
@@ -312,15 +301,25 @@ def train_model(n_max_epochs, dataset, model_init_args, lr_init,
             for key in batch.keys():
                 batch[key] = batch[key].to(device)
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            # Get output features ground-truth
-            if is_data_normalization or is_loss_normalization:
+            # Get input features
+            if is_model_in_normalized:
                 # Normalize features ground-truth
-                features_targets = \
+                features_in = \
+                    model.data_scaler_transform(tensor=batch['features_in'],
+                                                features_type='features_in',
+                                                mode='normalize')
+            else:
+                features_in = batch['features_in']
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Get output features ground-truth
+            if is_model_out_normalized:
+                # Normalize features ground-truth
+                targets = \
                     model.data_scaler_transform(tensor=batch['features_out'],
                                                 features_type='features_out',
                                                 mode='normalize')
             else:
-                features_targets = batch['features_out']
+                targets = batch['features_out']
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Compute output features predictions (forward propagation).
             # During the foward pass, PyTorch creates a computation graph for
@@ -334,17 +333,10 @@ def train_model(n_max_epochs, dataset, model_init_args, lr_init,
             # graph or for tensors with the gradient flag set to False.
             if loss_nature == 'features_out':
                 # Get output features
-                features_out = model(batch['features_in'],
-                                     is_normalized_out=is_data_normalization)
-                # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-                # Normalize output features (loss computation)
-                if not model.is_data_normalization and is_loss_normalization:
-                    features_out = model.data_scaler_transform(
-                        tensor=features_out, features_type='features_out',
-                        mode='normalize')
+                features_out = model(features_in)
                 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~                
                 # Compute loss
-                loss = loss_function(features_out, features_targets)
+                loss = loss_function(features_out, targets)
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             else:
                 raise RuntimeError('Unknown loss nature.')
@@ -514,8 +506,12 @@ def train_model(n_max_epochs, dataset, model_init_args, lr_init,
     best_training_epoch = loss_history_epochs.index(best_loss)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     if is_verbose:
-        print('\n\n> Minimum training loss: {:.8e} | Epoch: {:d}'.format(
-              best_loss, best_training_epoch))
+        if is_model_out_normalized:
+            min_loss_str = 'Minimum training loss (normalized)'
+        else:
+            min_loss_str = 'Minimum training loss'
+        print(f'\n\n> {min_loss_str}: {best_loss:.8e} | '
+              f'Epoch: {best_training_epoch:d}')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Compute total training time and average training time per epoch
     total_time_sec = time.time() - start_time_sec
@@ -542,11 +538,12 @@ def train_model(n_max_epochs, dataset, model_init_args, lr_init,
     # Write summary data file for model training process
     write_training_summary_file(
         device_type, seed, model.model_directory, load_model_state,
-        n_max_epochs, is_data_normalization, batch_size, is_sampler_shuffle,
-        loss_nature, loss_type, loss_kwargs, opt_algorithm, lr_init,
-        lr_scheduler_type, lr_scheduler_kwargs, epoch, dataset_file_path,
-        dataset, best_loss, best_training_epoch, total_time_sec,
-        avg_time_epoch, best_model_parameters=best_model_parameters,
+        n_max_epochs, is_model_in_normalized, is_model_out_normalized,
+        batch_size, is_sampler_shuffle, loss_nature, loss_type, loss_kwargs,
+        opt_algorithm, lr_init, lr_scheduler_type, lr_scheduler_kwargs, epoch,
+        dataset_file_path, dataset, best_loss, best_training_epoch,
+        total_time_sec, avg_time_epoch,
+        best_model_parameters=best_model_parameters,
         torchinfo_summary=str(model_statistics))
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     return model, best_loss, best_training_epoch
@@ -714,11 +711,6 @@ class EarlyStopper:
     _improvement_tolerance : float
         Minimum relative improvement required to count as a performance
         improvement.
-    is_loss_normalization : bool, default=True
-        If True, then output features are normalized for loss computation,
-        False otherwise. Ignored if model is_data_normalization is set to
-        True. The model data scalers are fitted and employed to normalize
-        the output features.
     _validation_steps_history : list
         Validation steps history.
     _validation_loss_history : list
@@ -752,8 +744,7 @@ class EarlyStopper:
         Load minimum validation loss model and optimizer states.
     """
     def __init__(self, validation_dataset, validation_frequency=1,
-                 trigger_tolerance=1, improvement_tolerance=1e-2,
-                 is_loss_normalization=True):
+                 trigger_tolerance=1, improvement_tolerance=1e-2):
         """Constructor.
         
         Parameters
@@ -772,11 +763,6 @@ class EarlyStopper:
         improvement_tolerance : float, default=1e-2
             Minimum relative improvement required to count as a performance
             improvement.
-        is_loss_normalization : bool, default=True
-            If True, then output features are normalized for loss computation,
-            False otherwise. Ignored if model is_data_normalization is set to
-            True. The model data scalers are fitted and employed to normalize
-            the output features.
         """
         # Set validation data set
         self._validation_dataset = validation_dataset
@@ -786,8 +772,6 @@ class EarlyStopper:
         self._trigger_tolerance = trigger_tolerance
         # Set minimum relative improvement tolerance
         self._improvement_tolerance = improvement_tolerance
-        # Set loss normalization
-        self._is_loss_normalization = is_loss_normalization
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Initialize validation training steps history
         self._validation_steps_history = []
@@ -972,8 +956,7 @@ class EarlyStopper:
             model=model, predict_directory=None, load_model_state=epoch,
             loss_nature=loss_nature, loss_type=loss_type,
             loss_kwargs=loss_kwargs,
-            is_normalized_loss=(model.is_data_normalization
-                                or self._is_normalized_loss),
+            is_normalized_loss=model.is_model_out_normalized,
             batch_size=batch_size,
             device_type=device_type, seed=None, is_verbose=False)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

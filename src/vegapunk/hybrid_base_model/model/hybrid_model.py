@@ -24,7 +24,8 @@ import sklearn.preprocessing
 # Local
 from rc_base_model.model.recurrent_model import RecurrentConstitutiveModel
 from rnn_base_model.model.gru_model import GRURNNModel
-from hybrid_base_model.model.transfer_learning import PolynomialLinearRegressor
+from hybrid_base_model.model.transfer_learning import BatchedElasticModel, \
+    PolynomialLinearRegressor
 from hybrid_base_model.model.hybridization import HybridizationModel
 from rnn_base_model.data.time_dataset import get_time_series_data_loader
 from utilities.data_scalers import TorchStandardScaler
@@ -81,10 +82,12 @@ class HybridMaterialModel(torch.nn.Module):
         Type of device on which torch.Tensor is allocated.
     _device : torch.device
         Device on which torch.Tensor is allocated.
-    is_data_normalization : bool
-        If True, then input features are normalized prior to forward
-        propagation, False otherwise. Fitted data scalers need to be stored
-        as model attributes to carry out data normalization procedures.
+    is_model_in_normalized : bool, default=False
+        If True, then model input features are assumed to be normalized
+        (normalized input data has been seen during model training).
+    is_model_out_normalized : bool, default=False
+        If True, then model output features are assumed to be normalized
+        (normalized output data has been seen during model training).
     _data_scalers : dict
         Data scaler (item, TorchStandardScaler) for each feature data
         (key, str).
@@ -103,7 +106,7 @@ class HybridMaterialModel(torch.nn.Module):
         Get model parameters detached of gradients.
     get_model_parameters_bounds(self)
         Get model parameters bounds.
-    forward(self, features_in, is_normalized_out=False)
+    forward(self, features_in)
         Forward propagation.
     features_out_extractor(cls, model_output)
         Extract output features from generic model output.
@@ -152,7 +155,7 @@ class HybridMaterialModel(torch.nn.Module):
                  hybridization_type='identity',
                  tl_models_names={}, tl_models_init_args={}, 
                  is_tl_residual_connection={},
-                 is_data_normalization=False,
+                 is_model_in_normalized=False, is_model_out_normalized=False,
                  is_save_model_init_file=True, device_type='cpu'):
         """Constructor.
         
@@ -182,10 +185,12 @@ class HybridMaterialModel(torch.nn.Module):
         is_tl_residual_connection : dict, default={}
             Sets residual connection (item, bool) to each transfer-learning
             model (key, str).
-        is_data_normalization : bool, default=False
-            If True, then input features are normalized prior to forward
-            propagation, False otherwise. Fitted data scalers need to be stored
-            as model attributes to carry out data normalization procedures.
+        is_model_in_normalized : bool, default=False
+            If True, then model input features are assumed to be normalized
+            (normalized input data has been seen during model training).
+        is_model_out_normalized : bool, default=False
+            If True, then model output features are assumed to be normalized
+            (normalized output data has been seen during model training).
         is_save_model_init_file: bool, default=True
             If True, saves model initialization file when model is initialized
             (overwritting existent initialization file), False otherwise. When
@@ -216,8 +221,9 @@ class HybridMaterialModel(torch.nn.Module):
             self.model_name = model_name
         # Set hybridization model type
         self._hybridization_type = hybridization_type
-        # Set normalization flag
-        self.is_data_normalization = is_data_normalization
+        # Set model input and output features normalization
+        self.is_model_in_normalized = is_model_in_normalized
+        self.is_model_out_normalized = is_model_out_normalized
         # Set save initialization file flag
         self._is_save_model_init_file = is_save_model_init_file
         # Set device
@@ -254,9 +260,7 @@ class HybridMaterialModel(torch.nn.Module):
                                           is_tl_residual_connection)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Initialize data scalers
-        self._data_scalers = None
-        if self.is_data_normalization:
-            self._init_data_scalers()
+        self._init_data_scalers()
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Save model initialization file
         if self._is_save_model_init_file:
@@ -451,7 +455,7 @@ class HybridMaterialModel(torch.nn.Module):
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         return model_parameters_bounds
     # -------------------------------------------------------------------------
-    def forward(self, features_in, is_normalized_out=False):
+    def forward(self, features_in):
         """Forward propagation.
         
         Parameters
@@ -461,8 +465,6 @@ class HybridMaterialModel(torch.nn.Module):
             (sequence_length, n_features_in) for unbatched input or
             torch.Tensor(3d) of shape
             (sequence_length, batch_size, n_features_in) for batched input.
-        is_normalized_out : bool, default=False
-            If True, get normalized output features, False otherwise.
             
         Returns
         -------
@@ -476,9 +478,6 @@ class HybridMaterialModel(torch.nn.Module):
         if not isinstance(features_in, torch.Tensor):
             raise RuntimeError('Input features were not provided as '
                                'torch.Tensor.')
-        # Check model data normalization
-        if is_normalized_out:
-            self.check_normalized_return()
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Initialize hybridized models outputs
         list_features_out = []
@@ -487,7 +486,7 @@ class HybridMaterialModel(torch.nn.Module):
             # Get hybridized material model name
             hyb_model_name = self._hyb_models_names[i]
             # Compute hybridized material model output features
-            hyb_model_output = hyb_model(features_in, is_normalized_out=False)
+            hyb_model_output = hyb_model(features_in)
             # Extract output features
             features_out = self.features_out_extractor(hyb_model_output)
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -508,23 +507,15 @@ class HybridMaterialModel(torch.nn.Module):
                 else:
                     tl_model_input = features_out
                 # Compute transfer-learning model output features
-                tl_model_output = \
-                    tl_model(tl_model_input, is_normalized_out=False)
+                tl_model_output = tl_model(tl_model_input)
                 # Extract output features
-                features_out = self.features_out_extractor(tl_model_output) 
+                features_out = self.features_out_extractor(tl_model_output)
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Store hybridized material model output features
             list_features_out.append(features_out)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Compute hybridization model output features
         features_out = self._hybridization_model(list_features_out)
-        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        # Normalize output features data
-        if self.is_data_normalization and is_normalized_out:
-            features_out = \
-                self.data_scaler_transform(tensor=features_out,
-                                           features_type='features_out',
-                                           mode='normalize')
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         return features_out
     # -------------------------------------------------------------------------
@@ -606,6 +597,8 @@ class HybridMaterialModel(torch.nn.Module):
                 if bool(re.search(r'^gru.*$', tl_model_name)):
                     tl_model = GRURNNModel(**tl_model_init_args,
                                            is_save_model_init_file=False)
+                elif bool(re.search(r'^elastic.*', tl_model_name)):
+                    tl_model = BatchedElasticModel(**tl_model_init_args)
                 elif bool(re.search(r'^poly_regressor.*', tl_model_name)):
                     tl_model = PolynomialLinearRegressor(**tl_model_init_args)
                 else:
@@ -663,7 +656,9 @@ class HybridMaterialModel(torch.nn.Module):
             self._is_tl_residual_connection
         model_init_args['model_directory'] = self.model_directory
         model_init_args['model_name'] = self.model_name
-        model_init_args['is_data_normalization'] = self.is_data_normalization
+        model_init_args['is_model_in_normalized'] = self.is_model_in_normalized
+        model_init_args['is_model_out_normalized'] = \
+            self.is_model_out_normalized
         model_init_args['device_type'] = self._device_type
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Assemble initialization parameters
@@ -700,8 +695,8 @@ class HybridMaterialModel(torch.nn.Module):
         # Loop over hybridized material models
         for hyb_model in self._hyb_models:
             # Check hybridized model normalization
-            if (hasattr(hyb_model, 'is_data_normalization')
-                and hyb_model.is_data_normalization):
+            if (hasattr(hyb_model, 'is_model_in_normalized')
+                or hasattr(hyb_model, 'is_model_out_normalized')):
                 # Synchronize data scalers
                 hyb_model.set_data_scalers(scaler_features_in,
                                            scaler_features_out)
@@ -727,8 +722,8 @@ class HybridMaterialModel(torch.nn.Module):
                 self._is_tl_residual_connection[tl_model_name]
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Check transfer-learning model data normalization
-            if (hasattr(tl_model, 'is_data_normalization')
-                    and tl_model.is_data_normalization):
+            if (hasattr(tl_model, 'is_model_in_normalized')
+                    or hasattr(tl_model, 'is_model_out_normalized')):
                 # Synchronize data scalers according with residual connection
                 if is_tl_residual_connection:
                     # Check concatenated features data scalers
@@ -1060,6 +1055,9 @@ class HybridMaterialModel(torch.nn.Module):
         scaler_features_out : {TorchMinMaxScaler, TorchMinMaxScaler}
             Data scaler for output features.
         """
+        # Initialize data scalers
+        self._init_data_scalers()
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Set fitted data scalers
         self._data_scalers['features_in'] = scaler_features_in
         self._data_scalers['features_out'] = scaler_features_out
@@ -1094,8 +1092,6 @@ class HybridMaterialModel(torch.nn.Module):
             print('\nFitting model data scalers'
                   '\n--------------------------\n')
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        # Set model data normalization
-        self.is_data_normalization = True
         # Initialize data scalers
         self._init_data_scalers()
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -1241,16 +1237,16 @@ class HybridMaterialModel(torch.nn.Module):
     # -------------------------------------------------------------------------
     def check_normalized_return(self):
         """Check if model data normalization is available."""
-        if not self.is_data_normalization or self._data_scalers is None:
+        if self._data_scalers is None:
             raise RuntimeError('Data scalers for model features have not '
-                               'been fitted. Fit data scalers by calling '
-                               'method fit_data_scalers() before training '
-                               'or predicting with the model.')
+                               'been set or fitted. Call set_data_scalers() '
+                               'or fit_data_scalers() to make model '
+                               'normalization procedures available.')
         if all([x is None for x in self._data_scalers.values()]):
             raise RuntimeError('Data scalers for model features have not '
-                               'been fitted. Fit data scalers by calling '
-                               'method fit_data_scalers() before training '
-                               'or predicting with the model.')
+                               'been set or fitted. Call set_data_scalers() '
+                               'or fit_data_scalers() to make model '
+                               'normalization procedures available.')
 # =============================================================================
 def standard_partial_fit(dataset, features_type, n_features, is_verbose=False):
     """Perform batch fitting of standardization data scalers.
