@@ -95,6 +95,8 @@ def perform_model_prediction(predict_directory, dataset_file_path,
     dataset = concatenate_dataset_features(
         dataset, new_label_out, cat_features_out, is_remove_features=True)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Set prediction loss normalization
+    is_normalized_loss = False
     # Set prediction batch size
     batch_size = batch_size=len(dataset)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -103,7 +105,7 @@ def perform_model_prediction(predict_directory, dataset_file_path,
         predict(dataset, model_directory, predict_directory=predict_directory,
                 load_model_state='best', loss_nature=loss_nature,
                 loss_type=loss_type, loss_kwargs=loss_kwargs,
-                batch_size=batch_size, is_normalized_loss=False,
+                batch_size=batch_size, is_normalized_loss=is_normalized_loss,
                 dataset_file_path=dataset_file_path,
                 device_type=device_type, seed=None, is_verbose=is_verbose)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
