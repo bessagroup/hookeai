@@ -186,7 +186,7 @@ def perform_model_standard_training(train_dataset_file_path, model_directory,
     # Set default model training options
     opt_algorithm, lr_init, lr_scheduler_type, lr_scheduler_kwargs, \
         loss_nature, loss_type, loss_kwargs, is_sampler_shuffle, \
-            is_early_stopping, early_stopping_kwargs, is_loss_normalization = \
+            is_early_stopping, early_stopping_kwargs = \
                 set_default_training_options()
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set data features for training
