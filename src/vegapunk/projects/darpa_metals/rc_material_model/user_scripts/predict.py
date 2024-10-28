@@ -233,77 +233,84 @@ def set_default_prediction_options():
 # =============================================================================
 if __name__ == "__main__":
     # Set testing type
-    testing_type = ('training', 'validation', 'in_distribution',
-                    'out_distribution')[3]
+    testing_type = \
+        ('training', 'validation', 'in_distribution', 'out_distribution')[2]
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set case studies base directory
     base_dir = ('/home/bernardoferreira/Documents/brown/projects/'
-                'darpa_project/5_global_specimens/'
-                'rowan_specimen_tension_bv_hexa8_rc_von_mises_vmap/'
-                '2_learning_parameters/4_elastoplastic_properties_E_v_s0_a')
-    # Set case study directory
-    case_study_name = 'material_model_performance'
-    case_study_dir = os.path.join(os.path.normpath(base_dir),
-                                  f'{case_study_name}')
-    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Check case study directory
-    if not os.path.isdir(case_study_dir):
-        raise RuntimeError('The case study directory has not been found:\n\n'
-                           + case_study_dir)
-    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Set testing data set directory
-    if testing_type == 'training':
-        # Set testing data set directory (training data set)
-        dataset_directory = os.path.join(os.path.normpath(case_study_dir),
-                                         '1_training_dataset')
-    elif testing_type == 'validation':
-        # Set testing data set directory (validation data set)
-        dataset_directory = os.path.join(os.path.normpath(case_study_dir),
-                                         '2_validation_dataset')
-    elif testing_type == 'in_distribution':
-        # Set testing data set directory (in-distribution testing data set)
-        dataset_directory = os.path.join(os.path.normpath(case_study_dir),
-                                         '5_testing_id_dataset')
-    elif testing_type == 'out_distribution':
-        # Set testing data set directory (out-of-distribution testing data set)
-        dataset_directory = os.path.join(os.path.normpath(case_study_dir),
-                                         '6_testing_od_dataset')
-    else:
-        raise RuntimeError('Unknown testing type.')
-    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Get testing data set file path
-    regex = (r'^ss_paths_dataset_n[0-9]+.pkl$',)
-    is_file_found, dataset_file_path = \
-        find_unique_file_with_regex(dataset_directory, regex)
-    # Check data set file
-    if not is_file_found:
-        raise RuntimeError(f'Testing data set file has not been found  '
-                           f'in data set directory:\n\n'
-                           f'{dataset_directory}')
-    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Set model directory
-    model_directory = os.path.join(os.path.normpath(case_study_dir), '3_model')
-    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Set model predictions directory
-    prediction_directory = os.path.join(os.path.normpath(case_study_dir),
-                                        '7_prediction')
-    # Create model predictions directory
-    if not os.path.isdir(prediction_directory):
-        make_directory(prediction_directory)
-    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Create model predictions subdirectory
-    prediction_subdir = os.path.join(
-        os.path.normpath(prediction_directory), testing_type)
-    # Create prediction subdirectory
-    if not os.path.isdir(prediction_subdir):
-        make_directory(prediction_subdir)
-    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Set device type
-    if torch.cuda.is_available():
-        device_type = 'cuda'
-    else:
-        device_type = 'cpu'
-    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Perform prediction with model
-    perform_model_prediction(prediction_subdir, dataset_file_path,
-                             model_directory, device_type, is_verbose=True)
+                'darpa_project/7_local_hybrid_training/'
+                'case_learning_drucker_prager_pressure_dependency/'
+                'w_candidate_dp_model_1deg/'
+                '2_candidate_rc_drucker_prager_model')
+    # Set training data set sizes
+    training_sizes = (10,)
+    # Loop over training data set sizes
+    for n in training_sizes:
+        # Set case study directory
+        case_study_name = f'n{n}'
+        case_study_dir = os.path.join(os.path.normpath(base_dir),
+                                      f'{case_study_name}')
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Check case study directory
+        if not os.path.isdir(case_study_dir):
+            raise RuntimeError('The case study directory has not been found:'
+                               '\n\n' + case_study_dir)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set testing data set directory
+        if testing_type == 'training':
+            # Set testing data set directory (training data set)
+            dataset_directory = os.path.join(os.path.normpath(case_study_dir),
+                                             '1_training_dataset')
+        elif testing_type == 'validation':
+            # Set testing data set directory (validation data set)
+            dataset_directory = os.path.join(os.path.normpath(case_study_dir),
+                                             '2_validation_dataset')
+        elif testing_type == 'in_distribution':
+            # Set testing data set directory (in-distribution testing data set)
+            dataset_directory = os.path.join(os.path.normpath(case_study_dir),
+                                             '5_testing_id_dataset')
+        elif testing_type == 'out_distribution':
+            # Set testing data set directory (out-of-distribution testing
+            # data set)
+            dataset_directory = os.path.join(os.path.normpath(case_study_dir),
+                                             '6_testing_od_dataset')
+        else:
+            raise RuntimeError('Unknown testing type.')
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Get testing data set file path
+        regex = (r'^ss_paths_dataset_n[0-9]+.pkl$',)
+        is_file_found, dataset_file_path = \
+            find_unique_file_with_regex(dataset_directory, regex)
+        # Check data set file
+        if not is_file_found:
+            raise RuntimeError(f'Testing data set file has not been found  '
+                               f'in data set directory:\n\n'
+                               f'{dataset_directory}')
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set model directory
+        model_directory = \
+            os.path.join(os.path.normpath(case_study_dir), '3_model')
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set model predictions directory
+        prediction_directory = os.path.join(os.path.normpath(case_study_dir),
+                                            '7_prediction')
+        # Create model predictions directory
+        if not os.path.isdir(prediction_directory):
+            make_directory(prediction_directory)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Create model predictions subdirectory
+        prediction_subdir = os.path.join(
+            os.path.normpath(prediction_directory), testing_type)
+        # Create prediction subdirectory
+        if not os.path.isdir(prediction_subdir):
+            make_directory(prediction_subdir)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set device type
+        if torch.cuda.is_available():
+            device_type = 'cuda'
+        else:
+            device_type = 'cpu'
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Perform prediction with model
+        perform_model_prediction(prediction_subdir, dataset_file_path,
+                                 model_directory, device_type, is_verbose=True)

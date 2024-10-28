@@ -345,59 +345,67 @@ if __name__ == "__main__":
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set case studies base directory
     base_dir = ('/home/bernardoferreira/Documents/brown/projects/'
-                'darpa_project/2_local_rnn_training/von_mises/')
-    # Set case study directory
-    case_study_name = 'j2_random_paths'
-    case_study_dir = os.path.join(os.path.normpath(base_dir),
-                                  f'{case_study_name}')
+                'darpa_project/7_local_hybrid_training/'
+                'case_learning_drucker_prager_pressure_dependency/'
+                'w_candidate_dp_model_1deg/1_gru_model_convergence_analysis')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Check case study directory
-    if not os.path.isdir(case_study_dir):
-        raise RuntimeError('The case study directory has not been found:\n\n'
-                           + case_study_dir)
-    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~        
-    # Set training data set directory
-    training_dataset_dir = os.path.join(os.path.normpath(case_study_dir),
-                                        '1_training_dataset')
-    # Get training data set file path
-    regex = (r'^ss_paths_dataset_n[0-9]+.pkl$',)
-    is_file_found, train_dataset_file_path = \
-        find_unique_file_with_regex(training_dataset_dir, regex)
-    # Check data set file
-    if not is_file_found:
-        raise RuntimeError(f'Training data set file has not been found  '
-                           f'in data set directory:\n\n'
-                           f'{training_dataset_dir}')
-    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Set model directory
-    model_directory = os.path.join(os.path.normpath(case_study_dir), '3_model')
-    # Create model directory
-    if is_standard_training:
-        # Create model directory (overwrite)
-        make_directory(model_directory, is_overwrite=True)
-    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Set validation data set directory
-    val_dataset_directory = os.path.join(os.path.normpath(case_study_dir),
-                                         '2_validation_dataset')
-    # Get validation data set file path
-    regex = (r'^ss_paths_dataset_n[0-9]+.pkl$',)
-    is_file_found, val_dataset_file_path = \
-        find_unique_file_with_regex(val_dataset_directory, regex)
-    # Check data set file
-    if not is_file_found:
-        raise RuntimeError(f'Validation data set file has not been found  '
-                           f'in data set directory:\n\n'
-                           f'{val_dataset_directory}')
-    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Set device type
-    if torch.cuda.is_available():
-        device_type = 'cuda'
-    else:
-        device_type = 'cpu'
-    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Perform standard training of model
-    if is_standard_training:
-        perform_model_standard_training(
-            train_dataset_file_path, model_directory,
-            val_dataset_file_path=val_dataset_file_path,
-            device_type=device_type, is_verbose=True)
+    # Set training data set sizes
+    training_sizes = (10, 20, 40, 80, 160, 320, 640, 1280, 2560)
+    # Loop over training data set sizes
+    for n in training_sizes:
+        # Set case study directory
+        case_study_name = f'n{n}'
+        case_study_dir = os.path.join(os.path.normpath(base_dir),
+                                      f'{case_study_name}')
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Check case study directory
+        if not os.path.isdir(case_study_dir):
+            raise RuntimeError('The case study directory has not been found:'
+                               '\n\n' + case_study_dir)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set training data set directory
+        training_dataset_dir = os.path.join(os.path.normpath(case_study_dir),
+                                            '1_training_dataset')
+        # Get training data set file path
+        regex = (r'^ss_paths_dataset_n[0-9]+.pkl$',)
+        is_file_found, train_dataset_file_path = \
+            find_unique_file_with_regex(training_dataset_dir, regex)
+        # Check data set file
+        if not is_file_found:
+            raise RuntimeError(f'Training data set file has not been found '
+                               f'in data set directory:\n\n'
+                               f'{training_dataset_dir}')
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set model directory
+        model_directory = \
+            os.path.join(os.path.normpath(case_study_dir), '3_model')
+        # Create model directory
+        if is_standard_training:
+            # Create model directory (overwrite)
+            make_directory(model_directory, is_overwrite=True)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set validation data set directory
+        val_dataset_directory = os.path.join(os.path.normpath(case_study_dir),
+                                             '2_validation_dataset')
+        # Get validation data set file path
+        regex = (r'^ss_paths_dataset_n[0-9]+.pkl$',)
+        is_file_found, val_dataset_file_path = \
+            find_unique_file_with_regex(val_dataset_directory, regex)
+        # Check data set file
+        if not is_file_found:
+            raise RuntimeError(f'Validation data set file has not been found '
+                               f'in data set directory:\n\n'
+                               f'{val_dataset_directory}')
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set device type
+        if torch.cuda.is_available():
+            device_type = 'cuda'
+        else:
+            device_type = 'cpu'
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Perform standard training of model
+        if is_standard_training:
+            perform_model_standard_training(
+                train_dataset_file_path, model_directory,
+                val_dataset_file_path=val_dataset_file_path,
+                device_type=device_type, is_verbose=True)
