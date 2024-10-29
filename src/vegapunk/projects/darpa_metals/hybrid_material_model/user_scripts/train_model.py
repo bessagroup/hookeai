@@ -370,6 +370,20 @@ def perform_model_standard_training(train_dataset_file_path, model_directory,
     _ = get_model_summary(model, device_type=device_type,
                           is_verbose=is_verbose)
 # =============================================================================
+def save_model_init_state(model_init_args):
+    """Save model initial state to file.
+    
+    Parameters
+    ----------
+    model_init_args : dict
+        Model class initialization parameters (check HybridMaterialModel).
+    """
+    # Initialize recurrent constitutive model
+    model = HybridMaterialModel(**model_init_args)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Save model initial state
+    model.save_model_init_state()
+# =============================================================================
 def get_candidate_model_init_args(model_name, model_directory, n_features_in,
                                   n_features_out, device_type='cpu'):
     """Set physics-based candidate constitutive model parameters.
