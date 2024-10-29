@@ -163,7 +163,7 @@ def train_model(n_max_epochs, dataset, model_init_args, lr_init,
         # Initialize recurrent neural network model
         # (includes loading of data scalers)
         model = GRURNNModel.init_model_from_file(
-            model_init_args['model_directory'])
+            model_directory=model_init_args['model_directory'])
         # Set model device
         model.set_device(device_type)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

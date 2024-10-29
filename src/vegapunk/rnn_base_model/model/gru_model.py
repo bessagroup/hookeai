@@ -83,6 +83,8 @@ class GRURNNModel(torch.nn.Module):
 
     Methods
     -------
+    init_model_from_file(model_directory=None, model_init_file_path=None)
+        Initialize model from initialization file.
     set_device(self, device_type)
         Set device on which torch.Tensor is allocated.
     get_device(self)
@@ -214,33 +216,58 @@ class GRURNNModel(torch.nn.Module):
             self.save_model_init_file()
     # -------------------------------------------------------------------------
     @staticmethod
-    def init_model_from_file(model_directory):
+    def init_model_from_file(model_directory=None, model_init_file_path=None):
         """Initialize model from initialization file.
         
-        Initialization file is assumed to be stored in the model directory
-        under the name model_init_file.pkl.
+        If model directory is provided, then (1) model initialization file is
+        assumed to be stored in the model directory under the name
+        model_init_file.pkl and (2) model initialization attributes are read
+        from the stored model_init_file.pkl file.
+        
+        In model initialization file path is provided, then (1) model
+        initialization attributes are read from the provided
+        model_init_file.pkl file and (2) model directory is set as the
+        corresponding directory.
         
         Parameters
         ----------
-        model_directory : str
+        model_directory : str, default=None
             Directory where model is stored.
+        model_init_file_path : str, default=None
+            Model initialization file path. Ignored if model_directory is
+            provided.
         """
-        # Check model directory
-        if not os.path.isdir(model_directory):
-            raise RuntimeError('The model directory has not been found:\n\n'
-                               + model_directory)
-        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        # Get model initialization file path from model directory
-        model_init_file_path = os.path.join(model_directory,
-                                            'model_init_file' + '.pkl')
+        # Get model directory or model initialization file path
+        if model_directory is not None:
+            # Check model directory
+            if not os.path.isdir(model_directory):
+                raise RuntimeError('The model directory has not been found:'
+                                   '\n\n' + model_directory)
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Set model initialization file path from model directory
+            model_init_file_path = os.path.join(model_directory,
+                                                'model_init_file' + '.pkl')
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Check model initialization file
+            if not os.path.isfile(model_init_file_path):
+                raise RuntimeError('The model initialization file has not '
+                                   'been found:\n\n' + model_init_file_path)
+        elif model_init_file_path is not None:
+            # Check model initialization file
+            if not os.path.isfile(model_init_file_path):
+                raise RuntimeError('The model initialization file has not '
+                                   'been found:\n\n' + model_init_file_path)
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Get model directory from model initialization file path
+            model_directory = os.path.dirname(model_init_file_path)
+        else:
+            raise RuntimeError('Either the model directory or the model '
+                               'initialization file path must be provided in '
+                               'order to initialize the model.')
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Load model initialization attributes from file
-        if not os.path.isfile(model_init_file_path):
-            raise RuntimeError('The model initialization file has not been '
-                               'found:\n\n' + model_init_file_path)
-        else:
-            with open(model_init_file_path, 'rb') as model_init_file:
-                model_init_attributes = pickle.load(model_init_file)
+        with open(model_init_file_path, 'rb') as model_init_file:
+            model_init_attributes = pickle.load(model_init_file)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Get model initialization attributes
         model_init_args = model_init_attributes['model_init_args']

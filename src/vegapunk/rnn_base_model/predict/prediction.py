@@ -134,7 +134,8 @@ def predict(dataset, model_directory, model=None, predict_directory=None,
             print('\n> Loading Recurrent Neural Network model...')
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Initialize recurrent neural network model
-        model = GRURNNModel.init_model_from_file(model_directory)
+        model = GRURNNModel.init_model_from_file(
+            model_directory=model_directory)
         # Set model device
         model.set_device(device_type)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
