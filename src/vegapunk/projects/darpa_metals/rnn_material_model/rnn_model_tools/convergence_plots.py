@@ -424,6 +424,8 @@ def plot_time_series_convergence(models_base_dirs, training_dirs, testing_dirs,
                         y_label = 'Stress (MPa)'
                     elif prediction_type == 'acc_p_strain':
                         y_label = 'Accumulated plastic strain'
+                    elif prediction_type == 'p_strain_comps':
+                        y_label = 'Plastic strain'
                     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                     # Plot model times series predictions
                     plot_time_series_prediction(
@@ -880,6 +882,8 @@ def plot_time_series_convergence_uq(models_base_dirs, training_dirs,
                         y_label = 'Stress (MPa)'
                     elif prediction_type == 'acc_p_strain':
                         y_label = 'Accumulated plastic strain'
+                    elif prediction_type == 'p_strain_comps':
+                        y_label = 'Plastic strain'
                     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                     # Plot model times series predictions
                     plot_time_series_prediction(

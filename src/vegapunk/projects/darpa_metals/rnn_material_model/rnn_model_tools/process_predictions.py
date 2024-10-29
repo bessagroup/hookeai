@@ -31,16 +31,22 @@ def build_prediction_data_arrays(predictions_dir, prediction_type,
                                  prediction_labels, samples_ids='all'):
     """Build samples predictions data arrays with predictions and ground-truth.
     
+    Specific output features indexes cannot be automatically inferred and must
+    be set according with the particular output features of the model for
+    suitable extraction.
+    
     Parameters
     ----------
     predictions_dir : str
         Directory where samples predictions results files are stored.
-    prediction_type : {'stress_comps', 'acc_p_strain'}
+    prediction_type : {'stress_comps', 'acc_p_strain', 'p_strain_comps'}
         Type of prediction data arrays:
         
         'stress_comps' : Stress components paths
         
         'acc_p_strain' : Accumulated plastic strain
+        
+        'p_strain_comps' : Plastic strain components paths
 
     prediction_labels : tuple[str]
         Labels of prediction data arrays.
@@ -99,6 +105,11 @@ def build_prediction_data_arrays(predictions_dir, prediction_type,
     elif prediction_type == 'acc_p_strain':
         # Set number of prediction components
         n_data_arrays = 1
+    elif prediction_type == 'p_strain_comps':
+        # Set number of plastic strain components
+        n_strain_comps = len(prediction_labels)
+        # Set number of prediction components
+        n_data_arrays = n_strain_comps
     else:
         raise RuntimeError('Unknown prediction data array type.')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -166,6 +177,27 @@ def build_prediction_data_arrays(predictions_dir, prediction_type,
                     (acc_p_strain_path_target.reshape((-1, 1)),
                      acc_p_strain_path.reshape((-1, 1))), axis=1)
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            elif prediction_type == 'p_strain_comps':
+                # Set plastic components features indexes
+                feature_idx = slice(0, n_strain_comps)
+                # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                # Get plastic components predictions
+                p_strain_path = sample_results['features_out'][:, feature_idx]
+                # Get plastic components ground-truth
+                p_strain_path_target = \
+                    sample_results['targets'][:, feature_idx]
+                # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                # Check availability of ground-truth
+                if p_strain_path_target is None:
+                    raise RuntimeError(f'Plastic strain components path '
+                                       f'ground-truth is not available for '
+                                       f'sample {sample_id}.')
+                # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                # Build sample data array
+                data_array = np.concatenate(
+                    (p_strain_path_target[:, i].reshape((-1, 1)),
+                     p_strain_path[:, i].reshape((-1, 1))), axis=1)
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Assemble sample prediction data
             prediction_data_arrays[i] = \
                 np.append(prediction_data_arrays[i], data_array, axis=0)
@@ -177,7 +209,11 @@ def build_time_series_predictions_data(dataset_file_path, predictions_dir,
                                        samples_ids='all',
                                        is_uncertainty_quantification=False):
     """Build times series prediction and ground-truth data arrays.
-    
+
+    Specific output features indexes cannot be automatically inferred and must
+    be set according with the particular output features of the model for
+    suitable extraction.
+
     Parameters
     ----------
     dataset_file_path : str
@@ -190,6 +226,8 @@ def build_time_series_predictions_data(dataset_file_path, predictions_dir,
         'stress_comps' : Stress components paths
         
         'acc_p_strain' : Accumulated plastic strain
+
+        'p_strain_comps' : Plastic strain components paths
 
     prediction_labels : tuple[str]
         Labels of prediction data arrays.
@@ -306,6 +344,11 @@ def build_time_series_predictions_data(dataset_file_path, predictions_dir,
     elif prediction_type == 'acc_p_strain':   
         # Set number of prediction components
         n_pred_comps = 1
+    elif prediction_type == 'p_strain_comps':
+        # Set number of plastic strain components
+        n_strain_comps = len(prediction_labels)
+        # Set number of prediction components
+        n_pred_comps = n_strain_comps
     else:
         raise RuntimeError('Unknown prediction data array type.')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -425,6 +468,36 @@ def build_time_series_predictions_data(dataset_file_path, predictions_dir,
                     data_array = np.concatenate(
                         (data_array,
                          acc_p_strain_path.reshape((-1, 1))), axis=1)
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            elif prediction_type == 'p_strain_comps':
+                # Loop over sample predictions
+                for j, sample_results in enumerate(models_sample_results):
+                    # Set stress components features indexes
+                    feature_idx = slice(0, n_strain_comps)
+                    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                    # Get stress component predictions
+                    p_strain_path = \
+                        sample_results['features_out'][:, feature_idx]
+                    # Get stress components ground-truth
+                    p_strain_path_target = \
+                        sample_results['targets'][:, feature_idx]
+                    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                    # Assemble sample ground-truth data
+                    if j == 0:
+                        if p_strain_path_target is None:
+                            raise RuntimeError(
+                                f'Plastic strain component path ground-truth '
+                                f'is not available for sample {sample_id}.')
+                        else:
+                            data_array = np.concatenate(
+                                (data_array,
+                                 p_strain_path_target[:, i].reshape((-1, 1))),
+                                axis=1)
+                    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                    # Concatenate sample prediction data
+                    data_array = np.concatenate(
+                        (data_array,
+                         p_strain_path[:, i].reshape((-1, 1))), axis=1)
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Assemble prediction component sample data
             prediction_data_arrays[i][str(sample_id)] = data_array

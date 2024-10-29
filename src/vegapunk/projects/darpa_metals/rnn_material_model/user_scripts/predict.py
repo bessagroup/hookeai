@@ -28,7 +28,8 @@ import torch
 import numpy as np
 # Local
 from rnn_base_model.data.time_dataset import load_dataset, \
-    concatenate_dataset_features, add_dataset_feature_init
+    concatenate_dataset_features, sum_dataset_features, \
+    add_dataset_feature_init
 from rnn_base_model.predict.prediction import predict
 from rnn_base_model.predict.prediction_plots import plot_time_series_prediction
 from projects.darpa_metals.rnn_material_model.rnn_model_tools. \
@@ -84,32 +85,63 @@ def perform_model_prediction(predict_directory, dataset_file_path,
     # Get model initialization attributes
     model_init_args = model_init_attributes['model_init_args']
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Initialize features concatenation/summing flags
+    is_cat_features_in = False
+    is_cat_features_out = False
+    is_sum_features_in = False
+    is_sum_features_out = False
     # Set data features for prediction
     features_option = 'stress'
     if features_option == 'stress_acc_p_strain':
         # Set input features
         new_label_in = 'features_in'
         cat_features_in = ('strain_path',)
+        is_cat_features_in = True
         # Set output features
         new_label_out = 'features_out'
         cat_features_out = ('stress_path', 'acc_p_strain')
+        is_cat_features_out = True
+        # Set number of input and output features
+        model_init_args['n_features_in'] = 6
+        model_init_args['n_features_out'] = 7
     elif features_option == 'strain_vf_to_stress':
         # Set input features
         new_label_in = 'features_in'
         cat_features_in = ('strain_path', 'vf_path')
+        is_cat_features_in = True
         # Set output features
         new_label_out = 'features_out'
         cat_features_out = ('stress_path',)
+        is_cat_features_out = True
         # Set number of input and output features
         model_init_args['n_features_in'] = 7
+        model_init_args['n_features_out'] = 6
+    elif features_option == 'strain_to_p_strain':
+        # Set input features
+        new_label_in = 'features_in'
+        sum_features_in = ('strain_path',)
+        features_in_weights = {'strain_path': 1.0,}
+        is_sum_features_in = True
+        # Set output features
+        new_label_out = 'features_out'
+        sum_features_out = ('strain_path', 'e_strain_mf')
+        features_out_weights = {'strain_path': 1.0, 'e_strain_mf': -1.0}
+        is_sum_features_out = True
+        # Set number of input and output features
+        model_init_args['n_features_in'] = 6
         model_init_args['n_features_out'] = 6
     else:
         # Set input features
         new_label_in = 'features_in'
         cat_features_in = ('strain_path',)
+        is_cat_features_in = True
         # Set output features
         new_label_out = 'features_out'
         cat_features_out = ('stress_path',)
+        is_cat_features_out = True
+        # Set number of input and output features
+        model_init_args['n_features_in'] = 6
+        model_init_args['n_features_out'] = 6
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set hidden state initialization
     hidden_features_in = torch.zeros((model_init_args['n_recurrent_layers'],
@@ -117,11 +149,23 @@ def perform_model_prediction(predict_directory, dataset_file_path,
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Load data set
     dataset = load_dataset(dataset_file_path)
-    # Change training data set features labels
-    dataset = concatenate_dataset_features(
-        dataset, new_label_in, cat_features_in, is_remove_features=True)
-    dataset = concatenate_dataset_features(
-        dataset, new_label_out, cat_features_out, is_remove_features=True)
+    # Set testing data set features labels
+    if is_cat_features_in:
+        dataset = concatenate_dataset_features(
+            dataset, new_label_in, cat_features_in,
+            is_remove_features=False)
+    elif is_sum_features_in:
+        dataset = sum_dataset_features(
+            dataset, new_label_in, sum_features_in,
+            features_weights=features_in_weights, is_remove_features=False)
+    if is_cat_features_out:
+        dataset = concatenate_dataset_features(
+            dataset, new_label_out, cat_features_out,
+            is_remove_features=False)
+    elif is_sum_features_out:
+        dataset = sum_dataset_features(
+            dataset, new_label_out, sum_features_out,
+            features_weights=features_out_weights, is_remove_features=False)
     # Add hidden state initialization to data set
     dataset = add_dataset_feature_init(
         dataset, 'hidden_features_in', hidden_features_in)    
@@ -165,15 +209,18 @@ def generate_prediction_plots(dataset_file_path, predict_subdir):
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Get first sample from testing data set
     probe_response_path = load_dataset(dataset_file_path)[0]
-    # Get stress components
+    # Get strain and stress components
+    strain_comps_order = probe_response_path['strain_comps_order']
     stress_comps_order = probe_response_path['stress_comps_order']
-    # Build stress components predictions labels
+    # Build strain and stress components predictions labels
     stress_labels = tuple([f'stress_{x}' for x in stress_comps_order])
+    p_strain_labels = tuple([f'p_strain_{x}' for x in strain_comps_order])
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set prediction types and corresponding labels
     prediction_types = {}
     prediction_types['stress_comps'] = stress_labels
     #prediction_types['acc_p_strain'] = ('acc_p_strain',)
+    #prediction_types['p_strain_comps'] = p_strain_labels
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Plot model predictions against ground-truth
     for prediction_type, prediction_labels in prediction_types.items():
@@ -195,6 +242,10 @@ def generate_prediction_plots(dataset_file_path, predict_subdir):
             elif prediction_type == 'acc_p_strain':
                 prediction_sets = \
                     {f'Accumulated plastic strain': data_array,}
+            elif prediction_type == 'p_strain_comps':
+                prediction_sets = \
+                    {f'Plastic strain {prediction_labels[i].split("_")[-1]}':
+                     data_array,}
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Plot model predictions against ground-truth
             plot_truth_vs_prediction(prediction_sets, error_bound=0.1,
@@ -232,6 +283,8 @@ def generate_prediction_plots(dataset_file_path, predict_subdir):
                     y_label = 'Stress (MPa)'
                 elif prediction_type == 'acc_p_strain':
                     y_label = 'Accumulated plastic strain'
+                elif prediction_type == 'p_strain_comps':
+                    y_label = 'Plastic strain'
                 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                 # Plot model times series predictions against ground-truth
                 plot_time_series_prediction(

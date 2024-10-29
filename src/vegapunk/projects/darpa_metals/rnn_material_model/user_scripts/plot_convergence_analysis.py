@@ -87,9 +87,13 @@ def generate_convergence_plots(models_base_dirs, training_dirs, testing_dirs,
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set prediction types and components
     prediction_types = {}
-    prediction_types['stress_comps'] = ('stress_11', 'stress_22', 'stress_33',
-                                        'stress_12', 'stress_23', 'stress_13')
+    prediction_types['stress_comps'] = \
+        ('stress_11', 'stress_22', 'stress_33', 'stress_12', 'stress_23',
+         'stress_13')
     #prediction_types['acc_p_strain'] = ('acc_p_strain',)
+    #prediction_types['p_strain_comps'] = \
+    #    ('p_strain_11', 'p_strain_22', 'p_strain_33', 'p_strain_12',
+    #     'p_strain_23', 'p_strain_13')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Plot models time series predictions versus ground-truth
     if is_uncertainty_quantification:
@@ -130,7 +134,7 @@ if __name__ == "__main__":
     base_dir = ('/home/bernardoferreira/Documents/brown/projects/'
                 'darpa_project/7_local_hybrid_training/'
                 'case_learning_drucker_prager_pressure_dependency/'
-                '3_hybrid_model_convergence_analysis/')
+                'w_candidate_dp_model_1deg/1_gru_model_convergence_analysis')
     # Set training data set sizes
     training_sizes = (10, 20, 40, 80, 160, 320, 640, 1280, 2560)
     # Set convergence analyses models base directories
