@@ -68,12 +68,12 @@ class GRURNNModel(torch.nn.Module):
         Device on which torch.Tensor is allocated.
     is_explicit_parameters : bool
         True if model learnable parameters are explicit, False otherwise.
-    is_model_in_normalized : bool, default=False
-        If True, then model input features are assumed to be normalized
-        (normalized input data has been seen during model training).
-    is_model_out_normalized : bool, default=False
-        If True, then model output features are assumed to be normalized
-        (normalized output data has been seen during model training).
+    is_model_in_normalized : bool
+        If True, then model expects normalized input features (normalized
+        input data has been seen during model training).
+    is_model_out_normalized : bool
+        If True, then model expects normalized output features (normalized
+        output data has been seen during model training).
     _is_save_model_init_file: bool, default=True
         If True, saves model initialization file when model is initialized
         (overwritting existent initialization file), False otherwise.
@@ -140,11 +140,11 @@ class GRURNNModel(torch.nn.Module):
         model_name : str, default='gru_material_model'
             Name of model.
         is_model_in_normalized : bool, default=False
-            If True, then model input features are assumed to be normalized
-            (normalized input data has been seen during model training).
+            If True, then model expects normalized input features (normalized
+            input data has been seen during model training).
         is_model_out_normalized : bool, default=False
-            If True, then model output features are assumed to be normalized
-            (normalized output data has been seen during model training).
+            If True, then model expects normalized output features (normalized
+            output data has been seen during model training).
         n_recurrent_layers : int, default=1
             Number of recurrent layers. A number of recurrent layers greater
             than 1 results in a stacked GRU (output of GRU in each time t is
