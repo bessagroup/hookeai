@@ -82,12 +82,12 @@ class HybridMaterialModel(torch.nn.Module):
         Type of device on which torch.Tensor is allocated.
     _device : torch.device
         Device on which torch.Tensor is allocated.
-    is_model_in_normalized : bool, default=False
-        If True, then model input features are assumed to be normalized
-        (normalized input data has been seen during model training).
-    is_model_out_normalized : bool, default=False
-        If True, then model output features are assumed to be normalized
-        (normalized output data has been seen during model training).
+    is_model_in_normalized : bool
+        If True, then model expects normalized input features (normalized
+        input data has been seen during model training).
+    is_model_out_normalized : bool
+        If True, then model expects normalized output features (normalized
+        output data has been seen during model training).
     _data_scalers : dict
         Data scaler (item, TorchStandardScaler) for each feature data
         (key, str).
@@ -108,6 +108,10 @@ class HybridMaterialModel(torch.nn.Module):
         Get model parameters bounds.
     forward(self, features_in)
         Forward propagation.
+    check_model_in_normalized(cls, model)
+        Check if generic model expects normalized input features.
+    check_model_out_normalized(cls, model)
+        Check if generic model expects normalized output features.
     features_out_extractor(cls, model_output)
         Extract output features from generic model output.
     set_transfer_learning_models(self, tl_models_names, tl_models_init_args,
@@ -121,6 +125,8 @@ class HybridMaterialModel(torch.nn.Module):
         Synchronize data scalers with hybridized models.
     sync_tl_models_data_scalers(self)
         Synchronize data scalers with transfer-learning models.
+    save_model_init_state(self)
+        Save model initial state to file.
     save_model_state(self, epoch=None, is_best_state=False, \
                      is_remove_posterior=True)
         Save model state to file.
@@ -520,6 +526,58 @@ class HybridMaterialModel(torch.nn.Module):
         return features_out
     # -------------------------------------------------------------------------
     @classmethod
+    def check_model_in_normalized(cls, model):
+        """Check if generic model expects normalized input features.
+        
+        A model expects normalized input features if it has an attribute
+        'is_model_in_normalized' set to True.
+        
+        Parameters
+        ----------
+        model : torch.nn.Module
+            Model.
+        
+        Returns
+        -------
+        is_model_in_normalized : bool
+            If True, then model expects normalized input features (normalized
+            input data has been seen during model training).
+        """
+        # Get model input features normalization
+        if hasattr(model, 'is_model_in_normalized'):
+            is_model_in_normalized = model.is_model_in_normalized
+        else:
+            is_model_in_normalized = False
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        return is_model_in_normalized
+    # -------------------------------------------------------------------------
+    @classmethod
+    def check_model_out_normalized(cls, model):
+        """Check if generic model expects normalized output features.
+        
+        A model expects normalized output features if it has an attribute
+        'is_model_out_normalized' set to True.
+        
+        Parameters
+        ----------
+        model : torch.nn.Module
+            Model.
+        
+        Returns
+        -------
+        is_model_out_normalized : bool
+            If True, then model expects normalized output features (normalized
+            output data has been seen during model training).
+        """
+        # Get model output features normalization
+        if hasattr(model, 'is_model_out_normalized'):
+            is_model_out_normalized = model.is_model_out_normalized
+        else:
+            is_model_out_normalized = False
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        return is_model_out_normalized
+    # -------------------------------------------------------------------------
+    @classmethod
     def features_out_extractor(cls, model_output):
         """Extract output features from generic model output.
         
@@ -597,13 +655,13 @@ class HybridMaterialModel(torch.nn.Module):
                 if bool(re.search(r'^gru.*$', tl_model_name)):
                     tl_model = GRURNNModel(**tl_model_init_args,
                                            is_save_model_init_file=False)
-                elif bool(re.search(r'^elastic.*', tl_model_name)):
+                elif bool(re.search(r'^batched_elastic.*', tl_model_name)):
                     tl_model = BatchedElasticModel(**tl_model_init_args)
                 elif bool(re.search(r'^poly_regressor.*', tl_model_name)):
                     tl_model = PolynomialLinearRegressor(**tl_model_init_args)
                 else:
                     raise RuntimeError(f'Unknown or unavailable transfer-'
-                                       f'learning model \'{model_name}\' '
+                                       f'learning model \'{tl_model_name}\' '
                                        f'assigned to hybridized model '
                                        f'\'{model_name}\'.')
             else:
@@ -758,6 +816,28 @@ class HybridMaterialModel(torch.nn.Module):
                     tl_model.set_data_scalers(
                         scaler_features_in=scaler_features_out,
                         scaler_features_out=scaler_features_out)
+    # -------------------------------------------------------------------------
+    def save_model_init_state(self):
+        """Save model initial state to file.
+        
+        Model state file is stored in model_directory under the name
+        < model_name >-init.pt.
+
+        """
+        # Check model directory
+        if not os.path.isdir(self.model_directory):
+            raise RuntimeError('The model directory has not been found:\n\n'
+                               + self.model_directory)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set model state filename
+        model_state_file = self.model_name + '-init'
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set model state file path
+        model_path = os.path.join(self.model_directory,
+                                  model_state_file + '.pt')
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Save model state
+        torch.save(self.state_dict(), model_path)
     # -------------------------------------------------------------------------
     def save_model_state(self, epoch=None, is_best_state=False,
                          is_remove_posterior=True):
