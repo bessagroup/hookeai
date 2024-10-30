@@ -117,8 +117,8 @@ def train_model(n_max_epochs, dataset, model_init_args, lr_init,
         None        : Model default state file
 
     save_every : int, default=None
-        Save model every save_every epochs. If None, then saves only last epoch
-        and best performance states.
+        Save model every save_every epochs. If None, then saves only initial,
+        last epoch and best performance states.
     dataset_file_path : str, default=None
         Time series data set file path if such file exists. Only used for
         output purposes.
@@ -192,6 +192,9 @@ def train_model(n_max_epochs, dataset, model_init_args, lr_init,
         # Fit model data scalers  
         if is_model_in_normalized or is_model_out_normalized:
             model.fit_data_scalers(dataset)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~  
+    # Save model initial state
+    model.save_model_init_state()
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Get model parameters
     model_parameters = model.parameters(recurse=True)
