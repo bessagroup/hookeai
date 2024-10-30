@@ -130,6 +130,8 @@ class HybridMaterialModel(torch.nn.Module):
         Save model initialization file.
     sync_material_model_parameters(self)
         Synchronize material model parameters with learnable parameters.
+    check_hyb_models_data_scalers(self)
+        Check hybridized material models data scalers.
     sync_hyb_models_data_scalers(self)
         Synchronize data scalers with hybridized models.
     sync_tl_models_data_scalers(self)
@@ -307,6 +309,9 @@ class HybridMaterialModel(torch.nn.Module):
             # Store hybridized material model
             self._hyb_models.append(material_model)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Check hybridized material models data scalers
+        self.check_hyb_models_data_scalers()
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Initialize hybridization model
         self._hybridization_model = \
             HybridizationModel(hybridization_type=hybridization_type)
@@ -393,10 +398,8 @@ class HybridMaterialModel(torch.nn.Module):
             for _, data_scaler in model._data_scalers.items():
                 data_scaler.set_device(model._device_type)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        # Synchronize data scalers with hybridized models
-        model.sync_hyb_models_data_scalers()
-        # Synchronize data scalers with transfer-learning models
-        model.sync_tl_models_data_scalers()
+        # Check hybridized material models data scalers
+        model.check_hyb_models_data_scalers()
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         return model
     # -------------------------------------------------------------------------
@@ -561,29 +564,30 @@ class HybridMaterialModel(torch.nn.Module):
             raise RuntimeError('Input features were not provided as '
                                'torch.Tensor.')
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        # Compute normalized input features if at least one hybridized material
-        # model requires normalized input features
-        for i, hyb_model in enumerate(self._hyb_models):
-            # Check if hybridized material model requires normalized input
-            # features
-            if self.check_model_in_normalized(hyb_model):
-                # Compute normalized input features
-                features_in_norm = self.data_scaler_transform(
-                    tensor=features_in, features_type='features_in',
-                    mode='normalize')
-                # Leave
-                break
-        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Initialize hybridized models outputs
         list_features_out = []
         # Loop over hybridized material models
         for i, hyb_model in enumerate(self._hyb_models):
             # Get hybridized material model name
             hyb_model_name = self._hyb_models_names[i]
-            # Compute hybridized material model output features
-            hyb_model_output = hyb_model(features_in)
-            # Extract output features
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Get hybridized material model input features
+            if self.check_model_in_normalized(hyb_model):
+                # Normalize hybridized material model input features
+                hyb_model_features_in = hyb_model.data_scaler_transform(
+                    features_in, 'features_in', mode='normalize')
+            else:
+                hyb_model_features_in = features_in
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Perform forward propagation of hybridized material model
+            hyb_model_output = hyb_model(hyb_model_features_in)
+            # Extract hybridized material model output features
             features_out = self.features_out_extractor(hyb_model_output)
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Get hybridized material model output features
+            if self.check_model_out_normalized(hyb_model):
+                features_out = hyb_model.data_scaler_transform(
+                    features_out, 'features_out', mode='denormalize')
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Propagate hybridized material model output features through
             # transfer-learning model
@@ -611,6 +615,12 @@ class HybridMaterialModel(torch.nn.Module):
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Compute hybridization model output features
         features_out = self._hybridization_model(list_features_out)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Normalize hybrid model output features
+        if self.is_model_out_normalized:
+            features_out = self.data_scaler_transform(
+                tensor=features_out, features_type='features_out',
+                mode='normalize')
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         return features_out
     # -------------------------------------------------------------------------
@@ -836,6 +846,59 @@ class HybridMaterialModel(torch.nn.Module):
             if (hasattr(hyb_model, 'sync_material_model_parameters')
                 and callable(hyb_model.sync_material_model_parameters)):
                 hyb_model.sync_material_model_parameters()
+    # -------------------------------------------------------------------------
+    def check_hyb_models_data_scalers(self):
+        """Check hybridized material models data scalers."""
+        # Loop over hybridized material models
+        for i, hyb_model in enumerate(self._hyb_models):
+            # Get hybridized material model name
+            hyb_model_name = self._hyb_models_names[i]
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Check hybridized material model features normalization
+            is_model_in_normalized = \
+                self.check_model_in_normalized(hyb_model)
+            is_model_out_normalized = \
+                self.check_model_out_normalized(hyb_model)
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Skip checking procedures if normalization is not required
+            if not is_model_in_normalized and not is_model_out_normalized:
+                continue
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Check hybridized material model data scalers
+            if (not hasattr(hyb_model, 'data_scalers')
+                    or hyb_model.data_scalers is None):
+                raise RuntimeError(
+                    f'Data scalers are not available to hybridized material '
+                    f'model {hyb_model_name}. Either the data_scalers '
+                    f'attribute is missing or is set to None.')
+            else:
+                data_scalers = hyb_model.data_scalers
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Check hybridized material model input features data scaler
+            is_features_in_data_scaler = \
+                ('features_in' in data_scalers.keys()
+                 and data_scalers['features_in'] is None)
+            # Check hybridized material model input features normalization
+            if is_model_in_normalized and not is_features_in_data_scaler:
+                raise RuntimeError(
+                    f'Data scalers to normalize \'features_in\' are not '
+                    f'available to hybridized material model {hyb_model_name} '
+                    f'with \'is_model_in_normalized=True\'.'
+                    f'The corresponding data_scaler[\'features_in\'] is '
+                    f'either missing or set to None.')
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Check hybridized material model output features data scaler
+            is_features_out_data_scaler = \
+                ('features_out' in data_scalers.keys()
+                 and data_scalers['features_out'] is None)
+            # Check hybridized material model output features normalization
+            if is_model_out_normalized and not is_features_out_data_scaler:
+                raise RuntimeError(
+                    f'Data scalers to normalize \'features_out\' are not '
+                    f'available to hybridized material model {hyb_model_name} '
+                    f'with \'is_model_out_normalized=True\'.'
+                    f'The corresponding data_scaler[\'features_in\'] is '
+                    f'either missing or set to None.')
     # -------------------------------------------------------------------------
     def sync_hyb_models_data_scalers(self):
         """Synchronize data scalers with hybridized models."""
@@ -1253,11 +1316,6 @@ class HybridMaterialModel(torch.nn.Module):
         # Update model initialization file with fitted data scalers
         if self._is_save_model_init_file:
             self.save_model_init_file()
-        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        # Synchronize data scalers with hybridized models
-        self.sync_hyb_models_data_scalers()
-        # Synchronize data scalers with transfer-learning models
-        self.sync_tl_models_data_scalers()
     # -------------------------------------------------------------------------
     def fit_data_scalers(self, dataset, is_verbose=False):
         """Fit model data scalers.
@@ -1308,11 +1366,6 @@ class HybridMaterialModel(torch.nn.Module):
         # Update model initialization file with fitted data scalers
         if self._is_save_model_init_file:
             self.save_model_init_file()
-        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        # Synchronize data scalers with hybridized models
-        self.sync_hyb_models_data_scalers()
-        # Synchronize data scalers with transfer-learning models
-        self.sync_tl_models_data_scalers()
     # -------------------------------------------------------------------------
     def get_fitted_data_scaler(self, features_type):
         """Get fitted model data scalers.
