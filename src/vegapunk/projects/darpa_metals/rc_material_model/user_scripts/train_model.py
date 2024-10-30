@@ -69,7 +69,10 @@ def perform_model_standard_training(train_dataset_file_path, model_directory,
         Type of device on which torch.Tensor is allocated.
     is_verbose : bool, default=False
         If True, enable verbose output.
-    """    
+    """
+    # Set store model initialization flag
+    is_store_model_init_only = False
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Get model default initialization parameters
     model_init_args = set_default_model_parameters(model_directory,
                                                    device_type)
@@ -260,7 +263,14 @@ def perform_model_standard_training(train_dataset_file_path, model_directory,
     train_dataset = concatenate_dataset_features(train_dataset, new_label_out,
                                                  cat_features_out,
                                                  is_remove_features=True)
-    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~    
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Save model initialization file and initial state
+    if is_store_model_init_only:
+        # Save model initialization file and initial state
+        save_model_init(model_init_args, training_dataset=train_dataset)
+        # Skip model training
+        return
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Training of recurrent constitutive model
     model, _, _ = train_model(n_max_epochs, train_dataset, model_init_args,
                               lr_init, opt_algorithm=opt_algorithm,
@@ -268,7 +278,6 @@ def perform_model_standard_training(train_dataset_file_path, model_directory,
                               lr_scheduler_kwargs=lr_scheduler_kwargs,
                               loss_nature=loss_nature, loss_type=loss_type,
                               loss_kwargs=loss_kwargs,
-                              is_loss_normalization=is_loss_normalization,
                               batch_size=batch_size,
                               is_sampler_shuffle=is_sampler_shuffle,
                               is_early_stopping=is_early_stopping,
@@ -354,7 +363,7 @@ def generate_model_parameters_plots(model_directory):
                                   is_save_fig=True, is_stdout_display=False,
                                   is_latex=True)
 # =============================================================================
-def save_model_init_state(model_init_args):
+def save_model_init(model_init_args, training_dataset=None):
     """Save model initial state to file.
     
     Parameters
@@ -362,9 +371,21 @@ def save_model_init_state(model_init_args):
     model_init_args : dict
         Model class initialization parameters (check
         RecurrentConstitutiveModel).
+    training_dataset : torch.utils.data.Dataset, default=None
+        Time series data set. Each sample is stored as a dictionary where
+        each feature (key, str) data is a torch.Tensor(2d) of shape
+        (sequence_length, n_features).
     """
     # Initialize recurrent constitutive model
     model = RecurrentConstitutiveModel(**model_init_args)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Fit model data scalers  
+    if model.is_model_in_normalized or model.is_model_out_normalized:
+        if training_dataset is None:
+            raise RuntimeError('Training data set needs to be provided in '
+                               'order to fit model data scalers.')
+        else:
+            model.fit_data_scalers(training_dataset)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Save model initial state
     model.save_model_init_state()

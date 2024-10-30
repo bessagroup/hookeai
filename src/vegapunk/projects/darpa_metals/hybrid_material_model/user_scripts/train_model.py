@@ -24,13 +24,13 @@ if root_dir not in sys.path:
     sys.path.insert(0, root_dir)
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 import os
-import random
 # Third-party
 import torch
 import numpy as np
 # Local
 from rnn_base_model.data.time_dataset import load_dataset, \
     concatenate_dataset_features
+from hybrid_base_model.model.hybrid_model import HybridMaterialModel
 from hybrid_base_model.train.training import train_model
 from gnn_base_model.train.training import \
     read_loss_history_from_file, read_lr_history_from_file
@@ -67,6 +67,9 @@ def perform_model_standard_training(train_dataset_file_path, model_directory,
     is_verbose : bool, default=False
         If True, enable verbose output.
     """
+    # Set store model initialization flag
+    is_store_model_init_only = False
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set default model training options
     opt_algorithm, lr_init, lr_scheduler_type, lr_scheduler_kwargs, \
         loss_nature, loss_type, loss_kwargs, is_sampler_shuffle, \
@@ -346,6 +349,13 @@ def perform_model_standard_training(train_dataset_file_path, model_directory,
     train_dataset = concatenate_dataset_features(train_dataset, new_label_out,
                                                  cat_features_out,
                                                  is_remove_features=True)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Save model initialization file and initial state
+    if is_store_model_init_only:
+        # Save model initialization file and initial state
+        save_model_init(model_init_args, training_dataset=train_dataset)
+        # Skip model training
+        return
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~    
     # Training of recurrent constitutive model
     model, _, _ = train_model(n_max_epochs, train_dataset, model_init_args,
@@ -370,16 +380,28 @@ def perform_model_standard_training(train_dataset_file_path, model_directory,
     _ = get_model_summary(model, device_type=device_type,
                           is_verbose=is_verbose)
 # =============================================================================
-def save_model_init_state(model_init_args):
-    """Save model initial state to file.
+def save_model_init(model_init_args, training_dataset=None):
+    """Save model initialization file and initial state to file.
     
     Parameters
     ----------
     model_init_args : dict
         Model class initialization parameters (check HybridMaterialModel).
+    training_dataset : torch.utils.data.Dataset, default=None
+        Time series data set. Each sample is stored as a dictionary where
+        each feature (key, str) data is a torch.Tensor(2d) of shape
+        (sequence_length, n_features).
     """
     # Initialize recurrent constitutive model
     model = HybridMaterialModel(**model_init_args)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Fit model data scalers  
+    if model.is_model_in_normalized or model.is_model_out_normalized:
+        if training_dataset is None:
+            raise RuntimeError('Training data set needs to be provided in '
+                               'order to fit model data scalers.')
+        else:
+            model.fit_data_scalers(training_dataset)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Save model initial state
     model.save_model_init_state()
