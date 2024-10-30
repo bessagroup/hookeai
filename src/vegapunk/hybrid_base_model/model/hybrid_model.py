@@ -105,6 +105,10 @@ class HybridMaterialModel(torch.nn.Module):
     -------
     init_model_from_file(model_directory=None, model_init_file_path=None)
         Initialize model from initialization file.
+    update_model_init_file_internal_paths(model_init_file_path, \
+                                          hyb_models_init_file_path={}, \
+                                          hyb_models_init_state_path={})
+        Update initialization file path-dependent attributes.
     set_device(self, device_type)
         Set device on which torch.Tensor is allocated.
     get_device(self)
@@ -402,6 +406,28 @@ class HybridMaterialModel(torch.nn.Module):
         model.check_hyb_models_data_scalers()
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         return model
+    # -------------------------------------------------------------------------
+    @staticmethod
+    def update_model_init_file_internal_paths(model_init_file_path,
+                                              hyb_models_init_file_path={},
+                                              hyb_models_init_state_path={}):
+        """Update initialization file path-dependent attributes.
+        
+        Only updates existing attributes and the specific provided paths.
+        
+        Parameters
+        ----------
+        model_init_file_path : str
+            Model initialization file path.
+        hyb_models_init_file_path : dict, default={}
+            Hybridized material models (key, str) initialization file path
+            (item, str).
+        hyb_models_init_state_path : dict, default={}
+            Hybridized material models (key, str) initial model state file
+            path (item, str). Initial model state file must be consistent with
+            hybridized material model initialization attributes.
+        """
+        pass
     # -------------------------------------------------------------------------
     def set_device(self, device_type):
         """Set device on which torch.Tensor is allocated.
