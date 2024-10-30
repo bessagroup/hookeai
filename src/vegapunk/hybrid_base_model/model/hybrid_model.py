@@ -78,6 +78,15 @@ class HybridMaterialModel(torch.nn.Module):
     _is_tl_residual_connection : dict
         Sets residual connection (item, bool) to each transfer-learning model
         (key, str).
+    _hyb_models_init_file_path : dict, default={}
+        Hybridized material models (key, str) initialization file path
+        (item, str). Overrides provided hybridized material model
+        initialization attributes.
+    _hyb_models_init_state_path : dict, default={}
+        Hybridized material models (key, str) initial model state file
+        path (item, str). Initial model state file must be consistent with
+        hybridized material model initialization attributes. Ignored when
+        initializing hybrid model from initialization file.
     _device_type : {'cpu', 'cuda'}
         Type of device on which torch.Tensor is allocated.
     _device : torch.device
@@ -94,7 +103,7 @@ class HybridMaterialModel(torch.nn.Module):
 
     Methods
     -------
-    init_model_from_file(model_directory)
+    init_model_from_file(model_directory=None, model_init_file_path=None)
         Initialize model from initialization file.
     set_device(self, device_type)
         Set device on which torch.Tensor is allocated.
@@ -162,6 +171,7 @@ class HybridMaterialModel(torch.nn.Module):
                  tl_models_names={}, tl_models_init_args={}, 
                  is_tl_residual_connection={},
                  is_model_in_normalized=False, is_model_out_normalized=False,
+                 hyb_models_init_file_path={}, hyb_models_init_state_path={},
                  is_save_model_init_file=True, device_type='cpu'):
         """Constructor.
         
@@ -192,11 +202,20 @@ class HybridMaterialModel(torch.nn.Module):
             Sets residual connection (item, bool) to each transfer-learning
             model (key, str).
         is_model_in_normalized : bool, default=False
-            If True, then model input features are assumed to be normalized
-            (normalized input data has been seen during model training).
+            If True, then model expects normalized input features (normalized
+            input data has been seen during model training).
         is_model_out_normalized : bool, default=False
-            If True, then model output features are assumed to be normalized
-            (normalized output data has been seen during model training).
+            If True, then model expects normalized output features (normalized
+            output data has been seen during model training).
+        hyb_models_init_file_path : dict, default={}
+            Hybridized material models (key, str) initialization file path
+            (item, str). Overrides provided hybridized material model
+            initialization attributes.
+        hyb_models_init_state_path : dict, default={}
+            Hybridized material models (key, str) initial model state file
+            path (item, str). Initial model state file must be consistent with
+            hybridized material model initialization attributes. Ignored when
+            initializing hybrid model from initialization file.
         is_save_model_init_file: bool, default=True
             If True, saves model initialization file when model is initialized
             (overwritting existent initialization file), False otherwise. When
@@ -230,6 +249,10 @@ class HybridMaterialModel(torch.nn.Module):
         # Set model input and output features normalization
         self.is_model_in_normalized = is_model_in_normalized
         self.is_model_out_normalized = is_model_out_normalized
+        # Set hybridized material models initialization file paths
+        self._hyb_models_init_file_path = hyb_models_init_file_path
+        # Set hybridized material models initial state file paths
+        self._hyb_models_init_state_path = hyb_models_init_state_path
         # Set save initialization file flag
         self._is_save_model_init_file = is_save_model_init_file
         # Set device
@@ -239,23 +262,50 @@ class HybridMaterialModel(torch.nn.Module):
         self._hyb_models = torch.nn.ModuleList()
         # Loop over hybridized material models
         for model_name in self._hyb_models_names:
-            # Get material model initialization attributes
-            model_init_args = self._hyb_models_init_args[model_name]
-            # Initialize material model
+            # Get material model class
             if bool(re.search(r'^rc_.*$', model_name)):
-                constitutive_model = \
-                    RecurrentConstitutiveModel(**model_init_args,
-                                               is_save_model_init_file=False)
+                material_model_class = RecurrentConstitutiveModel
+                is_save_init_file_kwarg = True
             elif bool(re.search(r'^gru.*$', model_name)):
-                constitutive_model = \
-                    GRURNNModel(**model_init_args,
-                                is_save_model_init_file=False)
+                material_model_class = GRURNNModel
+                is_save_init_file_kwarg = True
+            elif bool(re.search(r'^batched_elastic.*$', model_name)):
+                material_model_class = BatchedElasticModel
+                is_save_init_file_kwarg = False
             else:
                 raise RuntimeError(f'Unknown or unavailable material '
-                                   f'constitutive model for hybridization '
+                                   f'model for hybridization '
                                    f'\'{model_name}\'.')
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Initialize material model
+            if model_name in self._hyb_models_init_file_path.keys():
+                # Get material model initialization file
+                model_init_file_path = \
+                    self._hyb_models_init_file_path[model_name]
+                # Initialize material model
+                material_model = material_model_class.init_model_from_file(
+                    model_init_file_path=model_init_file_path)
+            else:
+                # Get material model initialization attributes
+                model_init_args = self._hyb_models_init_args[model_name]
+                # Initialize material model
+                if is_save_init_file_kwarg:
+                    material_model = material_model_class(
+                        **model_init_args, is_save_model_init_file=False)
+                else:
+                    material_model = material_model_class(**model_init_args)
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Load material model initial state
+            if model_name in self._hyb_models_init_state_path.keys():
+                # Get initial model state file path
+                model_state_path = self._hyb_models_init_state_path[model_name]
+                # Load model initial state
+                material_model.load_state_dict(
+                    torch.load(model_state_path,
+                               map_location=torch.device('cpu')))
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Store hybridized material model
-            self._hyb_models.append(constitutive_model)
+            self._hyb_models.append(material_model)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Initialize hybridization model
         self._hybridization_model = \
@@ -273,38 +323,64 @@ class HybridMaterialModel(torch.nn.Module):
             self.save_model_init_file()
     # -------------------------------------------------------------------------
     @staticmethod
-    def init_model_from_file(model_directory):
+    def init_model_from_file(model_directory=None, model_init_file_path=None):
         """Initialize model from initialization file.
         
-        Initialization file is assumed to be stored in the model directory
-        under the name model_init_file.pkl.
+        If model directory is provided, then (1) model initialization file is
+        assumed to be stored in the model directory under the name
+        model_init_file.pkl and (2) model initialization attributes are read
+        from the stored model_init_file.pkl file.
+        
+        In model initialization file path is provided, then (1) model
+        initialization attributes are read from the provided
+        model_init_file.pkl file and (2) model directory is set as the
+        corresponding directory.
         
         Parameters
         ----------
-        model_directory : str
+        model_directory : str, default=None
             Directory where model is stored.
+        model_init_file_path : str, default=None
+            Model initialization file path. Ignored if model_directory is
+            provided.
         """
-        # Check model directory
-        if not os.path.isdir(model_directory):
-            raise RuntimeError('The model directory has not been found:\n\n'
-                               + model_directory)
-        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        # Get model initialization file path from model directory
-        model_init_file_path = os.path.join(model_directory,
-                                            'model_init_file' + '.pkl')
+        # Get model directory or model initialization file path
+        if model_directory is not None:
+            # Check model directory
+            if not os.path.isdir(model_directory):
+                raise RuntimeError('The model directory has not been found:'
+                                   '\n\n' + model_directory)
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Set model initialization file path from model directory
+            model_init_file_path = os.path.join(model_directory,
+                                                'model_init_file' + '.pkl')
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Check model initialization file
+            if not os.path.isfile(model_init_file_path):
+                raise RuntimeError('The model initialization file has not '
+                                   'been found:\n\n' + model_init_file_path)
+        elif model_init_file_path is not None:
+            # Check model initialization file
+            if not os.path.isfile(model_init_file_path):
+                raise RuntimeError('The model initialization file has not '
+                                   'been found:\n\n' + model_init_file_path)
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Get model directory from model initialization file path
+            model_directory = os.path.dirname(model_init_file_path)
+        else:
+            raise RuntimeError('Either the model directory or the model '
+                               'initialization file path must be provided in '
+                               'order to initialize the model.')
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Load model initialization attributes from file
-        if not os.path.isfile(model_init_file_path):
-            raise RuntimeError('The model initialization file has not been '
-                               'found:\n\n' + model_init_file_path)
-        else:
-            with open(model_init_file_path, 'rb') as model_init_file:
-                model_init_attributes = pickle.load(model_init_file)
+        with open(model_init_file_path, 'rb') as model_init_file:
+            model_init_attributes = pickle.load(model_init_file)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Get model initialization attributes
         model_init_args = model_init_attributes['model_init_args']
         # Update model directory
         model_init_args['model_directory'] = model_directory
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Initialize model
         model = HybridMaterialModel(**model_init_args,
                                     is_save_model_init_file=False)
@@ -484,6 +560,19 @@ class HybridMaterialModel(torch.nn.Module):
         if not isinstance(features_in, torch.Tensor):
             raise RuntimeError('Input features were not provided as '
                                'torch.Tensor.')
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Compute normalized input features if at least one hybridized material
+        # model requires normalized input features
+        for i, hyb_model in enumerate(self._hyb_models):
+            # Check if hybridized material model requires normalized input
+            # features
+            if self.check_model_in_normalized(hyb_model):
+                # Compute normalized input features
+                features_in_norm = self.data_scaler_transform(
+                    tensor=features_in, features_type='features_in',
+                    mode='normalize')
+                # Leave
+                break
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Initialize hybridized models outputs
         list_features_out = []
@@ -717,6 +806,10 @@ class HybridMaterialModel(torch.nn.Module):
         model_init_args['is_model_in_normalized'] = self.is_model_in_normalized
         model_init_args['is_model_out_normalized'] = \
             self.is_model_out_normalized
+        model_init_args['hyb_models_init_file_path'] = \
+            self._hyb_models_init_file_path
+        model_init_args['hyb_models_init_state_path'] = \
+            self._hyb_models_init_state_path
         model_init_args['device_type'] = self._device_type
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Assemble initialization parameters
@@ -902,6 +995,9 @@ class HybridMaterialModel(torch.nn.Module):
         model_directory under the name < model_name >-best.pt or
         < model_name >-< epoch >-best.pt if epoch if known.
         
+        Model initial state file is stored in model directory under the name
+        < model_name >-init.pt
+
         Parameters
         ----------
         load_model_state : {'best', 'last', int, None}, default=None
@@ -914,6 +1010,8 @@ class HybridMaterialModel(torch.nn.Module):
             
             int         : Model state corresponding to given training epoch
             
+            'init'      : Model initial state
+                        
             None        : Model default state file
         
         is_remove_posterior : bool, default=True
@@ -1001,6 +1099,16 @@ class HybridMaterialModel(torch.nn.Module):
             epoch = load_model_state
             # Set model state filename with epoch
             model_state_file = self.model_name + '-' + str(int(epoch))
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Delete model epoch state files posterior to loaded epoch
+            if is_remove_posterior:
+                self._remove_posterior_state_files(epoch)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        elif load_model_state == 'init':
+            # Set model initial state file
+            model_state_file = self.model_name + '-init'
+            # Set epoch as unknown
+            epoch = 0
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Delete model epoch state files posterior to loaded epoch
             if is_remove_posterior:
