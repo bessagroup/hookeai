@@ -1129,7 +1129,7 @@ if __name__ == '__main__':
                 'time_end': time_end,
                 'inc_strain_norm': inc_strain_norm,
                 'strain_noise_std': strain_noise_std,
-                'is_cyclic_loading': is_cyclic_loading}
+                'n_cycle': 0}
         elif strain_path_type == 'random':
             strain_path_kwargs = \
                 {'n_control': (4, 7),
@@ -1140,7 +1140,7 @@ if __name__ == '__main__':
                 'time_end': time_end,
                 'inc_strain_norm': inc_strain_norm,
                 'strain_noise_std': strain_noise_std,
-                'is_cyclic_loading': is_cyclic_loading}
+                'n_cycle': 0}
         else:
             raise RuntimeError('Unknown strain path type.')
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

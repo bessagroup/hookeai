@@ -1873,7 +1873,7 @@ if __name__ == '__main__':
          'time_end': time_end,
          'inc_strain_norm': inc_strain_norm,
          'strain_noise_std': strain_noise_std,
-         'is_cyclic_loading': is_cyclic_loading}
+         'n_cycle': 0}
     # Random strain path generator 
     strain_path_kwargs_type['random'] = \
         {'n_control': (4, 7),
@@ -1884,7 +1884,7 @@ if __name__ == '__main__':
          'time_end': time_end,
          'inc_strain_norm': inc_strain_norm,
          'strain_noise_std': strain_noise_std,
-         'is_cyclic_loading': is_cyclic_loading}
+         'n_cycle': 0}
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Initialize strain-stress material response path data set generator
     dataset_generator = \

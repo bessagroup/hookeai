@@ -54,13 +54,13 @@ class RandomStrainPathGenerator(StrainPathGenerator):
                          generative_type='polynomial', \
                          time_init=0.0, time_end=1.0, \
                          inc_strain_norm=None, strain_noise_std=None, \
-                         is_cyclic_loading=False, random_seed=None)
+                         n_cycle=None, random_seed=None)
         Generate strain path.
     """
     def generate_strain_path(self, n_control, strain_bounds, n_time,
                              generative_type='polynomial', time_init=0.0,
                              time_end=1.0, inc_strain_norm=None,
-                             strain_noise_std=None, is_cyclic_loading=False,
+                             strain_noise_std=None, n_cycle=None,
                              random_seed=None):
         """Generate strain path.
         
@@ -89,12 +89,11 @@ class RandomStrainPathGenerator(StrainPathGenerator):
             For each discrete time, add noise to the strain components sampled
             from a Gaussian distribution with zero mean and given standard
             deviation.
-        is_cyclic_loading : bool, default=False
-            If True, then the strain loading path is reversed after half of the
-            prescribed discrete time steps (rounding-up) are generated. In the
-            case of a even number of prescribed discrete time points, the
-            strain loading path is appended with a last time point equal to the
-            initial strain state.
+        n_cycle : int, default=None
+            Number of strain path (similar) loading/reverse-loading cycles.
+            Last time step (corresponding to the initial strain state) is
+            replicated until the prescribed number of discrete time points is
+            met.
         random_seed : int, default=None
             Seed used to initialize the random number generator of Python and
             other libraries to preserve reproducibility.
@@ -145,10 +144,22 @@ class RandomStrainPathGenerator(StrainPathGenerator):
                                 endpoint=True, dtype=float)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Set number of discrete time points in the forward direction
-        if is_cyclic_loading:
-            n_time_forward = int(np.floor(0.5*(n_time + 1)))
+        if isinstance(n_cycle, int) and n_cycle > 0:
+            # Check minimum number of time points
+            if (n_time < 2*n_cycle + 1):
+                raise RuntimeError(f'In order to generate {n_cycle} '
+                                   f'loading/reverse-loading cycles, '
+                                   f'the minimum required number of discrete '
+                                   f'time points is {2*n_cycle + 1}.')
+            # Set number of forward time points
+            n_time_forward = int(np.floor(((n_time - 1)/(2*n_cycle)) + 1))
+            # Set cyclic loading flag
+            is_cyclic_loading = True
         else:
+            # Set number of forward time points
             n_time_forward = n_time
+            # Set cyclic loading flag
+            is_cyclic_loading = False
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Initialize trial strain path
         strain_path_trial = np.zeros((n_time_forward, len(strain_comps_order)))
@@ -281,12 +292,28 @@ class RandomStrainPathGenerator(StrainPathGenerator):
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Generate cyclic strain loading path
         if is_cyclic_loading:
-            # Reverse forward strain path to complete cyclic loading
-            strain_path = np.vstack((strain_path, strain_path[-2::-1, :]))
-            # Append initial strain state to comply with prescribed even number
-            # of discrete time points
-            if n_time % 2 == 0:
-                strain_path = np.vstack((strain_path, strain_path[0, :]))        
+            # Get initial strain state
+            initial_strain = strain_path[0, :].reshape(1, -1)
+            # Get forward strain path
+            forward_strain_path = strain_path[:, :]
+            # Get backward strain path
+            backward_strain_path = strain_path[-2:0:-1, :]
+            # Stack backward strain path
+            strain_path = \
+                np.concatenate((strain_path, backward_strain_path), axis=0)
+            # Loop over additional cycles
+            for i in range(1, n_cycle):
+                # Stack cycle (forward and backward strain path)
+                strain_path = np.concatenate(
+                    (strain_path, forward_strain_path, backward_strain_path),
+                    axis=0)
+            # Set strain path last time step
+            strain_path = np.concatenate((strain_path, initial_strain), axis=0)
+            # Replicate last time step until prescribed number of discrete time
+            # points is met
+            for i in range(n_time - strain_path.shape[0]):
+                strain_path = \
+                    np.concatenate((strain_path, initial_strain), axis=0)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         return strain_comps_order, time_hist, strain_path
 # =============================================================================
@@ -309,6 +336,8 @@ if __name__ == '__main__':
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set number of strain paths
     n_path = 1
+    # Set number of loading cycles
+    n_cycle = 1
     # Initialize strain paths data
     time_hists = []
     strain_paths = []
@@ -322,7 +351,7 @@ if __name__ == '__main__':
                 generative_type='polynomial',
                 time_init=0.0, time_end=1.0,
                 inc_strain_norm=None, strain_noise_std=None,
-                is_cyclic_loading=False, random_seed=None)
+                n_cycle=n_cycle, random_seed=None)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Plot strain path
         strain_path_generator.plot_strain_path(
@@ -357,8 +386,8 @@ if __name__ == '__main__':
             is_plot_strain_comp_hist=False,
             is_plot_strain_norm_hist=False,
             is_plot_inc_strain_norm_hist=False,
-            is_plot_strain_pairs_hist=True,
-            is_plot_strain_pairs_marginals=True,
-            is_plot_strain_comp_box=True,
+            is_plot_strain_pairs_hist=False,
+            is_plot_strain_pairs_marginals=False,
+            is_plot_strain_comp_box=False,
             is_stdout_display=True,
             is_latex=True)
