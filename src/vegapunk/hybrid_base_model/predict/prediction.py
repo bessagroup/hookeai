@@ -22,7 +22,7 @@ import numpy as np
 # Local
 from rnn_base_model.data.time_dataset import get_time_series_data_loader
 from hybrid_base_model.model.hybrid_model import HybridMaterialModel
-from gnn_base_model.train.torch_loss import get_pytorch_loss
+from utilities.loss_functions import get_pytorch_loss
 from gnn_base_model.predict.prediction import make_predictions_subdir, \
     save_sample_predictions, seed_worker, write_prediction_summary_file
 #

@@ -29,7 +29,7 @@ from rnn_base_model.predict.prediction import predict
 from gnn_base_model.train.training import get_pytorch_optimizer, \
     get_learning_rate_scheduler, save_training_state, save_loss_history, \
     seed_worker, write_training_summary_file
-from gnn_base_model.train.torch_loss import get_pytorch_loss
+from utilities.loss_functions import get_pytorch_loss
 from gnn_base_model.model.model_summary import get_model_summary
 #
 #                                                          Authorship & Credits
