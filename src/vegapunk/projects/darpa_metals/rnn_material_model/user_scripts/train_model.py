@@ -80,7 +80,7 @@ def perform_model_standard_training(train_dataset_file_path, model_directory,
     is_sum_features_in = False
     is_sum_features_out = False
     # Set data features for training
-    features_option = 'stress'
+    features_option = 'strain_to_stress'
     if features_option == 'stress_acc_p_strain':
         # Set input features
         new_label_in = 'features_in'
@@ -308,7 +308,7 @@ def set_default_model_parameters(model_directory, device_type='cpu'):
     # Set hidden layer size
     hidden_layer_size = 500
     # Set number of recurrent layers (stacked RNN)
-    n_recurrent_layers = 3
+    n_recurrent_layers = 2
     # Set dropout probability
     dropout = 0
     # Set model input and output features normalization
