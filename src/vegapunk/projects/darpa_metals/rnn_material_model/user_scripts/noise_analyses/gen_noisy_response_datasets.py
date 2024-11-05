@@ -926,7 +926,7 @@ class NoiseGenerator:
 # =============================================================================
 if __name__ == '__main__':
     # Set data set type
-    dataset_type = ('training', 'validation', 'testing_id', 'testing_od')[2]
+    dataset_type = ('training', 'validation', 'testing_id', 'testing_od')[0]
     # Set save dataset plots flags
     is_save_dataset_plots = True
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -960,8 +960,8 @@ if __name__ == '__main__':
         # Set data sets base directory
         datasets_base_dir = \
             ('/home/bernardoferreira/Documents/brown/projects/darpa_project/'
-             '7_local_hybrid_training/'
-             'case_learning_drucker_prager_pressure_dependency/datasets_base')
+             '7_local_hybrid_training/case_learning_drucker_prager_pressure/'
+             '0_datasets/datasets_base')
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Check data sets directory
         if not os.path.isdir(datasets_base_dir):
@@ -1015,8 +1015,8 @@ if __name__ == '__main__':
         inc_strain_norm = None
         # Set strain noise
         strain_noise_std = None
-        # Set cyclic loading
-        is_cyclic_loading = False
+        # Set number of loading cycles
+        n_cycle = 4
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Set constitutive model
         model_name = 'drucker_prager'
@@ -1099,7 +1099,7 @@ if __name__ == '__main__':
                 'friction_angle': friction_angle}
             # Set constitutive state variables to be additionally included in
             # the data set
-            state_features = {}
+            state_features = {'e_strain_mf': len(strain_comps_order)}
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Initialize constitutive model
             constitutive_model = DruckerPrager(strain_formulation,
@@ -1118,7 +1118,7 @@ if __name__ == '__main__':
                                         model_parameters)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Set strain path type
-        strain_path_type = 'random'
+        strain_path_type = 'proportional'
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Set strain path generator parameters
         if strain_path_type == 'proportional':
@@ -1129,7 +1129,7 @@ if __name__ == '__main__':
                 'time_end': time_end,
                 'inc_strain_norm': inc_strain_norm,
                 'strain_noise_std': strain_noise_std,
-                'n_cycle': 0}
+                'n_cycle': n_cycle}
         elif strain_path_type == 'random':
             strain_path_kwargs = \
                 {'n_control': (4, 7),
