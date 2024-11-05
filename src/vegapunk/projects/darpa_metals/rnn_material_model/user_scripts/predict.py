@@ -23,6 +23,7 @@ if root_dir not in sys.path:
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 import os
 import pickle
+import re
 # Third-party
 import torch
 import numpy as np
@@ -170,6 +171,10 @@ def perform_model_prediction(predict_directory, dataset_file_path,
     dataset = add_dataset_feature_init(
         dataset, 'hidden_features_in', hidden_features_in)    
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Set loss type
+    loss_type = 'mre'
+    # Set loss parameters
+    loss_kwargs = {}
     # Set prediction loss normalization
     if loss_type == 'mre':
         is_normalized_loss = True
@@ -248,7 +253,7 @@ def generate_prediction_plots(dataset_file_path, predict_subdir):
         # ground-truth
         prediction_data_arrays = build_prediction_data_arrays(
             predict_subdir, prediction_type, prediction_labels,
-            samples_ids='all')        
+            samples_ids='all')
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Loop over samples predictions data arrays
         for i, data_array in enumerate(prediction_data_arrays):
@@ -346,18 +351,24 @@ if __name__ == "__main__":
     # Set case studies base directory
     base_dir = ('/home/bernardoferreira/Documents/brown/projects/'
                 'darpa_project/7_local_hybrid_training/'
-                'case_learning_drucker_prager_pressure_dependency/'
-                'w_candidate_dp_model_1deg/1_gru_model_convergence_analysis')
+                'case_learning_drucker_prager_pressure/'
+                '2_vanilla_gru_model/strain_to_stress/mean_relative_error/'
+                'training_random')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Set training data set sizes
-    training_sizes = (10, 20, 40, 80, 160, 320, 640, 1280, 2560)
-    # Loop over training data set sizes
-    for n in training_sizes:
-        # Set case study directory
-        case_study_name = f'n{n}'
-        case_study_dir = os.path.join(os.path.normpath(base_dir),
-                                      f'{case_study_name}')
-        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Initialize case study directories
+    case_study_dirs = []
+    # Set case study directories
+    if True:
+        # Set training data set sizes
+        training_sizes = (10, 20, 40, 80, 160, 320, 640, 1280, 2560)
+        # Set case study directories
+        case_study_dirs += [os.path.join(os.path.normpath(base_dir), f'n{n}')
+                            for n in training_sizes]
+    else:
+        case_study_dirs += [base_dir,]
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Loop over case study directories
+    for case_study_dir in case_study_dirs:
         # Check case study directory
         if not os.path.isdir(case_study_dir):
             raise RuntimeError('The case study directory has not been found:'
