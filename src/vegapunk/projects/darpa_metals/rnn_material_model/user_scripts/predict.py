@@ -171,7 +171,10 @@ def perform_model_prediction(predict_directory, dataset_file_path,
         dataset, 'hidden_features_in', hidden_features_in)    
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set prediction loss normalization
-    is_normalized_loss = False
+    if loss_type == 'mre':
+        is_normalized_loss = True
+    else:
+        is_normalized_loss = False
     # Set prediction batch size
     batch_size = batch_size=len(dataset)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
