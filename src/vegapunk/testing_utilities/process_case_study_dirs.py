@@ -24,7 +24,6 @@ src_dir = ('/home/bernardoferreira/Documents/brown/projects/darpa_project/'
            '7_local_hybrid_training/case_learning_drucker_prager_pressure/'
            '0_datasets/datasets_drucker_prager_10deg/proportional_2cycle/'
            'no_plots')
-src_dir = ('/home/bernardoferreira/Documents/brown/projects/darpa_project/test')
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Initialize case study directories
 case_study_dirs = []
