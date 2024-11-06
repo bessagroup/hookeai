@@ -1698,7 +1698,7 @@ def generate_dataset_plots(strain_formulation, n_dim, dataset,
 # =============================================================================
 if __name__ == '__main__':
     # Set data set type
-    dataset_type = ('training', 'validation', 'testing_id', 'testing_od')[1]
+    dataset_type = ('training', 'validation', 'testing_id', 'testing_od')[2]
     # Set data set storage type
     is_in_memory_dataset = True
     # Set save dataset plots flags
@@ -1723,10 +1723,6 @@ if __name__ == '__main__':
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Loop over data set sizes
     for i, n_path in enumerate(n_paths):
-        # Set number of strain-stress paths of each type
-        n_path_type = {'proportional': int(0.5*n_path),
-                       'random': int(0.5*n_path)}
-        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Set data sets base directory
         datasets_base_dir = \
             ('/home/bernardoferreira/Documents/brown/projects/darpa_project/'
@@ -1897,23 +1893,23 @@ if __name__ == '__main__':
         # Proportional strain path generator
         strain_path_kwargs_type['proportional'] = \
             {'strain_bounds': strain_bounds,
-            'n_time': n_time,
-            'time_init': time_init,
-            'time_end': time_end,
-            'inc_strain_norm': inc_strain_norm,
-            'strain_noise_std': strain_noise_std,
-            'n_cycle': n_cycle}
+             'n_time': n_time,
+             'time_init': time_init,
+             'time_end': time_end,
+             'inc_strain_norm': inc_strain_norm,
+             'strain_noise_std': strain_noise_std,
+             'n_cycle': n_cycle}
         # Random strain path generator 
         strain_path_kwargs_type['random'] = \
             {'n_control': (4, 7),
-            'strain_bounds': strain_bounds,
-            'n_time': n_time,
-            'generative_type': 'polynomial',
-            'time_init': time_init,
-            'time_end': time_end,
-            'inc_strain_norm': inc_strain_norm,
-            'strain_noise_std': strain_noise_std,
-            'n_cycle': n_cycle}
+             'strain_bounds': strain_bounds,
+             'n_time': n_time,
+             'generative_type': 'polynomial',
+             'time_init': time_init,
+             'time_end': time_end,
+             'inc_strain_norm': inc_strain_norm,
+             'strain_noise_std': strain_noise_std,
+             'n_cycle': n_cycle}
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Initialize strain-stress material response path data set generator
         dataset_generator = \
@@ -1921,25 +1917,92 @@ if __name__ == '__main__':
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Initialize data sets
         datasets = []
-        # Loop over data set types
-        for strain_path_type, n_path in n_path_type.items():
-            # Check number of strain-stress paths
-            if n_path < 1:
-                continue
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set data sets option
+        datasets_option = 'strain_loading_types'
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        if datasets_option == 'strain_loading_types':
+            # Set number of strain-stress paths of each type
+            n_path_type = (
+                {'proportional': n_path,        'random': 0},
+                {'proportional': 0,             'random': n_path},
+                {'proportional': int(n_path/2), 'random': int(n_path/2)})[1]
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            # Get strain path generators parameters
-            strain_path_kwargs = strain_path_kwargs_type[strain_path_type]
-            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            # Generate data set
-            dataset = dataset_generator.generate_response_dataset(
-                n_path, strain_path_type, strain_path_kwargs, model_name,
-                model_parameters, state_features=state_features,
-                is_in_memory_dataset=is_in_memory_dataset,
-                dataset_directory=dataset_directory,
-                dataset_basename=dataset_basename, is_verbose=True)
-            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            # Store data set
-            datasets.append(dataset)
+            # Loop over data set types
+            for strain_path_type, n_path in n_path_type.items():
+                # Check number of strain-stress paths
+                if n_path < 1:
+                    continue
+                # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                # Get strain path generators parameters
+                strain_path_kwargs = strain_path_kwargs_type[strain_path_type]
+                # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                # Generate data set
+                dataset = dataset_generator.generate_response_dataset(
+                    n_path, strain_path_type, strain_path_kwargs, model_name,
+                    model_parameters, state_features=state_features,
+                    is_in_memory_dataset=is_in_memory_dataset,
+                    dataset_directory=dataset_directory,
+                    dataset_basename=dataset_basename, is_verbose=True)
+                # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                # Store data set
+                datasets.append(dataset)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        elif datasets_option == 'strain_regions':
+            # Set strain path type per strain region
+            strain_path_type_region = {}
+            strain_path_type_region['apex'] = 'proportional'
+            strain_path_type_region['cone'] = 'random'
+            # Set number of strain-stress paths per strain region
+            n_path_region = {}
+            n_path_region['apex'] = int(0.3*n_path)
+            n_path_region['cone'] = n_path - n_path_region['apex']
+            # Loop over data set strain regions
+            for dataset_region in ('apex', 'cone'):
+                # Get strain path type
+                strain_path_type = strain_path_type_region[dataset_region]
+                # Get number of strain-stress paths
+                n_path = n_path_region[dataset_region]
+                # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                # Check number of strain-stress paths
+                if n_path < 1:
+                    continue
+                # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                # Get strain path generators parameters
+                strain_path_kwargs = strain_path_kwargs_type[strain_path_type]
+                # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                # Set strain bounds according with data set strain region
+                if dataset_region == 'apex':
+                    # Set strain components bounds
+                    strain_bounds = {}
+                    for x in strain_comps_order:
+                        if x[0] == x[1]:
+                            strain_bounds[x] = (0.0, 0.05)
+                        else:
+                            strain_bounds[x] = (-0.05, 0.05)
+                elif dataset_region == 'cone':
+                    # Set strain components bounds
+                    strain_bounds = \
+                        {x: (-0.05, 0.05) for x in strain_comps_order}
+                else:
+                    raise RuntimeError('Unknown data set type.')
+                # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                # Override strain bounds
+                strain_path_kwargs['strain_bounds'] = strain_bounds
+                # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                # Generate data set
+                dataset = dataset_generator.generate_response_dataset(
+                    n_path, strain_path_type, strain_path_kwargs, model_name,
+                    model_parameters, state_features=state_features,
+                    is_in_memory_dataset=is_in_memory_dataset,
+                    dataset_directory=dataset_directory,
+                    dataset_basename=dataset_basename, is_verbose=True)
+                # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                # Store data set
+                datasets.append(dataset)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        else:
+            raise RuntimeError('Unknown data sets option.')
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Get joint data set
         if len(datasets) == 1:
