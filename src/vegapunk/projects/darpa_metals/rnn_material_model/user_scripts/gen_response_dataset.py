@@ -1698,237 +1698,274 @@ def generate_dataset_plots(strain_formulation, n_dim, dataset,
 # =============================================================================
 if __name__ == '__main__':
     # Set data set type
-    dataset_type = ('training', 'validation', 'testing_id', 'testing_od')[0]
+    dataset_type = ('training', 'validation', 'testing_id', 'testing_od')[1]
     # Set data set storage type
     is_in_memory_dataset = True
     # Set save dataset plots flags
     is_save_dataset_plots = True
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Set case studies base directory
-    base_dir = ('/home/bernardoferreira/Documents/brown/projects/'
-                'darpa_project/3_local_rc_training/')
-    # Set case study directory
-    case_study_name = 'lou'
-    case_study_dir = os.path.join(os.path.normpath(base_dir),
-                                  f'{case_study_name}')
-    # Set data set file basename
-    dataset_basename = 'ss_paths_dataset'
-    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Check case study directory
-    if not os.path.isdir(case_study_dir):
-        raise RuntimeError('The case study directory has not been found:\n\n'
-                           + case_study_dir)
-    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Set data set directory
+    # Set data set sizes
     if dataset_type == 'training':
-        dataset_directory = os.path.join(os.path.normpath(case_study_dir),
-                                         '1_training_dataset')
+        n_paths_dirs = (10, 20, 40, 80, 160, 320, 640, 1280, 2560)
+        n_paths = n_paths_dirs
     elif dataset_type == 'validation':
-        dataset_directory = os.path.join(os.path.normpath(case_study_dir),
-                                         '2_validation_dataset')
+        n_paths_dirs = (10, 20, 40, 80, 160, 320, 640, 1280, 2560)
+        n_paths = (2, 4, 8, 16, 32, 64, 128, 256, 512)
     elif dataset_type == 'testing_id':
-        dataset_directory = os.path.join(os.path.normpath(case_study_dir),
-                                         '5_testing_id_dataset')
+        n_paths_dirs = (512,)
+        n_paths = (512,)
     elif dataset_type == 'testing_od':
-        dataset_directory = os.path.join(os.path.normpath(case_study_dir),
-                                         '6_testing_od_dataset')
-    else:
-        raise RuntimeError('Unknown data set type.')
-    # Create data set directory (overwrite existing directory)
-    make_directory(dataset_directory, is_overwrite=True)
+        n_paths_dirs = (512,)
+        n_paths = (512,)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Set strain formulation
-    strain_formulation = 'infinitesimal'
-    # Set problem type
-    problem_type = 4
-    # Get problem type parameters
-    n_dim, comp_order_sym, comp_order_nsym = \
-        get_problem_type_parameters(problem_type)
-    # Set strain components order
-    if strain_formulation == 'infinitesimal':
-        strain_comps_order = comp_order_sym
-    else:
-        raise RuntimeError('Not implemented.')
+    # Set shuffle data set samples flag (only effective for multiple data sets)
+    is_shuffle_dataset_samples = True
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Set number of discrete times
-    n_time = 100
-    # Set initial and final time
-    time_init = 0.0
-    time_end = 1.0
-    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Set strain components bounds
-    strain_bounds = {x: (-0.05, 0.05) for x in strain_comps_order}
-    # Set incremental strain norm
-    inc_strain_norm = None
-    # Set strain noise
-    strain_noise_std = None
-    # Set cyclic loading
-    is_cyclic_loading = False
-    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Set constitutive model
-    model_name = 'lou_zhang_yoon'
-    # Set constitutive model parameters:
-    if model_name == 'von_mises':
-        # Set constitutive model parameters
-        model_parameters = {'elastic_symmetry': 'isotropic',
-                            'E': 110e3, 'v': 0.33,
-                            'euler_angles': (0.0, 0.0, 0.0),
-                            'hardening_law': get_hardening_law('nadai_ludwik'),
-                            'hardening_parameters':
-                                {'s0': 900,
-                                 'a': 700,
-                                 'b': 0.5,
-                                 'ep0': 1e-5}}
-        # Set constitutive state variables to be additionally included in the
-        # data set
-        state_features = {'acc_p_strain': 1}
-    elif model_name == 'drucker_prager':
-        # Set frictional angle
-        friction_angle = np.deg2rad(10)
-        # Set dilatancy angle
-        dilatancy_angle = friction_angle
+    # Loop over data set sizes
+    for i, n_path in enumerate(n_paths):
+        # Set number of strain-stress paths of each type
+        n_path_type = {'proportional': int(0.5*n_path),
+                       'random': int(0.5*n_path)}
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        # Compute angle-related material parameters
-        # (matching with Mohr-Coulomb under uniaxial tension and compression)
-        # Set yield surface cohesion parameter
-        yield_cohesion_parameter = (2.0/np.sqrt(3))*np.cos(friction_angle)
-        # Set yield pressure parameter
-        yield_pressure_parameter = (3.0/np.sqrt(3))*np.sin(friction_angle)
-        # Set plastic flow pressure parameter
-        flow_pressure_parameter = (3.0/np.sqrt(3))*np.sin(dilatancy_angle)
+        # Set data sets base directory
+        datasets_base_dir = \
+            ('/home/bernardoferreira/Documents/brown/projects/darpa_project/'
+             '7_local_hybrid_training/case_learning_drucker_prager_pressure/'
+             '0_datasets/datasets_drucker_prager_10deg/datasets_base/')
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        # Set constitutive model parameters
-        # (matching Von Mises yield surface for null pressure)
-        model_parameters = {
-            'elastic_symmetry': 'isotropic',
-            'E': 110e3, 'v': 0.33,
-            'euler_angles': (0.0, 0.0, 0.0),
-            'hardening_law': get_hardening_law('nadai_ludwik'),
-            'hardening_parameters':
-                {'s0': 900/yield_cohesion_parameter,
-                 'a': 700/yield_cohesion_parameter,
-                 'b': 0.5,
-                 'ep0': 1e-5},
-            'yield_cohesion_parameter': yield_cohesion_parameter,
-            'yield_pressure_parameter': yield_pressure_parameter,
-            'flow_pressure_parameter': flow_pressure_parameter,
-            'friction_angle': friction_angle}
-        # Set constitutive state variables to be additionally included in the
-        # data set
-        state_features = {}
-    elif model_name == 'lou_zhang_yoon':
-        # Set constitutive model parameters
-        model_parameters = \
-            {'elastic_symmetry': 'isotropic',
-             'E': 110e3, 'v': 0.33,
-             'euler_angles': (0.0, 0.0, 0.0),
-             'hardening_law': get_hardening_law('nadai_ludwik'),
-             'hardening_parameters':
-                 {'s0': 900,
-                  'a': 700,
-                  'b': 0.5,
-                  'ep0': 1e-5},
-             'a_hardening_law': get_hardening_law('linear'),
-             'a_hardening_parameters':
-                 {'s0': np.sqrt(3),
-                   'a': 0},
-             'b_hardening_law': get_hardening_law('linear'),
-             'b_hardening_parameters':
-                 {'s0': 0,
-                   'a': 0},
-             'c_hardening_law': get_hardening_law('linear'),
-             'c_hardening_parameters':
-                 {'s0': 0,
-                   'a': 0},
-             'd_hardening_law': get_hardening_law('linear'),
-             'd_hardening_parameters':
-                 {'s0': 0,
-                   'a': 0}}
-        # Set constitutive state variables to be additionally included in the
-        # data set
-        state_features = {}
-    elif model_name == 'bazant_m7':
-        # Set constitutive model parameters
-        model_parameters = {}
-        # Set constitutive state variables to include in data set
-        state_features = {}
-    else:
-        # Set constitutive model parameters
-        model_parameters = {'elastic_symmetry': 'isotropic',
-                            'E': 100, 'v': 0.3,
-                            'euler_angles': (0.0, 0.0, 0.0)}
-        # Set constitutive state variables to include in data set
-        state_features = {}
-    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Set number of strain-stress paths of each type
-    n_path_type = {'proportional': 1, 'random': 0}
-    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Set strain path generators parameters
-    strain_path_kwargs_type = {}
-    # Proportional strain path generator
-    strain_path_kwargs_type['proportional'] = \
-        {'strain_bounds': strain_bounds,
-         'n_time': n_time,
-         'time_init': time_init,
-         'time_end': time_end,
-         'inc_strain_norm': inc_strain_norm,
-         'strain_noise_std': strain_noise_std,
-         'n_cycle': 0}
-    # Random strain path generator 
-    strain_path_kwargs_type['random'] = \
-        {'n_control': (4, 7),
-         'strain_bounds': strain_bounds,
-         'n_time': n_time,
-         'generative_type': 'polynomial',
-         'time_init': time_init,
-         'time_end': time_end,
-         'inc_strain_norm': inc_strain_norm,
-         'strain_noise_std': strain_noise_std,
-         'n_cycle': 0}
-    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Initialize strain-stress material response path data set generator
-    dataset_generator = \
-        MaterialResponseDatasetGenerator(strain_formulation, problem_type)
-    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~  
-    # Initialize data sets
-    datasets = []
-    # Loop over data set types
-    for strain_path_type, n_path in n_path_type.items():
-        # Check number of strain-stress paths
-        if n_path < 1:
-            continue
+        # Check data sets directory
+        if not os.path.isdir(datasets_base_dir):
+            raise RuntimeError('The data sets base directory has not been '
+                               'found:\n\n' + datasets_base_dir)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        # Get strain path generators parameters
-        strain_path_kwargs = strain_path_kwargs_type[strain_path_type]
+        # Set data set directory (current number of paths)
+        dataset_size_dir = os.path.join(os.path.normpath(datasets_base_dir),
+                                        f'n{n_paths_dirs[i]}')
+        # Create data set directory
+        if not os.path.isdir(dataset_size_dir):
+            make_directory(dataset_size_dir)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        # Generate data set
-        dataset = dataset_generator.generate_response_dataset(
-            n_path, strain_path_type, strain_path_kwargs, model_name,
-            model_parameters, state_features=state_features,
-            is_in_memory_dataset=is_in_memory_dataset,
-            dataset_directory=dataset_directory,
-            dataset_basename=dataset_basename, is_verbose=True)
+        # Set data set file basename
+        dataset_basename = 'ss_paths_dataset'
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        # Store data set
-        datasets.append(dataset)
-    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Get joint data set
-    if len(datasets) == 1:
-        dataset = datasets[0]
-    else:
-        dataset = torch.utils.data.ConcatDataset(datasets)
-    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Save data set
-    save_dataset(dataset, dataset_basename, dataset_directory,
-                 is_append_n_sample=True)
-    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Generate plots
-    if is_save_dataset_plots:
-        # Set data set plots directory
-        plots_dir = os.path.join(dataset_directory, 'plots')
-        # Create plots directory
-        plots_dir = make_directory(plots_dir)
-        # Generate data set plots
-        generate_dataset_plots(strain_formulation, n_dim, dataset,
-                               save_dir=plots_dir, is_save_fig=True,
-                               is_stdout_display=False)
+        # Set data set directory
+        if dataset_type == 'training':
+            dataset_directory = os.path.join(
+                os.path.normpath(dataset_size_dir), '1_training_dataset')
+        elif dataset_type == 'validation':
+            dataset_directory = os.path.join(
+                os.path.normpath(dataset_size_dir), '2_validation_dataset')
+        elif dataset_type == 'testing_id':
+            dataset_directory = os.path.join(
+                os.path.normpath(dataset_size_dir), '5_testing_id_dataset')
+        elif dataset_type == 'testing_od':
+            dataset_directory = os.path.join(
+                os.path.normpath(dataset_size_dir), '6_testing_od_dataset')
+        else:
+            raise RuntimeError('Unknown data set type.')
+        # Create data set directory (overwrite existing directory)
+        make_directory(dataset_directory, is_overwrite=True)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set strain formulation
+        strain_formulation = 'infinitesimal'
+        # Set problem type
+        problem_type = 4
+        # Get problem type parameters
+        n_dim, comp_order_sym, comp_order_nsym = \
+            get_problem_type_parameters(problem_type)
+        # Set strain components order
+        if strain_formulation == 'infinitesimal':
+            strain_comps_order = comp_order_sym
+        else:
+            raise RuntimeError('Not implemented.')
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set number of discrete times
+        n_time = 100
+        # Set initial and final time
+        time_init = 0.0
+        time_end = 1.0
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set strain components bounds
+        strain_bounds = {x: (-0.05, 0.05) for x in strain_comps_order}
+        # Set incremental strain norm
+        inc_strain_norm = None
+        # Set strain noise
+        strain_noise_std = None
+        # Set number of loading cycles
+        n_cycle = 0
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set constitutive model
+        model_name = 'drucker_prager'
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set constitutive model parameters:
+        if model_name == 'von_mises':
+            # Set constitutive model parameters
+            model_parameters = {'elastic_symmetry': 'isotropic',
+                                'E': 110e3, 'v': 0.33,
+                                'euler_angles': (0.0, 0.0, 0.0),
+                                'hardening_law':
+                                    get_hardening_law('nadai_ludwik'),
+                                'hardening_parameters':
+                                    {'s0': 900,
+                                    'a': 700,
+                                    'b': 0.5,
+                                    'ep0': 1e-5}}
+            # Set constitutive state variables to be additionally included in
+            # the data set
+            state_features = {'acc_p_strain': 1}
+        elif model_name == 'drucker_prager':
+            # Set frictional angle
+            friction_angle = np.deg2rad(10)
+            # Set dilatancy angle
+            dilatancy_angle = friction_angle
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Compute angle-related material parameters
+            # (matching with Mohr-Coulomb under uniaxial tension and
+            # compression)
+            # Set yield surface cohesion parameter
+            yield_cohesion_parameter = (2.0/np.sqrt(3))*np.cos(friction_angle)
+            # Set yield pressure parameter
+            yield_pressure_parameter = (3.0/np.sqrt(3))*np.sin(friction_angle)
+            # Set plastic flow pressure parameter
+            flow_pressure_parameter = (3.0/np.sqrt(3))*np.sin(dilatancy_angle)
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Set constitutive model parameters
+            # (matching Von Mises yield surface for null pressure)
+            model_parameters = {
+                'elastic_symmetry': 'isotropic',
+                'E': 110e3, 'v': 0.33,
+                'euler_angles': (0.0, 0.0, 0.0),
+                'hardening_law': get_hardening_law('nadai_ludwik'),
+                'hardening_parameters':
+                    {'s0': 900/yield_cohesion_parameter,
+                    'a': 700/yield_cohesion_parameter,
+                    'b': 0.5,
+                    'ep0': 1e-5},
+                'yield_cohesion_parameter': yield_cohesion_parameter,
+                'yield_pressure_parameter': yield_pressure_parameter,
+                'flow_pressure_parameter': flow_pressure_parameter,
+                'friction_angle': friction_angle}
+            # Set constitutive state variables to be additionally included in
+            # the data set
+            state_features = {'e_strain_mf': len(strain_comps_order)}
+        elif model_name == 'lou_zhang_yoon':
+            # Set constitutive model parameters
+            model_parameters = \
+                {'elastic_symmetry': 'isotropic',
+                'E': 110e3, 'v': 0.33,
+                'euler_angles': (0.0, 0.0, 0.0),
+                'hardening_law': get_hardening_law('nadai_ludwik'),
+                'hardening_parameters':
+                    {'s0': 900,
+                    'a': 700,
+                    'b': 0.5,
+                    'ep0': 1e-5},
+                'a_hardening_law': get_hardening_law('linear'),
+                'a_hardening_parameters':
+                    {'s0': np.sqrt(3),
+                    'a': 0},
+                'b_hardening_law': get_hardening_law('linear'),
+                'b_hardening_parameters':
+                    {'s0': 0,
+                    'a': 0},
+                'c_hardening_law': get_hardening_law('linear'),
+                'c_hardening_parameters':
+                    {'s0': 0,
+                    'a': 0},
+                'd_hardening_law': get_hardening_law('linear'),
+                'd_hardening_parameters':
+                    {'s0': 0,
+                    'a': 0}}
+            # Set constitutive state variables to be additionally included in
+            # the data set
+            state_features = {}
+        elif model_name == 'bazant_m7':
+            # Set constitutive model parameters
+            model_parameters = {}
+            # Set constitutive state variables to include in data set
+            state_features = {}
+        else:
+            # Set constitutive model parameters
+            model_parameters = {'elastic_symmetry': 'isotropic',
+                                'E': 100, 'v': 0.3,
+                                'euler_angles': (0.0, 0.0, 0.0)}
+            # Set constitutive state variables to include in data set
+            state_features = {}
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set strain path generators parameters
+        strain_path_kwargs_type = {}
+        # Proportional strain path generator
+        strain_path_kwargs_type['proportional'] = \
+            {'strain_bounds': strain_bounds,
+            'n_time': n_time,
+            'time_init': time_init,
+            'time_end': time_end,
+            'inc_strain_norm': inc_strain_norm,
+            'strain_noise_std': strain_noise_std,
+            'n_cycle': n_cycle}
+        # Random strain path generator 
+        strain_path_kwargs_type['random'] = \
+            {'n_control': (4, 7),
+            'strain_bounds': strain_bounds,
+            'n_time': n_time,
+            'generative_type': 'polynomial',
+            'time_init': time_init,
+            'time_end': time_end,
+            'inc_strain_norm': inc_strain_norm,
+            'strain_noise_std': strain_noise_std,
+            'n_cycle': n_cycle}
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Initialize strain-stress material response path data set generator
+        dataset_generator = \
+            MaterialResponseDatasetGenerator(strain_formulation, problem_type)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Initialize data sets
+        datasets = []
+        # Loop over data set types
+        for strain_path_type, n_path in n_path_type.items():
+            # Check number of strain-stress paths
+            if n_path < 1:
+                continue
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Get strain path generators parameters
+            strain_path_kwargs = strain_path_kwargs_type[strain_path_type]
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Generate data set
+            dataset = dataset_generator.generate_response_dataset(
+                n_path, strain_path_type, strain_path_kwargs, model_name,
+                model_parameters, state_features=state_features,
+                is_in_memory_dataset=is_in_memory_dataset,
+                dataset_directory=dataset_directory,
+                dataset_basename=dataset_basename, is_verbose=True)
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Store data set
+            datasets.append(dataset)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Get joint data set
+        if len(datasets) == 1:
+            # Pick single data set
+            dataset = datasets[0]
+        else:
+            # Concatenate multiple data sets
+            dataset = torch.utils.data.ConcatDataset(datasets)
+            # Shuffle concatenated data set samples
+            if is_shuffle_dataset_samples:
+                # Get shuffle concatenated data set samples indices
+                shuffled_indices = torch.randperm(len(dataset)).tolist()
+                # Get concatenated data set with shuffled samples
+                dataset = torch.utils.data.Subset(dataset, shuffled_indices)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Save data set
+        save_dataset(dataset, dataset_basename, dataset_directory,
+                     is_append_n_sample=True)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Generate plots
+        if is_save_dataset_plots:
+            # Set data set plots directory
+            plots_dir = os.path.join(dataset_directory, 'plots')
+            # Create plots directory
+            plots_dir = make_directory(plots_dir)
+            # Generate data set plots
+            generate_dataset_plots(strain_formulation, n_dim, dataset,
+                                   save_dir=plots_dir, is_save_fig=True,
+                                   is_stdout_display=False)
