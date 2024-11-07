@@ -2,7 +2,7 @@
 
 Functions
 ---------
-add_strain_features(dataset, strain_feature_label, n_dim, strain_comps_order)
+add_strain_features(dataset, strain_feature_label)
     Add new strain-based feature history in time series data set.
 compute_strain_feature(strain_comps_array, strain_feature_label, n_dim,
                        strain_comps_order, device=None)
@@ -38,8 +38,7 @@ __status__ = 'Planning'
 # =============================================================================
 #
 # =============================================================================
-def add_strain_features(dataset, strain_feature_label, n_dim,
-                        strain_comps_order):
+def add_strain_features(dataset, strain_feature_label):
     """Add new strain-based feature history in time series data set.
     
     The computation of a new strain-based feature requires that 'strain_path'
@@ -61,11 +60,6 @@ def add_strain_features(dataset, strain_feature_label, n_dim,
         'i1' : First (principal) invariant of strain tensor.
         
         'i2' : Second (principal) invariant of strain tensor.
-
-    n_dim : int
-        Number of spatial dimensions.
-    strain_comps_order : tuple[str]
-        Strain components order.
     
     Returns
     -------
@@ -74,11 +68,25 @@ def add_strain_features(dataset, strain_feature_label, n_dim,
         each feature (key, str) data is a torch.Tensor(2d) of shape
         (sequence_length, n_features).
     """
-    # Check if strain is available in data set
-    if 'strain_path' not in dataset[0].keys():
+    # Probe first data set sample
+    sample = dataset[0]
+    # Check if required data is available in data set
+    if 'strain_path' not in sample.keys():
         raise RuntimeError(f'The feature \'strain_path\' must be available '
                            f'in the data set in order to compute a new '
                            f'strain-based feature.')
+    elif 'strain_comps_order' not in sample.keys():
+        raise RuntimeError(f'The data \'strain_comps_order\' must be available '
+                           f'in the data set in order to compute a new '
+                           f'strain-based feature.')
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Get strain components order
+    strain_comps_order = sample['strain_comps_order']
+    # Infer number of spatial dimensions from strain components
+    if len(strain_comps_order) in (3, 4):
+        n_dim = 2
+    else:
+        n_dim = 3
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set available strain-based features
     available_strain_features = ('i1', 'i2')
@@ -208,24 +216,10 @@ if __name__ == '__main__':
     # Load data set
     dataset = load_dataset(dataset_file_path)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Set strain formulation
-    strain_formulation = 'infinitesimal'
-    # Set problem type
-    problem_type = 4
-    # Get problem type parameters
-    n_dim, comp_order_sym, comp_order_nsym = \
-        get_problem_type_parameters(problem_type)
-    # Set strain components order
-    if strain_formulation == 'infinitesimal':
-        strain_comps_order = comp_order_sym
-    else:
-        raise RuntimeError('Not implemented.')
-    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Loop over strain-based features
     for strain_feature_label in ('i1', 'i2'):
         # Add strain-based feature to data set
-        dataset = add_strain_features(dataset, strain_feature_label, n_dim,
-                                      strain_comps_order)
+        dataset = add_strain_features(dataset, strain_feature_label)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Probe first data set sample
     sample = dataset[0]
