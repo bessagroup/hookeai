@@ -33,7 +33,7 @@ def plot_avg_prediction_loss(save_dir, is_save_fig=False,
     training_sizes = (10, 20, 40, 80, 160, 320, 640, 1280, 2560)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set example
-    example = '1'
+    example = '3'
     # Set example data
     if example == 'erroneous_von_mises_properties':
         # Set models labels
@@ -232,7 +232,22 @@ def plot_avg_prediction_loss(save_dir, is_save_fig=False,
     
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     elif example == '1':
-        # Study directory:
+        # Purpose
+        # -------
+        # Comparison of different types of strain-stress training data sets
+        # in the prediction performance of the GRU model.
+        #
+        # Input features: Strain
+        # Output features: Stress
+        #
+        # Training is performed with MRE. 
+        #
+        # Observations
+        # ------------
+        # (1) ...
+        #
+        # Data directories
+        # ----------------
         # '/home/bernardoferreira/Documents/brown/projects/darpa_project/'
         # '7_local_hybrid_training/case_learning_drucker_prager_pressure/'
         # '2_vanilla_gru_model/strain_to_stress/mean_relative_error'
@@ -285,7 +300,22 @@ def plot_avg_prediction_loss(save_dir, is_save_fig=False,
         y_scale = 'linear'
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     elif example == '2':
-        # Study directory:
+        # Purpose
+        # -------
+        # Comparison of different types of strain-stress training data sets
+        # in the prediction performance of the GRU model.
+        #
+        # Input features: Strain
+        # Output features: Stress
+        #
+        # Training is performed with MRE.
+        #
+        # Observations
+        # ------------
+        # (1) ...
+        #
+        # Data directories
+        # ----------------
         # '/home/bernardoferreira/Documents/brown/projects/darpa_project/'
         # '7_local_hybrid_training/case_learning_drucker_prager_pressure/'
         # '2_vanilla_gru_model/strain_to_stress/mean_squared_error'
@@ -332,6 +362,91 @@ def plot_avg_prediction_loss(save_dir, is_save_fig=False,
         # Set axes scale
         x_scale = 'log'
         y_scale = 'linear'
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    elif example == '3':
+        # Purpose
+        # -------
+        # Comparison of different sets of input features in the prediction
+        # performance of the GRU model.
+        #
+        # Input features: (i) Strain, (ii) Strain + I1 + I2
+        # Output features: Stress
+        #
+        # Training is performed with MRE.
+        #
+        # Observations
+        # ------------
+        # (1) ...
+        #
+        # Data directories
+        # ----------------
+        # '/home/bernardoferreira/Documents/brown/projects/darpa_project/'
+        # '7_local_hybrid_training/case_learning_drucker_prager_pressure/'
+        # '2_vanilla_gru_model/strain_to_stress/mean_relative_error'
+        #
+        # '/home/bernardoferreira/Documents/brown/projects/darpa_project/'
+        # '7_local_hybrid_training/case_learning_drucker_prager_pressure/'
+        # '2_vanilla_gru_model/strain_i1_i2_to_stress/mean_relative_error'
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Initialize models average prediction loss
+        models_avg_predict_loss = {}
+        # Set testing data set type
+        testing_type = 'proportional'
+        # Set prediction loss type
+        prediction_loss_type = 'mre'
+        # Set models average prediction loss
+        if testing_type == 'random':
+            models_avg_predict_loss['GRU (str, rand./rand.)'] = \
+                [0.711485147, 0.765105605, 0.504647255, 0.325015962, 0.20673649, 0.125683844, 0.0986325219, 0.0481931716, 0.0259366408]
+            models_avg_predict_loss['GRU (str, prop./rand.)'] = \
+                [3.76491642, 2.53799725, 2.16523647, 1.94805944, 1.84417129, 1.87977254, 1.88211465, 1.85847485, 1.8168788]
+            models_avg_predict_loss['GRU (str, prop.(2c)/rand.)'] = \
+                [2.34063721, 2.09915113, 1.88783622, 1.42225647, 1.06488407, 1.06585515, 0.826798916, 0.784138799, 0.820805132]
+            models_avg_predict_loss['GRU (str, rand+prop./rand.)'] = \
+                [1.19108558, 1.07213414, 0.846771359, 0.411654711, 0.306536347, 0.223055899, 0.163353294, 0.0947590619, 0.05163607]
+            models_avg_predict_loss['GRU (str, apex+cone/rand.)'] = \
+                [0.891771078, 0.855269194, 0.745420575, 0.365836501, 0.230215341, 0.164953217, 0.125772104, 0.0626440346, 0.0331411585]
+            models_avg_predict_loss['GRU (str-i1-i2, rand./rand.)'] = \
+                [0.713928342, 0.762041032, 0.479262948, 0.28303951, 0.19211553, 0.122327089, 0.088236779, 0.0471768752, 0.024342183]
+            models_avg_predict_loss['GRU (str-i1-i2, prop./rand.)'] = \
+                [3.37488747, 2.37237024, 2.09414387, 1.89461029, 1.84086609, 1.91685247, 1.93387151, 1.94355845, 1.91204762]
+            models_avg_predict_loss['GRU (str-i1-i2, prop.(2c)/rand.)'] = \
+                [2.22479415, 1.96836734, 1.67915535, 1.33447719, 1.12187386, 1.32005167, 1.00056148, 0.976038933, 1.17263389]
+            models_avg_predict_loss['GRU (str-i1-i2, rand+prop./rand.)'] = \
+                [1.14428329, 0.764982581, 0.623999357, 0.382480979, 0.268026024, 0.185381353, 0.124198444, 0.0868264809, 0.0573462807]
+            models_avg_predict_loss['GRU (str-i1-i2, apex+cone/rand.)'] = \
+                [0.870067, 0.661266088, 0.417905986, 0.274378359, 0.213640466, 0.145024598, 0.107493408, 0.0576950461, 0.030576786]
+        elif testing_type == 'proportional':
+            models_avg_predict_loss['GRU (str, rand./prop.)'] = \
+                [0.619509816, 0.619414806, 0.54364872, 0.271952868, 0.155367523, 0.111418873, 0.0862796232, 0.0527936295, 0.0283560455]
+            models_avg_predict_loss['GRU (str, prop./prop.)'] = \
+                [1.02984631, 0.402982414, 0.215880111, 0.103733808, 0.0368126594, 0.0184596218, 0.0116598159, 0.00496042613, 0.00243825512]
+            models_avg_predict_loss['GRU (str, prop.(2c)/prop.)'] = \
+                [0.811315417, 0.648340762, 0.466697842, 0.381364524, 0.271140575, 0.173272818, 0.149255753, 0.111266643, 0.0770416409]
+            models_avg_predict_loss['GRU (str, rand+prop./prop.)'] = \
+                [0.496268153, 0.323136866, 0.206813589, 0.0868700743, 0.0509016514, 0.0429093353, 0.0314695463, 0.0144617511, 0.00852774922]
+            models_avg_predict_loss['GRU (str, apex+cone/prop.)'] = \
+                [0.591750145, 0.751824141, 0.69582051, 0.20526579, 0.0964431763, 0.0667821318, 0.0579240546, 0.0335734487, 0.0251233708]
+            models_avg_predict_loss['GRU (str-i1-i2, rand./prop.)'] = \
+                [0.633915186, 0.62495482, 0.448864818, 0.208711296, 0.154933721, 0.115883753, 0.0777116865, 0.0421762504, 0.0292074382]
+            models_avg_predict_loss['GRU (str-i1-i2, prop./prop.)'] = \
+                [0.588817835, 0.325135231, 0.152866751, 0.0678516775, 0.0275869891, 0.0125249466, 0.00678915437, 0.00332685048, 0.00193638308]
+            models_avg_predict_loss['GRU (str-i1-i2, prop.(2c)/prop.)'] = \
+                [0.848101616, 0.62812376, 0.406069279, 0.333647847, 0.295855969, 0.221067965, 0.169398353, 0.125306949, 0.0872977823]
+            models_avg_predict_loss['GRU (str-i1-i2, rand+prop./prop.)'] = \
+                [0.422883153, 0.267492115, 0.160600051, 0.0821137354, 0.0447838083, 0.0272434261, 0.0137507729, 0.0129402373, 0.0089170821]
+            models_avg_predict_loss['GRU (str-i1-i2, apex+cone/prop.)'] = \
+                [0.629388154, 0.36820522, 0.206587791, 0.154914498, 0.0885878429, 0.058970768, 0.0411365405, 0.0220039301, 0.0203967094]
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set models labels
+        models_labels = tuple(models_avg_predict_loss.keys())
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set axes limits
+        x_lims = (None, None)
+        y_lims = (0, None)
+        # Set axes scale
+        x_scale = 'log'
+        y_scale = 'linear'
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ 
     # Get number of training data set sizes
     n_training_sizes = len(training_sizes)
@@ -356,13 +471,14 @@ def plot_avg_prediction_loss(save_dir, is_save_fig=False,
     # Plot data
     figure, axes = plot_xy_data(
         data_xy, data_labels=data_labels, x_label=x_label, y_label=y_label,
-        y_lims=y_lims, x_scale=x_scale, y_scale=y_scale, marker='o',
-        markersize=3, markeredgecolor='k', markeredgewidth=0.5, is_latex=True)
+        x_lims=x_lims, y_lims=y_lims, x_scale=x_scale, y_scale=y_scale,
+        marker='o', markersize=3, markeredgecolor='k', markeredgewidth=0.5,
+        is_latex=True)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Override plot legend (relocate)
     axes.legend(loc='upper right', ncols=1, frameon=True, fancybox=True,
                 facecolor='inherit', edgecolor='inherit',
-                fontsize=8, framealpha=1.0)
+                fontsize=6, framealpha=1.0)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Display figure
     if is_stdout_display:
@@ -464,7 +580,7 @@ if __name__ == "__main__":
     plots_dir = ('/home/bernardoferreira/Documents/brown/projects/'
                  'darpa_project/7_local_hybrid_training/'
                  'case_learning_drucker_prager_pressure/2_vanilla_gru_model/'
-                 'strain_to_stress/mean_relative_error/plots')
+                 'strain_i1_i2_to_stress/mean_relative_error/plots')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Plot average prediction loss
     if is_plot_avg_prediction_loss:
