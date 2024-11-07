@@ -137,7 +137,7 @@ def perform_model_standard_training(train_dataset_file_path, model_directory,
         # Set number of input and output features
         model_init_args['n_features_in'] = 8
         model_init_args['n_features_out'] = 6
-    else:
+    elif features_option == 'strain_to_stress':
         # Set input features
         new_label_in = 'features_in'
         cat_features_in = ('strain_path',)
@@ -149,6 +149,8 @@ def perform_model_standard_training(train_dataset_file_path, model_directory,
         # Set number of input and output features
         model_init_args['n_features_in'] = 6
         model_init_args['n_features_out'] = 6
+    else:
+        raise RuntimeError('Unknown features option.')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set hidden state initialization
     hidden_features_in = torch.zeros((model_init_args['n_recurrent_layers'],
