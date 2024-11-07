@@ -37,6 +37,8 @@ from gnn_base_model.model.model_summary import get_model_summary
 from gnn_base_model.train.training_plots import plot_training_loss_history, \
     plot_training_loss_and_lr_history
 from ioput.iostandard import make_directory, find_unique_file_with_regex
+from projects.darpa_metals.rnn_material_model.rnn_model_tools.strain_features \
+    import add_strain_features
 #
 #                                                          Authorship & Credits
 # =============================================================================
@@ -74,6 +76,8 @@ def perform_model_standard_training(train_dataset_file_path, model_directory,
             is_early_stopping, early_stopping_kwargs = \
                 set_default_training_options()
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Initialize new strain-based feature flags
+    strain_features_labels = None
     # Initialize features concatenation/summing flags
     is_cat_features_in = False
     is_cat_features_out = False
@@ -119,6 +123,20 @@ def perform_model_standard_training(train_dataset_file_path, model_directory,
         # Set number of input and output features
         model_init_args['n_features_in'] = 6
         model_init_args['n_features_out'] = 6
+    elif features_option == 'strain_i1_i2_to_stress':
+        # Set new strain-based features labels
+        strain_features_labels = ('i1', 'i2')
+        # Set input features
+        new_label_in = 'features_in'
+        cat_features_in = ('strain_path', *strain_features_labels)
+        is_cat_features_in = True
+        # Set output features
+        new_label_out = 'features_out'
+        cat_features_out = ('stress_path',)
+        is_cat_features_out = True
+        # Set number of input and output features
+        model_init_args['n_features_in'] = 8
+        model_init_args['n_features_out'] = 6
     else:
         # Set input features
         new_label_in = 'features_in'
@@ -162,6 +180,13 @@ def perform_model_standard_training(train_dataset_file_path, model_directory,
         else:
             # Load validation data set
             val_dataset = load_dataset(val_dataset_file_path)
+            # Compute new strain-based features
+            if strain_features_labels is not None:
+                # Loop over strain-based features
+                for strain_feature_label in strain_features_labels:
+                    # Add strain-based feature to data set
+                    val_dataset = add_strain_features(
+                        val_dataset, strain_feature_label)
             # Set validation data set features
             if is_cat_features_in:
                 val_dataset = concatenate_dataset_features(
@@ -192,6 +217,13 @@ def perform_model_standard_training(train_dataset_file_path, model_directory,
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Load training data set
     train_dataset = load_dataset(train_dataset_file_path)
+    # Compute new strain-based features
+    if strain_features_labels is not None:
+        # Loop over strain-based features
+        for strain_feature_label in strain_features_labels:
+            # Add strain-based feature to data set
+            train_dataset = add_strain_features(
+                train_dataset, strain_feature_label)
     # Set training data set features
     if is_cat_features_in:
         train_dataset = concatenate_dataset_features(
