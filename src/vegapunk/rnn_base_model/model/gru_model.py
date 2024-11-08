@@ -767,9 +767,9 @@ class GRURNNModel(torch.nn.Module):
         
         Parameters
         ----------
-        scaler_features_in : {TorchMinMaxScaler, TorchMinMaxScaler}
+        scaler_features_in : {TorchStandardScaler, TorchMinMaxScaler}
             Data scaler for input features.
-        scaler_features_out : {TorchMinMaxScaler, TorchMinMaxScaler}
+        scaler_features_out : {TorchStandardScaler, TorchMinMaxScaler}
             Data scaler for output features.
         """
         # Initialize data scalers
@@ -1015,7 +1015,7 @@ def standard_partial_fit(dataset, features_type, n_features, is_verbose=False):
         if isinstance(features_tensor, torch.Tensor):
             # Check number of features
             if features_tensor.shape[-1] != n_features:
-                raise RuntimeError(f'Mismatch between input graph '
+                raise RuntimeError(f'Mismatch between input features tensor '
                                    f'({features_tensor.shape[-1]}) and '
                                    f'model ({n_features}) number of '
                                    f'features for features type: '

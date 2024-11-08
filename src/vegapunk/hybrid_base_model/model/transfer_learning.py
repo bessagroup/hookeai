@@ -266,9 +266,9 @@ class PolynomialLinearRegressor(torch.nn.Module):
         
         Parameters
         ----------
-        scaler_features_in : {TorchMinMaxScaler, TorchMinMaxScaler}
+        scaler_features_in : {TorchStandardScaler, TorchMinMaxScaler}
             Data scaler for input features.
-        scaler_features_out : {TorchMinMaxScaler, TorchMinMaxScaler}
+        scaler_features_out : {TorchStandardScaler, TorchMinMaxScaler}
             Data scaler for output features.
         """
         # Initialize data scalers
