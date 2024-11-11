@@ -95,15 +95,25 @@ def perform_model_prediction(predict_directory, dataset_file_path,
     dataset = concatenate_dataset_features(
         dataset, new_label_out, cat_features_out, is_remove_features=True)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Set loss type
+    loss_type = 'mre'
+    # Set loss parameters
+    loss_kwargs = {}
     # Set prediction loss normalization
-    is_normalized_loss = False
+    if loss_type == 'mre':
+        is_normalized_loss = True
+    else:
+        is_normalized_loss = False
     # Set prediction batch size
     batch_size = batch_size=len(dataset)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Set model state loading
+    load_model_state = 'best'
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Prediction with recurrent constitutive model
     predict_subdir, _ = \
         predict(dataset, model_directory, predict_directory=predict_directory,
-                load_model_state='best', loss_nature=loss_nature,
+                load_model_state=load_model_state, loss_nature=loss_nature,
                 loss_type=loss_type, loss_kwargs=loss_kwargs,
                 batch_size=batch_size, is_normalized_loss=is_normalized_loss,
                 dataset_file_path=dataset_file_path,
