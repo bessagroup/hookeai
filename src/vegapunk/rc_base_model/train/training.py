@@ -918,9 +918,9 @@ class EarlyStopper:
         avg_predict_loss : float
             Average prediction loss per sample.
         """
-        # Set material patch model state file name and path
+        # Set model state file name and path
         model_state_file = model.model_name + '-' + str(int(epoch))
-        # Set material patch model state file path
+        # Set model state file path
         model_state_path = \
             os.path.join(model.model_directory, model_state_file + '.pt')
         # Set optimizer state file name and path
@@ -994,7 +994,7 @@ class EarlyStopper:
             raise RuntimeError('The best performance optimization state has '
                                'not been stored.')
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        # Load material patch model state
+        # Load model state
         model.load_state_dict(self._best_model_state)
         # Set loaded optimizer state
         optimizer.load_state_dict(self._best_optimizer_state['state'])
