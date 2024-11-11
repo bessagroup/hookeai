@@ -16,7 +16,7 @@ import itertools
 # Third-party
 import torch
 # Local
-from hybrid_base_model.model.hybrid_model import HybridMaterialModel
+from hybrid_base_model.model.hybrid_model import HybridModel
 from simulators.fetorch.element.integrations.internal_forces import \
     compute_element_internal_forces, compute_infinitesimal_inc_strain, \
     compute_infinitesimal_strain
@@ -412,11 +412,14 @@ class MaterialModelFinder(torch.nn.Module):
         # Loop over material models
         for model_key, model in material_models.items():
             # Collect material models explicit learnable parameters
-            if isinstance(model, HybridMaterialModel):
+            if isinstance(model, HybridModel):
+                # Get hybridized material models names
+                submodels_names = model.get_hybridized_models_names()
                 # Get hybridized material models
-                material_submodels = model.get_hyb_models_dict()
+                submodels = model.get_hybridized_models()
                 # Loop over material submodels
-                for submodel_key, submodel in material_submodels.items():
+                for submodel_name, submodel in \
+                        list(zip(submodels_names, submodels)):
                     # Check if submodel parameters are collected
                     is_collect_params = \
                         (hasattr(submodel, 'is_explicit_parameters')
@@ -435,7 +438,7 @@ class MaterialModelFinder(torch.nn.Module):
                     for param, value in detached_parameters.items():
                         # Set parameter label
                         param_label = \
-                            f'model_{model_key}_{submodel_key}_{param}'
+                            f'model_{model_key}_{submodel_name}_{param}'
                         # Store parameter
                         model_parameters[param_label] = value  
             else:
@@ -484,11 +487,14 @@ class MaterialModelFinder(torch.nn.Module):
         # Loop over material models
         for model_key, model in material_models.items():
             # Collect material models explicit learnable parameters
-            if isinstance(model, HybridMaterialModel):
+            if isinstance(model, HybridModel):
+                # Get hybridized material models names
+                submodels_names = model.get_hybridized_models_names()
                 # Get hybridized material models
-                material_submodels = model.get_hyb_models_dict()
+                submodels = model.get_hybridized_models()
                 # Loop over material submodels
-                for submodel_key, submodel in material_submodels.items():
+                for submodel_name, submodel in \
+                        list(zip(submodels_names, submodels)):
                     # Check if submodel parameters are collected
                     is_collect_params = \
                         (hasattr(submodel, 'is_explicit_parameters')
@@ -506,7 +512,7 @@ class MaterialModelFinder(torch.nn.Module):
                     for param, bounds in parameters_bounds.items():
                         # Set parameter label
                         param_label = \
-                            f'model_{model_key}_{submodel_key}_{param}'
+                            f'model_{model_key}_{submodel_name}_{param}'
                         # Store parameter
                         model_parameters_bounds[param_label] = bounds
             else:
@@ -543,11 +549,11 @@ class MaterialModelFinder(torch.nn.Module):
         # Loop over parameters
         for model_key, param_dict in self.get_model_parameters().items():
             # Enforce bounds in models explicit learnable parameters
-            if isinstance(model, HybridMaterialModel):
+            if isinstance(model, HybridModel):
                 # Get hybridized material models
-                material_submodels = model.get_hyb_models_dict()
+                submodels = model.get_hybridized_models()
                 # Loop over material submodels
-                for _, submodel in material_submodels.items():
+                for submodel in submodels:
                     # Check if submodel parameters are collected
                     is_collect_params = \
                         (hasattr(submodel, 'is_explicit_parameters')
