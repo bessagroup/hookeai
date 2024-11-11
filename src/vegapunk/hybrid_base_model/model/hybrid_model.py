@@ -1,10 +1,10 @@
-"""Hybrid material constitutive model.
+"""Hybrid model.
 
 Classes
 -------
-HybridMaterialModel(torch.nn.Module)
-    Hybrid material constitutive model.
-    
+HybridModel(torch.nn.Module)
+    Hybrid model.
+
 Functions
 ---------
 standard_partial_fit(dataset, features_type, n_features, is_verbose=False)
@@ -22,10 +22,6 @@ import torch
 import tqdm
 import sklearn.preprocessing
 # Local
-from rc_base_model.model.recurrent_model import RecurrentConstitutiveModel
-from rnn_base_model.model.gru_model import GRURNNModel
-from hybrid_base_model.model.transfer_learning import BatchedElasticModel, \
-    PolynomialLinearRegressor
 from hybrid_base_model.model.hybridization import HybridizationModel
 from rnn_base_model.data.time_dataset import get_time_series_data_loader
 from utilities.data_scalers import TorchStandardScaler
@@ -38,55 +34,43 @@ __status__ = 'Planning'
 # =============================================================================
 #
 # =============================================================================
-class HybridMaterialModel(torch.nn.Module):
-    """Hybrid material constitutive model.
+class HybridModel(torch.nn.Module):
+    """Hybrid model.
     
     Attributes
     ----------
-    model_directory : str
-        Directory where model is stored.
-    model_name : str, default='hybrid_material_model'
-        Name of model.
+    model_directory : {str, None}
+        Directory where model is stored. If None, then all methods that depend
+        on an existent model directory become unavailable.
+    model_name : {str, None}
+        Name of model. If None, then all methods that depend on a valid model
+        name become unavailable.
     _n_features_in : int
         Number of input features.
     _n_features_out : int
         Number of output features.
+    _hyb_models_dict : dict
+        For each hybridized model (key, str), store dictionary (item, dict)
+        with the hybridized model data.
     _hyb_models_names : list[str]
-        Hybridized material models names.
-    _hyb_models_init_args : dict
-        Hybridized material models (key, str) initialization attributes
-        (value, dict).
+        Hybridized models names.
     _hyb_models : torch.nn.ModuleList
-        Hybridized material models.
+        Hybridized models.
+    _hyb_channels : dict
+        For each hybridization channel (key, str[int]), store the
+        corresponding hybridized models module index (item, list[int]),
+        sorted according with the associated hybridization indices.
+        Hybridization channels are labeled between 0 and n_hyb_channel,
+        where n_hyb_channel is the total number of channels required to
+        place the hybridized models.
+    _hyb_models_input_residual : dict
+        For each hybridization model (key, str), store input residual
+        connection flag (item, bool). If True, then input residual
+        connection is assigned to hybridized model, False otherwise.
     _hybridization_type : str
         Hybridization model type.
     _hybridization_model : HybridizationModel
         Hybridization model.
-    _is_assigned_tl_model : dict[bool]
-        Sets transfer-learning model assignment (item, bool) to each
-        hybridized model (key, str).
-    _tl_models_names : dict
-        Transfer-learning model name (item, str) associated with given
-        hybridized model (key, str).
-    _tl_models_init_args : dict
-        Transfer-learning models (key, str) initialization attributes
-        (value, dict).
-    _tl_models : torch.nn.ModuleList
-        Transfer-learning models sorted according with hybridized models.
-        An identity model is assigned as a placeholder for hybridized
-        models without an assigned transfer-learning model.
-    _is_tl_residual_connection : dict
-        Sets residual connection (item, bool) to each transfer-learning model
-        (key, str).
-    _hyb_models_init_file_path : dict, default={}
-        Hybridized material models (key, str) initialization file path
-        (item, str). Overrides provided hybridized material model
-        initialization attributes.
-    _hyb_models_init_state_path : dict, default={}
-        Hybridized material models (key, str) initial model state file
-        path (item, str). Initial model state file must be consistent with
-        hybridized material model initialization attributes. Ignored when
-        initializing hybrid model from initialization file.
     _device_type : {'cpu', 'cuda'}
         Type of device on which torch.Tensor is allocated.
     _device : torch.device
@@ -105,16 +89,18 @@ class HybridMaterialModel(torch.nn.Module):
     -------
     init_model_from_file(model_directory=None, model_init_file_path=None)
         Initialize model from initialization file.
-    update_model_init_file_internal_paths(model_init_file_path, \
-                                          hyb_models_init_file_path={}, \
-                                          hyb_models_init_state_path={})
-        Update initialization file path-dependent attributes.
+    get_hybridization_channels(cls, hyb_models_dict)
+        Get hybrid model hybridization channels.
+    get_hybridized_model(self, hyb_model_name)
+        Get hybridized model from name.
+    get_hybridized_models(self)
+        Get hybridized models.
+    get_hybridized_models_names(self)
+        Get hybridized models names.
     set_device(self, device_type)
         Set device on which torch.Tensor is allocated.
     get_device(self)
         Get device on which torch.Tensor is allocated.
-    get_hyb_models_dict(self)
-        Get hybridized material models dictionary.
     get_detached_model_parameters(self, is_normalized_out=False)
         Get model parameters detached of gradients.
     get_model_parameters_bounds(self)
@@ -127,19 +113,12 @@ class HybridMaterialModel(torch.nn.Module):
         Check if generic model expects normalized output features.
     features_out_extractor(cls, model_output)
         Extract output features from generic model output.
-    set_transfer_learning_models(self, tl_models_names, tl_models_init_args,
-                                 is_tl_residual_connection)
-        Set transfer-learning models for hybridized models.
     save_model_init_file(self)
         Save model initialization file.
     sync_material_model_parameters(self)
-        Synchronize material model parameters with learnable parameters.
+        Synchronize model parameters with learnable parameters.
     check_hyb_models_data_scalers(self)
-        Check hybridized material models data scalers.
-    sync_hyb_models_data_scalers(self)
-        Synchronize data scalers with hybridized models.
-    sync_tl_models_data_scalers(self)
-        Synchronize data scalers with transfer-learning models.
+        Check hybridized models data scalers.
     save_model_init_state(self)
         Save model initial state to file.
     save_model_state(self, epoch=None, is_best_state=False, \
@@ -170,15 +149,11 @@ class HybridMaterialModel(torch.nn.Module):
     check_normalized_return(self)
         Check if model data normalization is available.
     """
-    def __init__(self, n_features_in, n_features_out, hyb_models_names,
-                 hyb_models_init_args, model_directory,
-                 model_name='hybrid_material_model',
-                 hybridization_type='identity',
-                 tl_models_names={}, tl_models_init_args={}, 
-                 is_tl_residual_connection={},
-                 is_model_in_normalized=False, is_model_out_normalized=False,
-                 hyb_models_init_file_path={}, hyb_models_init_state_path={},
-                 is_save_model_init_file=True, device_type='cpu'):
+    def __init__(self, n_features_in, n_features_out, hyb_models_dict,
+                 model_directory, model_name='hybrid_model',
+                 hybridization_type='identity', is_model_in_normalized=False,
+                 is_model_out_normalized=False, is_save_model_init_file=True,
+                 device_type='cpu'):
         """Constructor.
         
         Parameters
@@ -187,41 +162,30 @@ class HybridMaterialModel(torch.nn.Module):
             Number of input features.
         n_features_out : int
             Number of output features.
-        hyb_models_names : list[str]
-            Hybridized material models names.
-        hyb_models_init_args : dict
-            Hybridized material models (key, str) initialization attributes
-            (value, dict).
+        hyb_models_dict : dict
+            For each hybridized model (key, str), store dictionary (item, dict)
+            with the hybridized model data, namely:
+            
+            'hyb_model' : Hybridized model (torch.nn.Module)
+            
+            'hyb_indices' : Hybridization indices (tuple[int])
+            
+            'is_input_residual' Input residual connection (concatenation)
+
         model_directory : str
-            Directory where model is stored.
-        model_name : str, default='hybrid_material_model'
-            Name of model.
+            Directory where model is stored. If None, then all methods that
+            depend on an existent model directory become unavailable.
+        model_name : str, default='hybrid_model'
+            Name of model. If None, then all methods that depend on a valid
+            model name become unavailable.
         hybridization_type : str, default='identity'
             Hybridization model type.
-        tl_models_names : dict, default={}
-            Transfer-learning model name (item, str) associated with given
-            hybridized model (key, str).
-        tl_models_init_args : dict, default={}
-            Transfer-learning models (key, str) initialization attributes
-            (value, dict).
-        is_tl_residual_connection : dict, default={}
-            Sets residual connection (item, bool) to each transfer-learning
-            model (key, str).
         is_model_in_normalized : bool, default=False
             If True, then model expects normalized input features (normalized
             input data has been seen during model training).
         is_model_out_normalized : bool, default=False
             If True, then model expects normalized output features (normalized
             output data has been seen during model training).
-        hyb_models_init_file_path : dict, default={}
-            Hybridized material models (key, str) initialization file path
-            (item, str). Overrides provided hybridized material model
-            initialization attributes.
-        hyb_models_init_state_path : dict, default={}
-            Hybridized material models (key, str) initial model state file
-            path (item, str). Initial model state file must be consistent with
-            hybridized material model initialization attributes. Ignored when
-            initializing hybrid model from initialization file.
         is_save_model_init_file: bool, default=True
             If True, saves model initialization file when model is initialized
             (overwritting existent initialization file), False otherwise. When
@@ -232,97 +196,58 @@ class HybridMaterialModel(torch.nn.Module):
             Type of device on which torch.Tensor is allocated.
         """
         # Initialize from base class
-        super(HybridMaterialModel, self).__init__()
+        super(HybridModel, self).__init__()
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Set number of features
         self._n_features_in = n_features_in
         self._n_features_out = n_features_out
-        # Set hybridized material models names
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set hybridized models dictionary
+        self._hyb_models_dict = hyb_models_dict
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set hybridization channels
+        hyb_models_names, hyb_models, hyb_channels, \
+            hyb_models_input_residual = self.get_hybridization_channels(
+                self._hyb_models_dict)
+        # Set hybridized model names
         self._hyb_models_names = hyb_models_names
-        # Set hybridized material models initialization attributes
-        self._hyb_models_init_args = hyb_models_init_args
-        # Set model directory and name
-        if os.path.isdir(model_directory):
+        # Set hybridized models
+        self._hyb_models = torch.nn.ModuleList(hyb_models)
+        # Set hybridization channels
+        self._hyb_channels = hyb_channels
+        # Set hybridization models input residual connections
+        self._hyb_models_input_residual = hyb_models_input_residual
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set model directory
+        if model_directory is None:
+            self.model_directory = model_directory
+        elif os.path.isdir(model_directory):
             self.model_directory = str(model_directory)
         else:
             raise RuntimeError('The model directory has not been found.')
-        if not isinstance(model_name, str):
-            raise RuntimeError('The model name must be a string.')
-        else:
+        # Set model name
+        if model_name is None:
             self.model_name = model_name
+        elif isinstance(model_name, str):
+            self.model_name = model_name
+        else:
+            raise RuntimeError('The model name must be a string.')
         # Set hybridization model type
         self._hybridization_type = hybridization_type
         # Set model input and output features normalization
         self.is_model_in_normalized = is_model_in_normalized
         self.is_model_out_normalized = is_model_out_normalized
-        # Set hybridized material models initialization file paths
-        self._hyb_models_init_file_path = hyb_models_init_file_path
-        # Set hybridized material models initial state file paths
-        self._hyb_models_init_state_path = hyb_models_init_state_path
         # Set save initialization file flag
         self._is_save_model_init_file = is_save_model_init_file
         # Set device
         self.set_device(device_type)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        # Initialize hybridized material models
-        self._hyb_models = torch.nn.ModuleList()
-        # Loop over hybridized material models
-        for model_name in self._hyb_models_names:
-            # Get material model class
-            if bool(re.search(r'^rc_.*$', model_name)):
-                material_model_class = RecurrentConstitutiveModel
-                is_save_init_file_kwarg = True
-            elif bool(re.search(r'^gru.*$', model_name)):
-                material_model_class = GRURNNModel
-                is_save_init_file_kwarg = True
-            elif bool(re.search(r'^batched_elastic.*$', model_name)):
-                material_model_class = BatchedElasticModel
-                is_save_init_file_kwarg = False
-            else:
-                raise RuntimeError(f'Unknown or unavailable material '
-                                   f'model for hybridization '
-                                   f'\'{model_name}\'.')
-            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            # Initialize material model
-            if model_name in self._hyb_models_init_file_path.keys():
-                # Get material model initialization file
-                model_init_file_path = \
-                    self._hyb_models_init_file_path[model_name]
-                # Initialize material model
-                material_model = material_model_class.init_model_from_file(
-                    model_init_file_path=model_init_file_path)
-            else:
-                # Get material model initialization attributes
-                model_init_args = self._hyb_models_init_args[model_name]
-                # Initialize material model
-                if is_save_init_file_kwarg:
-                    material_model = material_model_class(
-                        **model_init_args, is_save_model_init_file=False)
-                else:
-                    material_model = material_model_class(**model_init_args)
-            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            # Load material model initial state
-            if model_name in self._hyb_models_init_state_path.keys():
-                # Get initial model state file path
-                model_state_path = self._hyb_models_init_state_path[model_name]
-                # Load model initial state
-                material_model.load_state_dict(
-                    torch.load(model_state_path,
-                               map_location=torch.device('cpu')))
-            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            # Store hybridized material model
-            self._hyb_models.append(material_model)
-        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        # Check hybridized material models data scalers
+        # Check hybridized models data scalers
         self.check_hyb_models_data_scalers()
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Initialize hybridization model
         self._hybridization_model = \
             HybridizationModel(hybridization_type=hybridization_type)
-        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        # Set transfer-learning models for hybridized models
-        self.set_transfer_learning_models(tl_models_names, tl_models_init_args,
-                                          is_tl_residual_connection)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Initialize data scalers
         self._init_data_scalers()
@@ -391,8 +316,7 @@ class HybridMaterialModel(torch.nn.Module):
         model_init_args['model_directory'] = model_directory
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Initialize model
-        model = HybridMaterialModel(**model_init_args,
-                                    is_save_model_init_file=False)
+        model = HybridModel(**model_init_args, is_save_model_init_file=False)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Set model data scalers
         model_data_scalers = model_init_attributes['model_data_scalers']
@@ -402,32 +326,161 @@ class HybridMaterialModel(torch.nn.Module):
             for _, data_scaler in model._data_scalers.items():
                 data_scaler.set_device(model._device_type)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        # Check hybridized material models data scalers
+        # Check hybridized models data scalers
         model.check_hyb_models_data_scalers()
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         return model
     # -------------------------------------------------------------------------
-    @staticmethod
-    def update_model_init_file_internal_paths(model_init_file_path,
-                                              hyb_models_init_file_path={},
-                                              hyb_models_init_state_path={}):
-        """Update initialization file path-dependent attributes.
-        
-        Only updates existing attributes and the specific provided paths.
+    @classmethod
+    def get_hybridization_channels(cls, hyb_models_dict):
+        """Get hybrid model hybridization channels.
         
         Parameters
         ----------
-        model_init_file_path : str
-            Model initialization file path.
-        hyb_models_init_file_path : dict, default={}
-            Hybridized material models (key, str) initialization file path
-            (item, str).
-        hyb_models_init_state_path : dict, default={}
-            Hybridized material models (key, str) initial model state file
-            path (item, str). Initial model state file must be consistent with
-            hybridized material model initialization attributes.
+        hyb_models_dict : dict
+            For each hybridized model (key, str), store dictionary (item, dict)
+            with the hybridized model data.
+        
+        Returns
+        -------
+        hyb_models_names : list[str]
+            Hybridized models names.
+        hyb_models : list[torch.nn.Module]
+            Hybridized models.
+        hyb_channels : dict
+            For each hybridization channel (key, str[int]), store the
+            corresponding hybridized models module index (item, list[int]),
+            sorted according with the associated hybridization indices.
+            Hybridization channels are labeled between 0 and n_hyb_channel,
+            where n_hyb_channel is the total number of channels required to
+            place the hybridized models.
+        hyb_models_input_residual : dict
+            For each hybridization model (key, str), store input residual
+            connection flag (item, bool). If True, then input residual
+            connection is assigned to hybridized model, False otherwise.
         """
-        pass
+        # Initialize hybridized models names
+        hyb_models_names = []
+        # Initialize hybridized models
+        hyb_models = []
+        # Initialize hybridization channels
+        hyb_channels = {}
+        # Initialize hybridized models input residual connection
+        hyb_models_input_residual = {}
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Initialize hybridized models indices
+        hyb_models_indices = torch.zeros((0, 2), dtype=torch.int)
+        # Loop over hybridized models
+        for hyb_model_name, hyb_model_data in hyb_models_dict.items():
+            # Get hybridized model indices
+            hyb_indices = torch.tensor(hyb_model_data['hyb_indices'],
+                                       dtype=torch.int).view(1, 2)
+            # Store hybridized model name
+            hyb_models_names.append(hyb_model_name)
+            # Store hybridized model indices
+            hyb_models_indices = \
+                torch.cat((hyb_models_indices, hyb_indices), dim=0)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Get sorted column indices (secondary)
+        sorted_cols_indices = \
+            torch.argsort(hyb_models_indices[:, 1], stable=True)
+        # Sort hybridized models
+        hyb_models_names = [hyb_models_names[i] for i in sorted_cols_indices]
+        hyb_models_indices = hyb_models_indices[sorted_cols_indices, :]
+        # Get sorted row indices (primary)
+        sorted_rows_indices = \
+            torch.argsort(hyb_models_indices[:, 0], stable=True)
+        # Sort hybridized models
+        hyb_models_names = [hyb_models_names[i] for i in sorted_rows_indices]
+        hyb_models_indices = hyb_models_indices[sorted_rows_indices, :]
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Initialize hybridization channel id
+        channel_id = 0
+        # Initialize hybridized model index
+        model_idx = 0
+        # Initialize hybridization channel
+        hyb_channels[str(channel_id)] = []
+        # Loop over (sorted) hybridized models
+        for i, hyb_model_name in enumerate(hyb_models_names):
+            # Get hybridized model
+            hyb_model = hyb_models_dict[hyb_model_name]['hyb_model']
+            # Store hybridized model
+            hyb_models.append(hyb_model)
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Get hybridized model indices
+            hyb_indices = hyb_models_indices[i, :]
+            # Assemble hybridized model to channel
+            if len(hyb_channels[str(channel_id)]) == 0:
+                hyb_channels[str(channel_id)].append(model_idx)
+            elif hyb_indices[0] == hyb_models_indices[i - 1, 0]:
+                # Check for duplicate indices
+                if hyb_indices[1] == hyb_models_indices[i - 1, 1]:
+                    raise RuntimeError(
+                        f'Two hybridization models were assigned similar '
+                        f'hybridization indices ({hyb_indices.tolist()}). '
+                        f'Check hybridization models \'{hyb_model_name}\' '
+                        f'and \'{hyb_models_names[i - 1]}\'.')
+                else:
+                    hyb_channels[str(channel_id)].append(model_idx)
+            else:
+                # Increment hybridization channel id
+                channel_id += 1
+                # Initialize hybridized channel
+                hyb_channels[str(channel_id)] = []
+                # Assemble hybridized model to channel
+                hyb_channels[str(channel_id)].append(model_idx)
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Get hybridized model input residual connection
+            hyb_models_input_residual[hyb_model_name] = \
+                hyb_models_dict[hyb_model_name]['is_input_residual']
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        return hyb_models_names, hyb_models, hyb_channels, \
+            hyb_models_input_residual
+    # -------------------------------------------------------------------------
+    def get_hybridized_model(self, hyb_model_name):
+        """Get hybridized model from name.
+        
+        Parameters
+        ----------
+        hyb_model_name : str
+            Hybridized model name.
+            
+        Returns
+        -------
+        hyb_model : torch.nn.Module
+            Hybridized model.
+        """
+        # Check hybridized model name
+        if hyb_model_name not in self._hyb_models_names:
+            raise RuntimeError(f'Unknown hybridized model '
+                               f'\'{hyb_model_name}\'.')
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Get hybridized model module index
+        model_idx = self._hyb_models_names.index(hyb_model_name)
+        # Get hybridized model
+        hyb_model = self._hyb_models[model_idx]
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        return hyb_model
+    # -------------------------------------------------------------------------
+    def get_hybridized_models(self):
+        """Get hybridized models.
+        
+        Returns
+        -------
+        hyb_models : torch.nn.ModuleList
+            Hybridized models.
+        """
+        return self._hyb_models
+    # -------------------------------------------------------------------------
+    def get_hybridized_models_names(self):
+        """Get hybridized models names.
+        
+        Returns
+        -------
+        hyb_models_names : list[str]
+            Hybridized models names.
+        """
+        return self._hyb_models_names
     # -------------------------------------------------------------------------
     def set_device(self, device_type):
         """Set device on which torch.Tensor is allocated.
@@ -447,11 +500,13 @@ class HybridMaterialModel(torch.nn.Module):
             self._device_type = device_type
             self._device = torch.device(device_type)
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            # Consistent update of hybridized material models device
-            if hasattr(self, '_hyb_models'):
-                # Loop over hybridized material models
-                for hyb_model in self._hyb_models:
-                    # Update hybridized material model device 
+            # Consistent update of hybridized models device
+            if hasattr(self, '_hyb_models_dict'):
+                # Loop over hybridized models
+                for hyb_model_name in self._hyb_models_names:
+                    # Get hybridized model
+                    hyb_model = self.get_hybridized_model(hyb_model_name)
+                    # Update hybridized model device 
                     if hasattr(hyb_model, 'set_device'):
                         hyb_model.set_device(self._device_type)
         else:
@@ -469,23 +524,11 @@ class HybridMaterialModel(torch.nn.Module):
         """
         return self.device_type, self.device
     # -------------------------------------------------------------------------
-    def get_hyb_models_dict(self):
-        """Get hybridized material models dictionary.
-        
-        Returns
-        -------
-        hyb_models_dict : dict
-            Hybridized material models (val, torch.nn.Module) with
-            corresponding names (key, str).
-        """
-        return dict(zip(self._hyb_models_names, self._hyb_models))
-    # -------------------------------------------------------------------------
     def get_detached_model_parameters(self, is_normalized_out=False):
         """Get model parameters detached of gradients.
         
-        Only collects parameters from hybridized material models with explicit
-        learnable parameters. Parameters labels are prefixed with hybridized
-        model name.
+        Only collects parameters from hybridized models with explicit learnable
+        parameters. Parameters labels are prefixed with hybridized model name.
         
         Parameters
         ----------
@@ -497,22 +540,22 @@ class HybridMaterialModel(torch.nn.Module):
         model_parameters : dict
             Model parameters.
         """
-        # Get hybridized material models
-        hyb_models_dict = self.get_hyb_models_dict()
-        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Initialize model parameters
         model_parameters = {}
-        # Loop over hybridized material models
-        for hyb_model_name, hyb_model in hyb_models_dict.items():
-            # Check if hybridized material model parameters are collected
+        # Loop over hybridized models
+        for hyb_model_name in self._hyb_models_names:
+            # Get hybridized model
+            hyb_model = self.get_hybridized_model(hyb_model_name)
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Check if hybridized model parameters are collected
             is_collect_params = (hasattr(hyb_model, 'is_explicit_parameters')
                                  and hyb_model.is_explicit_parameters)
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            # Skip hybridized material model parameters
+            # Skip hybridized model parameters
             if not is_collect_params:
                 continue
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            # Get detached hybridized material model parameters
+            # Get detached hybridized model parameters
             detached_parameters = hyb_model.get_detached_model_parameters(
                 is_normalized_out=is_normalized_out)
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -528,9 +571,8 @@ class HybridMaterialModel(torch.nn.Module):
     def get_model_parameters_bounds(self):
         """Get model parameters bounds.
         
-        Only collects parameters from hybridized material models with explicit
-        learnable parameters. Parameters labels are prefixed with hybridized
-        model name.
+        Only collects parameters from hybridized models with explicit learnable
+        parameters. Parameters labels are prefixed with hybridized model name.
 
         Returns
         -------
@@ -539,22 +581,22 @@ class HybridMaterialModel(torch.nn.Module):
             the corresponding bounds are stored as a
             tuple(lower_bound, upper_bound) (item, tuple).
         """
-        # Get hybridized material models
-        hyb_models_dict = self.get_hyb_models_dict()
-        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Initialize model parameters bounds
         model_parameters_bounds = {}
-        # Loop over hybridized material models
-        for hyb_model_name, hyb_model in hyb_models_dict.items():
-            # Check if hybridized material model parameters are collected
+        # Loop over hybridized models
+        for hyb_model_name in self._hyb_models_names:
+            # Get hybridized model
+            hyb_model = self.get_hybridized_model(hyb_model_name)
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Check if hybridized model parameters are collected
             is_collect_params = (hasattr(hyb_model, 'is_explicit_parameters')
                                  and hyb_model.is_explicit_parameters)
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            # Skip hybridized material model parameters
+            # Skip hybridized model parameters
             if not is_collect_params:
                 continue
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            # Get hybridized material model parameters bounds
+            # Get hybridized model parameters bounds
             parameters_bounds = hyb_model.get_model_parameters_bounds()
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Collect parameters bounds (prefix with hybridized model name)
@@ -590,53 +632,48 @@ class HybridMaterialModel(torch.nn.Module):
             raise RuntimeError('Input features were not provided as '
                                'torch.Tensor.')
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Get sorted hybridization channels ids
+        channels_ids = sorted([int(x) for x in self._hyb_channels.keys()])
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Initialize hybridized models outputs
         list_features_out = []
-        # Loop over hybridized material models
-        for i, hyb_model in enumerate(self._hyb_models):
-            # Get hybridized material model name
-            hyb_model_name = self._hyb_models_names[i]
+        # Loop over hybridization channels
+        for channel_id in channels_ids:
+            # Initialize hybridization channel output features (recursive)
+            features_out = features_in
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            # Get hybridized material model input features
-            if self.check_model_in_normalized(hyb_model):
-                # Normalize hybridized material model input features
-                hyb_model_features_in = hyb_model.data_scaler_transform(
-                    features_in, 'features_in', mode='normalize')
-            else:
-                hyb_model_features_in = features_in
-            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            # Perform forward propagation of hybridized material model
-            hyb_model_output = hyb_model(hyb_model_features_in)
-            # Extract hybridized material model output features
-            features_out = self.features_out_extractor(hyb_model_output)
-            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            # Get hybridized material model output features
-            if self.check_model_out_normalized(hyb_model):
-                features_out = hyb_model.data_scaler_transform(
-                    features_out, 'features_out', mode='denormalize')
-            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            # Propagate hybridized material model output features through
-            # transfer-learning model
-            if self._is_assigned_tl_model[hyb_model_name]:
-                # Get transfer-learning model name
-                tl_model_name = self._tl_models_names[hyb_model_name]
-                # Get transfer-learning model
-                tl_model = self._tl_models[i]
-                # Check if transfer-learning model has residual connection
-                is_tl_residual_connection = \
-                    self._is_tl_residual_connection[tl_model_name]
-                # Build transfer-learning model input features
-                if is_tl_residual_connection:
-                    tl_model_input = torch.cat(
-                        (features_in, features_out), dim=-1)
+            # Loop over hybridization channel hybridized models
+            for hyb_model_idx in self._hyb_channels[str(channel_id)]:
+                # Get hybridized model name
+                hyb_model_name = self._hyb_models_names[hyb_model_idx]
+                # Get hybridized model
+                hyb_model = self.get_hybridized_model(hyb_model_name)
+                # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                # Check hybridized model input residual connection
+                if self._hyb_models_input_residual[hyb_model_name]:
+                    # Concatenate input residual connection
+                    features_out = \
+                        torch.cat((features_out, features_in), dim=-1)
+                # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                # Get hybridized model input features
+                if self.check_model_in_normalized(hyb_model):
+                    # Normalize hybridized model input features
+                    hyb_model_features_in = hyb_model.data_scaler_transform(
+                        features_out, 'features_in', mode='normalize')
                 else:
-                    tl_model_input = features_out
-                # Compute transfer-learning model output features
-                tl_model_output = tl_model(tl_model_input)
-                # Extract output features
-                features_out = self.features_out_extractor(tl_model_output)
+                    hyb_model_features_in = features_out
+                # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                # Perform forward propagation of hybridized model
+                hyb_model_output = hyb_model(hyb_model_features_in)
+                # Extract hybridized model output features
+                features_out = self.features_out_extractor(hyb_model_output)
+                # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                # Get hybridized model output features
+                if self.check_model_out_normalized(hyb_model):
+                    features_out = hyb_model.data_scaler_transform(
+                        features_out, 'features_out', mode='denormalize')
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            # Store hybridized material model output features
+            # Store hybridization channel output features
             list_features_out.append(features_out)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Compute hybridization model output features
@@ -734,77 +771,6 @@ class HybridMaterialModel(torch.nn.Module):
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         return features_out
     # -------------------------------------------------------------------------
-    def set_transfer_learning_models(self, tl_models_names,
-                                     tl_models_init_args,
-                                     is_tl_residual_connection):
-        """Set transfer-learning models for hybridized models.
-        
-        Parameters
-        ----------
-        tl_models_names : dict
-            Transfer-learning model name (item, str) associated with given
-            hybridized model (key, str).
-        tl_models_init_args : dict
-            Transfer-learning models (key, str) initialization attributes
-            (value, dict).
-        is_tl_residual_connection : dict
-            Sets residual connection (item, bool) to each transfer-learning
-            model (key, str).
-        """
-        # Set transfer-learning models names
-        self._tl_models_names = tl_models_names
-        # Set transfer-learning models initialization attributes 
-        self._tl_models_init_args = tl_models_init_args
-        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        # Initialize transfer-learning models assignment
-        self._is_assigned_tl_model = {}
-        # Loop over hybridized material models
-        for model_name in self._hyb_models_names:
-            # Assign transfer-learning model
-            if model_name in self._tl_models_names.keys():
-                self._is_assigned_tl_model[model_name] = True
-            else:
-                self._is_assigned_tl_model[model_name] = False
-        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        # Initialize transfer-learning models
-        self._tl_models = torch.nn.ModuleList()
-        # Loop over hybridized material models
-        for model_name in self._hyb_models_names:
-            # Set transfer-learning model
-            if self._is_assigned_tl_model[model_name]:
-                # Get transfer-learning model name
-                tl_model_name = self._tl_models_names[model_name]
-                # Get transfer-learning model initialization attributes
-                tl_model_init_args = self._tl_models_init_args[tl_model_name]
-                # Initialize material model
-                if bool(re.search(r'^gru.*$', tl_model_name)):
-                    tl_model = GRURNNModel(**tl_model_init_args,
-                                           is_save_model_init_file=False)
-                elif bool(re.search(r'^batched_elastic.*', tl_model_name)):
-                    tl_model = BatchedElasticModel(**tl_model_init_args)
-                elif bool(re.search(r'^poly_regressor.*', tl_model_name)):
-                    tl_model = PolynomialLinearRegressor(**tl_model_init_args)
-                else:
-                    raise RuntimeError(f'Unknown or unavailable transfer-'
-                                       f'learning model \'{tl_model_name}\' '
-                                       f'assigned to hybridized model '
-                                       f'\'{model_name}\'.')
-            else:
-                tl_model = torch.nn.Identity()
-            # Store transfer-learning model
-            self._tl_models.append(tl_model)
-        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        # Initialize transfer-learning residual connection
-        self._is_tl_residual_connection = {}
-        # Loop over transfer-learning models
-        for _, tl_model_name in self._tl_models_names.items():
-            # Set residual connection of transfer-learning model
-            if tl_model_name in is_tl_residual_connection.keys():
-                self._is_tl_residual_connection[tl_model_name] = \
-                    bool(is_tl_residual_connection[tl_model_name])
-            else:
-                self._is_tl_residual_connection[tl_model_name] = False
-    # -------------------------------------------------------------------------
     def save_model_init_file(self):
         """Save model initialization file.
         
@@ -817,6 +783,7 @@ class HybridMaterialModel(torch.nn.Module):
         'model_init_args' - Model initialization parameters
         
         'model_data_scalers' - Model fitted data scalers
+
         """
         # Check model directory
         if not os.path.isdir(self.model_directory):
@@ -830,22 +797,13 @@ class HybridMaterialModel(torch.nn.Module):
         model_init_args = {}
         model_init_args['n_features_in'] = self._n_features_in
         model_init_args['n_features_out'] = self._n_features_out
-        model_init_args['hyb_models_names'] = self._hyb_models_names
-        model_init_args['hyb_models_init_args'] = self._hyb_models_init_args
-        model_init_args['hybridization_type'] = self._hybridization_type
-        model_init_args['tl_models_names'] = self._tl_models_names
-        model_init_args['tl_models_init_args'] = self._tl_models_init_args
-        model_init_args['is_tl_residual_connection'] = \
-            self._is_tl_residual_connection
+        model_init_args['hyb_models_dict'] = self._hyb_models_dict
         model_init_args['model_directory'] = self.model_directory
         model_init_args['model_name'] = self.model_name
-        model_init_args['is_model_in_normalized'] = self.is_model_in_normalized
+        model_init_args['is_model_in_normalized'] = \
+            self.is_model_in_normalized
         model_init_args['is_model_out_normalized'] = \
             self.is_model_out_normalized
-        model_init_args['hyb_models_init_file_path'] = \
-            self._hyb_models_init_file_path
-        model_init_args['hyb_models_init_state_path'] = \
-            self._hyb_models_init_state_path
         model_init_args['device_type'] = self._device_type
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Assemble initialization parameters
@@ -861,26 +819,28 @@ class HybridMaterialModel(torch.nn.Module):
             pickle.dump(model_init_attributes, init_file)
     # -------------------------------------------------------------------------
     def sync_material_model_parameters(self):
-        """Synchronize material model parameters with learnable parameters.
+        """Synchronize model parameters with learnable parameters.
         
-        Required to update wrapped material constitutive model parameters in
+        Required to update wrapped constitutive model parameters in
         hybridized models of class RecurrentConstitutiveModel.
         """
-        # Loop over hybridized material models
-        for hyb_model in self._hyb_models:
-            # Synchronize material model parameters with learnable parameters
+        # Loop over hybridized models
+        for hyb_model_name in self._hyb_models_names:
+            # Get hybridized model
+            hyb_model = self.get_hybridized_model(hyb_model_name)
+            # Synchronize model parameters with learnable parameters
             if (hasattr(hyb_model, 'sync_material_model_parameters')
                 and callable(hyb_model.sync_material_model_parameters)):
                 hyb_model.sync_material_model_parameters()
     # -------------------------------------------------------------------------
     def check_hyb_models_data_scalers(self):
-        """Check hybridized material models data scalers."""
-        # Loop over hybridized material models
-        for i, hyb_model in enumerate(self._hyb_models):
-            # Get hybridized material model name
-            hyb_model_name = self._hyb_models_names[i]
+        """Check hybridized models data scalers."""
+        # Loop over hybridized models
+        for hyb_model_name in self._hyb_models_names:
+            # Get hybridized model
+            hyb_model = self.get_hybridized_model(hyb_model_name)
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            # Check hybridized material model features normalization
+            # Check hybridized model features normalization
             is_model_in_normalized = \
                 self.check_model_in_normalized(hyb_model)
             is_model_out_normalized = \
@@ -890,114 +850,41 @@ class HybridMaterialModel(torch.nn.Module):
             if not is_model_in_normalized and not is_model_out_normalized:
                 continue
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            # Check hybridized material model data scalers
-            if (not hasattr(hyb_model, 'data_scalers')
-                    or hyb_model.data_scalers is None):
+            # Check hybridized model data scalers
+            if (not hasattr(hyb_model, '_data_scalers')
+                    or hyb_model._data_scalers is None):
                 raise RuntimeError(
-                    f'Data scalers are not available to hybridized material '
-                    f'model {hyb_model_name}. Either the data_scalers '
+                    f'Data scalers are not available to hybridized '
+                    f'model \'{hyb_model_name}\'. Either the data_scalers '
                     f'attribute is missing or is set to None.')
             else:
-                data_scalers = hyb_model.data_scalers
+                data_scalers = hyb_model._data_scalers
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            # Check hybridized material model input features data scaler
+            # Check hybridized model input features data scaler
             is_features_in_data_scaler = \
                 ('features_in' in data_scalers.keys()
-                 and data_scalers['features_in'] is None)
-            # Check hybridized material model input features normalization
+                 and data_scalers['features_in'] is not None)
+            # Check hybridized model input features normalization
             if is_model_in_normalized and not is_features_in_data_scaler:
                 raise RuntimeError(
                     f'Data scalers to normalize \'features_in\' are not '
-                    f'available to hybridized material model {hyb_model_name} '
+                    f'available to hybridized model \'{hyb_model_name}\' '
                     f'with \'is_model_in_normalized=True\'.'
                     f'The corresponding data_scaler[\'features_in\'] is '
                     f'either missing or set to None.')
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            # Check hybridized material model output features data scaler
+            # Check hybridized model output features data scaler
             is_features_out_data_scaler = \
                 ('features_out' in data_scalers.keys()
-                 and data_scalers['features_out'] is None)
-            # Check hybridized material model output features normalization
+                 and data_scalers['features_out'] is not None)
+            # Check hybridized model output features normalization
             if is_model_out_normalized and not is_features_out_data_scaler:
                 raise RuntimeError(
                     f'Data scalers to normalize \'features_out\' are not '
-                    f'available to hybridized material model {hyb_model_name} '
+                    f'available to hybridized model \'{hyb_model_name}\' '
                     f'with \'is_model_out_normalized=True\'.'
                     f'The corresponding data_scaler[\'features_in\'] is '
                     f'either missing or set to None.')
-    # -------------------------------------------------------------------------
-    def sync_hyb_models_data_scalers(self):
-        """Synchronize data scalers with hybridized models."""
-        # Get fitted data scalers
-        scaler_features_in = self._data_scalers['features_in']
-        scaler_features_out = self._data_scalers['features_out']
-        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        # Loop over hybridized material models
-        for hyb_model in self._hyb_models:
-            # Check hybridized model normalization
-            if (hasattr(hyb_model, 'is_model_in_normalized')
-                or hasattr(hyb_model, 'is_model_out_normalized')):
-                # Synchronize data scalers
-                hyb_model.set_data_scalers(scaler_features_in,
-                                           scaler_features_out)
-    # -------------------------------------------------------------------------
-    def sync_tl_models_data_scalers(self):
-        """Synchronize data scalers with transfer-learning models."""
-        # Get fitted data scalers
-        scaler_features_in = self._data_scalers['features_in']
-        scaler_features_out = self._data_scalers['features_out']
-        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        # Loop over hybridized material models
-        for i, model_name in enumerate(self._hyb_models_names):
-            # Skip hybridized model if transfer-learning model is not assigned
-            if not self._is_assigned_tl_model[model_name]:
-                continue
-            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            # Get transfer-learning model name
-            tl_model_name = self._tl_models_names[model_name]
-            # Get transfer-learning model
-            tl_model = self._tl_models[i]
-            # Check if transfer-learning model has residual connection
-            is_tl_residual_connection = \
-                self._is_tl_residual_connection[tl_model_name]
-            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            # Check transfer-learning model data normalization
-            if (hasattr(tl_model, 'is_model_in_normalized')
-                    or hasattr(tl_model, 'is_model_out_normalized')):
-                # Synchronize data scalers according with residual connection
-                if is_tl_residual_connection:
-                    # Check concatenated features data scalers
-                    type_scaler_in = type(scaler_features_in)
-                    type_scaler_out = type(scaler_features_out)
-                    if ((not type_scaler_in == TorchStandardScaler)
-                            or (not type_scaler_out == TorchStandardScaler)):
-                        raise RuntimeError(
-                            'Handling of transfer-learning model residual '
-                            'connection requires that the hybrid model '
-                            'input and output features data scalers are '
-                            'of type TorchStandardScaler.')
-                    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-                    # Get concatenated features data scalers parameters
-                    mean_in, std_in = scaler_features_in.get_mean_and_std()
-                    mean_out, std_out = scaler_features_out.get_mean_and_std()
-                    # Concatenate features data scalers parameters
-                    cat_mean = torch.cat((mean_in, mean_out))
-                    cat_std = torch.cat((std_in, std_out))
-                    # Set transfer-learning model concatenated data scaler
-                    cat_scaler_features_in = TorchStandardScaler(
-                        n_features=self._n_features_in + self._n_features_out,
-                        mean=cat_mean, std=cat_std,
-                        device_type=self._device_type)
-                    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-                    # Synchronize concatenated data scalers
-                    tl_model.set_data_scalers(
-                        scaler_features_in=cat_scaler_features_in,
-                        scaler_features_out=scaler_features_out)
-                else:
-                    # Synchronize data scalers
-                    tl_model.set_data_scalers(
-                        scaler_features_in=scaler_features_out,
-                        scaler_features_out=scaler_features_out)
     # -------------------------------------------------------------------------
     def save_model_init_state(self):
         """Save model initial state to file.

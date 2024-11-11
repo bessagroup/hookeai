@@ -1,4 +1,4 @@
-"""Prediction of hybrid material constitutive model.
+"""Prediction of hybrid model.
 
 Functions
 ---------
@@ -21,7 +21,7 @@ import tqdm
 import numpy as np
 # Local
 from rnn_base_model.data.time_dataset import get_time_series_data_loader
-from hybrid_base_model.model.hybrid_model import HybridMaterialModel
+from hybrid_base_model.model.hybrid_model import HybridModel
 from utilities.loss_functions import get_pytorch_loss
 from gnn_base_model.predict.prediction import make_predictions_subdir, \
     save_sample_predictions, seed_worker, write_prediction_summary_file
@@ -39,7 +39,7 @@ def predict(dataset, model_directory, model=None, predict_directory=None,
             loss_type='mse', loss_kwargs={}, is_normalized_loss=False,
             batch_size=1, dataset_file_path=None, device_type='cpu', seed=None,
             is_verbose=False):
-    """Make predictions with hybrid material model for given dataset.
+    """Make predictions with hybrid model for given dataset.
     
     Parameters
     ----------
@@ -49,8 +49,8 @@ def predict(dataset, model_directory, model=None, predict_directory=None,
         (sequence_length, n_features).
     model_directory : str
         Directory where model is stored.
-    model : HybridMaterialModel, default=None
-        Hybrid material constitutive model. If None, then model is initialized
+    model : HybridModel, default=None
+        Hybrid model. If None, then model is initialized
         from the initialization file and the state is loaded from the state
         file. In both cases the model is set to evaluation mode.
     predict_directory : str, default=None
@@ -116,8 +116,8 @@ def predict(dataset, model_directory, model=None, predict_directory=None,
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     start_time_sec = time.time()
     if is_verbose:
-        print('\nHybrid material constitutive model prediction'
-              '\n---------------------------------------------')
+        print('\nHybrid model prediction'
+              '\n-----------------------')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Check model directory
     if not os.path.exists(model_directory):
@@ -131,14 +131,14 @@ def predict(dataset, model_directory, model=None, predict_directory=None,
     # Initialize model and load model state if not provided
     if model is None:
         if is_verbose:
-            print('\n> Loading hybrid material constitutive model...')
+            print('\n> Loading hybrid model...')
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        # Initialize hybrid material constitutive model
-        model = HybridMaterialModel.init_model_from_file(model_directory)
+        # Initialize hybrid model
+        model = HybridModel.init_model_from_file(model_directory)
         # Set model device
         model.set_device(device_type)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        # Load hybrid material constitutive model state
+        # Load hybrid model state
         _ = model.load_model_state(load_model_state=load_model_state,
                                    is_remove_posterior=False)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

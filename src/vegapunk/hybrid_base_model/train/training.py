@@ -1,4 +1,4 @@
-"""Training of hybrid material constitutive model.
+"""Training of hybrid model.
 
 Classes
 -------
@@ -8,7 +8,7 @@ EarlyStopper
 Functions
 ---------
 train_model
-    Training of hybrid material constitutive model.
+    Training of hybrid model.
 save_parameters_history
     Save model learnable parameters history record.
 read_parameters_history_from_file
@@ -33,7 +33,7 @@ import torch
 import numpy as np
 # Local
 from rnn_base_model.data.time_dataset import get_time_series_data_loader
-from hybrid_base_model.model.hybrid_model import HybridMaterialModel
+from hybrid_base_model.model.hybrid_model import HybridModel
 from hybrid_base_model.predict.prediction import predict
 from gnn_base_model.train.training import get_pytorch_optimizer, \
     get_learning_rate_scheduler, save_training_state, save_loss_history, \
@@ -57,7 +57,7 @@ def train_model(n_max_epochs, dataset, model_init_args, lr_init,
                 early_stopping_kwargs={}, load_model_state=None,
                 save_every=None, dataset_file_path=None, device_type='cpu',
                 seed=None, is_verbose=False):
-    """Training of hybrid material constitutive model.
+    """Training of hybrid model.
     
     Parameters
     ----------
@@ -159,8 +159,8 @@ def train_model(n_max_epochs, dataset, model_init_args, lr_init,
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     start_time_sec = time.time()
     if is_verbose:
-        print('\nHybrid material constitutive model training'
-              '\n-------------------------------------------')
+        print('\nHybrid model training'
+              '\n---------------------')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Initialize recurrent neural network model state
     if load_model_state is not None:
@@ -169,7 +169,7 @@ def train_model(n_max_epochs, dataset, model_init_args, lr_init,
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Initialize recurrent neural network model
         # (includes loading of data scalers)
-        model = HybridMaterialModel.init_model_from_file(
+        model = HybridModel.init_model_from_file(
             model_init_args['model_directory'])
         # Set model device
         model.set_device(device_type)
@@ -185,8 +185,8 @@ def train_model(n_max_epochs, dataset, model_init_args, lr_init,
         _ = model.load_model_state(load_model_state=load_model_state,
                                    is_remove_posterior=True)
     else:
-        # Initialize hybrid material constitutive model
-        model = HybridMaterialModel(**model_init_args)    
+        # Initialize hybrid model
+        model = HybridModel(**model_init_args)    
         # Set model device
         model.set_device(device_type)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -359,21 +359,19 @@ def train_model(n_max_epochs, dataset, model_init_args, lr_init,
             # attribute of model parameters
             optimizer.step()
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            # Get hybridized material models
-            hyb_models_dict = model.get_hyb_models_dict()
             # Enforce bounds on model parameters
             # (only explicit learnable parameters)
-            for _, hyb_model in hyb_models_dict.items():
-                # Check if hybridized material model parameters are collected
+            for hyb_model in model.get_hybridized_models():
+                # Check if hybridized model parameters are collected
                 is_collect_params = \
                     (hasattr(hyb_model, 'is_explicit_parameters')
                              and hyb_model.is_explicit_parameters)
                 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-                # Skip hybridized material model parameters
+                # Skip hybridized model parameters
                 if not is_collect_params:
                     continue
                 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-                # Loop over hybridized material model parameters
+                # Loop over hybridized model parameters
                 for param, value in hyb_model.get_model_parameters().items():
                     # Get parameter bounds
                     if hyb_model.is_normalized_parameters:
@@ -930,9 +928,9 @@ class EarlyStopper:
         avg_predict_loss : float
             Average prediction loss per sample.
         """
-        # Set material patch model state file name and path
+        # Set model state file name and path
         model_state_file = model.model_name + '-' + str(int(epoch))
-        # Set material patch model state file path
+        # Set model state file path
         model_state_path = \
             os.path.join(model.model_directory, model_state_file + '.pt')
         # Set optimizer state file name and path
@@ -1006,7 +1004,7 @@ class EarlyStopper:
             raise RuntimeError('The best performance optimization state has '
                                'not been stored.')
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        # Load material patch model state
+        # Load model state
         model.load_state_dict(self._best_model_state)
         # Set loaded optimizer state
         optimizer.load_state_dict(self._best_optimizer_state['state'])

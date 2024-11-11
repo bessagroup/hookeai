@@ -125,7 +125,7 @@ def perform_model_prediction(predict_directory, dataset_file_path,
     # Prediction with RNN-based model
     predict_subdir, _ = \
         predict(dataset, model_directory, predict_directory=predict_directory,
-                load_model_state='best', loss_nature=loss_nature,
+                load_model_state=load_model_state, loss_nature=loss_nature,
                 loss_type=loss_type, loss_kwargs=loss_kwargs,
                 is_normalized_loss=is_normalized_loss, batch_size=batch_size,
                 dataset_file_path=dataset_file_path,
