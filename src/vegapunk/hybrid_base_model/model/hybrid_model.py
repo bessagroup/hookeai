@@ -433,6 +433,9 @@ class HybridModel(torch.nn.Module):
             # Get hybridized model input residual connection
             hyb_models_input_residual[hyb_model_name] = \
                 hyb_models_dict[hyb_model_name]['is_input_residual']
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Increment hybridized model index
+            model_idx += 1
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         return hyb_models_names, hyb_models, hyb_channels, \
             hyb_models_input_residual
