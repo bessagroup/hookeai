@@ -15,15 +15,16 @@ import shutil
 # =============================================================================
 # Set available tasks
 available_tasks = {'1': 'remove_plots_dirs',
-                   '2': 'remove_sample_prediction_files'}
+                   '2': 'remove_sample_prediction_files',
+                   '3': 'remove_model_dirs'}
 # Set task
-task = available_tasks['1']
+task = available_tasks['3']
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Set source directory
 src_dir = ('/home/bernardoferreira/Documents/brown/projects/darpa_project/'
            '7_local_hybrid_training/case_learning_drucker_prager_pressure/'
-           '0_datasets/datasets_drucker_prager_10deg/proportional_2cycle/'
-           'no_plots')
+           '2_vanilla_gru_model/strain_i1_i2_to_stress/mean_relative_error/'
+           'training_proportional_2cycle')
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Initialize case study directories
 case_study_dirs = []
@@ -88,6 +89,16 @@ for case_study_dir in case_study_dirs:
                         sample_file_path = os.path.join(root, file)
                         # Remove sample prediction file
                         os.remove(sample_file_path)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Task: Remove specific directories from model directory
+    elif task == 'remove_model_dirs':
+        # Set directories to be removed
+        remove_dirnames = ('3_model', '7_prediction')
+        # Loop over case study directories
+        for i, l1_name in enumerate(l1_names):
+            # Remove model or prediction directory
+            if l1_name in remove_dirnames:
+                shutil.rmtree(l1_paths[i])
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     else:
         raise RuntimeError('Unknown task.')
