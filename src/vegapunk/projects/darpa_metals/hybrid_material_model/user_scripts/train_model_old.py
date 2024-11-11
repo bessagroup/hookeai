@@ -30,7 +30,7 @@ import numpy as np
 # Local
 from rnn_base_model.data.time_dataset import load_dataset, \
     concatenate_dataset_features
-from hybrid_base_model.model.hybrid_model import HybridMaterialModel
+from hybrid_base_model.model.hybrid_model_old import HybridMaterialModel
 from hybrid_base_model.train.training import train_model
 from gnn_base_model.train.training import \
     read_loss_history_from_file, read_lr_history_from_file
@@ -114,7 +114,7 @@ def perform_model_standard_training(train_dataset_file_path, model_directory,
     hyb_models_init_args[candidate_model_name] = candidate_model_init_args
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set hybridization scheme
-    hybridization_scheme = 0
+    hybridization_scheme = 9
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set hybridization scheme transfer-learning and residual models
     if hybridization_scheme == 0:
@@ -276,7 +276,7 @@ def perform_model_standard_training(train_dataset_file_path, model_directory,
         hyb_models_init_args[residual_model_name] = residual_model_init_args
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Set transfer-learning model name
-        tl_model_name = 'elastic_tl_model'
+        tl_model_name = 'batched_elastic_tl_model'
         # Set transfer-learning model residual connection
         is_residual_connection = True
         # Get transfer-learning model initialization attributes
@@ -286,6 +286,192 @@ def perform_model_standard_training(train_dataset_file_path, model_directory,
         tl_models_names = {residual_model_name: tl_model_name}
         tl_models_init_args = {tl_model_name: tl_model_init_args}
         is_tl_residual_connection = {tl_model_name: is_residual_connection}
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set hybridization model type
+        model_init_args['hybridization_type'] = 'identity'
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    elif hybridization_scheme == 6:
+        # Description:
+        #
+        # Hybrid_Model(e) = GRU(e)
+        #
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Initialize hybridized material models names
+        hyb_models_names = []
+        # Initialize hybridized material models initialization attributes
+        hyb_models_init_args = {}
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set residual model name
+        residual_model_name = 'gru_material_model'
+        # Get residual model initialization attributes
+        residual_model_init_args = get_gru_model_init_args(
+            residual_model_name, model_directory, n_features_in,
+            n_features_out, device_type=device_type)
+        # Override residual model input and output features normalization
+        residual_model_init_args['is_model_in_normalized'] = True
+        residual_model_init_args['is_model_out_normalized'] = False
+        # Store residual model
+        hyb_models_names.append(residual_model_name)
+        hyb_models_init_args[residual_model_name] = residual_model_init_args
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Build transfer-learning model parameters
+        tl_models_names = {}
+        tl_models_init_args = {}
+        is_tl_residual_connection = {}
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set hybridization model type
+        model_init_args['hybridization_type'] = 'identity'
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    elif hybridization_scheme == 7:
+        # Description:
+        #
+        # Hybrid_Model(e) = Batched_Elastic(e) + GRU(e)
+        #
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Initialize hybridized material models names
+        hyb_models_names = []
+        # Initialize hybridized material models initialization attributes
+        hyb_models_init_args = {}
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set elastic candidate constitutive model name
+        candidate_model_name = 'batched_elastic'
+        # Set elastic candidate constitutive model initialization attributes
+        candidate_model_init_args = \
+            get_batched_elastic_model_init_args(device_type=device_type)
+        # Store elastic candidate constitutive model
+        hyb_models_names.append(candidate_model_name)
+        hyb_models_init_args[candidate_model_name] = candidate_model_init_args
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set residual model name
+        residual_model_name = 'gru_material_model'
+        # Get residual model initialization attributes
+        residual_model_init_args = get_gru_model_init_args(
+            residual_model_name, model_directory, n_features_in,
+            n_features_out, device_type=device_type)
+        # Override residual model input and output features normalization
+        residual_model_init_args['is_model_in_normalized'] = True
+        residual_model_init_args['is_model_out_normalized'] = False
+        # Store residual model
+        hyb_models_names.append(residual_model_name)
+        hyb_models_init_args[residual_model_name] = residual_model_init_args
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Build transfer-learning model parameters
+        tl_models_names = {}
+        tl_models_init_args = {}
+        is_tl_residual_connection = {}
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set hybridization model type
+        model_init_args['hybridization_type'] = 'additive'
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    elif hybridization_scheme == 8:
+        # Description:
+        #
+        # Hybrid_Model(e) = Candidate_Model(e) + GRU(e)
+        #
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Initialize hybridized material models names
+        hyb_models_names = []
+        # Initialize hybridized material models initialization attributes
+        hyb_models_init_args = {}
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set candidate constitutive model name
+        candidate_model_name = 'rc_drucker_prager_vmap'
+        # Get candidate constitutive model initialization attributes
+        candidate_model_init_args = get_candidate_model_init_args(
+            candidate_model_name, model_directory, n_features_in,
+            n_features_out, device_type=device_type)
+        # Override model input and output features normalization
+        candidate_model_init_args['is_model_in_normalized'] = False
+        candidate_model_init_args['is_model_out_normalized'] = False
+        # Store candidate constitutive model
+        hyb_models_names.append(candidate_model_name)
+        hyb_models_init_args[candidate_model_name] = candidate_model_init_args
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set residual model name
+        residual_model_name = 'gru_material_model'
+        # Get residual model initialization attributes
+        residual_model_init_args = get_gru_model_init_args(
+            residual_model_name, model_directory, n_features_in,
+            n_features_out, device_type=device_type)
+        # Override residual model input and output features normalization
+        residual_model_init_args['is_model_in_normalized'] = True
+        residual_model_init_args['is_model_out_normalized'] = True
+        # Store residual model
+        hyb_models_names.append(residual_model_name)
+        hyb_models_init_args[residual_model_name] = residual_model_init_args
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Build transfer-learning model parameters
+        tl_models_names = {}
+        tl_models_init_args = {}
+        is_tl_residual_connection = {}
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set hybridization model type
+        model_init_args['hybridization_type'] = 'identity'
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    elif hybridization_scheme == 9:
+        # Description:
+        #
+        # Hybrid_Model(e) = Bached_Elastic(GRU(e), e), where GRU(e) = ep
+        #
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Initialize hybridized material models names
+        hyb_models_names = []
+        # Initialize hybridized material models initialization attributes
+        hyb_models_init_args = {}
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set residual model name
+        residual_model_name = 'gru_material_model'
+        # Get residual model initialization attributes
+        residual_model_init_args = get_gru_model_init_args(
+            residual_model_name, model_directory, n_features_in,
+            n_features_out, device_type=device_type)
+        # Override residual model input and output features normalization
+        residual_model_init_args['is_model_in_normalized'] = True
+        residual_model_init_args['is_model_out_normalized'] = True
+        # Store residual model
+        hyb_models_names.append(residual_model_name)
+        hyb_models_init_args[residual_model_name] = residual_model_init_args
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set transfer-learning model name
+        tl_model_name = 'batched_elastic_tl_model'
+        # Set transfer-learning model residual connection
+        is_residual_connection = True
+        # Get transfer-learning model initialization attributes
+        tl_model_init_args = \
+            get_batched_elastic_model_init_args(device_type=device_type)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Build transfer-learning model parameters
+        tl_models_names = {residual_model_name: tl_model_name}
+        tl_models_init_args = {tl_model_name: tl_model_init_args}
+        is_tl_residual_connection = {tl_model_name: is_residual_connection}
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Initialize hybridized model initialization file
+        hyb_models_init_file_path = {}
+        # Set residual model initialization file
+        hyb_models_init_file_path['gru_material_model'] = \
+            ('/home/bernardoferreira/Documents/brown/projects/darpa_project/'
+             '7_local_hybrid_training/'
+             'case_learning_drucker_prager_pressure_dependency/'
+             'y_candidate_dp_model_1deg_gru_epbar/'
+             '1_gru_model_epbar_convergence_analysis/n2560/3_model/'
+             'model_init_file.pkl')
+        # Set hybridized models initialization file
+        model_init_args['hyb_models_init_file_path'] = \
+            hyb_models_init_file_path
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Initialize hybridized models initial state
+        hyb_models_init_state_path = {}
+        # Set residual model initial model state
+        hyb_models_init_state_path['gru_material_model'] = \
+            ('/home/bernardoferreira/Documents/brown/projects/darpa_project/'
+             '7_local_hybrid_training/'
+             'case_learning_drucker_prager_pressure_dependency/'
+             'y_candidate_dp_model_1deg_gru_epbar/'
+             '1_gru_model_epbar_convergence_analysis/n2560/3_model/'
+             'gru_material_model-75-best.pt')
+        # Set hybridized models initial state
+        model_init_args['hyb_models_init_state_path'] = \
+            hyb_models_init_state_path
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Set hybridization model type
         model_init_args['hybridization_type'] = 'identity'
@@ -824,11 +1010,12 @@ if __name__ == "__main__":
     base_dir = ('/home/bernardoferreira/Documents/brown/projects/'
                 'darpa_project/7_local_hybrid_training/'
                 'case_learning_drucker_prager_pressure_dependency/'
-                'w_candidate_dp_model_1deg/'
+                'y_candidate_dp_model_1deg_gru_epbar/'
                 '3_hybrid_model_convergence_analysis')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set training data set sizes
     training_sizes = (10, 20, 40, 80, 160, 320, 640, 1280, 2560)
+    training_sizes = (2560,)
     # Loop over training data set sizes
     for n in training_sizes:
         # Set case study directory
