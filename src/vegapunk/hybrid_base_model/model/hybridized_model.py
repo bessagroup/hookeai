@@ -76,28 +76,31 @@ def set_hybridized_model(model_class, hyb_indices, model_init_args=None,
                            'to initialize hybridized model.')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set hybridized model data scalers
-    if hasattr(model_class, 'set_data_scalers'):
-        # Check data scalers
-        if isinstance(data_scalers, dict):
-            # Check data scaler for input features
-            if 'features_in' in data_scalers.keys():
-                scaler_features_in = data_scalers['features_in']
+    if data_scalers is not None:
+        if hasattr(model_class, 'set_data_scalers'):
+            # Check data scalers
+            if isinstance(data_scalers, dict):
+                # Check data scaler for input features
+                if 'features_in' in data_scalers.keys():
+                    scaler_features_in = data_scalers['features_in']
+                else:
+                    scaler_features_in = None
+                # Check data scaler for output features
+                if 'features_out' in data_scalers.keys():
+                    scaler_features_out = data_scalers['features_out']
+                else:
+                    scaler_features_out = None
+                # Set hybridized model data scalers
+                hyb_model.set_data_scalers(scaler_features_in,
+                                           scaler_features_out)
             else:
-                scaler_features_in = None
-            # Check data scaler for output features
-            if 'features_out' in data_scalers.keys():
-                scaler_features_out = data_scalers['features_out']
-            else:
-                scaler_features_out = None
-            # Set hybridized model data scalers
-            hyb_model.set_data_scalers(scaler_features_in, scaler_features_out)
+                raise RuntimeError('Hybridized model data scalers must be '
+                                'provided as dictionary.') 
         else:
-            raise RuntimeError('Hybridized model data scalers must be '
-                               'provided as dictionary.') 
-    else:
-        raise RuntimeError(f'Cannot set hybridized model \'{model_class}\' '
-                           f'data scalers because method '
-                           f'\'set_data_scalers\' is not available.')
+            raise RuntimeError(f'Cannot set hybridized model '
+                               f'\'{model_class}\' data scalers because '
+                               f'method \'set_data_scalers\' is not '
+                               f'available.')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Check hybridization indices
     if not isinstance(hyb_indices, tuple):
