@@ -32,7 +32,7 @@ import numpy as np
 from rnn_base_model.data.time_dataset import load_dataset, \
     concatenate_dataset_features, sum_dataset_features
 from rnn_base_model.model.gru_model import GRURNNModel
-from hybrid_base_model.model.transfer_learning import BatchedElasticModel
+from hybrid_base_model.model.hybridized_layers import BatchedElasticModel
 from hybrid_base_model.model.hybridized_model import set_hybridized_model
 from hybrid_base_model.model.hybrid_model import HybridModel
 from hybrid_base_model.train.training import train_model
@@ -126,6 +126,38 @@ def perform_model_standard_training(train_dataset_file_path, model_directory,
         hyb_models_dict[hyb_model_name] = set_hybridized_gru_model(
             hyb_indices, 'strain_to_stress', scaling_dataset,
             device_type=device_type)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set hybridized models dictionary
+        model_init_args['hyb_models_dict'] = hyb_models_dict
+        # Set hybridization model type
+        model_init_args['hybridization_type'] = 'identity'
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    elif hybridization_scheme == 1:
+        # Description:
+        #
+        # HybridModel(e) = BatchedElastic(e - GRU(e))
+        #
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set hybridized model name
+        hyb_model_name = 'gru_strain_to_pstrain'
+        # Set hybridized model indices
+        hyb_indices = (0, 0)
+        # Load scaling data set
+        scaling_dataset = load_dataset(train_dataset_file_path)
+        # Set hybridized model: GRU (strain to plastic strain)
+        hyb_models_dict[hyb_model_name] = set_hybridized_gru_model(
+            hyb_indices, 'strain_to_pstrain', scaling_dataset,
+            device_type=device_type)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set hybridized model name
+        hyb_model_name = 'batched_elastic'
+        # Set hybridized model indices
+        hyb_indices = (0, 1)
+        # Load scaling data set
+        scaling_dataset = load_dataset(train_dataset_file_path)
+        # Set hybridized model: Batched elastic (plastic strain to stress)
+        hyb_models_dict[hyb_model_name] = set_hybridized_material_layer(
+            hyb_indices, 'batched_elastic', device_type=device_type)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Set hybridized models dictionary
         model_init_args['hyb_models_dict'] = hyb_models_dict
@@ -521,6 +553,9 @@ def set_hybridized_material_layer(hyb_indices, layer_type, device_type='cpu'):
                            'elastic_properties': elastic_properties,
                            'elastic_symmetry': elastic_symmetry,
                            'device_type': device_type}
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set input residual connection
+        is_input_residual=True
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     elif layer_type == 'vd_composition':
         # Set hybridized model class
@@ -528,13 +563,17 @@ def set_hybridized_material_layer(hyb_indices, layer_type, device_type='cpu'):
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Set hybridized model initialization parameters
         model_init_args = {}
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set input residual connection
+        is_input_residual=False
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     else:
         raise RuntimeError('Unknown material layer type.')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set hybridized model data
     hyb_model_data = set_hybridized_model(
-        model_class, hyb_indices, model_init_args=model_init_args)
+        model_class, hyb_indices, model_init_args=model_init_args,
+        is_input_residual=is_input_residual)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     return hyb_model_data
 # =============================================================================
