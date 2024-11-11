@@ -13,7 +13,8 @@ import torch
 from rnn_base_model.data.time_dataset import get_time_series_data_loader, \
     load_dataset, concatenate_dataset_features, sum_dataset_features
 from rc_base_model.model.recurrent_model import RecurrentConstitutiveModel
-from hybrid_base_model.model.transfer_learning import BatchedElasticModel
+from hybrid_base_model.model.hybridized_layers import BatchedElasticModel
+from utilities.loss_functions import get_pytorch_loss
 # =============================================================================
 # Summary: Validate elastic constitutive model for batched time series data
 # =============================================================================
@@ -41,21 +42,12 @@ from hybrid_base_model.model.transfer_learning import BatchedElasticModel
 #    state_features = {'e_strain_mf': len(strain_comps_order)}
 #
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-# Set model directory
-model_directory = ('/home/bernardoferreira/Documents/brown/projects/'
-                   'darpa_project/7_local_hybrid_training/'
-                   'case_learning_drucker_prager_pressure_dependency/'
-                   'w_candidate_dp_model_testing/'
-                   '5_hybrid_model_elastic_tl_model_convergence_analysis/'
-                   '3_model')
 # Set training data set file path
 train_dataset_file_path = \
     ('/home/bernardoferreira/Documents/brown/projects/darpa_project/'
-     '7_local_hybrid_training/'
-     'case_learning_drucker_prager_pressure_dependency/'
-     'w_candidate_dp_model_testing/'
-     '5_hybrid_model_elastic_tl_model_convergence_analysis/'
-     '1_training_dataset/ss_paths_dataset_n10.pkl')
+     '7_local_hybrid_training/case_learning_drucker_prager_pressure/'
+     '2_vanilla_gru_model/strain_to_stress/mean_relative_error/debug_hybrid/'
+     'ss_paths_dataset_n10.pkl')
 # Load training data set
 train_dataset = load_dataset(train_dataset_file_path)
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -98,8 +90,8 @@ model_init_args = {'n_features_in': n_features_in,
                    'material_model_name': material_model_name,
                    'material_model_parameters': material_model_parameters,
                    'state_features_out': state_features_out,
-                   'model_directory': model_directory,
-                   'model_name': model_name,
+                   'model_directory': None,
+                   'model_name': None,
                    'is_normalized_parameters': is_normalized_parameters,
                    'is_model_in_normalized': is_model_in_normalized,
                    'is_model_out_normalized': is_model_out_normalized,
@@ -116,7 +108,7 @@ train_dataset = sum_dataset_features(train_dataset, new_label,
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Set new feature (concatenated strain and plastic strain)
 new_label = 'cat_strain'
-cat_features_in = ('strain_path', 'p_strain_mf')
+cat_features_in = ('p_strain_mf', 'strain_path')
 # Set training data set new feature
 train_dataset = concatenate_dataset_features(train_dataset, new_label,
                                              cat_features_in, 
@@ -155,7 +147,8 @@ if not torch.allclose(strain, e_strain_in + p_strain_in):
                        'decomposition was not satisfied.')
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Initialize elastic recurrent constitutive model
-rc_elastic_model = RecurrentConstitutiveModel(**model_init_args)
+rc_elastic_model = RecurrentConstitutiveModel(**model_init_args,
+                                              is_save_model_init_file=False)
 # Compute elastic recurrent constitutive model prediction
 rc_elastic_features_out = rc_elastic_model(e_strain_in)
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -167,9 +160,24 @@ batch_elastic_model = BatchedElasticModel(
 # Compute batched elastic constitutive model prediction
 batch_elastic_features_out = batch_elastic_model(cat_strain_in)
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-# Check results
-if not torch.allclose(rc_elastic_features_out, batch_elastic_features_out,
-                      rtol=1e-3):
-    raise RuntimeError('Elastic recurrent constitutive model and batched '
-                       'elastic constitutive model prediction results '
-                       'do not match!')
+# Check results: Mean Relative Error (MRE)
+# Initialize loss function
+loss_function = get_pytorch_loss('mre')
+# Compute loss
+mre = loss_function(rc_elastic_features_out, batch_elastic_features_out)
+# Display results
+print(f'\nmre = {mre:11.4e}')
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# Check results: Element by element maximum tolerance
+# Set absolute tolerance
+atol = 1e-4
+# Set relative tolerance
+rtol = 1e-3
+# Check element by element tolerances
+is_all_close = \
+    torch.allclose(rc_elastic_features_out, batch_elastic_features_out,
+                   rtol=rtol, atol=atol)
+# Display results
+print(f'\nall_close(rtol={rtol}, atol={atol}) = {is_all_close}')
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+print()
