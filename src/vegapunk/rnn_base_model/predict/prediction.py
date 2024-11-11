@@ -49,7 +49,7 @@ def predict(dataset, model_directory, model=None, predict_directory=None,
         (sequence_length, n_features).
     model_directory : str
         Directory where model is stored.
-    model : HybridMaterialModel, default=None
+    model : GRURNNModel, default=None
         Hybrid material constitutive model. If None, then model is initialized
         from the initialization file and the state is loaded from the state
         file. In both cases the model is set to evaluation mode.
