@@ -85,8 +85,8 @@ def perform_model_prediction(predict_directory, dataset_file_path,
     model_init_args = model_init_attributes['model_init_args']
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set data features for prediction
-    features_option = 'stress'
-    if features_option == 'stress':
+    features_option = 'strain_to_stress'
+    if features_option == 'strain_to_stress':
         # Set input features
         new_label_in = 'features_in'
         cat_features_in = ('strain_path',)
@@ -107,10 +107,20 @@ def perform_model_prediction(predict_directory, dataset_file_path,
     dataset = concatenate_dataset_features(
         dataset, new_label_out, cat_features_out, is_remove_features=True) 
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Set loss type
+    loss_type = 'mre'
+    # Set loss parameters
+    loss_kwargs = {}
     # Set prediction loss normalization
-    is_normalized_loss = False
+    if loss_type == 'mre':
+        is_normalized_loss = True
+    else:
+        is_normalized_loss = False
     # Set prediction batch size
     batch_size = batch_size=len(dataset)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Set model state loading
+    load_model_state = 'best'
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Prediction with RNN-based model
     predict_subdir, _ = \
