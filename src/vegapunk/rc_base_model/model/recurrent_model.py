@@ -61,10 +61,12 @@ class RecurrentConstitutiveModel(torch.nn.Module):
     
     Attributes
     ----------
-    model_directory : str
-        Directory where model is stored.
-    model_name : str
-        Name of model.
+    model_directory : {str, None}
+        Directory where model is stored. If None, then all methods that depend
+        on an existent model directory become unavailable.
+    model_name : {str, None}
+        Name of model. If None, then all methods that depend on a valid model
+        name become unavailable.
     _n_features_in : int
         Number of input features.
     _n_features_out : int
@@ -238,10 +240,12 @@ class RecurrentConstitutiveModel(torch.nn.Module):
             Material constitutive model name.
         material_model_parameters : dict
             Material constitutive model parameters.
-        model_directory : str
-            Directory where model is stored.
-        model_name : str, default='wrapper_recurrent_model'
-            Name of model.
+        model_directory : {str, None}
+            Directory where model is stored. If None, then all methods that
+            depend on an existent model directory become unavailable.
+        model_name : {str, None}, default='wrapper_recurrent_model'
+            Name of model. If None, then all methods that depend on a valid
+            model name become unavailable.
         is_auto_sync_parameters : bool, default=True
             If True, then automatically synchronize material model parameters
             with learnable parameters in forward propagation.
@@ -304,15 +308,20 @@ class RecurrentConstitutiveModel(torch.nn.Module):
         self._n_dim, self._comp_order_sym, self._comp_order_nsym = \
             get_problem_type_parameters(problem_type)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        # Set model directory and name
-        if os.path.isdir(model_directory):
+        # Set model directory
+        if model_directory is None:
+            self.model_directory = model_directory
+        elif os.path.isdir(model_directory):
             self.model_directory = str(model_directory)
         else:
             raise RuntimeError('The model directory has not been found.')
-        if not isinstance(model_name, str):
-            raise RuntimeError('The model name must be a string.')
-        else:
+        # Set model name
+        if model_name is None:
             self.model_name = model_name
+        elif isinstance(model_name, str):
+            self.model_name = model_name
+        else:
+            raise RuntimeError('The model name must be a string.')
         # Set model input and output features normalization
         self.is_model_in_normalized = is_model_in_normalized
         self.is_model_out_normalized = is_model_out_normalized
