@@ -524,19 +524,23 @@ if __name__ == "__main__":
     # Set case studies base directory
     base_dir = ('/home/bernardoferreira/Documents/brown/projects/'
                 'darpa_project/7_local_hybrid_training/'
-                'case_learning_drucker_prager_pressure_dependency/'
-                'w_candidate_dp_model_1deg/'
-                '2_candidate_rc_drucker_prager_model')
+                'case_learning_drucker_prager_pressure/1_candidate_rc_models/'
+                'rc_drucker_prager_2deg/strain_to_stress')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Set training data set sizes
-    training_sizes = (10,)
-    # Loop over training data set sizes
-    for n in training_sizes:
-        # Set case study directory
-        case_study_name = f'n{n}'
-        case_study_dir = os.path.join(os.path.normpath(base_dir),
-                                      f'{case_study_name}')
-        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Initialize case study directories
+    case_study_dirs = []
+    # Set case study directories
+    if False:
+        # Set training data set sizes
+        training_sizes = (10, 20, 40, 80, 160, 320, 640, 1280, 2560)
+        # Set case study directories
+        case_study_dirs += [os.path.join(os.path.normpath(base_dir), f'n{n}/')
+                            for n in training_sizes]
+    else:
+        case_study_dirs += [base_dir,]
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Loop over case study directories
+    for case_study_dir in case_study_dirs:
         # Check case study directory
         if not os.path.isdir(case_study_dir):
             raise RuntimeError('The case study directory has not been found:'
