@@ -2,15 +2,16 @@
     
 Functions
 ---------
-set_hybridized_model(model_class, hyb_indices, model_init_args=None, \
-                     model_init_file_path=None, is_input_residual=False, \
-                     data_scalers=None)
+set_hybridized_model
     Set hybridized model data.
 """
 #
 #                                                                       Modules
 # =============================================================================
-#
+# Standard
+import os
+# Third-party
+import torch
 #
 #                                                          Authorship & Credits
 # =============================================================================
@@ -21,7 +22,8 @@ __status__ = 'Planning'
 #
 # =============================================================================
 def set_hybridized_model(model_class, hyb_indices, model_init_args=None,
-                         model_init_file_path=None, is_input_residual=False,
+                         model_init_file_path=None,
+                         model_state_file_path=None, is_input_residual=False,
                          data_scalers=None):
     """Set hybridized model data.
     
@@ -34,10 +36,14 @@ def set_hybridized_model(model_class, hyb_indices, model_init_args=None,
         hybridization channel index and j the position index along the
         hybridization channel.
     model_init_args : dict, default=None
-        Hybridization model class initialization parameters.
+        Hybridized model class initialization parameters.
     model_init_file_path : str, default=None
-        Hybridization model initialization file path. Ignored if
+        Hybridized model initialization file path. Ignored if
         model_init_args is provided.
+    model_state_file_path : str, default=None
+        Hybridized model state file path. If provided, then model state is
+        initialized from state file, otherwise model state stems from model
+        (default) initialization.
     is_input_residual : bool, default=False
         If True, then input residual connection is assigned to hybridized
         model, False otherwise.
@@ -74,6 +80,17 @@ def set_hybridized_model(model_class, hyb_indices, model_init_args=None,
         raise RuntimeError('Neither valid \'model_init_args\' nor '
                            '\'model_init_file_path\' have been provided '
                            'to initialize hybridized model.')
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Set hybridized model state
+    if model_state_file_path is not None:
+        # Check hybridized model state file path
+        if not os.path.isfile(model_state_file_path):
+            raise RuntimeError(f'Hybridized model \'{model_class}\' state '
+                               f'file path has not been found:\n\n'
+                               f'{model_state_file_path}')
+        # Load hybridized model state
+        hyb_model.load_state_dict(torch.load(model_state_file_path,
+                                             map_location=torch.device('cpu')))
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set hybridized model data scalers
     if data_scalers is not None:
