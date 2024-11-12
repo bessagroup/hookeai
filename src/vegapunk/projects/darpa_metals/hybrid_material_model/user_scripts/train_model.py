@@ -310,14 +310,15 @@ def set_hybridized_gru_model(hyb_indices, features_option, scaling_dataset,
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set hybridized model initialization option
     is_model_init_file_path = False
-    # Initialize model initializations
+    # Initialize model initialization data
     model_init_args = None
     model_init_file_path = None
+    model_state_file_path = None
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Initialize hybridized model
     if is_model_init_file_path:
         # Set model initialization file path
-        model_init_file_path = None
+        model_init_file_path = ''
     else:
         # Set hidden layer size
         hidden_layer_size = 500
@@ -381,6 +382,9 @@ def set_hybridized_gru_model(hyb_indices, features_option, scaling_dataset,
                           'is_model_in_normalized': is_model_in_normalized,
                           'is_model_out_normalized': is_model_out_normalized,
                           'device_type': device_type}
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set model state file path
+        model_state_file_path = None
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Initialize features data scalers
     data_scalers = {}
@@ -426,7 +430,8 @@ def set_hybridized_gru_model(hyb_indices, features_option, scaling_dataset,
     # Set hybridized model data
     hyb_model_data = set_hybridized_model(
         model_class, hyb_indices, model_init_args=model_init_args,
-        model_init_file_path=model_init_file_path, data_scalers=data_scalers)
+        model_init_file_path=model_init_file_path,
+        model_state_file_path=model_state_file_path, data_scalers=data_scalers)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     return hyb_model_data
 # =============================================================================
