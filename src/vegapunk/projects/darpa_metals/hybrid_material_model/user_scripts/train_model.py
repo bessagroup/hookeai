@@ -32,7 +32,8 @@ import numpy as np
 from rnn_base_model.data.time_dataset import load_dataset, \
     concatenate_dataset_features, sum_dataset_features
 from rnn_base_model.model.gru_model import GRURNNModel
-from hybrid_base_model.model.hybridized_layers import BatchedElasticModel
+from hybrid_base_model.model.hybridized_layers import BatchedElasticModel, \
+    VolDevCompositionModel
 from hybrid_base_model.model.hybridized_model import set_hybridized_model
 from hybrid_base_model.model.hybrid_model import HybridModel
 from hybrid_base_model.train.training import train_model
@@ -44,6 +45,10 @@ from gnn_base_model.train.training_plots import plot_training_loss_history, \
 from simulators.fetorch.material.models.standard.hardening import \
     get_hardening_law
 from utilities.fit_data_scalers import get_fitted_data_scaler
+from projects.darpa_metals.rnn_material_model.rnn_model_tools.strain_features \
+    import add_strain_features
+from projects.darpa_metals.rnn_material_model.rnn_model_tools.stress_features \
+    import add_stress_features
 from ioput.iostandard import make_directory, find_unique_file_with_regex
 #
 #                                                          Authorship & Credits
@@ -158,6 +163,39 @@ def perform_model_standard_training(train_dataset_file_path, model_directory,
         # Set hybridized model: Batched elastic (plastic strain to stress)
         hyb_models_dict[hyb_model_name] = set_hybridized_material_layer(
             hyb_indices, 'batched_elastic', device_type=device_type)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set hybridized models dictionary
+        model_init_args['hyb_models_dict'] = hyb_models_dict
+        # Set hybridization model type
+        model_init_args['hybridization_type'] = 'identity'
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    elif hybridization_scheme == 2:
+        # Description:
+        #
+        # HybridModel(e) = GRU(e) + VolDevComposition(s_vol, s_dev)
+        #
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set hybridized model name
+        hyb_model_name = 'gru_strain_to_stressvd'
+        # Set hybridized model indices
+        hyb_indices = (0, 0)
+        # Load scaling data set
+        scaling_dataset = load_dataset(train_dataset_file_path)
+        # Set hybridized model: GRU (strain to
+        #                            stress volumetric/deviatoric components)
+        hyb_models_dict[hyb_model_name] = set_hybridized_gru_model(
+            hyb_indices, 'strain_to_stressvd', scaling_dataset,
+            device_type=device_type)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set hybridized model name
+        hyb_model_name = 'vd_composition'
+        # Set hybridized model indices
+        hyb_indices = (0, 1)
+        # Load scaling data set
+        scaling_dataset = load_dataset(train_dataset_file_path)
+        # Set hybridized model: Batched elastic (plastic strain to stress)
+        hyb_models_dict[hyb_model_name] = set_hybridized_material_layer(
+            hyb_indices, 'vd_composition', device_type=device_type)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Set hybridized models dictionary
         model_init_args['hyb_models_dict'] = hyb_models_dict
@@ -314,6 +352,9 @@ def set_hybridized_gru_model(hyb_indices, features_option, scaling_dataset,
     model_init_args = None
     model_init_file_path = None
     model_state_file_path = None
+    # Initialize new strain/stress-based features
+    strain_features_in_labels = None
+    stress_features_out_labels = None
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Initialize hybridized model
     if is_model_init_file_path:
@@ -364,6 +405,23 @@ def set_hybridized_gru_model(hyb_indices, features_option, scaling_dataset,
             # Set number of output features
             n_features_out = 6
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        elif features_option == 'strain_to_stressvd':
+            # Set input features
+            new_label_in = 'features_in'
+            features_in_list = ('strain_path',)
+            features_in_build = 'cat'
+            # Set number of input features
+            n_features_in = 6
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Set new stress-based features labels
+            stress_features_out_labels = ('vol_stress', 'dev_stress')
+            # Set output features
+            new_label_out = 'features_out'
+            features_out_list = ('vol_stress', 'dev_stress')
+            features_out_build = 'cat'
+            # Set number of output features
+            n_features_out = 7
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         else:
             raise RuntimeError('Unknown features option.')
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -391,13 +449,25 @@ def set_hybridized_gru_model(hyb_indices, features_option, scaling_dataset,
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Fit input features data scaler
     if is_model_in_normalized:
+        # Load scaling data set
+        scaling_dataset = load_dataset(val_dataset_file_path)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Compute new strain-based input features
+        if strain_features_in_labels is not None:
+            # Loop over strain-based features
+            for strain_feature_label in strain_features_in_labels:
+                # Add strain-based feature to data set
+                scaling_dataset = add_strain_features(
+                    scaling_dataset, strain_feature_label)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set data set input features
         if features_in_build == 'cat':
             fin_dataset = concatenate_dataset_features(
-                copy.deepcopy(scaling_dataset), new_label_in,
-                features_in_list, is_remove_features=True)
+                scaling_dataset, new_label_in,
+                features_in_list, is_remove_features=False)
         elif features_in_build == 'sum':
             fin_dataset = sum_dataset_features(
-                copy.deepcopy(scaling_dataset), new_label_in,
+                scaling_dataset, new_label_in,
                 features_in_list, features_weights=features_in_weights,
                 is_remove_features=False)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -410,13 +480,24 @@ def set_hybridized_gru_model(hyb_indices, features_option, scaling_dataset,
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Fit output features data scaler
     if is_model_out_normalized:
+        # Load scaling data set
+        scaling_dataset = load_dataset(val_dataset_file_path)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Compute new stress-based output features
+        if stress_features_out_labels is not None:
+            # Loop over stress-based features
+            for stress_feature_label in stress_features_out_labels:
+                # Add stress-based feature to data set
+                scaling_dataset = add_stress_features(
+                    scaling_dataset, stress_feature_label)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         if features_out_build == 'cat':
             fout_dataset = concatenate_dataset_features(
-                copy.deepcopy(scaling_dataset), new_label_out,
-                features_out_list, is_remove_features=True)
+                scaling_dataset, new_label_out,
+                features_out_list, is_remove_features=False)
         elif features_out_build == 'sum':
             fout_dataset = sum_dataset_features(
-                copy.deepcopy(scaling_dataset), new_label_out,
+                scaling_dataset, new_label_out,
                 features_out_list, features_weights=features_out_weights,
                 is_remove_features=False)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -564,10 +645,10 @@ def set_hybridized_material_layer(hyb_indices, layer_type, device_type='cpu'):
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     elif layer_type == 'vd_composition':
         # Set hybridized model class
-        raise RuntimeError('Not implemented yet.')
+        model_class = VolDevCompositionModel
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Set hybridized model initialization parameters
-        model_init_args = {}
+        model_init_args = {'device_type': device_type}
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Set input residual connection
         is_input_residual=False
