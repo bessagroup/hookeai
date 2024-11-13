@@ -140,7 +140,7 @@ def plot_prediction_loss_convergence(models_base_dirs, training_dirs,
     # Plot data
     figure, _ = scatter_xy_data(
         data_xy, x_label=x_label, y_label=y_label, x_scale='log',
-        y_scale='log', is_latex=is_latex)
+        y_scale='linear', is_latex=is_latex)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Save figure
     if is_save_fig:
