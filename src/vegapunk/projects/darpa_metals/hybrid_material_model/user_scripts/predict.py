@@ -35,6 +35,8 @@ from rnn_base_model.predict.prediction_plots import plot_time_series_prediction
 from projects.darpa_metals.rnn_material_model.rnn_model_tools. \
     process_predictions import build_prediction_data_arrays, \
         build_time_series_predictions_data
+from projects.darpa_metals.rnn_material_model.rnn_model_tools.strain_features \
+    import add_strain_features
 from gnn_base_model.predict.prediction_plots import plot_truth_vs_prediction
 from ioput.iostandard import make_directory, find_unique_file_with_regex
 #
@@ -85,28 +87,60 @@ def perform_model_prediction(predict_directory, dataset_file_path,
     # Get model initialization attributes
     model_init_args = model_init_attributes['model_init_args']
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Initialize new strain-based feature
+    strain_features_labels = None
+    # Initialize features concatenation/summing flags
+    features_in_build = 'cat'
+    features_out_build = 'cat'
     # Set data features for prediction
     features_option = 'strain_to_stress'
     if features_option == 'strain_to_stress':
         # Set input features
         new_label_in = 'features_in'
-        cat_features_in = ('strain_path',)
+        features_in_list = ('strain_path',)
         # Set output features
         new_label_out = 'features_out'
-        cat_features_out = ('stress_path',)
+        features_out_list = ('stress_path',)
         # Set number of input and output features
         n_features_in = 6
         model_init_args['n_features_in'] = n_features_in
         n_features_out = 6
         model_init_args['n_features_out'] = n_features_out
+    elif features_option == 'strain_i1_i2_to_stress':
+        # Set new strain-based features labels
+        strain_features_labels = ('i1_strain', 'i2_strain')
+        # Set input features
+        new_label_in = 'features_in'
+        features_in_list = ('strain_path', *strain_features_labels)
+        features_in_build = 'cat'
+        # Set output features
+        new_label_out = 'features_out'
+        features_out_list = ('stress_path',)
+        features_out_build = 'cat'
+        # Set number of input and output features
+        model_init_args['n_features_in'] = 8
+        model_init_args['n_features_out'] = 6
+    else:
+        raise RuntimeError('Unknown features option.')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Load data set
     dataset = load_dataset(dataset_file_path)
+    # Compute new strain-based features
+    if strain_features_labels is not None:
+        # Loop over strain-based features
+        for strain_feature_label in strain_features_labels:
+            # Add strain-based feature to data set
+            dataset = add_strain_features(
+                dataset, strain_feature_label)
     # Change training data set features labels
-    dataset = concatenate_dataset_features(
-        dataset, new_label_in, cat_features_in, is_remove_features=True)
-    dataset = concatenate_dataset_features(
-        dataset, new_label_out, cat_features_out, is_remove_features=True) 
+    if features_in_build == 'cat':
+        dataset = concatenate_dataset_features(
+            dataset, new_label_in, features_in_list,
+            is_remove_features=False)
+    if features_out_build == 'cat':
+        dataset = concatenate_dataset_features(
+            dataset, new_label_out, features_out_list,
+            is_remove_features=False) 
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set loss type
     loss_type = 'mre'

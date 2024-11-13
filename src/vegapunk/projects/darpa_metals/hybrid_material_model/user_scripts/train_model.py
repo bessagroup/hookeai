@@ -93,17 +93,38 @@ def perform_model_standard_training(train_dataset_file_path, model_directory,
                        'is_model_out_normalized': True,
                        'device_type': device_type}
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Initialize new strain-based feature
+    strain_features_labels = None
+    # Initialize features concatenation/summing flags
+    features_in_build = 'cat'
+    features_out_build = 'cat'
     # Set data features for training
     features_option = 'strain_to_stress'
     if features_option == 'strain_to_stress':
         # Set input features
         new_label_in = 'features_in'
         features_in_list = ('strain_path',)
+        features_in_build = 'cat'
         # Set output features
         new_label_out = 'features_out'
         features_out_list = ('stress_path',)
+        features_out_build = 'cat'
         # Set number of input and output features
         model_init_args['n_features_in'] = 6
+        model_init_args['n_features_out'] = 6
+    elif features_option == 'strain_i1_i2_to_stress':
+        # Set new strain-based features labels
+        strain_features_labels = ('i1_strain', 'i2_strain')
+        # Set input features
+        new_label_in = 'features_in'
+        features_in_list = ('strain_path', *strain_features_labels)
+        features_in_build = 'cat'
+        # Set output features
+        new_label_out = 'features_out'
+        features_out_list = ('stress_path',)
+        features_out_build = 'cat'
+        # Set number of input and output features
+        model_init_args['n_features_in'] = 8
         model_init_args['n_features_out'] = 6
     else:
         raise RuntimeError('Unknown features option.')
@@ -202,6 +223,39 @@ def perform_model_standard_training(train_dataset_file_path, model_directory,
         # Set hybridization model type
         model_init_args['hybridization_type'] = 'identity'
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    elif hybridization_scheme == 3:
+        # Description:
+        #
+        # HybridModel(e) = GRU(e, e_i1, e_i2) + VolDevComposition(s_vol, s_dev)
+        #
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set hybridized model name
+        hyb_model_name = 'gru_strain_i1_i2_to_stressvd'
+        # Set hybridized model indices
+        hyb_indices = (0, 0)
+        # Load scaling data set
+        scaling_dataset = load_dataset(train_dataset_file_path)
+        # Set hybridized model: GRU (strain + i1/i2 strain invariants to
+        #                            stress volumetric/deviatoric components)
+        hyb_models_dict[hyb_model_name] = set_hybridized_gru_model(
+            hyb_indices, 'strain_i1_i2_to_stressvd', scaling_dataset,
+            device_type=device_type)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set hybridized model name
+        hyb_model_name = 'vd_composition'
+        # Set hybridized model indices
+        hyb_indices = (0, 1)
+        # Load scaling data set
+        scaling_dataset = load_dataset(train_dataset_file_path)
+        # Set hybridized model: Batched elastic (plastic strain to stress)
+        hyb_models_dict[hyb_model_name] = set_hybridized_material_layer(
+            hyb_indices, 'vd_composition', device_type=device_type)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set hybridized models dictionary
+        model_init_args['hyb_models_dict'] = hyb_models_dict
+        # Set hybridization model type
+        model_init_args['hybridization_type'] = 'identity'
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     else:
         raise RuntimeError('Unknown hybridization scheme.')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -231,13 +285,22 @@ def perform_model_standard_training(train_dataset_file_path, model_directory,
         else:
             # Load validation data set
             val_dataset = load_dataset(val_dataset_file_path)
+            # Compute new strain-based features
+            if strain_features_labels is not None:
+                # Loop over strain-based features
+                for strain_feature_label in strain_features_labels:
+                    # Add strain-based feature to data set
+                    val_dataset = add_strain_features(
+                        val_dataset, strain_feature_label)
             # Set validation data set features
-            val_dataset = concatenate_dataset_features(
-                val_dataset, new_label_in, features_in_list,
-                is_remove_features=True)
-            val_dataset = concatenate_dataset_features(
-                val_dataset, new_label_out, features_out_list,
-                is_remove_features=True)
+            if features_in_build == 'cat':
+                val_dataset = concatenate_dataset_features(
+                    val_dataset, new_label_in, features_in_list,
+                    is_remove_features=False)
+            if features_out_build == 'cat':
+                val_dataset = concatenate_dataset_features(
+                    val_dataset, new_label_out, features_out_list,
+                    is_remove_features=True)
         # Set early stopping parameters
         early_stopping_kwargs = {'validation_dataset': val_dataset,
                                  'validation_frequency': 1,
@@ -246,13 +309,22 @@ def perform_model_standard_training(train_dataset_file_path, model_directory,
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Load training data set
     train_dataset = load_dataset(train_dataset_file_path)
+    # Compute new strain-based features
+    if strain_features_labels is not None:
+        # Loop over strain-based features
+        for strain_feature_label in strain_features_labels:
+            # Add strain-based feature to data set
+            train_dataset = add_strain_features(
+                train_dataset, strain_feature_label)
     # Set training data set features
-    train_dataset = concatenate_dataset_features(train_dataset, new_label_in,
-                                                 features_in_list,
-                                                 is_remove_features=True)
-    train_dataset = concatenate_dataset_features(train_dataset, new_label_out,
-                                                 features_out_list,
-                                                 is_remove_features=True)
+    if features_in_build == 'cat':
+        train_dataset = concatenate_dataset_features(
+            train_dataset, new_label_in, features_in_list,
+            is_remove_features=False)
+    if features_out_build == 'cat':
+        train_dataset = concatenate_dataset_features(
+            train_dataset, new_label_out, features_out_list,
+            is_remove_features=False)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Save model initialization file and initial state
     if is_store_model_init_only:
