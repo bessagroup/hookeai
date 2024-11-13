@@ -96,8 +96,63 @@ def perform_model_prediction(predict_directory, dataset_file_path,
     is_sum_features_in = False
     is_sum_features_out = False
     # Set data features for prediction
-    features_option = 'stress'
-    if features_option == 'stress_acc_p_strain':
+    features_option = 'strain_to_stress'
+    if features_option == 'strain_to_stress':
+        # Set input features
+        new_label_in = 'features_in'
+        cat_features_in = ('strain_path',)
+        is_cat_features_in = True
+        # Set output features
+        new_label_out = 'features_out'
+        cat_features_out = ('stress_path',)
+        is_cat_features_out = True
+        # Set number of input and output features
+        model_init_args['n_features_in'] = 6
+        model_init_args['n_features_out'] = 6
+    elif features_option == 'strain_i1_i2_to_stress':
+        # Set new strain-based features labels
+        strain_features_labels = ('i1', 'i2')
+        # Set input features
+        new_label_in = 'features_in'
+        cat_features_in = ('strain_path', *strain_features_labels)
+        is_cat_features_in = True
+        # Set output features
+        new_label_out = 'features_out'
+        cat_features_out = ('stress_path',)
+        is_cat_features_out = True
+        # Set number of input and output features
+        model_init_args['n_features_in'] = 8
+        model_init_args['n_features_out'] = 6
+    elif features_option == 'strain_to_p_strain':
+        # Set input features
+        new_label_in = 'features_in'
+        sum_features_in = ('strain_path',)
+        features_in_weights = {'strain_path': 1.0,}
+        is_sum_features_in = True
+        # Set output features
+        new_label_out = 'features_out'
+        sum_features_out = ('strain_path', 'e_strain_mf')
+        features_out_weights = {'strain_path': 1.0, 'e_strain_mf': -1.0}
+        is_sum_features_out = True
+        # Set number of input and output features
+        model_init_args['n_features_in'] = 6
+        model_init_args['n_features_out'] = 6
+    elif features_option == 'strain_i1_i2_to_p_strain':
+        # Set new strain-based features labels
+        strain_features_labels = ('i1', 'i2')
+        # Set input features
+        new_label_in = 'features_in'
+        cat_features_in = ('strain_path', *strain_features_labels)
+        is_cat_features_in = True
+        # Set output features
+        new_label_out = 'features_out'
+        sum_features_out = ('strain_path', 'e_strain_mf')
+        features_out_weights = {'strain_path': 1.0, 'e_strain_mf': -1.0}
+        is_sum_features_out = True
+        # Set number of input and output features
+        model_init_args['n_features_in'] = 8
+        model_init_args['n_features_out'] = 6
+    elif features_option == 'stress_acc_p_strain':
         # Set input features
         new_label_in = 'features_in'
         cat_features_in = ('strain_path',)
@@ -120,46 +175,6 @@ def perform_model_prediction(predict_directory, dataset_file_path,
         is_cat_features_out = True
         # Set number of input and output features
         model_init_args['n_features_in'] = 7
-        model_init_args['n_features_out'] = 6
-    elif features_option == 'strain_to_p_strain':
-        # Set input features
-        new_label_in = 'features_in'
-        sum_features_in = ('strain_path',)
-        features_in_weights = {'strain_path': 1.0,}
-        is_sum_features_in = True
-        # Set output features
-        new_label_out = 'features_out'
-        sum_features_out = ('strain_path', 'e_strain_mf')
-        features_out_weights = {'strain_path': 1.0, 'e_strain_mf': -1.0}
-        is_sum_features_out = True
-        # Set number of input and output features
-        model_init_args['n_features_in'] = 6
-        model_init_args['n_features_out'] = 6
-    elif features_option == 'strain_i1_i2_to_stress':
-        # Set new strain-based features labels
-        strain_features_labels = ('i1', 'i2')
-        # Set input features
-        new_label_in = 'features_in'
-        cat_features_in = ('strain_path', *strain_features_labels)
-        is_cat_features_in = True
-        # Set output features
-        new_label_out = 'features_out'
-        cat_features_out = ('stress_path',)
-        is_cat_features_out = True
-        # Set number of input and output features
-        model_init_args['n_features_in'] = 8
-        model_init_args['n_features_out'] = 6
-    elif features_option == 'strain_to_stress':
-        # Set input features
-        new_label_in = 'features_in'
-        cat_features_in = ('strain_path',)
-        is_cat_features_in = True
-        # Set output features
-        new_label_out = 'features_out'
-        cat_features_out = ('stress_path',)
-        is_cat_features_out = True
-        # Set number of input and output features
-        model_init_args['n_features_in'] = 6
         model_init_args['n_features_out'] = 6
     else:
         raise RuntimeError('Unknown features option.')
