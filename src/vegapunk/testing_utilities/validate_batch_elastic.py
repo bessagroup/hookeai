@@ -44,9 +44,7 @@ from utilities.loss_functions import get_pytorch_loss
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Set training data set file path
 train_dataset_file_path = \
-    ('/home/bernardoferreira/Documents/brown/projects/darpa_project/'
-     '7_local_hybrid_training/case_learning_drucker_prager_pressure/'
-     '2_vanilla_gru_model/strain_to_stress/mean_relative_error/debug_hybrid/'
+    ('/home/bernardoferreira/Desktop/test/1_training_dataset/'
      'ss_paths_dataset_n10.pkl')
 # Load training data set
 train_dataset = load_dataset(train_dataset_file_path)
