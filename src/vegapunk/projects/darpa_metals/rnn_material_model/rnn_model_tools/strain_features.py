@@ -53,12 +53,12 @@ def add_strain_features(dataset, strain_feature_label):
         Time series data set. Each sample is stored as a dictionary where
         each feature (key, str) data is a torch.Tensor(2d) of shape
         (sequence_length, n_features).
-    strain_feature_label : {'i1', 'i2'}
+    strain_feature_label : {'i1_strain', 'i2_strain'}
         Strain-based feature:
         
-        'i1' : First (principal) invariant of strain tensor.
+        'i1_strain' : First (principal) invariant of strain tensor.
         
-        'i2' : Second (principal) invariant of strain tensor.
+        'i2_strain' : Second (principal) invariant of strain tensor.
     
     Returns
     -------
@@ -88,7 +88,7 @@ def add_strain_features(dataset, strain_feature_label):
         n_dim = 3
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set available strain-based features
-    available_strain_features = ('i1', 'i2')
+    available_strain_features = ('i1_strain', 'i2_strain')
     # Check if available strain-based feature
     if strain_feature_label not in available_strain_features:
         raise RuntimeError(
@@ -130,12 +130,12 @@ def compute_strain_feature(strain_comps_array, strain_feature_label, n_dim,
     ----------
     strain_comps_array : torch.Tensor(1d)
         Strain components array.
-    strain_feature_label : {'i1', 'i2'}
+    strain_feature_label : {'i1_strain', 'i2_strain'}
         Strain-based feature:
         
-        'i1' : First (principal) invariant of strain tensor.
+        'i1_strain' : First (principal) invariant of strain tensor.
         
-        'i2' : Second (principal) invariant of strain tensor.
+        'i2_strain' : Second (principal) invariant of strain tensor.
  
     n_dim : int
         Number of spatial dimensions.
@@ -154,7 +154,7 @@ def compute_strain_feature(strain_comps_array, strain_feature_label, n_dim,
                                      strain_comps_array)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Compute strain-based feature
-    if strain_feature_label == 'i1':
+    if strain_feature_label == 'i1_strain':
         # Check number of spatial dimensions
         if n_dim != 3:
             raise RuntimeError('First (principal) invariant can only be '
@@ -162,7 +162,7 @@ def compute_strain_feature(strain_comps_array, strain_feature_label, n_dim,
                                'tensor.')
         # Compute first (principal) invariant
         strain_feature = torch.trace(strain)
-    elif strain_feature_label == 'i2':
+    elif strain_feature_label == 'i2_strain':
         # Check number of spatial dimensions
         if n_dim != 3:
             raise RuntimeError('Second (principal) invariant can only be '

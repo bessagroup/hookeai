@@ -111,7 +111,7 @@ def perform_model_prediction(predict_directory, dataset_file_path,
         model_init_args['n_features_out'] = 6
     elif features_option == 'strain_i1_i2_to_stress':
         # Set new strain-based features labels
-        strain_features_labels = ('i1', 'i2')
+        strain_features_labels = ('i1_strain', 'i2_strain')
         # Set input features
         new_label_in = 'features_in'
         cat_features_in = ('strain_path', *strain_features_labels)
@@ -139,7 +139,7 @@ def perform_model_prediction(predict_directory, dataset_file_path,
         model_init_args['n_features_out'] = 6
     elif features_option == 'strain_i1_i2_to_p_strain':
         # Set new strain-based features labels
-        strain_features_labels = ('i1', 'i2')
+        strain_features_labels = ('i1_strain', 'i2_strain')
         # Set input features
         new_label_in = 'features_in'
         cat_features_in = ('strain_path', *strain_features_labels)
