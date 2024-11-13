@@ -28,7 +28,6 @@ import itertools
 import torch
 # Local
 from rnn_base_model.data.time_dataset import TimeSeriesDataset, load_dataset
-from simulators.fetorch.math.matrixops import get_problem_type_parameters
 #
 #                                                          Authorship & Credits
 # =============================================================================
@@ -76,9 +75,9 @@ def add_strain_features(dataset, strain_feature_label):
                            f'in the data set in order to compute a new '
                            f'strain-based feature.')
     elif 'strain_comps_order' not in sample.keys():
-        raise RuntimeError(f'The data \'strain_comps_order\' must be available '
-                           f'in the data set in order to compute a new '
-                           f'strain-based feature.')
+        raise RuntimeError(f'The data \'strain_comps_order\' must be '
+                           f'available in the data set in order to compute a '
+                           f'new strain-based feature.')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Get strain components order
     strain_comps_order = sample['strain_comps_order']
@@ -147,18 +146,28 @@ def compute_strain_feature(strain_comps_array, strain_feature_label, n_dim,
         
     Returns
     -------
-    _label : torch.Tensor(1d)
+    strain_feature : torch.Tensor(1d)
         Strain-based feature.
     """
     # Build strain tensor
     strain = build_strain_from_comps(n_dim, strain_comps_order,
-                                     strain_comps_array, device=device)
+                                     strain_comps_array)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Compute strain-based feature
     if strain_feature_label == 'i1':
+        # Check number of spatial dimensions
+        if n_dim != 3:
+            raise RuntimeError('First (principal) invariant can only be '
+                               'computed from three-dimensional strain '
+                               'tensor.')
         # Compute first (principal) invariant
         strain_feature = torch.trace(strain)
     elif strain_feature_label == 'i2':
+        # Check number of spatial dimensions
+        if n_dim != 3:
+            raise RuntimeError('Second (principal) invariant can only be '
+                               'computed from three-dimensional strain '
+                               'tensor.')
         # Compute second (principal) invariant
         strain_feature = 0.5*(torch.trace(strain)**2
                               - torch.trace(torch.matmul(strain, strain)))
@@ -188,7 +197,7 @@ def build_strain_from_comps(n_dim, strain_comps_order, strain_comps_array,
     Returns
     -------
     strain : torch.Tensor(2d)
-        Strain/Stress tensor.
+        Strain tensor.
     """
     # Get device from input tensor
     if device is None:
