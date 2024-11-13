@@ -76,7 +76,7 @@ def perform_model_standard_training(train_dataset_file_path, model_directory,
             is_early_stopping, early_stopping_kwargs = \
                 set_default_training_options()
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Initialize new strain-based feature flags
+    # Initialize new strain-based feature
     strain_features_labels = None
     # Initialize features concatenation/summing flags
     is_cat_features_in = False
