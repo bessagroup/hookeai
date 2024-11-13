@@ -88,24 +88,22 @@ def perform_model_prediction(predict_directory, dataset_file_path,
     # Get model initialization attributes
     model_init_args = model_init_attributes['model_init_args']
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Initialize new strain-based feature flags
+    # Initialize new strain-based feature
     strain_features_labels = None
     # Initialize features concatenation/summing flags
-    is_cat_features_in = False
-    is_cat_features_out = False
-    is_sum_features_in = False
-    is_sum_features_out = False
-    # Set data features for prediction
+    features_in_build = 'cat'
+    features_out_build = 'cat'
+    # Set data features for training
     features_option = 'strain_to_stress'
     if features_option == 'strain_to_stress':
         # Set input features
         new_label_in = 'features_in'
-        cat_features_in = ('strain_path',)
-        is_cat_features_in = True
+        features_in_list = ('strain_path',)
+        features_in_build = 'cat'
         # Set output features
         new_label_out = 'features_out'
-        cat_features_out = ('stress_path',)
-        is_cat_features_out = True
+        features_out_list = ('stress_path',)
+        features_out_build = 'cat'
         # Set number of input and output features
         model_init_args['n_features_in'] = 6
         model_init_args['n_features_out'] = 6
@@ -114,26 +112,26 @@ def perform_model_prediction(predict_directory, dataset_file_path,
         strain_features_labels = ('i1_strain', 'i2_strain')
         # Set input features
         new_label_in = 'features_in'
-        cat_features_in = ('strain_path', *strain_features_labels)
-        is_cat_features_in = True
+        features_in_list = ('strain_path', *strain_features_labels)
+        features_in_build = 'cat'
         # Set output features
         new_label_out = 'features_out'
-        cat_features_out = ('stress_path',)
-        is_cat_features_out = True
+        features_out_list = ('stress_path',)
+        features_out_build = 'cat'
         # Set number of input and output features
         model_init_args['n_features_in'] = 8
         model_init_args['n_features_out'] = 6
     elif features_option == 'strain_to_p_strain':
         # Set input features
         new_label_in = 'features_in'
-        sum_features_in = ('strain_path',)
+        features_in_list = ('strain_path',)
         features_in_weights = {'strain_path': 1.0,}
-        is_sum_features_in = True
+        features_in_build = 'sum'
         # Set output features
         new_label_out = 'features_out'
-        sum_features_out = ('strain_path', 'e_strain_mf')
+        features_out_list = ('strain_path', 'e_strain_mf')
         features_out_weights = {'strain_path': 1.0, 'e_strain_mf': -1.0}
-        is_sum_features_out = True
+        features_out_build = 'sum'
         # Set number of input and output features
         model_init_args['n_features_in'] = 6
         model_init_args['n_features_out'] = 6
@@ -142,37 +140,37 @@ def perform_model_prediction(predict_directory, dataset_file_path,
         strain_features_labels = ('i1_strain', 'i2_strain')
         # Set input features
         new_label_in = 'features_in'
-        cat_features_in = ('strain_path', *strain_features_labels)
-        is_cat_features_in = True
+        features_in_list = ('strain_path', *strain_features_labels)
+        features_in_build = 'cat'
         # Set output features
         new_label_out = 'features_out'
-        sum_features_out = ('strain_path', 'e_strain_mf')
+        features_out_list = ('strain_path', 'e_strain_mf')
         features_out_weights = {'strain_path': 1.0, 'e_strain_mf': -1.0}
-        is_sum_features_out = True
+        features_out_build = 'sum'
         # Set number of input and output features
         model_init_args['n_features_in'] = 8
         model_init_args['n_features_out'] = 6
     elif features_option == 'stress_acc_p_strain':
         # Set input features
         new_label_in = 'features_in'
-        cat_features_in = ('strain_path',)
-        is_cat_features_in = True
+        features_in_list = ('strain_path',)
+        features_in_build = 'cat'
         # Set output features
         new_label_out = 'features_out'
-        cat_features_out = ('stress_path', 'acc_p_strain')
-        is_cat_features_out = True
+        features_out_list = ('stress_path', 'acc_p_strain')
+        features_out_build = 'cat'
         # Set number of input and output features
         model_init_args['n_features_in'] = 6
         model_init_args['n_features_out'] = 7
     elif features_option == 'strain_vf_to_stress':
         # Set input features
         new_label_in = 'features_in'
-        cat_features_in = ('strain_path', 'vf_path')
-        is_cat_features_in = True
+        features_in_list = ('strain_path', 'vf_path')
+        features_in_build = 'cat'
         # Set output features
         new_label_out = 'features_out'
-        cat_features_out = ('stress_path',)
-        is_cat_features_out = True
+        features_out_list = ('stress_path',)
+        features_out_build = 'cat'
         # Set number of input and output features
         model_init_args['n_features_in'] = 7
         model_init_args['n_features_out'] = 6
@@ -192,21 +190,21 @@ def perform_model_prediction(predict_directory, dataset_file_path,
             # Add strain-based feature to data set
             dataset = add_strain_features(dataset, strain_feature_label)
     # Set testing data set features labels
-    if is_cat_features_in:
+    if features_in_build == 'cat':
         dataset = concatenate_dataset_features(
-            dataset, new_label_in, cat_features_in,
+            dataset, new_label_in, features_in_list,
             is_remove_features=False)
-    elif is_sum_features_in:
+    elif features_in_build == 'sum':
         dataset = sum_dataset_features(
-            dataset, new_label_in, sum_features_in,
+            dataset, new_label_in, features_in_list,
             features_weights=features_in_weights, is_remove_features=False)
-    if is_cat_features_out:
+    if features_out_build == 'cat':
         dataset = concatenate_dataset_features(
-            dataset, new_label_out, cat_features_out,
+            dataset, new_label_out, features_out_list,
             is_remove_features=False)
-    elif is_sum_features_out:
+    elif features_out_build == 'sum':
         dataset = sum_dataset_features(
-            dataset, new_label_out, sum_features_out,
+            dataset, new_label_out, features_out_list,
             features_weights=features_out_weights, is_remove_features=False)
     # Add hidden state initialization to data set
     dataset = add_dataset_feature_init(
