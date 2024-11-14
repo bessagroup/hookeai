@@ -33,7 +33,7 @@ def plot_avg_prediction_loss(save_dir, is_save_fig=False,
     training_sizes = (10, 20, 40, 80, 160, 320, 640, 1280, 2560)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set example
-    example = '7'
+    example = '9'
     # Set example data
     if example == 'erroneous_von_mises_properties':
         # Set models labels
@@ -756,6 +756,180 @@ def plot_avg_prediction_loss(save_dir, is_save_fig=False,
         # Set axes scale
         x_scale = 'log'
         y_scale = 'linear'
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    elif example == '8':
+        # Purpose
+        # -------
+        # Compare prediction performance of vanilla GRU model and hybrid GRU
+        # model (hybrid training) for different types of strain-stress training
+        # data sets
+        #
+        # Input features: Strain
+        # Output features: Stress
+        #
+        # Training is performed with MRE. 
+        #
+        # Observations
+        # ------------
+        # (1) ...
+        #
+        # Data directories
+        # ----------------
+        # '/home/bernardoferreira/Documents/brown/projects/darpa_project/'
+        # '7_local_hybrid_training/case_learning_drucker_prager_pressure/'
+        # '2_vanilla_gru_model/strain_to_stress/mean_relative_error'
+        #
+        # '/home/bernardoferreira/Documents/brown/projects/darpa_project/'
+        # '7_local_hybrid_training/case_learning_drucker_prager_pressure/'
+        # '3_hybrid_model/strain_to_stressvd_to_stress/mean_relative_error/'
+        # 'hybrid_training/
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Initialize models average prediction loss
+        models_avg_predict_loss = {}
+        # Set testing data set type
+        testing_type = 'proportional'
+        # Set prediction loss type
+        prediction_loss_type = 'mre'
+        # Set models average prediction loss
+        if testing_type == 'random':
+            models_avg_predict_loss['GRU (rand./rand.)'] = \
+                [0.711485147, 0.765105605, 0.504647255, 0.325015962, 0.20673649, 0.125683844, 0.0986325219, 0.0481931716, 0.0259366408]
+            models_avg_predict_loss['GRU (prop./rand.)'] = \
+                [3.76491642, 2.53799725, 2.16523647, 1.94805944, 1.84417129, 1.87977254, 1.88211465, 1.85847485, 1.8168788]
+            #models_avg_predict_loss['GRU (prop.(2c)/rand.)'] = \
+            #    [2.34063721, 2.09915113, 1.88783622, 1.42225647, 1.06488407, 1.06585515, 0.826798916, 0.784138799, 0.820805132]
+            #models_avg_predict_loss['GRU (rand+prop./rand.)'] = \
+            #    [1.19108558, 1.07213414, 0.846771359, 0.411654711, 0.306536347, 0.223055899, 0.163353294, 0.0947590619, 0.05163607]
+            #models_avg_predict_loss['GRU (apex+cone/rand.)'] = \
+            #    [0.891771078, 0.855269194, 0.745420575, 0.365836501, 0.230215341, 0.164953217, 0.125772104, 0.0626440346, 0.0331411585]
+            models_avg_predict_loss['HYB (rand./rand.)'] = \
+                [0.806715071, 0.783563972, 0.747182012, 0.281810135, 0.189362288, 0.129430026, 0.0717859715, 0.0399394557, 0.025031399]
+            models_avg_predict_loss['HYB (prop./rand.)'] = \
+                [4.25305986, 2.88659239, 2.13938046, 1.93324268, 1.88690639, 1.91504824, 1.93037343, 1.91127229, 1.87112331]
+            #models_avg_predict_loss['HYB (prop.(2c)/rand.)'] = \
+            #    
+            #models_avg_predict_loss['HYB (rand+prop./rand.)'] = \
+            #    
+            #models_avg_predict_loss['HYB (apex+cone/rand.)'] = \
+            #    
+        elif testing_type == 'proportional':
+            models_avg_predict_loss['GRU (rand./prop.)'] = \
+                [0.619509816, 0.619414806, 0.54364872, 0.271952868, 0.155367523, 0.111418873, 0.0862796232, 0.0527936295, 0.0283560455]
+            models_avg_predict_loss['GRU (prop./prop.)'] = \
+                [1.02984631, 0.402982414, 0.215880111, 0.103733808, 0.0368126594, 0.0184596218, 0.0116598159, 0.00496042613, 0.00243825512]
+            #models_avg_predict_loss['GRU (prop.(2c)/prop.)'] = \
+            #    [0.811315417, 0.648340762, 0.466697842, 0.381364524, 0.271140575, 0.173272818, 0.149255753, 0.111266643, 0.0770416409]
+            #models_avg_predict_loss['GRU (rand+prop./prop.)'] = \
+            #    [0.496268153, 0.323136866, 0.206813589, 0.0868700743, 0.0509016514, 0.0429093353, 0.0314695463, 0.0144617511, 0.00852774922]
+            #models_avg_predict_loss['GRU (apex+cone/prop.)'] = \
+            #    [0.591750145, 0.751824141, 0.69582051, 0.20526579, 0.0964431763, 0.0667821318, 0.0579240546, 0.0335734487, 0.0251233708]
+            models_avg_predict_loss['HYB (rand./prop.)'] = \
+                [0.675308764, 0.687643647, 0.70114857, 0.212603718, 0.159323364, 0.134147853, 0.0931111425, 0.0428915769, 0.0227415077]
+            models_avg_predict_loss['HYB (prop./prop.)'] = \
+                [1.22704744, 0.786419868, 0.20545724, 0.083699435, 0.0363887325, 0.0172345638, 0.0102597959, 0.00515709585, 0.00235548848]
+            #models_avg_predict_loss['HYB (prop.(2c)/prop.)'] = \
+            #    
+            #models_avg_predict_loss['HYB (rand+prop./prop.)'] = \
+            #    
+            #models_avg_predict_loss['HYB (apex+cone/prop.)'] = \
+            #    
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set models labels
+        models_labels = tuple(models_avg_predict_loss.keys())
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set axes limits
+        x_lims = (None, None)
+        y_lims = (0, 1.0)
+        # Set axes scale
+        x_scale = 'log'
+        y_scale = 'linear'
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    elif example == '9':
+        # Purpose
+        # -------
+        # Compare prediction performance of vanilla GRU model and hybrid GRU
+        # model (hybrid training) for different types of strain-stress training
+        # data sets
+        #
+        # Input features: (GRU) Strain, (Hybrid) Strain + I1 + I2
+        # Output features: (GRU) Stress, (Hybrid) Stress
+        #
+        # Training is performed with MRE. 
+        #
+        # Observations
+        # ------------
+        # (1) ...
+        #
+        # Data directories
+        # ----------------
+        # '/home/bernardoferreira/Documents/brown/projects/darpa_project/'
+        # '7_local_hybrid_training/case_learning_drucker_prager_pressure/'
+        # '2_vanilla_gru_model/strain_to_stress/mean_relative_error'
+        #
+        # '/home/bernardoferreira/Documents/brown/projects/darpa_project/'
+        # '7_local_hybrid_training/case_learning_drucker_prager_pressure/'
+        # '3_hybrid_model/strain_i1_i2_to_stressvd_to_stress/'
+        # 'mean_relative_error/hybrid_training/
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Initialize models average prediction loss
+        models_avg_predict_loss = {}
+        # Set testing data set type
+        testing_type = 'proportional'
+        # Set prediction loss type
+        prediction_loss_type = 'mre'
+        # Set models average prediction loss
+        if testing_type == 'random':
+            models_avg_predict_loss['GRU (rand./rand.)'] = \
+                [0.711485147, 0.765105605, 0.504647255, 0.325015962, 0.20673649, 0.125683844, 0.0986325219, 0.0481931716, 0.0259366408]
+            models_avg_predict_loss['GRU (prop./rand.)'] = \
+                [3.76491642, 2.53799725, 2.16523647, 1.94805944, 1.84417129, 1.87977254, 1.88211465, 1.85847485, 1.8168788]
+            #models_avg_predict_loss['GRU (prop.(2c)/rand.)'] = \
+            #    [2.34063721, 2.09915113, 1.88783622, 1.42225647, 1.06488407, 1.06585515, 0.826798916, 0.784138799, 0.820805132]
+            #models_avg_predict_loss['GRU (rand+prop./rand.)'] = \
+            #    [1.19108558, 1.07213414, 0.846771359, 0.411654711, 0.306536347, 0.223055899, 0.163353294, 0.0947590619, 0.05163607]
+            #models_avg_predict_loss['GRU (apex+cone/rand.)'] = \
+            #    [0.891771078, 0.855269194, 0.745420575, 0.365836501, 0.230215341, 0.164953217, 0.125772104, 0.0626440346, 0.0331411585]
+            models_avg_predict_loss['HYB (rand./rand.)'] = \
+                [0.794499993, 0.780930042, 0.728098512, 0.255889624, 0.187406063, 0.117502622, 0.0909238756, 0.0420758538, 0.0218026526]
+            models_avg_predict_loss['HYB (prop./rand.)'] = \
+                [4.14906788, 2.34869099, 2.09101152, 1.94346046, 1.9089756, 1.98808372, 2.00592685, 1.98578262, 1.99731863]
+            #models_avg_predict_loss['HYB (prop.(2c)/rand.)'] = \
+            #    
+            #models_avg_predict_loss['HYB (rand+prop./rand.)'] = \
+            #    
+            #models_avg_predict_loss['HYB (apex+cone/rand.)'] = \
+            #    
+        elif testing_type == 'proportional':
+            models_avg_predict_loss['GRU (rand./prop.)'] = \
+                [0.619509816, 0.619414806, 0.54364872, 0.271952868, 0.155367523, 0.111418873, 0.0862796232, 0.0527936295, 0.0283560455]
+            models_avg_predict_loss['GRU (prop./prop.)'] = \
+                [1.02984631, 0.402982414, 0.215880111, 0.103733808, 0.0368126594, 0.0184596218, 0.0116598159, 0.00496042613, 0.00243825512]
+            #models_avg_predict_loss['GRU (prop.(2c)/prop.)'] = \
+            #    [0.811315417, 0.648340762, 0.466697842, 0.381364524, 0.271140575, 0.173272818, 0.149255753, 0.111266643, 0.0770416409]
+            #models_avg_predict_loss['GRU (rand+prop./prop.)'] = \
+            #    [0.496268153, 0.323136866, 0.206813589, 0.0868700743, 0.0509016514, 0.0429093353, 0.0314695463, 0.0144617511, 0.00852774922]
+            #models_avg_predict_loss['GRU (apex+cone/prop.)'] = \
+            #    [0.591750145, 0.751824141, 0.69582051, 0.20526579, 0.0964431763, 0.0667821318, 0.0579240546, 0.0335734487, 0.0251233708]
+            models_avg_predict_loss['HYB (rand./prop.)'] = \
+                [0.681510568, 0.614375532, 0.718093932, 0.198453933, 0.165328532, 0.121926859, 0.0997562334, 0.0486866385, 0.0205817781]
+            models_avg_predict_loss['HYB (prop./prop.)'] = \
+                [1.20960939, 0.357766807, 0.156749517, 0.0673625842, 0.0259585902, 0.0112659633, 0.00693309307, 0.00344297523, 0.00176035136]
+            #models_avg_predict_loss['HYB (prop.(2c)/prop.)'] = \
+            #    
+            #models_avg_predict_loss['HYB (rand+prop./prop.)'] = \
+            #    
+            #models_avg_predict_loss['HYB (apex+cone/prop.)'] = \
+            #    
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set models labels
+        models_labels = tuple(models_avg_predict_loss.keys())
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set axes limits
+        x_lims = (None, None)
+        y_lims = (0, 1.0)
+        # Set axes scale
+        x_scale = 'log'
+        y_scale = 'linear'
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ 
     # Get number of training data set sizes
     n_training_sizes = len(training_sizes)
@@ -889,8 +1063,8 @@ if __name__ == "__main__":
     plots_dir = ('/home/bernardoferreira/Documents/brown/projects/'
                  'darpa_project/7_local_hybrid_training/'
                  'case_learning_drucker_prager_pressure/3_hybrid_model/'
-                 'strain_to_pstrain_to_stress/mean_relative_error/'
-                 'gru_training_hybrid_prediction/plots')
+                 'strain_i1_i2_to_stressvd_to_stress/mean_relative_error/'
+                 'hybrid_training/plots')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Plot average prediction loss
     if is_plot_avg_prediction_loss:
