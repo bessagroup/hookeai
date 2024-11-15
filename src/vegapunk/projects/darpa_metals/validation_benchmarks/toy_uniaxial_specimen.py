@@ -925,6 +925,8 @@ if __name__ == '__main__':
         # Set model input and output features normalization
         is_model_in_normalized = True
         is_model_out_normalized = True
+        # Set GRU model source
+        gru_model_source = 'torch'
         # Set device type
         if torch.cuda.is_available():
             device_type = 'cuda'

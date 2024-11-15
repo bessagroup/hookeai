@@ -555,12 +555,14 @@ if __name__ == "__main__":
         # Set hidden layer size
         hidden_layer_size = 500
         # Set number of recurrent layers (stacked RNN)
-        n_recurrent_layers = 3
+        n_recurrent_layers = 2
         # Set dropout probability
         dropout = 0
         # Set model input and output features normalization
         is_model_in_normalized = True
         is_model_out_normalized = True
+        # Set GRU model source
+        gru_model_source = 'custom'
         # Set device type
         if torch.cuda.is_available():
             device_type = 'cuda'
