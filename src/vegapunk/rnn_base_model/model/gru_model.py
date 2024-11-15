@@ -23,6 +23,7 @@ import tqdm
 import sklearn.preprocessing
 # Local
 from rnn_base_model.data.time_dataset import get_time_series_data_loader
+from rnn_base_model.custom.gru_vmap import GRU
 from utilities.data_scalers import TorchMinMaxScaler, TorchStandardScaler
 #
 #                                                          Authorship & Credits
@@ -60,6 +61,9 @@ class GRURNNModel(torch.nn.Module):
     _dropout : int
         Dropout probability. If non-zero, each GRU recurrent layer is followed
         by a dropout layer with the provided dropout probability.
+    _gru_model_source : {'torch', 'custom'}, default='torch'
+        GRU model source: 'torch' imports torch.nn.GRU model, while
+        'custom' gets custom GRU implementation.
     _gru_rnn_model : torch.nn.Module
         Multi-layer gated recurrent unit (GRU) recurrent neural network model.
     _linear_layer : torch.nn.Module
@@ -130,7 +134,7 @@ class GRURNNModel(torch.nn.Module):
                  model_directory, model_name='gru_material_model',
                  is_model_in_normalized=False, is_model_out_normalized=False,
                  n_recurrent_layers=1, dropout=0, is_save_model_init_file=True,
-                 device_type='cpu'):
+                 gru_model_source='torch', device_type='cpu'):
         """Constructor.
         
         Parameters
@@ -166,6 +170,9 @@ class GRURNNModel(torch.nn.Module):
             initializing model from initialization file this option should be
             set to False to avoid updating the initialization file and preserve
             fitted data scalers.
+        gru_model_source : {'torch', 'custom'}, default='torch'
+            GRU model source: 'torch' imports torch.nn.GRU model, while
+            'custom' gets custom GRU implementation.
         device_type : {'cpu', 'cuda'}, default='cpu'
             Type of device on which torch.Tensor is allocated.
         """
@@ -198,19 +205,29 @@ class GRURNNModel(torch.nn.Module):
         self.is_model_out_normalized = is_model_out_normalized
         # Set save initialization file flag
         self._is_save_model_init_file = is_save_model_init_file
+        # Set multi-layer gated recurrent unit (GRU) model source
+        self._gru_model_source = gru_model_source
         # Set device
         self.set_device(device_type)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Initialize multi-layer gated recurrent unit (GRU) recurrent neural
         # network
-        self._gru_rnn_model = \
-            torch.nn.GRU(input_size=self._n_features_in,
-                         hidden_size=self._hidden_layer_size,
-                         num_layers = self._n_recurrent_layers,
-                         bias=True,
-                         batch_first=False,
-                         dropout=self._dropout,
-                         device=self._device)
+        if self._gru_model_source == 'custom':
+            self._gru_rnn_model = \
+                GRU(input_size=self._n_features_in,
+                    hidden_size=self._hidden_layer_size,
+                    num_layers=self._n_recurrent_layers,
+                    bias=True,
+                    device=self._device)
+        else:
+            self._gru_rnn_model = \
+                torch.nn.GRU(input_size=self._n_features_in,
+                            hidden_size=self._hidden_layer_size,
+                            num_layers = self._n_recurrent_layers,
+                            bias=True,
+                            batch_first=False,
+                            dropout=self._dropout,
+                            device=self._device)
         # Initialize linear layer
         self._linear_layer = \
             torch.nn.Linear(in_features=self._hidden_layer_size,
@@ -437,6 +454,7 @@ class GRURNNModel(torch.nn.Module):
         model_init_args['is_model_in_normalized'] = self.is_model_in_normalized
         model_init_args['is_model_out_normalized'] = \
             self.is_model_out_normalized
+        model_init_args['gru_model_source'] = self._gru_model_source
         model_init_args['device_type'] = self._device_type
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Assemble initialization parameters

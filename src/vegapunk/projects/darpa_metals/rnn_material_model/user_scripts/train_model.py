@@ -361,6 +361,8 @@ def set_default_model_parameters(model_directory, device_type='cpu'):
     # Set model input and output features normalization
     is_model_in_normalized = True
     is_model_out_normalized = True
+    # Set GRU model source
+    gru_model_source = 'custom'
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Build model initialization parameters
     model_init_args = {'n_features_in': n_features_in,
@@ -372,6 +374,7 @@ def set_default_model_parameters(model_directory, device_type='cpu'):
                        'model_name': model_name,
                        'is_model_in_normalized': is_model_in_normalized,
                        'is_model_out_normalized': is_model_out_normalized,
+                       'gru_model_source': gru_model_source,
                        'device_type': device_type}
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     return model_init_args
