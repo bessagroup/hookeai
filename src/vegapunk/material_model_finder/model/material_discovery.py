@@ -189,6 +189,8 @@ class MaterialModelFinder(torch.nn.Module):
         Build strain/stress tensor from given components.
     vstore_tensor_comps(cls, comps, tensor, device=None)
         Store strain/stress tensor components in array.
+    features_out_extractor(cls, model_output)
+        Extract output features from generic model output.
     _init_data_scalers(self)
         Initialize model data scalers.
     set_fitted_force_data_scalers(self, force_minimum, force_maximum)
@@ -1206,6 +1208,8 @@ class MaterialModelFinder(torch.nn.Module):
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Compute output features
         features_out = constitutive_model(features_in)
+        # Extract output features
+        features_out = self.features_out_extractor(features_out)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Loop over discrete time
         for time_idx in range(n_time):
@@ -2247,6 +2251,38 @@ class MaterialModelFinder(torch.nn.Module):
         comps_array = tensor[index_map]
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         return comps_array
+    # -------------------------------------------------------------------------
+    @classmethod
+    def features_out_extractor(cls, model_output):
+        """Extract output features from generic model output.
+        
+        Parameters
+        ----------
+        model_output : {torch.Tensor, tuple}
+            Model output.
+        
+        Returns
+        -------
+        features_out : torch.Tensor
+            Tensor of output features stored as torch.Tensor(2d) of shape
+            (sequence_length, n_features_out) for unbatched input or
+            torch.Tensor(3d) of shape
+            (sequence_length, batch_size, n_features_out) for batched input.
+        """
+        # Extract output features
+        if isinstance(model_output, tuple):
+            # Assume output features are stored in the first output index
+            # of model output
+            features_out = model_output[0]
+        elif isinstance(model_output, torch.Tensor):
+            # Output features correspond directly to model output
+            features_out = model_output
+        else:
+            raise RuntimeError(f'Unexpected model output of type '
+                               f'({type(model_output)}). Output features '
+                               f'extraction is not implemented.')
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        return features_out
     # -------------------------------------------------------------------------
     def _init_data_scalers(self):
         """Initialize model data scalers."""
