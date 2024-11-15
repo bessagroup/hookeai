@@ -13,10 +13,11 @@ LinksSimulator
 #                                                                       Modules
 # =============================================================================
 # Standard
-from abc import ABC, abstractmethod
 import os
 import subprocess
 import re
+import copy
+import itertools
 # Third-party
 import numpy as np
 # Local
@@ -69,6 +70,9 @@ class LinksSimulator:
         Get Links finite element mesh data.
     _get_links_elem_type_data(self, patch)
         Get Links finite element type data.
+    remove_mesh_elements(cls, remove_elements_labels, node_coords, elements, \
+                         elements_mat_phase, boundary_nodes_labels=None)
+        Remove elements from finite element mesh.
     """
     def __init__(self, links_bin_path, strain_formulation, analysis_type):
         """Constructor.
@@ -103,7 +107,9 @@ class LinksSimulator:
         return n_dim
     # -------------------------------------------------------------------------
     def generate_input_data_file(self, filename, directory, patch,
-                                 patch_material_data, links_input_params=None,
+                                 patch_material_data,
+                                 remove_elements_labels=None,
+                                 links_input_params=None,
                                  is_overwrite_file=False, is_verbose=False):
         """Generate Links input data file.
         
@@ -124,6 +130,8 @@ class LinksSimulator:
             the corresponding material phase (int)) and
             'mat_phases_descriptors': dict (constitutive model descriptors
             (item, dict) for each material phase (key, str[int])).
+        remove_elements_labels : tuple[int], default=None
+            Finite elements to be removed from finite element mesh.
         links_input_params : dict, default=None
             Links input data file parameters. If None, default parameters are
             set.
@@ -172,6 +180,17 @@ class LinksSimulator:
         # Get Links finite element mesh data
         node_coords, elements, elements_mat_phase = \
             self._get_links_mesh_data(patch, mesh_elem_material)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Remove elements from Links finite elements mesh
+        if remove_elements_labels is not None:
+            # Get mesh boundary nodes labels
+            boundary_nodes_labels = patch.get_boundary_nodes_labels()
+            # Remove elements from Links finite elements mesh
+            node_coords, elements, elements_mat_phase = \
+                self.remove_mesh_elements(remove_elements_labels, node_coords,
+                                          elements, elements_mat_phase,
+                                          boundary_nodes_labels)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Get Links finite element type
         element_type, n_gauss_points = self._get_links_elem_type_data(patch)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -758,3 +777,126 @@ class LinksSimulator:
             raise RuntimeError('Missing 3D implementation.')
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         return element_type, n_gauss_points
+    # -------------------------------------------------------------------------
+    @classmethod
+    def remove_mesh_elements(cls, remove_elements_labels, node_coords,
+                             elements, elements_mat_phase,
+                             boundary_nodes_labels=None):
+        """Remove elements from finite element mesh.
+
+        Parameters
+        ----------
+        remove_elements_labels : tuple[int]
+            Finite elements to be removed from finite element mesh.
+        node_coords : dict
+            Coordinates (item, numpy.ndarray(n_dim)) of each finite element
+            mesh node (key, str[int]).
+        elements : dict
+            Nodes (item, tuple[int]) of each finite element (key, str[int]).
+        elements_mat_phase : dict
+            Material phase (item, int) of each finite element (key, str).
+        boundary_nodes_labels : tuple[int], default=None
+            Finite element mesh boundary nodes labels. If provided, then
+            removal of elements that would lead to the removal of a boundary
+            node raises error.
+            
+        Returns
+        -------
+        node_coords : dict
+            Coordinates (item, numpy.ndarray(n_dim)) of each finite element
+            mesh node (key, str[int]).
+        elements : dict
+            Nodes (item, tuple[int]) of each finite element (key, str[int]).
+        elements_mat_phase : dict
+            Material phase (item, int) of each finite element (key, str).
+        """
+        # Store old nodes coordinates
+        node_coords_old = copy.deepcopy(node_coords)
+        # Store old elements
+        elements_old = copy.deepcopy(elements)
+        # Store old elements material phases
+        elements_mat_phase_old = copy.deepcopy(elements_mat_phase)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Get old nodes labels
+        nodes_old_labels = set(itertools.chain(*list(elements_old.values())))
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Initialize element number
+        elem_label = 1
+        # Initialize elements
+        elements = {}
+        # Initialize elements mapping (old to new)
+        elem_label_map = {}
+        # Loop over old elements
+        for elem_old_label, elem_old_nodes in elements_old.items():
+            # Process remaining element
+            if int(elem_old_label) not in remove_elements_labels:
+                # Collect remaining element nodes
+                elements[str(elem_label)] = elem_old_nodes
+                # Assemble elements mapping (old to new)
+                elem_label_map[str(elem_old_label)] = str(elem_label)
+                # Increment element number
+                elem_label += 1
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Get current nodes
+        nodes_labels = set(itertools.chain(*list(elements.values())))
+        # Get nodes to be removed
+        remove_nodes_labels = nodes_old_labels - nodes_labels
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Check removal of boundary nodes
+        if boundary_nodes_labels is not None:
+            # Loop over nodes
+            for node_label in remove_nodes_labels:
+                # Check if removed node is boundary node
+                if node_label in boundary_nodes_labels:
+                    # Initialize invalid removed elements
+                    inv_remove_elements_labels = []
+                    # Loop over elements
+                    for elem_label in remove_elements_labels:
+                        # Collect invalid removed elements
+                        if node_label in elements_old[str(elem_label)]:
+                            inv_remove_elements_labels.append(elem_label)
+                    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                    raise RuntimeError(
+                        f'Removing elements that would lead to the removal of '
+                        f'boundary nodes is not allowed. The following '
+                        f'elements cannot be removed due to boundary node '
+                        f'{node_label}: {inv_remove_elements_labels}')
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Initialize node number
+        node_label = 1
+        # Initialize nodes coordinates
+        node_coords = {}
+        # Initialize nodes mapping (old to new)
+        node_label_map = {}
+        # Loop over old nodes
+        for node_old_label, node_old_coords in node_coords_old.items():
+            # Process remaining node
+            if node_old_label not in remove_nodes_labels:
+                # Collect remaining node coordinates
+                node_coords[str(node_label)] = node_old_coords
+                # Assemble nodes mapping (old to new)
+                node_label_map[str(node_old_label)] = node_label
+                # Increment node number
+                node_label += 1
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Loop over elements
+        for elem_label in elements.keys():
+            # Store old element nodes
+            elem_old_nodes = elements[elem_label]
+            # Build new element nodes
+            elem_nodes = [node_label_map[str(node_old_label)]
+                          for node_old_label in elem_old_nodes]
+            # Store new element nodes
+            elements[elem_label] = tuple(elem_nodes)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Initialize elements material phases
+        elements_mat_phase = {}
+        # Loop over elements
+        for elem_old_label, mat_phase in elements_mat_phase_old.items():
+            # Process remaining element
+            if elem_old_label in elem_label_map.keys():
+                # Collect remaining element material phase
+                elements_mat_phase[str(elem_label_map[elem_old_label])] = \
+                    mat_phase
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        return node_coords, elements, elements_mat_phase

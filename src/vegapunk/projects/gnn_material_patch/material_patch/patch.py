@@ -90,7 +90,7 @@ class FiniteElementPatch:
         Get finite element mesh connected nodes pairs.
     _set_n_edge_nodes_per_dim(self)
         Set number of patch edge nodes per dimension.
-    _get_boundary_nodes_labels(self)
+    get_boundary_nodes_labels(self)
         Get finite element mesh boundary nodes labels.
     plot_deformed_patch(self, is_show_plot=None, is_save_plot=False, \
                         save_directory=None, plot_name=None, \
@@ -136,7 +136,7 @@ class FiniteElementPatch:
         self._mesh_boundary_nodes_disps = \
             copy.deepcopy(mesh_boundary_nodes_disps)
         # Check if only boundary nodes have prescribed displacements
-        boundary_nodes_labels = self._get_boundary_nodes_labels()
+        boundary_nodes_labels = self.get_boundary_nodes_labels()
         if np.any([int(label) not in boundary_nodes_labels
                    for label in self._mesh_boundary_nodes_disps.keys()]):
             raise RuntimeError('Displacements can only be prescribed on '
@@ -286,7 +286,7 @@ class FiniteElementPatch:
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         self._n_edge_nodes_per_dim = tuple(n_edge_nodes_per_dim)
     # -------------------------------------------------------------------------  
-    def _get_boundary_nodes_labels(self):
+    def get_boundary_nodes_labels(self):
         """Get finite element mesh boundary nodes labels.
         
         Returns
@@ -340,7 +340,7 @@ class FiniteElementPatch:
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Get finite element mesh labels and reference coordinates
             mesh_nodes_labels = self._mesh_nodes_coords_ref.keys()
-            mesh_bnd_nodes_labels = self._get_boundary_nodes_labels()
+            mesh_bnd_nodes_labels = self.get_boundary_nodes_labels()
             mesh_nodes_coords_ref = self._mesh_nodes_coords_ref
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Loop over dimensions
