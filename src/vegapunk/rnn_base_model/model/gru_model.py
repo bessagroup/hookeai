@@ -23,7 +23,7 @@ import tqdm
 import sklearn.preprocessing
 # Local
 from rnn_base_model.data.time_dataset import get_time_series_data_loader
-from utilities.data_scalers import TorchStandardScaler
+from utilities.data_scalers import TorchMinMaxScaler, TorchStandardScaler
 #
 #                                                          Authorship & Credits
 # =============================================================================
@@ -113,6 +113,8 @@ class GRURNNModel(torch.nn.Module):
         Initialize model data scalers.
     set_data_scalers(self, scaler_features_in, scaler_features_out)
         Set fitted model data scalers.
+    set_fitted_data_scalers(self, scaling_type, scaling_parameters)
+        Set fitted model data scalers from given scaler type and parameters.
     fit_data_scalers(self, dataset, is_verbose=False)
         Fit model data scalers.
     get_fitted_data_scaler(self, features_type)
@@ -783,6 +785,59 @@ class GRURNNModel(torch.nn.Module):
         """
         # Initialize data scalers
         self._init_data_scalers()
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set fitted data scalers
+        self._data_scalers['features_in'] = scaler_features_in
+        self._data_scalers['features_out'] = scaler_features_out
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Update model initialization file with fitted data scalers
+        if self._is_save_model_init_file:
+            self.save_model_init_file()
+    # -------------------------------------------------------------------------
+    def set_fitted_data_scalers(self, scaling_type, scaling_parameters):
+        """Set fitted model data scalers from given scaler type and parameters.
+        
+        Parameters
+        ----------
+        scaling_type : {'min-max', 'mean-std'}
+            Type of data scaling. Min-Max scaling ('min-max') or
+            standardization ('mean-std').
+        scaling_parameters : dict
+            Data scaling parameters (item, tuple[2]) for each features type
+            (key, str). Each data scaling parameter is set as a
+            torch.Tensor(1d) according to the corresponding number of features.
+            For 'min-max' data scaling, the parameters are the 'minimum'[0] and
+            'maximum'[1] tensors, while for 'mean-std' data scaling the
+            parameters are the 'mean'[0] and 'std'[1] tensors.
+        """
+        # Initialize data scalers
+        self._init_data_scalers()
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Instantiate data scalers
+        if scaling_type == 'min-max':
+            scaler_features_in = TorchMinMaxScaler(
+                self._n_features_in,
+                minimum=scaling_parameters['features_in'][0],
+                maximum=scaling_parameters['features_in'][1],
+                device_type=self._device_type)
+            scaler_features_out = TorchMinMaxScaler(
+                self._n_features_out,
+                minimum=scaling_parameters['features_out'][0],
+                maximum=scaling_parameters['features_out'][1],
+                device_type=self._device_type)
+        elif scaling_type == 'mean-std':
+            scaler_features_in = TorchStandardScaler(
+                self._n_features_in,
+                mean=scaling_parameters['features_in'][0],
+                std=scaling_parameters['features_in'][1],
+                device_type=self._device_type)
+            scaler_features_out = TorchStandardScaler(
+                self._n_features_out,
+                mean=scaling_parameters['features_out'][0],
+                std=scaling_parameters['features_out'][1],
+                device_type=self._device_type)
+        else:
+            raise RuntimeError('Unknown type of data scaling.')
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Set fitted data scalers
         self._data_scalers['features_in'] = scaler_features_in
