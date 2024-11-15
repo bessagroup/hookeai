@@ -101,6 +101,8 @@ def validate_force_equilibrium_loss(specimen_name, strain_formulation,
         available_sequential_modes = ['sequential_element',]
         if bool(re.search(r'_vmap$', model_name)):
             available_sequential_modes.append('sequential_element_vmap')
+    elif bool(re.search(r'^gru_.*$', model_name)):
+        available_sequential_modes = ['sequential_element',]
     else:
         available_sequential_modes = ('sequential_time',
                                       'sequential_element')
@@ -114,6 +116,7 @@ def validate_force_equilibrium_loss(specimen_name, strain_formulation,
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set material model finder device
     device_type = 'cpu'
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Initialize material model finder
     material_finder = MaterialModelFinder(
         model_directory, model_name=model_finder_name,
@@ -916,7 +919,7 @@ if __name__ == '__main__':
         # Set hidden layer size
         hidden_layer_size = 500
         # Set number of recurrent layers (stacked RNN)
-        n_recurrent_layers = 3
+        n_recurrent_layers = 2
         # Set dropout probability
         dropout = 0
         # Set model input and output features normalization
@@ -928,17 +931,25 @@ if __name__ == '__main__':
         else:
             device_type = 'cpu'
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set model directory
+        model_directory = ('/home/bernardoferreira/Documents/brown/projects/'
+                           'darpa_project/1_pipeline_validation/'
+                           'toy_uniaxial_specimen/temp')
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Set other parameters required to initialize constitutive model
         model_kwargs = {'n_features_in': n_features_in,
                         'n_features_out': n_features_out,
                         'hidden_layer_size': hidden_layer_size,
                         'n_recurrent_layers': n_recurrent_layers,
                         'dropout': dropout,
-                        'model_directory': None,
+                        'model_directory': model_directory,
                         'model_name': model_name,
                         'is_model_in_normalized': is_model_in_normalized,
                         'is_model_out_normalized': is_model_out_normalized,
                         'device_type': device_type}
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set model validation data directory name (dummy)
+        model_data_name = 'von_mises'
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     else:
         raise RuntimeError('Unknown constitutive model.')
