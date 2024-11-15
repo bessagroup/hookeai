@@ -846,7 +846,10 @@ class RecurrentConstitutiveModel(torch.nn.Module):
             self.sync_material_model_parameters()
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~        
         # Forward propagation: Material constitutive model
-        features_out = self._vrecurrent_constitutive_model(features_in)
+        if bool(re.search(r'_vmap$', self._material_model_name)):
+            features_out = self._vrecurrent_constitutive_model(features_in)
+        else:
+            features_out = self._recurrent_constitutive_model(features_in)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         return features_out
     # -------------------------------------------------------------------------
