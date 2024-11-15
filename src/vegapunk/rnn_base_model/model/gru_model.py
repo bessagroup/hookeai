@@ -214,7 +214,8 @@ class GRURNNModel(torch.nn.Module):
         # Initialize linear layer
         self._linear_layer = \
             torch.nn.Linear(in_features=self._hidden_layer_size,
-                            out_features=n_features_out, bias=True)
+                            out_features=n_features_out, bias=True,
+                            device=self._device)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Set learnable parameters nature
         self.is_explicit_parameters = False
@@ -394,7 +395,7 @@ class GRURNNModel(torch.nn.Module):
         if not isinstance(hidden_features_in, torch.Tensor):
             raise RuntimeError('Initial hidden state features were not '
                                'provided as torch.Tensor.')
-        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~        
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Forward propagation: Multi-layer GRU
         features_out, hidden_features_out = self._gru_rnn_model(
             features_in, hidden_features_in)
