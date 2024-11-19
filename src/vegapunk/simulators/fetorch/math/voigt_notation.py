@@ -81,7 +81,7 @@ def get_strain_from_vmf(strain_vmf, n_dim, comp_order_sym, device=None):
         mf_indexes.append(comp_order_sym.index(comp_order_sym[i]))
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Initialize strain tensor
-    strain = torch.zeros((n_dim, n_dim), dtype=torch.float, device=device)
+    strain = torch.zeros((n_dim, n_dim), device=device)
     # Get strain tensor from matricial form
     for i in range(len(mf_indexes)):
         mf_idx = mf_indexes[i]
@@ -126,7 +126,7 @@ def vget_strain_from_vmf(strain_vmf, n_dim, comp_order_sym, device=None):
     # Build indexing inverse Voigt factor
     index_voigt_inv = torch.tensor(
         [1.0/2.0 if x[0] != x[1] else 1.0 for x in comp_order_sym],
-        dtype=torch.float, device=device)
+        device=device)
     # Build indexing mapping
     index_map = [comp_order_sym.index(x) if x in comp_order_sym
                  else comp_order_sym.index(x[::-1]) for x in row_major_order]
@@ -185,8 +185,7 @@ def get_stress_vmf(stress, n_dim, comp_order_sym, device=None):
         mf_indexes.append(comp_order_sym.index(comp_order_sym[i]))
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Initialize stress tensor Voigt matricial form
-    stress_vmf = torch.zeros(len(comp_order_sym),
-                             dtype=torch.float, device=device)
+    stress_vmf = torch.zeros(len(comp_order_sym), device=device)
     # Store stress tensor in Voigt matricial form
     for i in range(len(mf_indexes)):
         mf_idx = mf_indexes[i]

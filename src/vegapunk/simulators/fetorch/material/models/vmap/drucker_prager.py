@@ -40,9 +40,9 @@ DruckerPragerVMAP
 #                                                                       Modules
 # =============================================================================
 # Standard
+import math
+# Third-party
 import torch
-import numpy as np
-import copy
 # Local
 from simulators.fetorch.material.models.interface import ConstitutiveModel
 from simulators.fetorch.material.models.standard.elastic import Elastic
@@ -243,8 +243,7 @@ class DruckerPragerVMAP(ConstitutiveModel):
         state_variables_init = dict()
         # Initialize strain tensors
         state_variables_init['e_strain_mf'] = vget_tensor_mf(
-            torch.zeros((self._n_dim, self._n_dim),
-                        dtype=torch.float, device=self._device),
+            torch.zeros((self._n_dim, self._n_dim), device=self._device),
                         self._n_dim, self._comp_order_sym)
         state_variables_init['strain_mf'] = \
             state_variables_init['e_strain_mf'].clone()
@@ -252,18 +251,16 @@ class DruckerPragerVMAP(ConstitutiveModel):
         if self._strain_formulation == 'infinitesimal':
             # Cauchy stress tensor (symmetric)
             state_variables_init['stress_mf'] = vget_tensor_mf(
-                torch.zeros((self._n_dim, self._n_dim),
-                            dtype=torch.float, device=self._device),
+                torch.zeros((self._n_dim, self._n_dim), device=self._device),
                             self._n_dim, self._comp_order_sym)
         else:
             # First Piola-Kirchhoff stress tensor (nonsymmetric)
             state_variables_init['stress_mf'] = vget_tensor_mf(
-                torch.zeros((self._n_dim, self._n_dim),
-                            dtype=torch.float, device=self._device),
+                torch.zeros((self._n_dim, self._n_dim), device=self._device),
                             self._n_dim, self._comp_order_nsym)
         # Initialize internal variables
         state_variables_init['acc_p_strain'] = \
-            torch.tensor(0.0, dtype=torch.float, device=self._device)
+            torch.tensor(0.0, device=self._device)
         # Initialize state flags
         state_variables_init['is_plast'] = False
         state_variables_init['is_su_fail'] = False
@@ -271,9 +268,9 @@ class DruckerPragerVMAP(ConstitutiveModel):
         # Set additional out-of-plane strain and stress components
         if self._problem_type == 1:
             state_variables_init['e_strain_33'] = \
-                torch.tensor(0.0, dtype=torch.float, device=self._device)
+                torch.tensor(0.0, device=self._device)
             state_variables_init['stress_33'] = \
-                torch.tensor(0.0, dtype=torch.float, device=self._device)
+                torch.tensor(0.0, device=self._device)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Return
         return state_variables_init
@@ -461,11 +458,11 @@ class DruckerPragerVMAP(ConstitutiveModel):
             torch.matmul(fodevprojsym_mf, e_trial_strain_mf),
             n_dim, comp_order_sym, device=self._device)
         trial_unit = dev_trial_e_strain/torch.norm(dev_trial_e_strain)
-        s1 = inc_p_mult/(np.sqrt(2)*torch.norm(dev_trial_e_strain))
+        s1 = inc_p_mult/(math.sqrt(2)*torch.norm(dev_trial_e_strain))
         s2 = 1.0/(G + K*etay*etaf + H*xi**2)
         p_consistent_tangent_cone = 2.0*G*(1.0 - s1)*fodevprojsym \
             + 2.0*G*(s1 - G*s2)*dyad22_1(trial_unit, trial_unit) \
-            - np.sqrt(2)*G*s2*K*(etay*dyad22_1(trial_unit, soid)
+            - math.sqrt(2)*G*s2*K*(etay*dyad22_1(trial_unit, soid)
                                  + etaf*dyad22_1(soid, trial_unit)) \
             + K*(1.0 - K*etay*etaf*s2)*dyad22_1(soid, soid)
         #
@@ -558,8 +555,7 @@ class DruckerPragerVMAP(ConstitutiveModel):
         # Set return-mapping to apex flag
         is_apex_return = torch.tensor([False], device=e_trial_strain_mf.device)
         # Set incremental plastic multiplier
-        inc_p_mult = torch.tensor(0.0, dtype=torch.float,
-                                  device=e_trial_strain_mf.device)
+        inc_p_mult = torch.tensor(0.0, device=e_trial_strain_mf.device)
         # Set state update convergence flag
         is_converged = torch.tensor([True], device=e_trial_strain_mf.device)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -633,8 +629,7 @@ class DruckerPragerVMAP(ConstitutiveModel):
         # Set plastic step flag
         is_plast = torch.tensor([True], device=e_trial_strain_mf.device)
         # Set incremental plastic multiplier initial iterative guess
-        inc_p_mult = torch.tensor(0.0, dtype=torch.float,
-                                  device=e_trial_strain_mf.device)
+        inc_p_mult = torch.tensor(0.0, device=e_trial_strain_mf.device)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Newton-Raphson iterative loop
         for _ in range(su_max_n_iterations):
@@ -800,11 +795,9 @@ class DruckerPragerVMAP(ConstitutiveModel):
             Plastic step concatenated output data.
         """
         # Set incremental plastic multiplier
-        inc_p_mult = torch.tensor(0.0, dtype=torch.float,
-                                  device=e_trial_strain_mf.device)
+        inc_p_mult = torch.tensor(0.0, device=e_trial_strain_mf.device)
         # Set incremental plastic volumetric strain initial iterative guess
-        inc_vol_p_strain = torch.tensor(0.0, dtype=torch.float,
-                                        device=e_trial_strain_mf.device)
+        inc_vol_p_strain = torch.tensor(0.0, device=e_trial_strain_mf.device)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Newton-Raphson iterative loop
         for _ in range(su_max_n_iterations):

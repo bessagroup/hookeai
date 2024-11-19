@@ -294,18 +294,18 @@ class MaterialResponseDatasetGenerator():
             response_path = {}
             # Assemble strain-stress material response path
             response_path['strain_comps_order'] = strain_comps_order
-            response_path['strain_path'] = torch.tensor(strain_path,
-                                                        dtype=torch.float)
+            response_path['strain_path'] = \
+                torch.tensor(strain_path, dtype=torch.get_default_dtype())
             response_path['stress_comps_order'] = stress_comps_order
-            response_path['stress_path'] = torch.tensor(stress_path,
-                                                        dtype=torch.float)
+            response_path['stress_path'] = \
+                torch.tensor(stress_path, dtype=torch.get_default_dtype())
             # Assemble time path
-            response_path['time_hist'] = \
-                torch.tensor(time_hist, dtype=torch.float).reshape(-1, 1)
+            response_path['time_hist'] = torch.tensor(
+                time_hist, dtype=torch.get_default_dtype()).reshape(-1, 1)
             # Assemble state variables path
             for state_var in state_path.keys():
-                response_path[state_var] = torch.tensor(state_path[state_var],
-                                                        dtype=torch.float)
+                response_path[state_var] = torch.tensor(
+                    state_path[state_var], dtype=torch.get_default_dtype())
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Store strain-stress material response path
             if is_in_memory_dataset:
@@ -434,7 +434,8 @@ class MaterialResponseDatasetGenerator():
                 raise RuntimeError('Not implemented.')
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Convert incremental strain tensor to Torch tensor
-            inc_strain = torch.tensor(inc_strain, dtype=torch.float)
+            inc_strain = \
+                torch.tensor(inc_strain, dtype=torch.get_default_dtype())
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Material state update
             state_variables, _ = material_state_update(
@@ -676,22 +677,23 @@ class MaterialResponseDatasetGenerator():
             response_path = {}
             # Assemble strain-stress material response path
             response_path['strain_comps_order'] = strain_comps_order
-            response_path['strain_path'] = torch.tensor(strain_path,
-                                                        dtype=torch.float)
+            response_path['strain_path'] = \
+                torch.tensor(strain_path, dtype=torch.get_default_dtype())
             response_path['stress_comps_order'] = stress_comps_order
-            response_path['stress_path'] = torch.tensor(stress_path,
-                                                        dtype=torch.float)
+            response_path['stress_path'] = \
+                torch.tensor(stress_path, dtype=torch.get_default_dtype())
             # Assemble time path
-            response_path['time_hist'] = \
-                torch.tensor(time_hist, dtype=torch.float).reshape(-1, 1)
+            response_path['time_hist'] = torch.tensor(
+                time_hist, dtype=torch.get_default_dtype()).reshape(-1, 1)
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ v SECTION TO BE REMOVED
             # Get volume fraction path
             if is_input_volume_fraction:
                 # Get response path volume fraction
                 vf = volume_fractions_data[i, 1]
                 # Set volume fraction path
-                vf_path = torch.tile(torch.tensor(vf, dtype=torch.float),
-                                     (time_hist.shape[0], 1))
+                vf_path = torch.tile(
+                    torch.tensor(vf, dtype=torch.get_default_dtype()),
+                    (time_hist.shape[0], 1))
                 # Assemble volume fraction path
                 response_path['vf_path'] = vf_path
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ^ SECTION TO BE REMOVED

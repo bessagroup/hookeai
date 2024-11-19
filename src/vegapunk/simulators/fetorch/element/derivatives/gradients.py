@@ -96,7 +96,6 @@ def build_discrete_sym_gradient(shape_fun_deriv, comp_order_sym):
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Initialize discrete symmetric gradient operator
     grad_operator_sym = torch.zeros((n_comps, n_node*n_dof_node),
-                                    dtype=torch.float,
                                     device=shape_fun_deriv.device)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Loop over nodes
@@ -173,8 +172,7 @@ def vbuild_discrete_sym_gradient(shape_fun_deriv, comp_order_sym):
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Add zero element to shape functions derivatives
     mapping_values = \
-        torch.cat((torch.zeros((n_node, 1), dtype=torch.float,
-                               device=shape_fun_deriv.device),
+        torch.cat((torch.zeros((n_node, 1), device=shape_fun_deriv.device),
                    shape_fun_deriv), dim=1)
     # Build discrete symmetric gradient operator
     grad_operator_sym = torch.cat(
@@ -220,7 +218,6 @@ def build_discrete_gradient(shape_fun_deriv, comp_order_nsym):
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Initialize discrete gradient operator
     grad_operator = torch.zeros((n_comps, n_node*n_dof_node),
-                                dtype=torch.float,
                                 device=shape_fun_deriv.device)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Loop over nodes
@@ -292,8 +289,7 @@ def vbuild_discrete_gradient(shape_fun_deriv, comp_order_nsym):
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Add zero element to shape functions derivatives
     mapping_values = \
-        torch.cat((torch.zeros((n_node, 1), dtype=torch.float,
-                               device=shape_fun_deriv.device),
+        torch.cat((torch.zeros((n_node, 1), device=shape_fun_deriv.device),
                    shape_fun_deriv), dim=1)
     # Build discrete symmetric gradient operator
     grad_operator = torch.cat(

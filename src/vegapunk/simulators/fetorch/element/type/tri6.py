@@ -105,7 +105,7 @@ class FETri6(ElementType):
                           (0.5, 0.0),
                           (0.5, 0.5),
                           (0.0, 0.5)],
-                         dtype=torch.float, device=self._device)
+                         device=self._device)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Store nodes local coordinates
         self._nodes_local_coords = nodes_local_coords

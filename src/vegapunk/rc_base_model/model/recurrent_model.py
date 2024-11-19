@@ -19,11 +19,11 @@ import copy
 import re
 import pickle
 import itertools
+import math
 # Third-party
 import torch
 import tqdm
 import sklearn.preprocessing
-import numpy as np
 # Local
 from simulators.fetorch.material.models.standard.elastic import Elastic
 from simulators.fetorch.material.models.standard.von_mises import VonMises
@@ -545,7 +545,7 @@ class RecurrentConstitutiveModel(torch.nn.Module):
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Set model parameter
             self._model_parameters[param] = torch.nn.Parameter(
-                torch.tensor(init_val, dtype=torch.float, requires_grad=True))
+                torch.tensor(init_val, requires_grad=True))
     # -------------------------------------------------------------------------
     def sync_material_model_parameters(self):
         """Synchronize material model parameters with learnable parameters."""
@@ -654,13 +654,13 @@ class RecurrentConstitutiveModel(torch.nn.Module):
                     # Mohr-Coulomb under uniaxial tension and compression)
                     # Set yield surface cohesion parameter
                     yield_cohesion_parameter = \
-                        (2.0/np.sqrt(3.0))*torch.cos(friction_angle)
+                        (2.0/math.sqrt(3.0))*torch.cos(friction_angle)
                     # Set yield pressure parameter
                     yield_pressure_parameter = \
-                        (3.0/np.sqrt(3.0))*torch.sin(friction_angle)
+                        (3.0/math.sqrt(3.0))*torch.sin(friction_angle)
                     # Set plastic flow pressure parameter
                     flow_pressure_parameter = \
-                        (3.0/np.sqrt(3.0))*torch.sin(dilatancy_angle)
+                        (3.0/math.sqrt(3.0))*torch.sin(dilatancy_angle)
                     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                     # Synchronize angle-related material parameters
                     material_parameters['yield_cohesion_parameter'] = \
@@ -1300,7 +1300,7 @@ class RecurrentConstitutiveModel(torch.nn.Module):
         stress_path_steps = []
         # Set initial stress components
         stress_comps = torch.zeros(len(stress_comps_order),
-                                   dtype=torch.float, device=self._device)
+                                   device=self._device)
         # Store initial stress tensor
         stress_path_steps.append(stress_comps)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -1317,7 +1317,6 @@ class RecurrentConstitutiveModel(torch.nn.Module):
             state_var_features = []
             for state_var, n_features in self._state_features_out.items():
                 state_var_features.append(torch.zeros((1, n_features),
-                                                      dtype=torch.float,
                                                       device=self._device))
             # Set initial state features tensor
             state_comps = torch.cat(state_var_features, dim=1) 
@@ -1412,8 +1411,7 @@ class RecurrentConstitutiveModel(torch.nn.Module):
         # Build stress path
         stress_path = torch.stack(stress_path_steps, dim=0)
         # Build state features path
-        state_path = torch.zeros((n_time, 0), dtype=torch.float,
-                                 device=self._device)
+        state_path = torch.zeros((n_time, 0), device=self._device)
         if is_state_features_out:
             state_path = torch.cat(state_path_steps, dim=0)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

@@ -400,13 +400,11 @@ class GRURNNModel(torch.nn.Module):
             if len(features_in.shape) == 2:
                 hidden_features_in = torch.zeros((self._n_recurrent_layers,
                                                   self._hidden_layer_size),
-                                                 dtype=torch.float,
                                                  device=features_in.device)
             else:
                 hidden_features_in = torch.zeros((self._n_recurrent_layers,
                                                   features_in.shape[1],
                                                   self._hidden_layer_size),
-                                                 dtype=torch.float,
                                                  device=features_in.device)
         # Check hidden state features
         if not isinstance(hidden_features_in, torch.Tensor):

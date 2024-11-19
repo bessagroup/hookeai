@@ -194,8 +194,7 @@ class Denoiser:
                            for _ in range(n_features)])
         # Set convolution kernel of shape (n_features, 1, window_size)
         # (set independent kernel for each feature)
-        kernel = torch.tensor(coeffs, dtype=torch.float).view(
-            n_features, 1, window_size)
+        kernel = torch.tensor(coeffs).view(n_features, 1, window_size)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Compute moving average (independent convolution of each feature)
         denoised_tensor = \

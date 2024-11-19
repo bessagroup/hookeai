@@ -845,7 +845,6 @@ class MaterialModelFinder(torch.nn.Module):
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Initialize element internal forces of finite element mesh nodes
         internal_forces_mesh_hist = torch.zeros((n_node_mesh, n_dim, n_time),
-                                                dtype=torch.float,
                                                 device=self._device)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Loop over elements
@@ -871,8 +870,7 @@ class MaterialModelFinder(torch.nn.Module):
             # Initialize element nodes coordinates, displacements and
             # incremental displacements histories
             nodes_coords_hist = \
-                torch.zeros((n_node, n_dim, n_time), dtype=torch.float,
-                            device=self._device)
+                torch.zeros((n_node, n_dim, n_time), device=self._device)
             nodes_disps_hist = torch.zeros_like(nodes_coords_hist)
             nodes_inc_disps_hist = torch.zeros_like(nodes_coords_hist)
             # Loop over discrete time
@@ -1033,7 +1031,6 @@ class MaterialModelFinder(torch.nn.Module):
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Initialize element internal forces history
         element_internal_forces_hist = torch.zeros((n_node*n_dof_node, n_time),
-                                                   dtype=torch.float,
                                                    device=self._device)
         # Initialize element material constitutive model state variables
         # history
@@ -1055,13 +1052,11 @@ class MaterialModelFinder(torch.nn.Module):
             # Initialize Gauss integration point strain tensor history
             if strain_formulation == 'infinitesimal':
                 if is_recurrent_model:
-                    strain_hist = \
-                        torch.zeros((n_dim, n_dim, n_time), dtype=torch.float,
-                                    device=self._device)
+                    strain_hist = torch.zeros((n_dim, n_dim, n_time),
+                                              device=self._device)
                 else:
-                    inc_strain_hist = \
-                        torch.zeros((n_dim, n_dim, n_time), dtype=torch.float,
-                                    device=self._device)
+                    inc_strain_hist = torch.zeros((n_dim, n_dim, n_time),
+                                                  device=self._device)
             else:
                 raise RuntimeError('Not implemented.')
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -1192,7 +1187,7 @@ class MaterialModelFinder(torch.nn.Module):
         # Initialize tensor of input features
         if strain_formulation == 'infinitesimal':
             features_in = torch.zeros((n_time, len(comp_order_sym)),
-                                      dtype=torch.float, device=self._device)
+                                      device=self._device)
         else:
             raise RuntimeError('Not implemented.')
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -1355,10 +1350,10 @@ class MaterialModelFinder(torch.nn.Module):
         for i in range(n_gauss):
             # Initialize strain path
             strain_path = torch.zeros((n_time, len(strain_comps_order)),
-                                      dtype=torch.float)
+                                      device=self._device)
             # Initialize stress path
             stress_path = torch.zeros((n_time, len(stress_comps_order)),
-                                      dtype=torch.float)
+                                      device=self._device)
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Loop over discrete time
             for time_idx in range(n_time):
@@ -1422,7 +1417,7 @@ class MaterialModelFinder(torch.nn.Module):
             Strain/Stress tensor.
         """
         # Initialize tensor
-        tensor = torch.zeros((n_dim, n_dim), dtype=torch.float, device=device)
+        tensor = torch.zeros((n_dim, n_dim), device=device)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Loop over components
         for k, comp in enumerate(comps):
@@ -1455,7 +1450,7 @@ class MaterialModelFinder(torch.nn.Module):
             Strain/Stress components array.
         """
         # Initialize tensor components array
-        comps_array = torch.zeros(len(comps), dtype=torch.float, device=device)
+        comps_array = torch.zeros(len(comps), device=device)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Loop over components
         for k, comp in enumerate(comps):

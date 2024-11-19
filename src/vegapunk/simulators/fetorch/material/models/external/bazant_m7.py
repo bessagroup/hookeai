@@ -167,19 +167,17 @@ class BazantM7(ConstitutiveModel):
         state_variables_init = dict()
         # Initialize strain tensors
         state_variables_init['e_strain_mf'] = get_tensor_mf(
-            torch.zeros((self._n_dim, self._n_dim),
-                        dtype=torch.float, device=self._device),
+            torch.zeros((self._n_dim, self._n_dim), device=self._device),
                         self._n_dim, self._comp_order_sym)
         state_variables_init['strain_mf'] = \
             state_variables_init['e_strain_mf'].clone()
         # Initialize stress tensors
         state_variables_init['stress_mf'] = get_tensor_mf(
-            torch.zeros((self._n_dim, self._n_dim),
-                        dtype=torch.float, device=self._device),
+            torch.zeros((self._n_dim, self._n_dim), device=self._device),
                         self._n_dim, self._comp_order_sym)
         # Initialize internal variables
         state_variables_init['M7_microstate'] = \
-            torch.zeros((38, 5), dtype=torch.float, device=self._device)
+            torch.zeros((38, 5), device=self._device)
         # Initialize state flags
         state_variables_init['is_su_fail'] = False
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -910,7 +908,7 @@ class BazantM7(ConstitutiveModel):
         state_variables['stress_mf'] = get_tensor_mf(temp_stress, self._n_dim, self._comp_order_sym)
         
         # BPF: Converted to torch.Tensor
-        state_variables['M7_microstate'] = torch.zeros((38, 5), dtype=torch.float, device=self._device)
+        state_variables['M7_microstate'] = torch.zeros((38, 5), device=self._device)
 
         # BPF: Handle potential state variables overflow
         if max(stateNew) > np.finfo(np.float32).max:
@@ -921,7 +919,7 @@ class BazantM7(ConstitutiveModel):
                     state_variables['M7_microstate'][i][j] = stateNew[i*5+j]
 
         # BPF: Converted to torch.Tensor
-        consistent_tangent_mf = torch.zeros((6, 6), dtype=torch.float, device=self._device)
+        consistent_tangent_mf = torch.zeros((6, 6), device=self._device)
         temp_order = np.array([0, 1, 2, 3, 5, 4])
         
         # BPF: Ignoring consistent tangent modulus (not needed for now)

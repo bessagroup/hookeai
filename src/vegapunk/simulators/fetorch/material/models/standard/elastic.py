@@ -207,8 +207,7 @@ class Elastic(ConstitutiveModel):
         state_variables_init = dict()
         # Initialize strain tensors
         state_variables_init['e_strain_mf'] = vget_tensor_mf(
-            torch.zeros((self._n_dim, self._n_dim),
-                        dtype=torch.float, device=self._device),
+            torch.zeros((self._n_dim, self._n_dim), device=self._device),
             self._n_dim, self._comp_order_sym)
         state_variables_init['strain_mf'] = \
             state_variables_init['e_strain_mf'].clone()
@@ -216,14 +215,12 @@ class Elastic(ConstitutiveModel):
         if self._strain_formulation == 'infinitesimal':
             # Cauchy stress tensor (symmetric)
             state_variables_init['stress_mf'] = vget_tensor_mf(
-                torch.zeros((self._n_dim, self._n_dim),
-                            dtype=torch.float, device=self._device),
+                torch.zeros((self._n_dim, self._n_dim), device=self._device),
                             self._n_dim, self._comp_order_sym)
         else:
             # First Piola-Kirchhoff stress tensor (nonsymmetric)
             state_variables_init['stress_mf'] = vget_tensor_mf(
-                torch.zeros((self._n_dim, self._n_dim),
-                            dtype=torch.float, device=self._device),
+                torch.zeros((self._n_dim, self._n_dim), device=self._device),
                             self._n_dim, self._comp_order_nsym)
         # Initialize state flags
         state_variables_init['is_plast'] = False
@@ -506,7 +503,7 @@ class Elastic(ConstitutiveModel):
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Initialize elasticity tensor
             elastic_tangent_mf = torch.zeros(2*(len(comp_order_sym),),
-                                             dtype=torch.float, device=device)
+                                             device=device)
             # Build elasticity tensor according with elastic symmetry
             for modulus in all_moduli.keys():
                 # Get elastic modulus second-order indexes and associated

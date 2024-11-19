@@ -186,12 +186,10 @@ def get_id_operators(n_dim, device=None):
                       - \\dfrac{1}{3} \\delta_{ij}\\delta_{kl}
     """
     # Set second-order identity tensor
-    soid = torch.eye(n_dim, dtype=torch.float, device=device)
+    soid = torch.eye(n_dim, device=device)
     # Set fourth-order identity tensor and fourth-order transposition tensor
-    foid = torch.zeros((n_dim, n_dim, n_dim, n_dim),
-                       dtype=torch.float, device=device)
-    fotransp = torch.zeros((n_dim, n_dim, n_dim, n_dim),
-                           dtype=torch.float, device=device)
+    foid = torch.zeros((n_dim, n_dim, n_dim, n_dim), device=device)
+    fotransp = torch.zeros((n_dim, n_dim, n_dim, n_dim), device=device)
     for i in range(n_dim):
         for j in range(n_dim):
             foid[i, j, i, j] = 1.0

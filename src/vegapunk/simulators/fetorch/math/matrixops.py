@@ -29,6 +29,8 @@ vget_state_2Dmf_from_3Dmf
 #
 #                                                                       Modules
 # =============================================================================
+# Standard
+import math
 # Third-party
 import torch
 import numpy as np
@@ -165,15 +167,14 @@ def get_tensor_mf(tensor, n_dim, comp_order, is_kelvin_notation=True,
             tensor_mf = torch.zeros(len(comp_order), dtype=torch.cfloat,
                                     device=device)
         else:
-            tensor_mf = torch.zeros(len(comp_order), dtype=torch.float,
-                                    device=device)
+            tensor_mf = torch.zeros(len(comp_order), device=device)
         # Store tensor in matricial form
         for i in range(len(mf_indexes)):
             mf_idx = mf_indexes[i]
             so_idx = tuple(so_indexes[i])
             factor = 1.0
             if is_kelvin_notation and not so_idx[0] == so_idx[1]:
-                factor = np.sqrt(2)
+                factor = math.sqrt(2)
             tensor_mf[mf_idx] = factor*tensor[so_idx]
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     elif tensor_order == 4:
@@ -194,7 +195,7 @@ def get_tensor_mf(tensor, n_dim, comp_order, is_kelvin_notation=True,
                                     dtype=torch.cfloat, device=device)
         else:
             tensor_mf = torch.zeros((len(comp_order), len(comp_order)),
-                                    dtype=torch.float, device=device)
+                                    device=device)
         # Store tensor in matricial form
         for i in range(len(mf_indexes)):
             mf_idx = tuple(mf_indexes[i])
@@ -203,9 +204,9 @@ def get_tensor_mf(tensor, n_dim, comp_order, is_kelvin_notation=True,
             if is_kelvin_notation and not (fo_idx[0] == fo_idx[1]
                                            and fo_idx[2] == fo_idx[3]):
                 factor = \
-                    factor*np.sqrt(2) if fo_idx[0] != fo_idx[1] else factor
+                    factor*math.sqrt(2) if fo_idx[0] != fo_idx[1] else factor
                 factor = \
-                    factor*np.sqrt(2) if fo_idx[2] != fo_idx[3] else factor
+                    factor*math.sqrt(2) if fo_idx[2] != fo_idx[3] else factor
             tensor_mf[mf_idx] = factor*tensor[fo_idx]
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     return tensor_mf
@@ -276,11 +277,10 @@ def vget_tensor_mf(tensor, n_dim, comp_order, is_kelvin_notation=True,
         # Build indexing Kelvin factor
         if is_kelvin_notation:
             index_kelvin = torch.tensor(
-                [np.sqrt(2) if x[0] != x[1] else 1.0 for x in comp_order],
-                dtype=torch.float, device=device)
+                [math.sqrt(2) if x[0] != x[1] else 1.0 for x in comp_order],
+                device=device)
         else:
-            index_kelvin = torch.ones(n_comps, dtype=torch.float,
-                                      device=device)
+            index_kelvin = torch.ones(n_comps, device=device)
         # Compute tensor matricial form
         tensor_mf = torch.mul(tensor[index_map], index_kelvin)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -294,12 +294,11 @@ def vget_tensor_mf(tensor, n_dim, comp_order, is_kelvin_notation=True,
         # Build indexing Kelvin factor
         if is_kelvin_notation:
             index_kelvin_1d = torch.tensor(
-                [np.sqrt(2) if x[0] != x[1] else 1.0 for x in comp_order],
-                dtype=torch.float, device=device)
+                [math.sqrt(2) if x[0] != x[1] else 1.0 for x in comp_order],
+                device=device)
             index_kelvin = torch.outer(index_kelvin_1d, index_kelvin_1d)
         else:
-            index_kelvin = torch.ones((n_comps, n_comps), dtype=torch.float,
-                                      device=device)
+            index_kelvin = torch.ones((n_comps, n_comps), device=device)
         # Compute tensor matricial form
         tensor_mf = \
             torch.mul(tensor[index_map].view(-1, n_comps), index_kelvin)
@@ -402,15 +401,14 @@ def get_tensor_from_mf(tensor_mf, n_dim, comp_order, is_kelvin_notation=True,
             tensor = torch.zeros(tensor_order*(n_dim,), dtype=torch.cfloat,
                                  device=device)
         else:
-            tensor = torch.zeros(tensor_order*(n_dim,), dtype=torch.float,
-                                 device=device)
+            tensor = torch.zeros(tensor_order*(n_dim,), device=device)
         # Get tensor from matricial form
         for i in range(len(mf_indexes)):
             mf_idx = mf_indexes[i]
             so_idx = tuple(so_indexes[i])
             factor = 1.0
             if is_kelvin_notation and not so_idx[0] == so_idx[1]:
-                factor = np.sqrt(2)
+                factor = math.sqrt(2)
                 tensor[so_idx[::-1]] = (1.0/factor)*tensor_mf[mf_idx]
             tensor[so_idx] = (1.0/factor)*tensor_mf[mf_idx]
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -431,8 +429,7 @@ def get_tensor_from_mf(tensor_mf, n_dim, comp_order, is_kelvin_notation=True,
             tensor = torch.zeros(tensor_order*(n_dim,), dtype=torch.cfloat,
                                  device=device)
         else:
-            tensor = torch.zeros(tensor_order*(n_dim,), dtype=torch.float,
-                                 device=device)
+            tensor = torch.zeros(tensor_order*(n_dim,), device=device)
         # Get tensor from matricial form
         for i in range(len(mf_indexes)):
             mf_idx = tuple(mf_indexes[i])
@@ -441,9 +438,9 @@ def get_tensor_from_mf(tensor_mf, n_dim, comp_order, is_kelvin_notation=True,
             if is_kelvin_notation and not (fo_idx[0] == fo_idx[1]
                                            and fo_idx[2] == fo_idx[3]):
                 factor = \
-                    factor*np.sqrt(2) if fo_idx[0] != fo_idx[1] else factor
+                    factor*math.sqrt(2) if fo_idx[0] != fo_idx[1] else factor
                 factor = \
-                    factor*np.sqrt(2) if fo_idx[2] != fo_idx[3] else factor
+                    factor*math.sqrt(2) if fo_idx[2] != fo_idx[3] else factor
                 if fo_idx[0] != fo_idx[1] and fo_idx[2] != fo_idx[3]:
                     tensor[tuple(fo_idx[1::-1]+fo_idx[2:])] = \
                         (1.0/factor)*tensor_mf[mf_idx]
@@ -540,11 +537,10 @@ def vget_tensor_from_mf(tensor_mf, n_dim, comp_order, is_kelvin_notation=True,
         # Build indexing inverse Kelvin factor
         if is_kelvin_notation:
             index_kelvin_inv = torch.tensor(
-                [1.0/np.sqrt(2) if x[0] != x[1] else 1.0 for x in comp_order],
-                dtype=torch.float, device=device)
+                [1.0/math.sqrt(2) if x[0] != x[1] else 1.0
+                 for x in comp_order], device=device)
         else:
-            index_kelvin_inv = torch.ones(n_comps, dtype=torch.float,
-                                          device=device)
+            index_kelvin_inv = torch.ones(n_comps, device=device)
         # Build indexing mapping
         index_map = [comp_order.index(x) if x in comp_order
                      else comp_order.index(x[::-1]) for x in row_major_order]
@@ -556,13 +552,12 @@ def vget_tensor_from_mf(tensor_mf, n_dim, comp_order, is_kelvin_notation=True,
         # Build indexing inverse Kelvin factor
         if is_kelvin_notation:
             index_kelvin_inv_1d = torch.tensor(
-                [1.0/np.sqrt(2) if x[0] != x[1] else 1.0 for x in comp_order],
-                dtype=torch.float, device=device)
+                [1.0/math.sqrt(2) if x[0] != x[1] else 1.0
+                 for x in comp_order], device=device)
             index_kelvin_inv = torch.outer(index_kelvin_inv_1d,
                                            index_kelvin_inv_1d)
         else:
-            index_kelvin_inv = torch.ones((n_comps, n_comps),
-                                          dtype=torch.float, device=device)
+            index_kelvin_inv = torch.ones((n_comps, n_comps), device=device)
         # Build indexing mapping
         index_map = ([[comp_order.index(x[:2]) if x[:2] in comp_order
                        else comp_order.index(x[:2][::-1])
@@ -616,7 +611,7 @@ def kelvin_factor(idx, comp_order):
             if int(list(comp_order[idx])[0]) == int(list(comp_order[idx])[1]):
                 factor = 1.0
             else:
-                factor = np.sqrt(2)
+                factor = math.sqrt(2)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         elif isinstance(idx, list) and len(idx) == 2:
             # Set Kelvin coefficient associated with pair of strain/stress
@@ -624,7 +619,7 @@ def kelvin_factor(idx, comp_order):
             factor = 1.0
             for i in idx:
                 if int(list(comp_order[i])[0]) != int(list(comp_order[i])[1]):
-                    factor = factor*np.sqrt(2)
+                    factor = factor*math.sqrt(2)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         else:
             raise RuntimeError('Invalid strain/stress component(s) index(es).')
@@ -674,7 +669,7 @@ def get_state_3Dmf_from_2Dmf(problem_type, mf_2d, comp_33, device=None):
         comp_order_3d = comp_order_nsym_3d
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Build 3D strain/stress second-order tensor (matricial form)
-    mf_3d = torch.zeros(len(comp_order_3d), dtype=torch.float, device=device)
+    mf_3d = torch.zeros(len(comp_order_3d), device=device)
     if problem_type in (3, 4):
         raise RuntimeError('Unavailable problem type.')
     else:
@@ -729,10 +724,9 @@ def vget_state_3Dmf_from_2Dmf(mf_2d, comp_33, device=None):
     # Build 3D strain/stress second-order tensor (matricial form)
     mf_3d = torch.cat([mf_2d[comp_order_2d.index(x)].view(1)
                        if x in comp_order_2d
-                       else torch.tensor([0.0], dtype=torch.float,
-                                         device=device)
+                       else torch.tensor([0.0], device=device)
                        for x in comp_order_3d]) \
-        + comp_33*torch.eye(len(comp_order_3d), dtype=torch.float,
+        + comp_33*torch.eye(len(comp_order_3d),
                             device=device)[comp_order_3d.index('33')]    
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     return mf_3d
@@ -776,8 +770,7 @@ def get_state_2Dmf_from_3Dmf(problem_type, mf_3d, device=None):
         comp_order_3d = comp_order_nsym_3d
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Build 2D strain/stress related tensor (matricial form)
-    mf_2d = torch.zeros(len(mf_3d.shape)*(len(comp_order_2d),),
-                        dtype=torch.float, device=device)
+    mf_2d = torch.zeros(len(mf_3d.shape)*(len(comp_order_2d),), device=device)
     if len(mf_3d.shape) == 1:
         for i in range(len(comp_order_2d)):
             comp = comp_order_2d[i]

@@ -12,9 +12,10 @@ LouZhangYoon
 #                                                                       Modules
 # =============================================================================
 # Standard
-import torch
-import numpy as np
+import math
 import copy
+# Third-party
+import torch
 # Local
 from simulators.fetorch.material.models.interface import ConstitutiveModel
 from simulators.fetorch.material.models.standard.elastic import Elastic
@@ -201,19 +202,17 @@ class LouZhangYoon(ConstitutiveModel):
         state_variables_init = dict()
         # Initialize strain tensors
         state_variables_init['e_strain_mf'] = vget_tensor_mf(
-            torch.zeros((self._n_dim, self._n_dim),
-                        dtype=torch.float, device=self._device),
+            torch.zeros((self._n_dim, self._n_dim), device=self._device),
                         self._n_dim, self._comp_order_sym)
         state_variables_init['strain_mf'] = \
             state_variables_init['e_strain_mf'].clone()
         # Initialize Cauchy stress tensor
         state_variables_init['stress_mf'] = vget_tensor_mf(
-            torch.zeros((self._n_dim, self._n_dim),
-                        dtype=torch.float, device=self._device),
+            torch.zeros((self._n_dim, self._n_dim), device=self._device),
                         self._n_dim, self._comp_order_sym)
         # Initialize internal variables
         state_variables_init['acc_p_strain'] = \
-            torch.tensor(0.0, dtype=torch.float, device=self._device)
+            torch.tensor(0.0, device=self._device)
         # Initialize state flags
         state_variables_init['is_plast'] = False
         state_variables_init['is_su_fail'] = False
@@ -700,7 +699,7 @@ class LouZhangYoon(ConstitutiveModel):
         residual_1 = e_strain - e_trial_strain + inc_p_mult*flow_vector
         # Compute second residual
         residual_2 = (acc_p_strain - acc_p_strain_old
-                      - inc_p_mult*(np.sqrt(2/3))*norm_flow_vector)
+                      - inc_p_mult*(math.sqrt(2/3))*norm_flow_vector)
         # Compute third residual
         residual_3 = (effective_stress - yield_stress)/init_yield_stress
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -850,16 +849,16 @@ class LouZhangYoon(ConstitutiveModel):
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Compute derive of second residual w.r.t. to elastic strain
         dr2_destrain = \
-            -inc_p_mult*np.sqrt(2/3)*(1/norm_flow_vector)*ddot24_1(
+            -inc_p_mult*math.sqrt(2/3)*(1/norm_flow_vector)*ddot24_1(
                 flow_vector, dflow_destrain)
         # Compute derive of second residual w.r.t. to accumulated plastic
         # strain
         dr2_daccpstr = \
-            1.0 - inc_p_mult*np.sqrt(2/3)*(1/norm_flow_vector)*ddot22_1(
+            1.0 - inc_p_mult*math.sqrt(2/3)*(1/norm_flow_vector)*ddot22_1(
                 flow_vector, dflow_daccpstr)
         # Compute derive of second residual w.r.t. to incremental plastic
         # multiplier
-        dr2_dincpm = -np.sqrt(2/3)*norm_flow_vector
+        dr2_dincpm = -math.sqrt(2/3)*norm_flow_vector
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Compute derive of third residual w.r.t. to elastic strain
         dr3_destrain = (1/init_yield_stress)*deff_destrain

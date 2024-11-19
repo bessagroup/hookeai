@@ -230,7 +230,7 @@ def get_toy_uniaxial_specimen_mesh(mesh_type):
                           [1.00, 1.00],
                           [2.00, 0.75],
                           [3.00, 1.00],
-                          [4.00, 1.00]], dtype=torch.float)
+                          [4.00, 1.00]])
         # Set finite element mesh elements types
         elements_type = {str(i): FETri3(n_gauss=1) for i in range(1, 9)}
         # Set elements connectivies
@@ -279,7 +279,7 @@ def get_toy_uniaxial_specimen_mesh(mesh_type):
                           [2.500, 0.875],
                           [3.000, 1.000],
                           [3.500, 1.000],
-                          [4.000, 1.000]], dtype=torch.float)
+                          [4.000, 1.000]])
         # Set finite element mesh elements types
         elements_type = {str(i): FETri6(n_gauss=3) for i in range(1, 9)}
         # Set elements connectivies
@@ -313,7 +313,7 @@ def get_toy_uniaxial_specimen_mesh(mesh_type):
                           [1.00, 1.00],
                           [2.00, 0.75],
                           [3.00, 1.00],
-                          [4.00, 1.00]], dtype=torch.float)
+                          [4.00, 1.00]])
         # Set finite element mesh elements types
         elements_type = {str(i): FEQuad4(n_gauss=4) for i in range(1, 5)}
         # Set elements connectivies
@@ -354,7 +354,7 @@ def get_toy_uniaxial_specimen_mesh(mesh_type):
                           [2.500, 0.875],
                           [3.000, 1.000],
                           [3.500, 1.000],
-                          [4.000, 1.000]], dtype=torch.float)
+                          [4.000, 1.000]])
         # Set finite element mesh elements types
         elements_type = {str(i): FEQuad8(n_gauss=4) for i in range(1, 5)}
         # Set elements connectivies
@@ -394,7 +394,7 @@ def get_toy_uniaxial_specimen_mesh(mesh_type):
                           [1.00, 1.00, 1.0],
                           [2.00, 0.75, 1.0],
                           [3.00, 1.00, 1.0],
-                          [4.00, 1.00, 1.0]], dtype=torch.float)
+                          [4.00, 1.00, 1.0]])
         # Set finite element mesh elements types
         elements_type = {str(i): FETetra4(n_gauss=4) for i in range(1, 25)}
         # Set elements connectivies
@@ -461,7 +461,7 @@ def get_toy_uniaxial_specimen_mesh(mesh_type):
                           [1.00, 1.00, 1.0],
                           [2.00, 0.75, 1.0],
                           [3.00, 1.00, 1.0],
-                          [4.00, 1.00, 1.0]], dtype=torch.float)
+                          [4.00, 1.00, 1.0]])
         # Set finite element mesh elements types
         elements_type = {str(i): FEHexa8(n_gauss=8) for i in range(1, 5)}
         # Set elements connectivies
@@ -566,7 +566,7 @@ def get_specimen_numerical_data(links_output_directory, n_dim):
         # Get node data file path
         file_path = os.path.join(directory, file)
         # Get nodes features data
-        data_array = torch.tensor(np.genfromtxt(file_path), dtype=torch.float)
+        data_array = torch.tensor(np.genfromtxt(file_path))
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Initialize node features data
         if i == 0:
@@ -574,8 +574,7 @@ def get_specimen_numerical_data(links_output_directory, n_dim):
             n_nodes = data_array.shape[0]
             n_features = data_array.shape[1]
             # Initialize node features data
-            node_data = torch.zeros((n_nodes, n_features, n_time_steps),
-                                    dtype=torch.float)
+            node_data = torch.zeros((n_nodes, n_features, n_time_steps))
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Assemble node features data
         node_data[:, :, i] = data_array
@@ -726,8 +725,7 @@ if __name__ == '__main__':
             'hardening_parameters':
                 {'hardening_points':
                     torch.tensor([[0.0, 2.0/yield_cohesion_parameter],
-                                  [1.0, 4.0/yield_cohesion_parameter]],
-                                 dtype=torch.float)},
+                                  [1.0, 4.0/yield_cohesion_parameter]])},
             'yield_cohesion_parameter': yield_cohesion_parameter,
             'yield_pressure_parameter': yield_pressure_parameter,
             'flow_pressure_parameter': flow_pressure_parameter}
@@ -846,8 +844,7 @@ if __name__ == '__main__':
                 'hardening_parameters':
                     {'hardening_points':
                         torch.tensor([[0.0, 2.0/yield_cohesion_parameter],
-                                      [1.0, 4.0/yield_cohesion_parameter]],
-                                     dtype=torch.float)},
+                                      [1.0, 4.0/yield_cohesion_parameter]])},
                 'yield_cohesion_parameter': yield_cohesion_parameter,
                 'yield_pressure_parameter': yield_pressure_parameter,
                 'flow_pressure_parameter': flow_pressure_parameter}

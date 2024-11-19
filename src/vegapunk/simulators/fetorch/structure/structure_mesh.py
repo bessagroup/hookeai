@@ -430,7 +430,6 @@ class StructureMesh:
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Initialize mesh level array
         mesh_array = torch.zeros(self._n_node_mesh*n_dim_per_node,
-                                 dtype=torch.float,
                                  device=elements_array_1d[elem_key].device)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Loop over element arrays
@@ -511,7 +510,6 @@ class StructureMesh:
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Initialize element level array
         element_array = torch.zeros((len(elem_nodes)*n_dim_per_node),
-                                    dtype=torch.float,
                                     device=mesh_array.device)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Loop over element nodes

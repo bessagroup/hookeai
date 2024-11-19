@@ -102,7 +102,7 @@ class FETri3(ElementType):
             torch.tensor([(0.0, 0.0),
                           (1.0, 0.0),
                           (0.0, 1.0)],
-                         dtype=torch.float, device=self._device)
+                         device=self._device)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Store nodes local coordinates
         self._nodes_local_coords = nodes_local_coords

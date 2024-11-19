@@ -200,7 +200,7 @@ def get_specimen_mesh_from_inp_file(specimen_inp_path, n_dim):
         raise RuntimeError('The *NODE keyword has not been found in the '
                            'specimen mesh input file (.inp).')
     else:
-        nodes_coords_mesh_init = torch.tensor(nodes_coords, dtype=torch.float)
+        nodes_coords_mesh_init = torch.tensor(nodes_coords)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Get number of nodes
     n_node_mesh = nodes_coords_mesh_init.shape[0]

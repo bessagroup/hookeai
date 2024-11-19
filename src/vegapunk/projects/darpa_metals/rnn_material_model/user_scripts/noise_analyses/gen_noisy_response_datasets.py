@@ -164,28 +164,28 @@ class NoisyMaterialResponseDatasetGenerator:
         response_path = {}
         # Assemble strain-stress material response path
         response_path['strain_comps_order'] = strain_comps_order
-        response_path['strain_path'] = torch.tensor(strain_path,
-                                                    dtype=torch.float)
+        response_path['strain_path'] = \
+            torch.tensor(strain_path, dtype=torch.get_default_dtype())
         response_path['stress_comps_order'] = stress_comps_order
-        response_path['stress_path'] = torch.tensor(stress_path,
-                                                    dtype=torch.float)
+        response_path['stress_path'] = \
+            torch.tensor(stress_path, dtype=torch.get_default_dtype())
         # Assemble time path
-        response_path['time_hist'] = \
-            torch.tensor(time_hist, dtype=torch.float).reshape(-1, 1)
+        response_path['time_hist'] = torch.tensor(
+            time_hist, dtype=torch.get_default_dtype()).reshape(-1, 1)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Assemble state variables path
         for state_var in state_path.keys():
-            response_path[state_var] = torch.tensor(state_path[state_var],
-                                                    dtype=torch.float)
+            response_path[state_var] = torch.tensor(
+                state_path[state_var], dtype=torch.get_default_dtype())
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Assemble strain noise path
         if strain_noise_path is not None:
-            response_path['strain_noise_path'] = \
-                torch.tensor(strain_noise_path, dtype=torch.float)
+            response_path['strain_noise_path'] = torch.tensor(
+                strain_noise_path, dtype=torch.get_default_dtype())
         # Assemble stress noise path
         if stress_noise_path is not None:
-            response_path['stress_noise_path'] = \
-                torch.tensor(stress_noise_path, dtype=torch.float)
+            response_path['stress_noise_path'] = torch.tensor(
+                stress_noise_path, dtype=torch.get_default_dtype())
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         return response_path
     # -------------------------------------------------------------------------
@@ -448,7 +448,7 @@ class NoisyMaterialResponseDatasetGenerator:
                     n_denoise_cycle = 1
                     # Get denoised strain path
                     strain_path = denoiser.denoise(
-                        torch.tensor(strain_path, dtype=torch.float),
+                        torch.tensor(strain_path),
                         denoise_method, denoise_parameters=denoise_parameters,
                         n_denoise_cycle=n_denoise_cycle).numpy()
                     # Enforce null initial noise
@@ -572,7 +572,8 @@ class NoisyMaterialResponseDatasetGenerator:
                 raise RuntimeError('Not implemented.')
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Convert incremental strain tensor to Torch tensor
-            inc_strain = torch.tensor(inc_strain, dtype=torch.float)
+            inc_strain = \
+                torch.tensor(inc_strain, dtype=torch.get_default_dtype())
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Material state update
             state_variables, _ = material_state_update(

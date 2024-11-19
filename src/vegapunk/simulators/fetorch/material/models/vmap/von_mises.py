@@ -38,8 +38,9 @@ VonMisesVMAP
 #                                                                       Modules
 # =============================================================================
 # Standard
+import math
+# Third-party
 import torch
-import numpy as np
 # Local
 from simulators.fetorch.material.models.interface import ConstitutiveModel
 from simulators.fetorch.material.models.standard.elastic import Elastic
@@ -243,8 +244,7 @@ class VonMisesVMAP(ConstitutiveModel):
         state_variables_init = dict()
         # Initialize strain tensors
         state_variables_init['e_strain_mf'] = vget_tensor_mf(
-            torch.zeros((self._n_dim, self._n_dim),
-                        dtype=torch.float, device=self._device),
+            torch.zeros((self._n_dim, self._n_dim), device=self._device),
                         self._n_dim, self._comp_order_sym)
         state_variables_init['strain_mf'] = \
             state_variables_init['e_strain_mf'].clone()
@@ -252,18 +252,16 @@ class VonMisesVMAP(ConstitutiveModel):
         if self._strain_formulation == 'infinitesimal':
             # Cauchy stress tensor (symmetric)
             state_variables_init['stress_mf'] = vget_tensor_mf(
-                torch.zeros((self._n_dim, self._n_dim),
-                            dtype=torch.float, device=self._device),
+                torch.zeros((self._n_dim, self._n_dim), device=self._device),
                             self._n_dim, self._comp_order_sym)
         else:
             # First Piola-Kirchhoff stress tensor (nonsymmetric)
             state_variables_init['stress_mf'] = vget_tensor_mf(
-                torch.zeros((self._n_dim, self._n_dim),
-                            dtype=torch.float, device=self._device),
+                torch.zeros((self._n_dim, self._n_dim), device=self._device),
                             self._n_dim, self._comp_order_nsym)
         # Initialize internal variables
         state_variables_init['acc_p_strain'] = \
-            torch.tensor(0.0, dtype=torch.float, device=self._device)
+            torch.tensor(0.0, device=self._device)
         # Initialize state flags
         state_variables_init['is_plast'] = False
         state_variables_init['is_su_fail'] = False
@@ -373,7 +371,7 @@ class VonMisesVMAP(ConstitutiveModel):
         # Compute deviatoric trial stress
         dev_trial_stress_mf = torch.matmul(fodevprojsym_mf, trial_stress_mf)
         # Compute von Mises equivalent trial stress
-        vm_trial_stress = np.sqrt(3.0/2.0)*torch.norm(dev_trial_stress_mf)
+        vm_trial_stress = math.sqrt(3.0/2.0)*torch.norm(dev_trial_stress_mf)
         # Compute trial accumulated plastic strain
         acc_p_trial_strain = acc_p_strain_old
         # Compute trial yield stress
@@ -384,7 +382,7 @@ class VonMisesVMAP(ConstitutiveModel):
         cond_flow_vector_mf = torch.norm(dev_trial_stress_mf) \
             *torch.ones_like(dev_trial_stress_mf) > 1e-10
         # Set admissible flow vector
-        admissible_flow_vector_mf = np.sqrt(3.0/2.0) \
+        admissible_flow_vector_mf = math.sqrt(3.0/2.0) \
             *(dev_trial_stress_mf/torch.norm(dev_trial_stress_mf))
         # Set non-admissible flow vector
         nadmissible_flow_vector_mf = torch.zeros_like(dev_trial_stress_mf)
@@ -479,7 +477,7 @@ class VonMisesVMAP(ConstitutiveModel):
         factor_1 = ((inc_p_mult*6.0*G**2)/vm_trial_stress)
         factor_2 = (6.0*G**2)*((inc_p_mult/vm_trial_stress)
                                 - (1.0/(3.0*G + H)))
-        unit_flow_vector = np.sqrt(2.0/3.0)*vget_tensor_from_mf(
+        unit_flow_vector = math.sqrt(2.0/3.0)*vget_tensor_from_mf(
             flow_vector_mf, n_dim, comp_order_sym, device=self._device)
         p_consistent_tangent = e_consistent_tangent \
             - factor_1*fodevprojsym + factor_2*dyad22_1(
@@ -534,8 +532,7 @@ class VonMisesVMAP(ConstitutiveModel):
         # Set plastic step flag
         is_plast = torch.tensor([False], device=e_trial_strain_mf.device)
         # Set incremental plastic multiplier initial iterative guess
-        inc_p_mult = torch.tensor(0.0, dtype=torch.float,
-                                  device=e_trial_strain_mf.device)
+        inc_p_mult = torch.tensor(0.0, device=e_trial_strain_mf.device)
         # Set state update convergence flag
         is_converged = torch.tensor([True], device=e_trial_strain_mf.device)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -591,8 +588,7 @@ class VonMisesVMAP(ConstitutiveModel):
         # Set plastic step flag
         is_plast = torch.tensor([True], device=e_trial_strain_mf.device)
         # Set incremental plastic multiplier initial iterative guess
-        inc_p_mult = torch.tensor(0.0, dtype=torch.float,
-                                  device=e_trial_strain_mf.device)
+        inc_p_mult = torch.tensor(0.0, device=e_trial_strain_mf.device)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Newton-Raphson iterative loop
         for _ in range(su_max_n_iterations):

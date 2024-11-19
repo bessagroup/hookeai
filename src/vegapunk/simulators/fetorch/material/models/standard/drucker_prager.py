@@ -13,9 +13,10 @@ DruckerPrager
 #                                                                       Modules
 # =============================================================================
 # Standard
-import torch
-import numpy as np
+import math
 import copy
+# Third-party
+import torch
 # Local
 from simulators.fetorch.material.models.interface import ConstitutiveModel
 from simulators.fetorch.material.models.standard.elastic import Elastic
@@ -214,8 +215,7 @@ class DruckerPrager(ConstitutiveModel):
         state_variables_init = dict()
         # Initialize strain tensors
         state_variables_init['e_strain_mf'] = vget_tensor_mf(
-            torch.zeros((self._n_dim, self._n_dim),
-                        dtype=torch.float, device=self._device),
+            torch.zeros((self._n_dim, self._n_dim), device=self._device),
                         self._n_dim, self._comp_order_sym)
         state_variables_init['strain_mf'] = \
             state_variables_init['e_strain_mf'].clone()
@@ -223,18 +223,16 @@ class DruckerPrager(ConstitutiveModel):
         if self._strain_formulation == 'infinitesimal':
             # Cauchy stress tensor (symmetric)
             state_variables_init['stress_mf'] = vget_tensor_mf(
-                torch.zeros((self._n_dim, self._n_dim),
-                            dtype=torch.float, device=self._device),
+                torch.zeros((self._n_dim, self._n_dim), device=self._device),
                             self._n_dim, self._comp_order_sym)
         else:
             # First Piola-Kirchhoff stress tensor (nonsymmetric)
             state_variables_init['stress_mf'] = vget_tensor_mf(
-                torch.zeros((self._n_dim, self._n_dim),
-                            dtype=torch.float, device=self._device),
+                torch.zeros((self._n_dim, self._n_dim), device=self._device),
                             self._n_dim, self._comp_order_nsym)
         # Initialize internal variables
         state_variables_init['acc_p_strain'] = \
-            torch.tensor(0.0, dtype=torch.float, device=self._device)
+            torch.tensor(0.0, device=self._device)
         # Initialize state flags
         state_variables_init['is_plast'] = False
         state_variables_init['is_su_fail'] = False
@@ -242,9 +240,9 @@ class DruckerPrager(ConstitutiveModel):
         # Set additional out-of-plane strain and stress components
         if self._problem_type == 1:
             state_variables_init['e_strain_33'] = \
-                torch.tensor(0.0, dtype=torch.float, device=self._device)
+                torch.tensor(0.0, device=self._device)
             state_variables_init['stress_33'] = \
-                torch.tensor(0.0, dtype=torch.float, device=self._device)
+                torch.tensor(0.0, device=self._device)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Return
         return state_variables_init
@@ -393,8 +391,7 @@ class DruckerPrager(ConstitutiveModel):
             is_plast = True
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Set incremental plastic multiplier initial iterative guess
-            inc_p_mult = torch.tensor(0.0, dtype=torch.float,
-                                      device=self._device)
+            inc_p_mult = torch.tensor(0.0, device=self._device)
             # Compute initial hardening modulus
             cohesion, H = hardening_law(hardening_parameters,
                                         acc_p_strain_old + inc_p_mult)
@@ -463,8 +460,7 @@ class DruckerPrager(ConstitutiveModel):
                 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                 # Set incremental plastic volumetric strain initial iterative
                 # guess
-                inc_vol_p_strain = \
-                    torch.tensor(0.0, dtype=torch.float, device=self._device)
+                inc_vol_p_strain = torch.tensor(0.0, device=self._device)
                 # Compute initial hardening modulus
                 cohesion, H = hardening_law(
                     hardening_parameters,
@@ -550,13 +546,13 @@ class DruckerPrager(ConstitutiveModel):
                 # Compute deviatoric elastic strain unit vector
                 trial_unit = dev_trial_e_strain/torch.norm(dev_trial_e_strain)
                 # Compute common scalar terms
-                s1 = inc_p_mult/(np.sqrt(2)*torch.norm(dev_trial_e_strain))
+                s1 = inc_p_mult/(math.sqrt(2)*torch.norm(dev_trial_e_strain))
                 s2 = 1.0/(G + K*etay*etaf + H*xi**2)
                 # Compute elastoplastic consistent tangent modulus
                 # (cone apex)
                 consistent_tangent = 2.0*G*(1.0 - s1)*fodevprojsym \
                     + 2.0*G*(s1 - G*s2)*dyad22_1(trial_unit, trial_unit) \
-                    - np.sqrt(2)*G*s2*K*(etay*dyad22_1(trial_unit, soid)
+                    - math.sqrt(2)*G*s2*K*(etay*dyad22_1(trial_unit, soid)
                                          + etaf*dyad22_1(soid, trial_unit)) \
                     + K*(1.0 - K*etay*etaf*s2)*dyad22_1(soid, soid)
         else:

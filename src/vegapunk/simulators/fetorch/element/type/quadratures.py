@@ -17,6 +17,8 @@ uniform_grid_quadrature
 #                                                                       Modules
 # =============================================================================
 # Standard
+import math
+# Third-party
 import torch
 import numpy as np
 #
@@ -95,34 +97,29 @@ def gauss_quadrature_1d(n_gauss, device=None):
     if n_gauss == 1:
         # Complete integration: Polynomial Order 1
         gp_coords = \
-            {'1': torch.tensor((0.0,), dtype=torch.float, device=device)}
+            {'1': torch.tensor((0.0,), device=device)}
         gp_weights = \
-            {'1': torch.tensor(2.0, dtype=torch.float, device=device)}
+            {'1': torch.tensor(2.0, device=device)}
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     elif n_gauss == 2:
         # Complete integration: Polynomial Order 3
         gp_coords = \
-            {'1': torch.tensor((-1.0/np.sqrt(3.0),),
-                               dtype=torch.float, device=device),
-             '2': torch.tensor((1.0/np.sqrt(3.0),),
-                               dtype=torch.float, device=device)}
+            {'1': torch.tensor((-1.0/math.sqrt(3.0),), device=device),
+             '2': torch.tensor((1.0/math.sqrt(3.0),), device=device)}
         gp_weights = \
-            {'1': torch.tensor(1.0, dtype=torch.float, device=device),
-             '2': torch.tensor(1.0, dtype=torch.float, device=device)}
+            {'1': torch.tensor(1.0, device=device),
+             '2': torch.tensor(1.0, device=device)}
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     elif n_gauss == 3:
         # Complete integration: Polynomial Order 5
         gp_coords = \
-            {'1': torch.tensor((-np.sqrt(3.0/5.0),),
-                               dtype=torch.float, device=device),
-             '2': torch.tensor((0.0,),
-                               dtype=torch.float, device=device),
-             '3': torch.tensor((np.sqrt(3.0/5.0),),
-                               dtype=torch.float, device=device)}
+            {'1': torch.tensor((-math.sqrt(3.0/5.0),), device=device),
+             '2': torch.tensor((0.0,), device=device),
+             '3': torch.tensor((math.sqrt(3.0/5.0),), device=device)}
         gp_weights = \
-            {'1': torch.tensor(5.0/9.0, dtype=torch.float, device=device),
-             '2': torch.tensor(8.0/9.0, dtype=torch.float, device=device),
-             '3': torch.tensor(5.0/9.0, dtype=torch.float, device=device)}
+            {'1': torch.tensor(5.0/9.0, device=device),
+             '2': torch.tensor(8.0/9.0, device=device),
+             '3': torch.tensor(5.0/9.0, device=device)}
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     else:
         raise RuntimeError(f'The 1D {n_gauss}-point Gauss quadrature has not '
@@ -173,23 +170,19 @@ def gauss_quadrature_2d(n_gauss, domain, device=None):
     elif domain == 'triangular':
         if n_gauss == 1:
             gp_coords = \
-                {'1': torch.tensor((1.0/3.0, 1.0/3.0),
-                                   dtype=torch.float, device=device)}
+                {'1': torch.tensor((1.0/3.0, 1.0/3.0), device=device)}
             gp_weights = \
-                {'1': torch.tensor(1.0/2.0, dtype=torch.float, device=device)}
+                {'1': torch.tensor(1.0/2.0, device=device)}
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         elif n_gauss == 3:
             gp_coords = \
-                {'1': torch.tensor((1.0/6.0, 1.0/6.0),
-                                   dtype=torch.float, device=device),
-                 '2': torch.tensor((2.0/3.0, 1.0/6.0),
-                                   dtype=torch.float, device=device),
-                 '3': torch.tensor((1.0/6.0, 2.0/3.0),
-                                   dtype=torch.float, device=device)}
+                {'1': torch.tensor((1.0/6.0, 1.0/6.0), device=device),
+                 '2': torch.tensor((2.0/3.0, 1.0/6.0), device=device),
+                 '3': torch.tensor((1.0/6.0, 2.0/3.0), device=device)}
             gp_weights = \
-                {'1': torch.tensor(1.0/6.0, dtype=torch.float, device=device),
-                 '2': torch.tensor(1.0/6.0, dtype=torch.float, device=device),
-                 '3': torch.tensor(1.0/6.0, dtype=torch.float, device=device)}
+                {'1': torch.tensor(1.0/6.0, device=device),
+                 '2': torch.tensor(1.0/6.0, device=device),
+                 '3': torch.tensor(1.0/6.0, device=device)}
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         else:
             raise RuntimeError(f'The 2D triangular {n_gauss}-point Gauss '
@@ -244,34 +237,33 @@ def gauss_quadrature_3d(n_gauss, domain, device=None):
     elif domain == 'tetrahedral':
         if n_gauss == 1:
             gp_coords = \
-                {'1': torch.tensor((1.0/4.0, 1.0/4.0, 1.0/4.0),
-                                   dtype=torch.float, device=device)}
+                {'1': torch.tensor((1.0/4.0, 1.0/4.0, 1.0/4.0), device=device)}
             gp_weights = \
-                {'1': torch.tensor(1.0/6.0, dtype=torch.float, device=device)}
+                {'1': torch.tensor(1.0/6.0, device=device)}
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         elif n_gauss == 4:
             gp_coords = \
-                {'1': torch.tensor(((5.0 - np.sqrt(5))/20.0,
-                                    (5.0 - np.sqrt(5))/20.0,
-                                    (5.0 - np.sqrt(5))/20.0),
-                                   dtype=torch.float, device=device),
-                 '2': torch.tensor(((5.0 + 3.0*np.sqrt(5))/20.0,
-                                    (5.0 - np.sqrt(5))/20.0,
-                                    (5.0 - np.sqrt(5))/20.0),
-                                   dtype=torch.float, device=device),
-                 '3': torch.tensor(((5.0 - np.sqrt(5))/20.0,
-                                    (5.0 + 3.0*np.sqrt(5))/20.0,
-                                    (5.0 - np.sqrt(5))/20.0),
-                                   dtype=torch.float, device=device),
-                 '4': torch.tensor(((5.0 - np.sqrt(5))/20.0,
-                                    (5.0 - np.sqrt(5))/20.0,
-                                    (5.0 + 3.0*np.sqrt(5))/20.0),
-                                   dtype=torch.float, device=device)}
+                {'1': torch.tensor(((5.0 - math.sqrt(5))/20.0,
+                                    (5.0 - math.sqrt(5))/20.0,
+                                    (5.0 - math.sqrt(5))/20.0),
+                                   device=device),
+                 '2': torch.tensor(((5.0 + 3.0*math.sqrt(5))/20.0,
+                                    (5.0 - math.sqrt(5))/20.0,
+                                    (5.0 - math.sqrt(5))/20.0),
+                                   device=device),
+                 '3': torch.tensor(((5.0 - math.sqrt(5))/20.0,
+                                    (5.0 + 3.0*math.sqrt(5))/20.0,
+                                    (5.0 - math.sqrt(5))/20.0),
+                                   device=device),
+                 '4': torch.tensor(((5.0 - math.sqrt(5))/20.0,
+                                    (5.0 - math.sqrt(5))/20.0,
+                                    (5.0 + 3.0*math.sqrt(5))/20.0),
+                                   device=device)}
             gp_weights = \
-                {'1': torch.tensor(1.0/24.0, dtype=torch.float, device=device),
-                 '2': torch.tensor(1.0/24.0, dtype=torch.float, device=device),
-                 '3': torch.tensor(1.0/24.0, dtype=torch.float, device=device),
-                 '4': torch.tensor(1.0/24.0, dtype=torch.float, device=device)}
+                {'1': torch.tensor(1.0/24.0, device=device),
+                 '2': torch.tensor(1.0/24.0, device=device),
+                 '3': torch.tensor(1.0/24.0, device=device),
+                 '4': torch.tensor(1.0/24.0, device=device)}
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         else:
             raise RuntimeError(f'The 3D tetrahedral {n_gauss}-point Gauss '

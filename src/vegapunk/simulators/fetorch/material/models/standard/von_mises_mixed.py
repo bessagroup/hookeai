@@ -12,8 +12,9 @@ VonMisesMixed
 #                                                                       Modules
 # =============================================================================
 # Standard
+import math
+# Third-party
 import torch
-import numpy as np
 import copy
 # Local
 from simulators.fetorch.material.models.interface import ConstitutiveModel
@@ -199,22 +200,19 @@ class VonMisesMixed(ConstitutiveModel):
         state_variables_init = dict()
         # Initialize strain tensors
         state_variables_init['e_strain_mf'] = vget_tensor_mf(
-            torch.zeros((self._n_dim, self._n_dim),
-                        dtype=torch.float, device=self._device),
+            torch.zeros((self._n_dim, self._n_dim), device=self._device),
                         self._n_dim, self._comp_order_sym)
         state_variables_init['strain_mf'] = \
             state_variables_init['e_strain_mf'].clone()
         # Initialize Cauchy stress tensor
         state_variables_init['stress_mf'] = vget_tensor_mf(
-            torch.zeros((self._n_dim, self._n_dim),
-                        dtype=torch.float, device=self._device),
+            torch.zeros((self._n_dim, self._n_dim), device=self._device),
                         self._n_dim, self._comp_order_sym)
         # Initialize internal variables
         state_variables_init['acc_p_strain'] = \
-            torch.tensor(0.0, dtype=torch.float, device=self._device)
+            torch.tensor(0.0, device=self._device)
         state_variables_init['back_stress_mf'] = vget_tensor_mf(
-            torch.zeros((self._n_dim, self._n_dim),
-                        dtype=torch.float, device=self._device),
+            torch.zeros((self._n_dim, self._n_dim), device=self._device),
                         self._n_dim, self._comp_order_sym)
         # Initialize state flags
         state_variables_init['is_plast'] = False
@@ -339,17 +337,16 @@ class VonMisesMixed(ConstitutiveModel):
         # Compute flow vector
         if torch.allclose(relative_stress_mf,
                           torch.zeros(relative_stress_mf.shape,
-                                      dtype=torch.float, device=self._device),
+                                      device=self._device),
                           atol=1e-10):
             flow_vector_mf = torch.zeros(relative_stress_mf.shape,
-                                         dtype=torch.float,
                                          device=self._device)
         else:
-            flow_vector_mf = np.sqrt(3.0/2.0)*(
+            flow_vector_mf = math.sqrt(3.0/2.0)*(
                 relative_stress_mf/torch.norm(relative_stress_mf))
         # Compute relative equivalent trial stress
         relative_eq_trial_stress = \
-            np.sqrt(3.0/2.0)*torch.norm(relative_stress_mf)
+            math.sqrt(3.0/2.0)*torch.norm(relative_stress_mf)
         # Compute trial accumulated plastic strain
         acc_p_trial_strain = acc_p_strain_old
         # Compute trial yield stress
@@ -481,9 +478,9 @@ class VonMisesMixed(ConstitutiveModel):
             factor_2 = (6.0*G**2)*((inc_p_mult/relative_eq_trial_stress)
                                    - (1.0/(3.0*G + kin_hard_slope + H)))
             unit_flow_vector = \
-                np.sqrt(2.0/3.0)*vget_tensor_from_mf(flow_vector_mf, n_dim,
-                                                     comp_order_sym,
-                                                     device=self._device)
+                math.sqrt(2.0/3.0)*vget_tensor_from_mf(flow_vector_mf, n_dim,
+                                                       comp_order_sym,
+                                                       device=self._device)
             consistent_tangent = e_consistent_tangent \
                 - factor_1*fodevprojsym + factor_2*dyad22_1(
                     unit_flow_vector, unit_flow_vector)

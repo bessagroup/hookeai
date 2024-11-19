@@ -138,7 +138,7 @@ class BatchedElasticModel(torch.nn.Module):
         self._kelvin_matrix = \
             torch.tensor([math.sqrt(2) if x[0] != x[1] else 1.0
                           for x in self._comp_order_sym],
-                         dtype=torch.float, device=self._device)
+                         device=self._device)
     # -------------------------------------------------------------------------
     def set_device(self, device_type):
         """Set device on which torch.Tensor is allocated.
