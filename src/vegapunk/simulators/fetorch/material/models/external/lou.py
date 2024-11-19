@@ -370,6 +370,7 @@ class LouZhangYoon(ConstitutiveModel):
             # Get elastic trial strain tensor
             e_trial_strain = vget_tensor_from_mf(e_trial_strain_mf, n_dim,
                                                  comp_order_sym,
+                                                 is_kelvin_notation=True,
                                                  device=self._device)
             # Compute initial yield stress
             init_yield_stress, _ = \
@@ -420,10 +421,13 @@ class LouZhangYoon(ConstitutiveModel):
                 residual = torch.cat((r1, r2, r3), dim=0)
                 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                 # Compute residuals convergence norm
-                conv_norm_res_1 = \
-                    torch.norm(residual_1)/torch.norm(e_trial_strain)
-                conv_norm_res_2 = abs(residual_2/acc_p_strain_old)
-                conv_norm_res_3 = torch.norm(residual_3)
+                conv_norm_res_1 = (torch.linalg.norm(residual_1)/
+                                   torch.linalg.norm(e_trial_strain))
+                if abs(acc_p_strain_old) < 1e-8:
+                    conv_norm_res_2 = abs(residual_2)
+                else:
+                    conv_norm_res_2 = abs(residual_2/acc_p_strain_old)
+                conv_norm_res_3 = abs(residual_3)
                 # Compute residual vector convergence norm
                 conv_norm_residual = \
                     conv_norm_res_1 + conv_norm_res_2 + conv_norm_res_3
@@ -468,6 +472,7 @@ class LouZhangYoon(ConstitutiveModel):
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Update elastic strain
             e_strain_mf = vget_tensor_mf(e_strain, n_dim, comp_order_sym,
+                                         is_kelvin_notation=True,
                                          device=self._device)
             # Update stress
             stress_mf = torch.matmul(e_consistent_tangent_mf, e_strain_mf)
@@ -854,7 +859,7 @@ class LouZhangYoon(ConstitutiveModel):
                 flow_vector, dflow_daccpstr)
         # Compute derive of second residual w.r.t. to incremental plastic
         # multiplier
-        dr2_dincpm = np.sqrt(2/3)*norm_flow_vector
+        dr2_dincpm = -np.sqrt(2/3)*norm_flow_vector
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Compute derive of third residual w.r.t. to elastic strain
         dr3_destrain = (1/init_yield_stress)*deff_destrain
