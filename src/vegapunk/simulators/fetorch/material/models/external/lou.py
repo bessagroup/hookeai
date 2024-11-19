@@ -242,8 +242,11 @@ class LouZhangYoon(ConstitutiveModel):
             Material constitutive model consistent tangent modulus stored in
             matricial form.
         """
+        # Set verbose flag
+        is_verbose = False
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Set state update convergence tolerance
-        su_conv_tol = 1e-6
+        su_conv_tol = 1e-5
         # Set state update maximum number of iterations
         su_max_n_iterations = 20
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -313,7 +316,7 @@ class LouZhangYoon(ConstitutiveModel):
         # Set required fourth-order tensors
         _, _, _, fosym, fodiagtrace, _, _ = \
             get_id_operators(n_dim, device=self._device)
-        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~        
         # Compute elastic trial strain
         e_trial_strain_mf = e_strain_old_mf + inc_strain_mf
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -381,6 +384,15 @@ class LouZhangYoon(ConstitutiveModel):
             # Initialize Newton-Raphson iteration counter
             nr_iter = 0
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Initialize norm of iterative solution vector (convergence check)
+            diter_norm = 0.0
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            if is_verbose:
+                print(f'\n\nPlastic Increment - Newton-Raphson')
+                print('----------------------------------')
+                print('nr_iter   conv_norm_res_1   conv_norm_res_2   '
+                      'conv_norm_res_3   diter_norm')
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Start Newton-Raphson iterative loop
             while True:
                 # Compute current stress
@@ -426,18 +438,32 @@ class LouZhangYoon(ConstitutiveModel):
                     conv_norm_res_2 = abs(residual_2)
                 else:
                     conv_norm_res_2 = abs(residual_2/acc_p_strain_old)
-                conv_norm_res_3 = abs(residual_3)
+                conv_norm_res_3 = abs(residual_3)*(init_yield_stress/E)
                 # Compute residual vector convergence norm
-                conv_norm_residual = \
-                    conv_norm_res_1 + conv_norm_res_2 + conv_norm_res_3
+                conv_norm_residual = torch.mean(
+                    torch.tensor((conv_norm_res_1, conv_norm_res_2,
+                                  conv_norm_res_3)))
+                # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                # Display iterative residuals
+                if is_verbose:
+                    print(f'{nr_iter:7d}   {conv_norm_res_1:^15.4e}   '
+                          f'{conv_norm_res_2:^15.4e}   '
+                          f'{conv_norm_res_3:^15.4e}   {diter_norm:^10.4e}')
                 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                 # Check Newton-Raphson iterative procedure convergence
-                is_converged = conv_norm_residual < su_conv_tol
+                is_converged = (conv_norm_residual < su_conv_tol
+                                and diter_norm < su_conv_tol)
                 # Control Newton-Raphson iteration loop flow
                 if is_converged:
+                    # Display convergence status
+                    if is_verbose:
+                        print(f'{"Solution converged!":^74s}')
                     # Leave Newton-Raphson iterative loop (converged solution)
                     break
                 elif nr_iter == su_max_n_iterations:
+                    # Display convergence status
+                    if is_verbose:
+                        print(f'{"Solution convergence failure!":^74s}')
                     # If the maximum number of Newton-Raphson iterations is
                     # reached without achieving convergence, recover last
                     # converged state variables, set state update failure flag
@@ -457,6 +483,9 @@ class LouZhangYoon(ConstitutiveModel):
                     yield_d, d_hard_slope, e_consistent_tangent)
                 # Solve return-mapping linearized equation
                 d_iter = torch.linalg.solve(jacobian, -residual)
+                # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                # Compute norm of iterative solution vector (convergence check)
+                diter_norm = torch.linalg.norm(d_iter)
                 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                 # Extract iterative solution
                 e_strain_iter = vget_tensor_from_mf(
@@ -599,7 +628,7 @@ class LouZhangYoon(ConstitutiveModel):
         aux_3 = yield_d*j3
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Compute effective stress
-        effective_stress = yield_a*(aux_1 + (aux_2 - aux_3)**(1/3))
+        effective_stress = yield_a*(aux_1 + (aux_2**(1/2) - aux_3)**(1/3))
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         return effective_stress
     # -------------------------------------------------------------------------
@@ -721,7 +750,7 @@ class LouZhangYoon(ConstitutiveModel):
         stress : torch.Tensor(2d)
             Stress.
         inc_p_mult : torch.Tensor(0d)
-            Incremental plastic multiplier. 
+            Incremental plastic multiplier.
         flow_vector : torch.Tensor(2d)
             Flow vector.
         norm_flow_vector : torch.Tensor(0d)
@@ -866,7 +895,7 @@ class LouZhangYoon(ConstitutiveModel):
         dr3_daccpstr = (1/init_yield_stress)*(deff_daccpstr - hard_slope)
         # Compute derive of third residual w.r.t. to incremental plastic
         # multiplier
-        dr3_dincpm = torch.tensor(0.0, dtype=torch.float, device=self._device)
+        dr3_dincpm = torch.tensor(0.0, device=self._device)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Build first residual derivatives matrices
         j11 = vget_tensor_mf(dr1_destrain, n_dim, comp_order_sym,
