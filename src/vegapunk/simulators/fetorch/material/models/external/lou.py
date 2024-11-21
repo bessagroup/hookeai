@@ -833,11 +833,9 @@ class LouZhangYoon(ConstitutiveModel):
         ddevstressinv_dstress = \
             -ddot44_1(dyad22_1(dev_stress_inv, dev_stress_inv), fodevprojsym)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        # Get second (main) stress invariant second-order derivative w.r.t.
-        # stress
+        # Get second stress invariant second-order derivative w.r.t. stress
         d2j2_dstress2 = fodevprojsym
-        # Get third (main) stress invariant second-order derivative w.r.t.
-        # stress
+        # Get third stress invariant second-order derivative w.r.t. stress
         d2j3_dstress2 = (
             dyad22_1(ddot24_1(dev_stress_inv, fodevprojsym), dj3_dstress)
             + torch.det(dev_stress)*(ddevstressinv_dstress
