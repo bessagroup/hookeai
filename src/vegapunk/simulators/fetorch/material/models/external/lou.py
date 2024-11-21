@@ -674,6 +674,8 @@ class LouZhangYoon(ConstitutiveModel):
             get_id_operators(n_dim, device=self._device)
         # Compute deviatoric stress tensor
         dev_stress = ddot42_1(fodevprojsym, stress)
+        # Compute inverse of deviatoric stress tensor
+        dev_stress_inv = torch.inverse(dev_stress)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Compute stress invariants
         _, _, _, _, j2, j3 = self.get_stress_invariants(stress)
@@ -683,7 +685,8 @@ class LouZhangYoon(ConstitutiveModel):
         # Get second (main) stress invariant derivative w.r.t. stress
         dj2_dstress = dev_stress
         # Get third (main) stress invariant derivative w.r.t. stress
-        dj3_dstress = torch.det(dev_stress)*torch.inverse(dev_stress).T
+        dj3_dstress = \
+            torch.det(dev_stress)*ddot24_1(dev_stress_inv, fodevprojsym)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Compute auxiliary terms
         aux_1 = j2**3 - yield_c*(j3**2)
@@ -811,8 +814,8 @@ class LouZhangYoon(ConstitutiveModel):
             get_id_operators(n_dim, device=self._device)
         # Compute deviatoric stress tensor
         dev_stress = ddot42_1(fodevprojsym, stress)
-        # Compute transpose of inverse deviatoric stress tensor
-        dev_stress_invt = torch.inverse(dev_stress).T
+        # Compute inverse of deviatoric stress tensor
+        dev_stress_inv = torch.inverse(dev_stress)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Compute stress invariants
         i1, _, _, _, j2, j3 = self.get_stress_invariants(stress)
@@ -822,16 +825,23 @@ class LouZhangYoon(ConstitutiveModel):
         # Get second deviatoric stress invariant derivative w.r.t. stress
         dj2_dstress = dev_stress
         # Get third deviatoric stress invariant derivative w.r.t. stress
-        dj3_dstress = torch.det(dev_stress)*torch.inverse(dev_stress).T
+        dj3_dstress = \
+            torch.det(dev_stress)*ddot24_1(dev_stress_inv, fodevprojsym)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Compute derivative of inverse of deviatoric stress tensor w.r.t
+        # stress
+        ddevstressinv_dstress = \
+            -ddot44_1(dyad22_1(dev_stress_inv, dev_stress_inv), fodevprojsym)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Get second (main) stress invariant second-order derivative w.r.t.
         # stress
         d2j2_dstress2 = fodevprojsym
         # Get third (main) stress invariant second-order derivative w.r.t.
         # stress
-        d2j3_dstress2 = ddot44_1(
-            torch.det(dev_stress)*(-dyad22_1(dev_stress_invt, dev_stress_invt))
-            + dyad22_1(dev_stress_invt, dj3_dstress), fodevprojsym)
+        d2j3_dstress2 = (
+            dyad22_1(ddot24_1(dev_stress_inv, fodevprojsym), dj3_dstress)
+            + torch.det(dev_stress)*(ddevstressinv_dstress
+            - (1/3)*dyad22_1(soid, ddot24_1(soid, ddevstressinv_dstress))))
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Compute auxiliar terms a, b and c
         auxa = yield_b*i1
