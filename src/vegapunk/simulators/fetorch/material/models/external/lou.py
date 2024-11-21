@@ -680,11 +680,11 @@ class LouZhangYoon(ConstitutiveModel):
         # Compute stress invariants
         _, _, _, _, j2, j3 = self.get_stress_invariants(stress)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        # Get first (principal) stress invariant derivative w.r.t. stress
+        # Get first stress invariant derivative w.r.t. stress
         di1_dstress = soid
-        # Get second (main) stress invariant derivative w.r.t. stress
+        # Get second stress invariant derivative w.r.t. stress
         dj2_dstress = dev_stress
-        # Get third (main) stress invariant derivative w.r.t. stress
+        # Get third stress invariant derivative w.r.t. stress
         dj3_dstress = \
             torch.det(dev_stress)*ddot24_1(dev_stress_inv, fodevprojsym)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
