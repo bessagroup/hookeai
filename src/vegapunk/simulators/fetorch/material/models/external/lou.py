@@ -898,43 +898,45 @@ class LouZhangYoon(ConstitutiveModel):
              + yield_a*b_hard_slope*i1
              + aux_1*((1/2)*(auxb**(-1/2))*dauxb_daccpstr - d_hard_slope*j3))
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        # Compute derive of first residual w.r.t. to elastic strain
+        # Compute derivative of first residual w.r.t. to elastic strain
         dr1_destrain = fosym + inc_p_mult*dflow_destrain
-        # Compute derive of first residual w.r.t. to accumulated plastic strain
+        # Compute derivative of first residual w.r.t. to accumulated plastic
+        # strain
         dr1_daccpstr = inc_p_mult*dflow_daccpstr
-        # Compute derive of first residual w.r.t. to incremental plastic
+        # Compute derivative of first residual w.r.t. to incremental plastic
         # multiplier
         dr1_dincpm = flow_vector
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Compute derivatives of second residual
         if is_associative_hardening:
-            # Compute derive of second residual w.r.t. to elastic strain
+            # Compute derivative of second residual w.r.t. to elastic strain
             dr2_destrain = torch.zeros_like(flow_vector, device=self._device)
-            # Compute derive of second residual w.r.t. to accumulated plastic
-            # strain
+            # Compute derivative of second residual w.r.t. to accumulated
+            # plastic strain
             dr2_daccpstr = torch.tensor(1.0, device=self._device)
-            # Compute derive of second residual w.r.t. to incremental plastic
-            # multiplier
+            # Compute derivative of second residual w.r.t. to incremental
+            # plastic multiplier
             dr2_dincpm = torch.tensor(-1.0, device=self._device)
         else:
-            # Compute derive of second residual w.r.t. to elastic strain
+            # Compute derivative of second residual w.r.t. to elastic strain
             dr2_destrain = \
                 -inc_p_mult*math.sqrt(2/3)*(1/norm_flow_vector)*ddot24_1(
                     flow_vector, dflow_destrain)
-            # Compute derive of second residual w.r.t. to accumulated plastic
-            # strain
+            # Compute derivative of second residual w.r.t. to accumulated
+            # plastic strain
             dr2_daccpstr = \
                 1.0 - inc_p_mult*math.sqrt(2/3)*(1/norm_flow_vector)*ddot22_1(
                     flow_vector, dflow_daccpstr)
-            # Compute derive of second residual w.r.t. to incremental plastic
-            # multiplier
+            # Compute derivative of second residual w.r.t. to incremental
+            # plastic multiplier
             dr2_dincpm = -math.sqrt(2/3)*norm_flow_vector
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        # Compute derive of third residual w.r.t. to elastic strain
+        # Compute derivative of third residual w.r.t. to elastic strain
         dr3_destrain = (1/init_yield_stress)*deff_destrain
-        # Compute derive of third residual w.r.t. to accumulated plastic strain
+        # Compute derivative of third residual w.r.t. to accumulated plastic
+        # strain
         dr3_daccpstr = (1/init_yield_stress)*(deff_daccpstr - hard_slope)
-        # Compute derive of third residual w.r.t. to incremental plastic
+        # Compute derivative of third residual w.r.t. to incremental plastic
         # multiplier
         dr3_dincpm = torch.tensor(0.0, device=self._device)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
