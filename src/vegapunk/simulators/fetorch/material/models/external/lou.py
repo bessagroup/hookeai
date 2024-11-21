@@ -135,6 +135,13 @@ class LouZhangYoon(ConstitutiveModel):
         - 'c_hardening_parameters': Yield parameter hardening parameters (dict)
         - 'd_hardening_law': Yield parameter hardening law (function)
         - 'd_hardening_parameters': Yield parameter hardening parameters (dict)
+        - 'is_associative_hardening': Assume associative hardening rule (bool)
+        
+        Notes:
+        
+        - Associative hardening rule is only admissible if the yield parameters
+          a, b, c and d are constant, i.e., do not depend on the accumulated
+          plastic strain through the corresponding hardening laws
 
         Returns
         -------
@@ -148,7 +155,8 @@ class LouZhangYoon(ConstitutiveModel):
                                   'a_hardening_law', 'a_hardening_parameters',
                                   'b_hardening_law', 'b_hardening_parameters',
                                   'c_hardening_law', 'c_hardening_parameters',
-                                  'd_hardening_law', 'd_hardening_parameters')
+                                  'd_hardening_law', 'd_hardening_parameters',
+                                  'is_associative_hardening')
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         return model_parameters_names
     # -------------------------------------------------------------------------
@@ -274,6 +282,9 @@ class LouZhangYoon(ConstitutiveModel):
         d_hardening_law = self._model_parameters['d_hardening_law']
         d_hardening_parameters = \
             self._model_parameters['d_hardening_parameters']
+        # Get hardening rule associativity
+        is_associative_hardening = \
+            self._model_parameters['is_associative_hardening']
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Compute shear modulus
         G = E/(2.0*(1.0 + v))
@@ -421,7 +432,8 @@ class LouZhangYoon(ConstitutiveModel):
                 residual_1, residual_2, residual_3 = self.get_residual(
                     e_strain, e_trial_strain, acc_p_strain, acc_p_strain_old,
                     inc_p_mult, effective_stress, yield_stress,
-                    init_yield_stress, flow_vector, norm_flow_vector)
+                    init_yield_stress, flow_vector, norm_flow_vector,
+                    is_associative_hardening=is_associative_hardening)
                 # Build residuals matrices
                 r1 = vget_tensor_mf(residual_1, n_dim, comp_order_sym,
                                     is_kelvin_notation=True,
@@ -480,7 +492,8 @@ class LouZhangYoon(ConstitutiveModel):
                     n_dim, comp_order_sym, stress, inc_p_mult, flow_vector,
                     norm_flow_vector, init_yield_stress, hard_slope, yield_a,
                     a_hard_slope, yield_b, b_hard_slope, yield_c, c_hard_slope,
-                    yield_d, d_hard_slope, e_consistent_tangent)
+                    yield_d, d_hard_slope, e_consistent_tangent,
+                    is_associative_hardening=is_associative_hardening)
                 # Solve return-mapping linearized equation
                 d_iter = torch.linalg.solve(jacobian, -residual)
                 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -689,7 +702,7 @@ class LouZhangYoon(ConstitutiveModel):
     def get_residual(self, e_strain, e_trial_strain, acc_p_strain,
                      acc_p_strain_old, inc_p_mult, effective_stress,
                      yield_stress, init_yield_stress, flow_vector,
-                     norm_flow_vector):
+                     norm_flow_vector, is_associative_hardening=False):
         """Compute state update residuals.
         
         Parameters
@@ -714,6 +727,8 @@ class LouZhangYoon(ConstitutiveModel):
             Flow vector.
         norm_flow_vector : torch.Tensor(0d)
             Flow vector norm.
+        is_associative_hardening : bool, default=False
+            If True, then adopt associative hardening rule.
 
         Returns
         -------
@@ -727,8 +742,11 @@ class LouZhangYoon(ConstitutiveModel):
         # Compute first residual
         residual_1 = e_strain - e_trial_strain + inc_p_mult*flow_vector
         # Compute second residual
-        residual_2 = (acc_p_strain - acc_p_strain_old
-                      - inc_p_mult*(math.sqrt(2/3))*norm_flow_vector)
+        if is_associative_hardening:
+            residual_2 = acc_p_strain - acc_p_strain_old - inc_p_mult
+        else:
+            residual_2 = (acc_p_strain - acc_p_strain_old
+                          - inc_p_mult*(math.sqrt(2/3))*norm_flow_vector)
         # Compute third residual
         residual_3 = (effective_stress - yield_stress)/init_yield_stress
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -738,7 +756,7 @@ class LouZhangYoon(ConstitutiveModel):
                      flow_vector, norm_flow_vector, init_yield_stress,
                      hard_slope, yield_a, a_hard_slope, yield_b, b_hard_slope,
                      yield_c, c_hard_slope, yield_d, d_hard_slope,
-                     e_consistent_tangent):
+                     e_consistent_tangent, is_associative_hardening=False):
         """Compute state update Jacobian matrix.
         
         Parameters
@@ -777,6 +795,8 @@ class LouZhangYoon(ConstitutiveModel):
             Yield parameter hardening modulus.
         e_consistent_tangent : torch.Tensor(4d)
             Elastic consistent tangent modulus.
+        is_associative_hardening : bool, default=False
+            If True, then adopt associative hardening rule.
 
         Returns
         -------
@@ -876,18 +896,29 @@ class LouZhangYoon(ConstitutiveModel):
         # multiplier
         dr1_dincpm = flow_vector
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        # Compute derive of second residual w.r.t. to elastic strain
-        dr2_destrain = \
-            -inc_p_mult*math.sqrt(2/3)*(1/norm_flow_vector)*ddot24_1(
-                flow_vector, dflow_destrain)
-        # Compute derive of second residual w.r.t. to accumulated plastic
-        # strain
-        dr2_daccpstr = \
-            1.0 - inc_p_mult*math.sqrt(2/3)*(1/norm_flow_vector)*ddot22_1(
-                flow_vector, dflow_daccpstr)
-        # Compute derive of second residual w.r.t. to incremental plastic
-        # multiplier
-        dr2_dincpm = -math.sqrt(2/3)*norm_flow_vector
+        # Compute derivatives of second residual
+        if is_associative_hardening:
+            # Compute derive of second residual w.r.t. to elastic strain
+            dr2_destrain = torch.zeros_like(flow_vector, device=self._device)
+            # Compute derive of second residual w.r.t. to accumulated plastic
+            # strain
+            dr2_daccpstr = torch.tensor(1.0, device=self._device)
+            # Compute derive of second residual w.r.t. to incremental plastic
+            # multiplier
+            dr2_dincpm = torch.tensor(-1.0, device=self._device)
+        else:
+            # Compute derive of second residual w.r.t. to elastic strain
+            dr2_destrain = \
+                -inc_p_mult*math.sqrt(2/3)*(1/norm_flow_vector)*ddot24_1(
+                    flow_vector, dflow_destrain)
+            # Compute derive of second residual w.r.t. to accumulated plastic
+            # strain
+            dr2_daccpstr = \
+                1.0 - inc_p_mult*math.sqrt(2/3)*(1/norm_flow_vector)*ddot22_1(
+                    flow_vector, dflow_daccpstr)
+            # Compute derive of second residual w.r.t. to incremental plastic
+            # multiplier
+            dr2_dincpm = -math.sqrt(2/3)*norm_flow_vector
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Compute derive of third residual w.r.t. to elastic strain
         dr3_destrain = (1/init_yield_stress)*deff_destrain

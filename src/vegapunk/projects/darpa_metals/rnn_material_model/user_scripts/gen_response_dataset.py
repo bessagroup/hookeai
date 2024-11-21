@@ -1872,8 +1872,7 @@ if __name__ == '__main__':
                     'a': 0},
                 'd_hardening_law': get_hardening_law('linear'),
                 'd_hardening_parameters':
-                    {'s0': 0,
-                    'a': 0}}
+                'is_associative_hardening': True}
             # Set constitutive state variables to be additionally included in
             # the data set
             state_features = {}
