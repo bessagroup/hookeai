@@ -721,7 +721,7 @@ if __name__ == '__main__':
             'elastic_symmetry': 'isotropic',
             'E': 100, 'v': 0.3,
             'euler_angles': (0.0, 0.0, 0.0),
-            'hardening_law': get_hardening_law('piecewise_linear'),
+            'hardening_law': get_hardening_law('piecewise_linear'),            # Fix: np.sqrt(3) matching factor! + Repeat Links simulations
             'hardening_parameters':
                 {'hardening_points':
                     torch.tensor([[0.0, 2.0/yield_cohesion_parameter],
@@ -840,7 +840,7 @@ if __name__ == '__main__':
                 'elastic_symmetry': 'isotropic',
                 'E': 100, 'v': 0.3,
                 'euler_angles': (0.0, 0.0, 0.0),
-                'hardening_law': get_hardening_law('piecewise_linear'),
+                'hardening_law': get_hardening_law('piecewise_linear'),        # Fix: np.sqrt(3) matching factor!
                 'hardening_parameters':
                     {'hardening_points':
                         torch.tensor([[0.0, 2.0/yield_cohesion_parameter],

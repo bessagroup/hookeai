@@ -475,7 +475,7 @@ if __name__ == "__main__":
                 'E': 100.0, 'v': 0.3,
                 'euler_angles': (0.0, 0.0, 0.0),
                 'hardening_law': get_hardening_law('linear'),
-                'hardening_parameters':{'s0': 2.0/yield_cohesion_parameter,
+                'hardening_parameters':{'s0': 2.0/yield_cohesion_parameter,    # Fix: np.sqrt(3) matching factor!
                                         'a': 2.0/yield_cohesion_parameter,},
                 'yield_cohesion_parameter': yield_cohesion_parameter,
                 'yield_pressure_parameter': yield_pressure_parameter,

@@ -131,7 +131,7 @@ def perform_model_standard_training(train_dataset_file_path, model_directory,
              'E': 110e3, 'v': 0.33,
              'euler_angles': (0.0, 0.0, 0.0),
              'hardening_law': get_hardening_law('nadai_ludwik'),
-             'hardening_parameters': {'s0': 900/yield_cohesion_parameter,
+             'hardening_parameters': {'s0': 900/yield_cohesion_parameter,      # Fix: np.sqrt(3) matching factor!
                                       'a': 700/yield_cohesion_parameter,
                                       'b': 0.5,
                                       'ep0': 1e-5},

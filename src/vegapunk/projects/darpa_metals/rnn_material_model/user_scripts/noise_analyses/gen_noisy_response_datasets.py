@@ -1088,7 +1088,7 @@ if __name__ == '__main__':
                 'elastic_symmetry': 'isotropic',
                 'E': 110e3, 'v': 0.33,
                 'euler_angles': (0.0, 0.0, 0.0),
-                'hardening_law': get_hardening_law('nadai_ludwik'),
+                'hardening_law': get_hardening_law('nadai_ludwik'),            # Fix: np.sqrt(3) matching factor!
                 'hardening_parameters':
                     {'s0': 900/yield_cohesion_parameter,
                      'a': 700/yield_cohesion_parameter,
