@@ -93,14 +93,33 @@ class LouZhangYoonVMAP(ConstitutiveModel):
         Get initialized material constitutive model state variables.
     state_update(self, inc_strain, state_variables_old)
         Perform material constitutive model state update.
+    get_stress_invariants(cls, stress)
+        Compute invariants of stress and deviatoric stress.
+    get_effective_stress(cls, stress, yield_a, yield_b, yield_c, yield_d)
+        Compute effective stress.
+    get_flow_vector(cls, stress, yield_a, yield_b, yield_c, yield_d)
+        Compute flow vector.
     _elastic_step(cls, e_trial_strain_mf, trial_stress_mf, acc_p_strain_old)
         Perform elastic step.
-    _plastic_step(cls, is_elastic_step, e_trial_strain_mf, vm_trial_stress,
-                  e_consistent_tangent_mf, flow_vector_mf, acc_p_strain_old, G,
-                  hardening_law, hardening_parameters, su_conv_tol,
-                  su_max_n_iterations):
+    _plastic_step(cls, is_elastic_step, e_trial_strain_mf, \
+                  e_consistent_tangent, acc_p_strain_old, E, G, \
+                  hardening_law, hardening_parameters, a_hardening_law, \
+                  a_hardening_parameters, b_hardening_law, \
+                  b_hardening_parameters, c_hardening_law, \
+                  c_hardening_parameters, d_hardening_law, \
+                  d_hardening_parameters, is_associative_hardening, \
+                  su_conv_tol, su_max_n_iterations)
         Perform plastic step.
-    _nr_iteration(cls, inc_p_mult, residual, G, H)
+    get_residual(cls, e_strain, e_trial_strain, acc_p_strain, \
+                 acc_p_strain_old, inc_p_mult, effective_stress, \
+                 yield_stress, init_yield_stress, flow_vector, \
+                 norm_flow_vector, is_associative_hardening=False)
+        Compute state update residuals.
+    _nr_iteration(cls, residual, n_dim, comp_order_sym, stress, inc_p_mult, \
+                  flow_vector, norm_flow_vector, init_yield_stress, \
+                  hard_slope, yield_a, a_hard_slope, yield_b, b_hard_slope, \
+                  yield_c, c_hard_slope, yield_d, d_hard_slope, \
+                  e_consistent_tangent, is_associative_hardening)
         Newton-Raphson iteration (return-mapping).
     """
     def __init__(self, strain_formulation, problem_type, model_parameters,

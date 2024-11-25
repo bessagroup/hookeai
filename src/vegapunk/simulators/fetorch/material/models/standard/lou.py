@@ -66,6 +66,23 @@ class LouZhangYoon(ConstitutiveModel):
         Get initialized material constitutive model state variables.
     state_update(self, inc_strain, state_variables_old)
         Perform material constitutive model state update.
+    get_stress_invariants(self, stress)
+        Compute invariants of stress and deviatoric stress.
+    get_effective_stress(self, stress, yield_a, yield_b, yield_c, yield_d)
+        Compute effective stress.
+    get_flow_vector(self, stress, yield_a, yield_b, yield_c, yield_d)
+        Compute flow vector.
+    get_residual(self, e_strain, e_trial_strain, acc_p_strain, \
+                 acc_p_strain_old, inc_p_mult, effective_stress, \
+                 yield_stress, init_yield_stress, flow_vector, \
+                 norm_flow_vector, is_associative_hardening=False)
+        Compute state update residuals.
+    get_jacobian(self, n_dim, comp_order_sym, stress, inc_p_mult, \
+                 flow_vector, norm_flow_vector, init_yield_stress, \
+                 hard_slope, yield_a, a_hard_slope, yield_b, b_hard_slope, \
+                 yield_c, c_hard_slope, yield_d, d_hard_slope, \
+                 e_consistent_tangent, is_associative_hardening=False)
+        Compute state update Jacobian matrix.
     """
     def __init__(self, strain_formulation, problem_type, model_parameters,
                  device_type='cpu'):
@@ -121,10 +138,10 @@ class LouZhangYoon(ConstitutiveModel):
         Model parameters:
         
         - 'elastic_symmetry' : Elastic symmetry (str, {'isotropic',
-          'transverse_isotropic', 'orthotropic', 'monoclinic', 'triclinic'});
-        - 'elastic_moduli' : Elastic moduli (dict, {'Eijkl': float});
+          'transverse_isotropic', 'orthotropic', 'monoclinic', 'triclinic'})
+        - 'elastic_moduli' : Elastic moduli (dict, {'Eijkl': float})
         - 'euler_angles' : Euler angles (degrees) sorted according with Bunge
-           convention (tuple[float]).
+           convention (tuple[float])
         - 'hardening_law' : Isotropic hardening law (function)
         - 'hardening_parameters' : Isotropic hardening law parameters (dict)
         - 'a_hardening_law': Yield parameter hardening law (function)
@@ -229,7 +246,6 @@ class LouZhangYoon(ConstitutiveModel):
             state_variables_init['e_strain_33'] = 0.0
             state_variables_init['stress_33'] = 0.0
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        # Return
         return state_variables_init
     # -------------------------------------------------------------------------
     def state_update(self, inc_strain, state_variables_old):
