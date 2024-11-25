@@ -230,10 +230,10 @@ def perform_model_standard_training(train_dataset_file_path, model_directory,
     # Set batch size
     batch_size = 4
     # Set learning rate
-    lr_init = 1.0e+01
+    lr_init = 1.0e+00
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Compute exponential decay (learning rate scheduler)
-    lr_end = 1.0e-1
+    lr_end = 1.0e-3
     gamma = (lr_end/lr_init)**(1/n_max_epochs)
     # Set learning rate scheduler
     lr_scheduler_type = 'explr'
