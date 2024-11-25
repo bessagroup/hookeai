@@ -72,8 +72,15 @@ def perform_model_prediction(predict_directory, dataset_file_path,
     loss_nature, loss_type, loss_kwargs = set_default_prediction_options()
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set data features for prediction
-    features_option = 'stress'
-    if features_option == 'stress_acc_p_strain':
+    features_option = 'strain_to_stress'
+    if features_option == 'strain_to_stress':
+        # Set input features
+        new_label_in = 'features_in'
+        cat_features_in = ('strain_path',)
+        # Set output features
+        new_label_out = 'features_out'
+        cat_features_out = ('stress_path',)
+    elif features_option == 'strain_to_stress_acc_p_strain':
         # Set input features
         new_label_in = 'features_in'
         cat_features_in = ('strain_path',)
@@ -81,12 +88,7 @@ def perform_model_prediction(predict_directory, dataset_file_path,
         new_label_out = 'features_out'
         cat_features_out = ('stress_path', 'acc_p_strain')
     else:
-        # Set input features
-        new_label_in = 'features_in'
-        cat_features_in = ('strain_path',)
-        # Set output features
-        new_label_out = 'features_out'
-        cat_features_out = ('stress_path',)
+        raise RuntimeError('Unknown features option.')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Load data set
     dataset = load_dataset(dataset_file_path)

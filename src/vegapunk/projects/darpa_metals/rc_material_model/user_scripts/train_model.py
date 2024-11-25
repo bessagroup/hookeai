@@ -193,8 +193,18 @@ def perform_model_standard_training(train_dataset_file_path, model_directory,
                 set_default_training_options()
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set data features for training
-    features_option = 'stress'
-    if features_option == 'stress_acc_p_strain':
+    features_option = 'strain_to_stress'
+    if features_option == 'strain_to_stress':
+        # Set input features
+        new_label_in = 'features_in'
+        cat_features_in = ('strain_path',)
+        # Set output features
+        new_label_out = 'features_out'
+        cat_features_out = ('stress_path',)
+        # Set number of input and output features
+        model_init_args['n_features_in'] = 6
+        model_init_args['n_features_out'] = 6
+    elif features_option == 'strain_to_stress_acc_p_strain':
         # Set input features
         new_label_in = 'features_in'
         cat_features_in = ('strain_path',)
@@ -205,15 +215,7 @@ def perform_model_standard_training(train_dataset_file_path, model_directory,
         model_init_args['n_features_in'] = 6
         model_init_args['n_features_out'] = 7
     else:
-        # Set input features
-        new_label_in = 'features_in'
-        cat_features_in = ('strain_path',)
-        # Set output features
-        new_label_out = 'features_out'
-        cat_features_out = ('stress_path',)
-        # Set number of input and output features
-        model_init_args['n_features_in'] = 6
-        model_init_args['n_features_out'] = 6
+        raise RuntimeError('Unknown features option.')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set model training options:
     # Set number of epochs
