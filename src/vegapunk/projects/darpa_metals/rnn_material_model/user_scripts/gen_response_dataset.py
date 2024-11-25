@@ -1699,8 +1699,11 @@ def generate_dataset_plots(strain_formulation, n_dim, dataset,
                 is_stdout_display=is_stdout_display, is_latex=True)
 # =============================================================================
 if __name__ == '__main__':
+    # Set default float precision
+    torch.set_default_dtype(torch.float64)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set data set type
-    dataset_type = ('training', 'validation', 'testing_id', 'testing_od')[2]
+    dataset_type = ('training', 'validation', 'testing_id', 'testing_od')[0]
     # Set data set storage type
     is_in_memory_dataset = True
     # Set save dataset plots flags
@@ -1728,8 +1731,7 @@ if __name__ == '__main__':
         # Set data sets base directory
         datasets_base_dir = \
             ('/home/bernardoferreira/Documents/brown/projects/darpa_project/'
-             '7_local_hybrid_training/case_learning_drucker_prager_pressure/'
-             '0_datasets/datasets_drucker_prager_10deg/datasets_base/')
+             '3_local_rc_training/lou')
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Check data sets directory
         if not os.path.isdir(datasets_base_dir):
@@ -1793,7 +1795,7 @@ if __name__ == '__main__':
         n_cycle = 0
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Set constitutive model
-        model_name = 'drucker_prager'
+        model_name = 'lou_zhang_yoon'
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Set constitutive model parameters:
         if model_name == 'von_mises':
@@ -1860,18 +1862,20 @@ if __name__ == '__main__':
                     'ep0': 1e-5},
                 'a_hardening_law': get_hardening_law('linear'),
                 'a_hardening_parameters':
-                    {'s0': np.sqrt(3),
+                    {'s0': 1.0,
                     'a': 0},
                 'b_hardening_law': get_hardening_law('linear'),
                 'b_hardening_parameters':
-                    {'s0': 0,
+                    {'s0': 0.02,
                     'a': 0},
                 'c_hardening_law': get_hardening_law('linear'),
                 'c_hardening_parameters':
-                    {'s0': 0,
+                    {'s0': 0.1,
                     'a': 0},
                 'd_hardening_law': get_hardening_law('linear'),
                 'd_hardening_parameters':
+                    {'s0': 0.1,
+                    'a': 0},
                 'is_associative_hardening': True}
             # Set constitutive state variables to be additionally included in
             # the data set
