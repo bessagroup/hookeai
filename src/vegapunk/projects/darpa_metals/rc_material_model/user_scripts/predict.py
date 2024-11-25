@@ -22,6 +22,7 @@ if root_dir not in sys.path:
     sys.path.insert(0, root_dir)
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 import os
+import re
 # Third-party
 import torch
 import numpy as np
@@ -121,6 +122,23 @@ def perform_model_prediction(predict_directory, dataset_file_path,
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Generate plots of model predictions
     generate_prediction_plots(dataset_file_path, predict_subdir)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Set remove sample prediction files flag
+    is_remove_sample_prediction = False
+    # Remove sample prediction files
+    if is_remove_sample_prediction:
+        # Set sample prediction file regex
+        sample_regex = re.compile(r'^prediction_sample_\d+\.pkl$')
+        # Walk through prediction set directory recursively
+        for root, _, files in os.walk(predict_subdir):
+            # Loop over prediction set directory files
+            for file in files:
+                # Remove sample prediction file
+                if sample_regex.match(file):
+                    # Set sample prediction file path
+                    sample_file_path = os.path.join(root, file)
+                    # Remove sample prediction file
+                    os.remove(sample_file_path)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     return predict_subdir
 # =============================================================================
