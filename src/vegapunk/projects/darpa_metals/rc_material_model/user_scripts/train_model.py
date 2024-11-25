@@ -280,6 +280,13 @@ def perform_model_standard_training(train_dataset_file_path, model_directory,
         # Skip model training
         return
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Set loss type
+    loss_type = 'mre'
+    # Set loss parameters
+    loss_kwargs = {}
+    # Set model state loading
+    load_model_state = None
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Training of recurrent constitutive model
     model, _, _ = train_model(n_max_epochs, train_dataset, model_init_args,
                               lr_init, opt_algorithm=opt_algorithm,
@@ -291,7 +298,8 @@ def perform_model_standard_training(train_dataset_file_path, model_directory,
                               is_sampler_shuffle=is_sampler_shuffle,
                               is_early_stopping=is_early_stopping,
                               early_stopping_kwargs=early_stopping_kwargs,
-                              load_model_state=None, save_every=None,
+                              load_model_state=load_model_state,
+                              save_every=None,
                               dataset_file_path=train_dataset_file_path,
                               device_type=device_type, seed=None,
                               is_verbose=is_verbose)

@@ -152,8 +152,8 @@ def perform_model_uq(uq_directory, n_model_sample, train_dataset_file_path,
             # Save model sample prediction
             shutil.copytree(predict_subdir, sample_prediction_subdir)
 # =============================================================================
-def gen_model_uq_plots(uq_directory, testing_dataset_dir, testing_type,
-                       filename='model_uq', is_save_fig=False,
+def gen_model_uq_plots(uq_directory, n_model_sample, testing_dataset_dir,
+                       testing_type, filename='model_uq', is_save_fig=False,
                        is_stdout_display=False, is_latex=True):
     """Generate plots of model uncertainty quantification.
     
@@ -162,6 +162,8 @@ def gen_model_uq_plots(uq_directory, testing_dataset_dir, testing_type,
     uq_directory : str
         Directory where the uncertainty quantification models samples
         directories are stored.
+    n_model_sample : int
+        Number of model samples.
     testing_dataset_dir : str
         Directory where the testing data set is stored (common to all models
         samples).
@@ -478,7 +480,7 @@ def plot_time_series_uq(model_sample_dirs, testing_dirs, predictions_dirs,
     n_model_sample = len(model_sample_dirs)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Loop over prediction types
-    for prediction_type, prediction_comps in prediction_types.items():
+    for prediction_type, prediction_labels in prediction_types.items():
         # Initialize models time series predictions data
         models_prediction_data = []
         # Initialize testing data set sizes
@@ -505,7 +507,7 @@ def plot_time_series_uq(model_sample_dirs, testing_dirs, predictions_dirs,
             # Build prediction components data arrays for each sample
             prediction_data_arrays = build_time_series_predictions_data(
                 test_dataset_file_path, pred_dir,
-                prediction_type=prediction_type,
+                prediction_type, prediction_labels,
                 samples_ids=samples_ids)
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Store model time series prediction components data arrays
@@ -519,7 +521,7 @@ def plot_time_series_uq(model_sample_dirs, testing_dirs, predictions_dirs,
         testing_size = testing_sizes[0]
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Loop over prediction type components
-        for j, prediction_comp in enumerate(prediction_comps):
+        for j, prediction_comp in enumerate(prediction_labels):
             # Plot model times series prediction component
             # Set all available samples
             if samples_ids == 'all':
@@ -702,8 +704,8 @@ if __name__ == "__main__":
                      device_type=device_type, is_verbose=True)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Generate plots of model uncertainty quantification
-    gen_model_uq_plots(uq_directory, testing_dataset_dir, testing_type,
-                       is_save_fig=True, is_stdout_display=False,
+    gen_model_uq_plots(uq_directory, n_model_sample, testing_dataset_dir,
+                       testing_type, is_save_fig=True, is_stdout_display=False,
                        is_latex=True)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Remove model directory

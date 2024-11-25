@@ -103,10 +103,7 @@ def perform_model_prediction(predict_directory, dataset_file_path,
     # Set loss parameters
     loss_kwargs = {}
     # Set prediction loss normalization
-    if loss_type == 'mre':
-        is_normalized_loss = True
-    else:
-        is_normalized_loss = False
+    is_normalized_loss = False
     # Set prediction batch size
     batch_size = batch_size=len(dataset)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -126,7 +123,7 @@ def perform_model_prediction(predict_directory, dataset_file_path,
     generate_prediction_plots(dataset_file_path, predict_subdir)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set remove sample prediction files flag
-    is_remove_sample_prediction = True
+    is_remove_sample_prediction = False
     # Remove sample prediction files
     if is_remove_sample_prediction:
         # Set sample prediction file regex
