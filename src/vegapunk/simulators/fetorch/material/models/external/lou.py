@@ -23,7 +23,7 @@ from simulators.fetorch.math.matrixops import get_problem_type_parameters, \
     vget_tensor_mf, vget_tensor_from_mf, vget_state_3Dmf_from_2Dmf, \
     vget_state_2Dmf_from_3Dmf
 from simulators.fetorch.math.tensorops import get_id_operators, dyad22_1, \
-    ddot42_1, ddot24_1, ddot22_1, ddot44_1
+    ddot42_1, ddot24_1, ddot22_1, ddot44_1, fo_dinv_sym
 #
 #                                                          Authorship & Credits
 # =============================================================================
@@ -831,7 +831,7 @@ class LouZhangYoon(ConstitutiveModel):
         # Compute derivative of inverse of deviatoric stress tensor w.r.t
         # stress
         ddevstressinv_dstress = \
-            -ddot44_1(dyad22_1(dev_stress_inv, dev_stress_inv), fodevprojsym)
+            ddot44_1(fo_dinv_sym(dev_stress_inv), fodevprojsym)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Get second stress invariant second-order derivative w.r.t. stress
         d2j2_dstress2 = fodevprojsym

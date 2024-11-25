@@ -52,10 +52,14 @@ dd
     Kronecker delta function.
 get_id_operators
     Set common second- and fourth-order identity operators.
+fo_dinv_sym(inv)
+    Derivative of inverse of symmetric second-order tensor w.r.t. to itself.
 """
 #
 #                                                                       Modules
 # =============================================================================
+# Standard
+import itertools
 # Third-party
 import torch
 #
@@ -205,3 +209,36 @@ def get_id_operators(n_dim, device=None):
     fodevprojsym = fosym - (1.0/3.0)*fodiagtrace
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     return soid, foid, fotransp, fosym, fodiagtrace, fodevproj, fodevprojsym
+# =============================================================================
+def fo_dinv_sym(inv):
+    """Derivative of inverse of symmetric second-order tensor w.r.t. to itself.
+    
+    Parameters
+    ----------
+    inv : torch.Tensor(2d)
+        Inverse of symmetric second-order tensor.
+        
+    Returns
+    -------
+    dinv : torch.Tensor(4d)
+        Derivative of inverse of symmetric second-order tensor w.r.t itself.
+    """
+    # Get number of dimensions
+    n_dim = inv.shape[0]
+    # Set fourth-order tensor shape
+    fo_shape = 4*(n_dim,)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Get fourth-order tensor components indices (cartesian product)
+    fo_idxs = itertools.product(*[range(dim) for dim in fo_shape])
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Initialize derivative components
+    dinv_list = []
+    # Loop over components
+    for i, j, k, l in fo_idxs:
+        # Compute derivative (partial) component
+        dinv_list.append((inv[i, k]*inv[l, j] + inv[i, l]*inv[k, j]))
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Compute fourth-order derivative
+    dinv = -0.5*torch.tensor((dinv_list)).view(fo_shape)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    return dinv
