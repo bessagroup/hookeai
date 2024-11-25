@@ -232,7 +232,7 @@ def gen_model_uq_plots(uq_directory, testing_dataset_dir, testing_type,
     prediction_types = {}
     prediction_types['stress_comps'] = ('stress_11', 'stress_22', 'stress_33',
                                         'stress_12', 'stress_23', 'stress_13')
-    prediction_types['acc_p_strain'] = ('acc_p_strain',)
+    #prediction_types['acc_p_strain'] = ('acc_p_strain',)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Initialize model samples testing and predictions directories
     sample_testing_dirs = []
