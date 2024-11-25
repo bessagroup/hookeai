@@ -78,9 +78,9 @@ def perform_model_standard_training(train_dataset_file_path, model_directory,
                                                    device_type)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set constitutive model for training
-    material_model_name = 'von_mises'
+    material_model_name = 'von_mises_vmap'
     # Set constitutive model parameters
-    if material_model_name == 'von_mises':
+    if material_model_name in ('von_mises', 'von_mises_vmap'):
         # Set material constitutive model parameters
         material_model_parameters = \
             {'elastic_symmetry': 'isotropic',
@@ -96,21 +96,28 @@ def perform_model_standard_training(train_dataset_file_path, model_directory,
         learnable_parameters['E'] = \
             {'initial_value': random.uniform(100e3, 120e3),
              'bounds': (100e3, 120e3)}
-        learnable_parameters['v'] = \
-            {'initial_value': random.uniform(0.3, 0.4),
-             'bounds': (0.3, 0.4)}
-        learnable_parameters['s0'] = \
-            {'initial_value': random.uniform(800, 1000),
-             'bounds': (800, 1000)}
-        learnable_parameters['a'] = \
-            {'initial_value': random.uniform(500, 900),
-             'bounds': (500, 900)}
-        learnable_parameters['b'] = \
-            {'initial_value': random.uniform(0.3, 0.7),
-             'bounds': (0.3, 0.7)}
+        
         # Set material constitutive state variables (prediction)
-        state_features_out = {'acc_p_strain': 1,}
-    elif material_model_name == 'drucker_prager':
+        state_features_out = {}
+    elif material_model_name in ('von_mises_mixed', 'von_mises_mixed_vmap'):
+        # Set material constitutive model parameters
+        material_model_parameters = \
+            {'elastic_symmetry': 'isotropic',
+             'E': 110e3, 'v': 0.33,
+             'euler_angles': (0.0, 0.0, 0.0),
+             'hardening_law': get_hardening_law('nadai_ludwik'),
+             'hardening_parameters': {'s0': 900,
+                                      'a': 700,
+                                      'b': 0.5,
+                                      'ep0': 1e-5},
+             'kinematic_hardening_law': get_hardening_law('linear'),
+             'kinematic_hardening_parameters': {'s0': 0,
+                                                'a': 500}}
+        # Set learnable parameters
+        learnable_parameters = {}
+        # Set material constitutive state variables (prediction)
+        state_features_out = {}
+    elif material_model_name in ('drucker_prager', 'drucker_prager_vmap'):
         # Set frictional angle
         friction_angle = np.deg2rad(10)
         # Set dilatancy angle
@@ -161,7 +168,7 @@ def perform_model_standard_training(train_dataset_file_path, model_directory,
             {'initial_value': random.uniform(0.3, 0.7),
              'bounds': (0.3, 0.7)}
         # Set material constitutive state variables (prediction)
-        state_features_out = {'acc_p_strain': 1,}
+        state_features_out = {}
     else:
         # Set constitutive model parameters
         material_model_parameters = \
