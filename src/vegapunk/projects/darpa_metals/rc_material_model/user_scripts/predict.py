@@ -126,7 +126,7 @@ def perform_model_prediction(predict_directory, dataset_file_path,
     generate_prediction_plots(dataset_file_path, predict_subdir)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set remove sample prediction files flag
-    is_remove_sample_prediction = False
+    is_remove_sample_prediction = True
     # Remove sample prediction files
     if is_remove_sample_prediction:
         # Set sample prediction file regex
