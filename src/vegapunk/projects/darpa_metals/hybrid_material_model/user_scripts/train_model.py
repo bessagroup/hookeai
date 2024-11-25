@@ -494,6 +494,25 @@ def set_hybridized_gru_model(hyb_indices, features_option, scaling_dataset,
             # Set number of output features
             n_features_out = 7
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        elif features_option == 'strain_i1_i2_to_stressvd':
+            # Set new strain-based features labels
+            strain_features_in_labels = ('i1_strain', 'i2_strain')
+            # Set input features
+            new_label_in = 'features_in'
+            features_in_list = ('strain_path', 'i1_strain', 'i2_strain')
+            features_in_build = 'cat'
+            # Set number of input features
+            n_features_in = 8
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Set new stress-based features labels
+            stress_features_out_labels = ('vol_stress', 'dev_stress')
+            # Set output features
+            new_label_out = 'features_out'
+            features_out_list = ('vol_stress', 'dev_stress')
+            features_out_build = 'cat'
+            # Set number of output features
+            n_features_out = 7
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         else:
             raise RuntimeError('Unknown features option.')
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
