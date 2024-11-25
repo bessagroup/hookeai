@@ -49,7 +49,7 @@ from simulators.fetorch.material.models.standard.elastic import Elastic
 from simulators.fetorch.material.models.standard.von_mises import VonMises
 from simulators.fetorch.material.models.standard.drucker_prager import \
     DruckerPrager
-from simulators.fetorch.material.models.external.lou import LouZhangYoon
+from simulators.fetorch.material.models.standard.lou import LouZhangYoon
 from simulators.fetorch.material.models.external.bazant_m7 import BazantM7
 from simulators.fetorch.material.models.standard.hardening import \
     get_hardening_law
