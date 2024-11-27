@@ -22,7 +22,7 @@ import matplotlib.pyplot as plt
 import shapely.geometry
 # Local
 from projects.gnn_material_patch.material_patch.patch import \
-    FiniteElementPatch, mean_rotation_angle_2d
+    FiniteElementPatch
 from projects.gnn_material_patch.discretization.finite_element import \
     FiniteElement
 #
@@ -107,6 +107,8 @@ class FiniteElementPatchGenerator:
     _polynomial_sampler(order, left_point, right_point, lower_bound=None, \
                         upper_bound=None, is_plot=False)
         Generate random polynomial by sampling points within given bounds.
+    _get_patch_centroid(self, corners_coords, edges_coords)
+        Compute patch centroid.
     _build_boundary_coords_array(self, edges_coords, is_close_polygon)
         Build patch boundary nodes coordinates array.
     _is_admissible_simulation(self, edges_coords)
@@ -152,15 +154,18 @@ class FiniteElementPatchGenerator:
         if self._n_dim == 2:
             self._n_corners = 4
             self._n_edges = 4
+        elif self._n_dim == 3:
+            self._n_corners = 8
+            self._n_edges = 24
         else:
-            raise RuntimeError('Missing 3D implementation.')
+            raise RuntimeError('Invalid number of spatial dimensions.')
         # Set corners attributes
-        self._set_corners_attributes()
+        self._set_corners_attributes()                                         # 3D STATUS: CHECK
         # Set patch corners coordinates (reference configuration)
-        self._set_corners_coords_ref()
+        self._set_corners_coords_ref()                                         # 3D STATUS: CHECK
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Set edges attributes
-        self._set_edges_attributes()
+        self._set_edges_attributes()                                           # 3D STATUS: CHECK
     # -------------------------------------------------------------------------  
     def generate_deformed_patch(self, elem_type, n_elems_per_dim,
                                 corners_lab_bc=None,
@@ -218,13 +223,7 @@ class FiniteElementPatchGenerator:
             assumed for unspecified angles. If None, then there is no
             rotational motion.
         is_remove_rbm : bool, default=False
-            Remove rigid body motions. Translation rigid body motion is removed
-            by recentering the centroid in the deformed configuration with its
-            reference configuration counterpart. Rotation rigid body motion is
-            removed by rotating all boundary nodes by the negative mean
-            rotation angle of all boundary nodes in the deformed configuration
-            around the centroid (after removing the translation rigid body
-            motion).
+            Remove rigid body motions. Deprecated.
         deformation_noise : float, default=0.0
             Parameter that controls the normally distributed noise superimposed
             to the boundary edges interior nodes coordinates in the deformed
@@ -243,23 +242,23 @@ class FiniteElementPatchGenerator:
         patch : FiniteElementPatch
             Finite element patch. If `is_admissible` is False, then returns
             None.
-        """        
+        """
         if is_verbose:
             print('\nGenerating finite element deformed material patch'
                   '\n-------------------------------------------------')
             print('\n> Setting patch reference configuration...')
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Set corners boundary conditions
-        corners_bc = self._build_corners_bc(corners_lab_bc=corners_lab_bc)
+        corners_bc = self._build_corners_bc(corners_lab_bc=corners_lab_bc)     # 3D STATUS: CHECK
         # Build corners displacement range
         corners_disp_range = self._build_corners_disp_range(
             corners_lab_disp_range=corners_lab_disp_range,
-            corners_bc=corners_bc)
+            corners_bc=corners_bc)                                             # 3D STATUS: CHECK
         # Build edges deformation polynomials orders and displacement range
         edges_poly_orders = self._build_edges_poly_orders(
-            edges_lab_def_order=edges_lab_def_order)
+            edges_lab_def_order=edges_lab_def_order)                           # 3D STATUS: CHECK
         edges_disp_range = self._build_edges_disp_range(
-            edges_lab_disp_range=edges_lab_disp_range)
+            edges_lab_disp_range=edges_lab_disp_range)                         # 3D STATUS: CHECK
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Get corners coordinates (reference configuration)
         corners_coords_ref = self._corners_coords_ref
@@ -267,8 +266,8 @@ class FiniteElementPatchGenerator:
         edges_per_dim = self._edges_per_dim
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Get number of patch edge nodes along each dimension
-        n_edge_nodes_per_dim = self._get_n_edge_nodes_per_dim(elem_type,
-                                                              n_elems_per_dim)
+        n_edge_nodes_per_dim = \
+            self._get_n_edge_nodes_per_dim(elem_type, n_elems_per_dim)         # 3D STATUS: CHECK
         # Set edges nodes coordinates (reference configuration)
         edges_coords_ref = {}
         for i in range(self._n_dim):
@@ -305,7 +304,7 @@ class FiniteElementPatchGenerator:
             # Compute corners random displacements
             corners_disp, corners_disp_range = \
                 self._get_corners_random_displacements(
-                    corners_disp_range, edges_poly_orders=edges_poly_orders)
+                    corners_disp_range, edges_poly_orders=edges_poly_orders)   # 3D STATUS: CHECK (CHECK 0 ORDER LOGIC)
             # Compute corners deformed coordinates
             corners_coords_def = self._corners_coords_ref + corners_disp
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -326,83 +325,74 @@ class FiniteElementPatchGenerator:
                     init_node_def = corners_coords_def[cid_init, :]
                     end_node_def = corners_coords_def[cid_end, :]
                     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-                    # Generate deformed configuration    
-                    if self._n_dim == 2:
-                        # Get rotation tensor from patch coordinates to
-                        # deformed boundary edge local coordinates
-                        rotation = self._rotation_tensor_deformed_edge(
-                            i, j, init_node_def, end_node_def)[:self._n_dim,
-                                                               :self._n_dim]
-                        # Get translation from patch coordinates to deformed
-                        # boundary edge local coordinates
-                        translation = np.matmul(rotation, init_node_def)
-                        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-                        # Transform from patch coordinates to deformed edge
-                        # local coordinates
-                        local_init_node_def, local_end_node_def, \
-                            local_nodes_coords_ref = \
-                            self._transform_to_edge_local_coordinates(
-                                init_node_def, end_node_def, nodes_coords_ref,
-                                translation, rotation)                                               
-                        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-                        # Get edge deformation polynomial order
-                        poly_order = edges_poly_orders[str(i)][j]
-                        # Get edge displacement range
-                        disp_amp = edges_disp_range[str(i)][j]
-                        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-                        # Generate randomly deformed boundary edge node
-                        # coordinates in the edge local coordinates
-                        # (deformation plane)
-                        local_nodes_coords_def, local_nodes_disp = \
-                            self._get_deformed_boundary_edge(
-                                local_nodes_coords_ref, local_init_node_def,
-                                local_end_node_def, poly_order,
-                                poly_bounds_range=disp_amp,
-                                noise=deformation_noise)                        
-                        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-                        # Get translation from deformed boundary edge local
-                        # coordinates to patch coordinates
-                        translation = -init_node_def
-                        # Get rotation tensor from deformed boundary edge local
-                        # coordinates to patch coordinates
-                        rotation = np.transpose(rotation)
-                        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-                        # Transform from deformed edge local coordinates to
-                        # patch coordinates
-                        nodes_coords_def = \
-                            self._transform_from_edge_local_coordinates(
-                                local_nodes_coords_def, translation, rotation)
-                        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-                        # Store edge nodes coordinates (deformed configuration)
-                        edges_coords_def[str(i)].append(nodes_coords_def)
-                    else:
-                        raise RuntimeError('Missing 3D implementation.')        
+                    # Get rotation tensor from patch coordinates to deformed
+                    # boundary edge local coordinates
+                    rotation = self._rotation_tensor_deformed_edge(
+                        i, j, init_node_def, end_node_def)[:self._n_dim,
+                                                            :self._n_dim]
+                    # Get translation from patch coordinates to deformed
+                    # boundary edge local coordinates
+                    translation = np.matmul(rotation, init_node_def)
+                    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                    # Transform from patch coordinates to deformed edge local
+                    # coordinates
+                    local_init_node_def, local_end_node_def, \
+                        local_nodes_coords_ref = \
+                        self._transform_to_edge_local_coordinates(
+                            init_node_def, end_node_def, nodes_coords_ref,
+                            translation, rotation)
+                    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                    # Get edge deformation polynomial order
+                    poly_order = edges_poly_orders[str(i)][j]
+                    # Get edge displacement range
+                    disp_amp = edges_disp_range[str(i)][j]
+                    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                    # Discard out-of-deformation-plane spatial dimension
+                    if self._n_dim == 3:
+                        local_init_node_def = local_init_node_def[:2]
+                        local_end_node_def = local_end_node_def[:2]
+                        local_nodes_coords_ref = local_nodes_coords_ref[:, :2]
+                    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                    # Generate randomly deformed boundary edge node coordinates
+                    # in the edge local coordinates (deformation plane)
+                    local_nodes_coords_def, local_nodes_disp = \
+                        self._get_deformed_boundary_edge(
+                            local_nodes_coords_ref, local_init_node_def,
+                            local_end_node_def, poly_order,
+                            poly_bounds_range=disp_amp,
+                            noise=deformation_noise)
+                    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                    # Restore out-of-deformation-plane spatial dimension
+                    if self._n_dim == 3:
+                        n_nodes = local_nodes_coords_def.shape[0]
+                        local_nodes_coords_def = np.hstack(
+                            (local_nodes_coords_def, np.zeros((n_nodes, 1))))
+                        local_nodes_disp = np.hstack(
+                            (local_nodes_disp, np.zeros((n_nodes, 1))))
+                    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                    # Get translation from deformed boundary edge local
+                    # coordinates to patch coordinates
+                    translation = -init_node_def
+                    # Get rotation tensor from deformed boundary edge local
+                    # coordinates to patch coordinates
+                    rotation = np.transpose(rotation)
+                    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                    # Transform from deformed edge local coordinates to patch
+                    # coordinates
+                    nodes_coords_def = \
+                        self._transform_from_edge_local_coordinates(
+                            local_nodes_coords_def, translation, rotation)
+                    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                    # Store edge nodes coordinates (deformed configuration)
+                    edges_coords_def[str(i)].append(nodes_coords_def)
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~            
             # Compute random rigid body motions
-            translation, rotation = self._get_random_rigid_motions(
-                translation_range, rotation_angles_range)
+            rbm_translation, rbm_rotation = self._get_random_rigid_motions(
+                translation_range, rotation_angles_range)                      # 3D STATUS: CHECK
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            # Get patch (geometrical) centroid
-            if self._n_dim == 2:
-                # Build boundary nodes coordinates array (close polygon,
-                # reference configuration)
-                boundary_coords_array_ref = self._build_boundary_coords_array(
-                    edges_coords_ref, is_close_polygon=True)
-                # Generate boundary polygon
-                polygon = shapely.geometry.Polygon(boundary_coords_array_ref)
-                # Get boundary polygon centroid (reference configuration)
-                centroid_ref = np.array(polygon.centroid.coords).reshape(-1)
-                # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-                # Build boundary nodes coordinates array (close polygon,
-                # deformed configuration)
-                boundary_coords_array_def = self._build_boundary_coords_array(
-                    edges_coords_def, is_close_polygon=True)
-                # Generate boundary polygon
-                polygon = shapely.geometry.Polygon(boundary_coords_array_def)
-                # Get boundary polygon centroid (deformed configuration)
-                centroid_def = np.array(polygon.centroid.coords).reshape(-1)
-            else:
-                raise RuntimeError('Missing 3D implementation.')
+            # Get patch centroid (deformed configuration)
+            centroid_def = self._get_patch_centroid(corners_coords_def,
+                                                    edges_coords_def)
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Superimpose rigid body motions (translation and rotation)
             for i in range(self._n_dim):
@@ -413,81 +403,25 @@ class FiniteElementPatchGenerator:
                     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                     # Rigid body rotation (around deformed configuration
                     # centroid)
-                    if rotation is not None:
+                    if centroid_def is not None and rotation is not None:
                         # Build centroid tile array (local)
                         centroid_def_tile = np.tile(centroid_def, (n_nodes, 1))
                         # Superimpose rigid body rotation around centroid
                         # (in-place update)
                         coords_array[:, :] = \
                             centroid_def_tile + self._rotate_coords_array(
-                                coords_array - centroid_def_tile, rotation)
+                                coords_array - centroid_def_tile, rbm_rotation)
                     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                     # Rigid body translation
                     if translation is not None:
                         # Build translation tile array (local)
-                        translation_tile = np.tile(translation, (n_nodes, 1))
+                        translation_tile = \
+                            np.tile(rbm_translation, (n_nodes, 1))
                         # Superimpose rigid body translation (in-place update)
                         coords_array += translation_tile
-            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            # Build boundary nodes coordinates array (close polygon,
-            # deformed configuration)
-            boundary_coords_array_def = self._build_boundary_coords_array(
-                edges_coords_def, is_close_polygon=True)
-            # Generate boundary polygon
-            polygon = shapely.geometry.Polygon(boundary_coords_array_def)
-            # Get boundary polygon centroid (deformed configuration, after
-            # superimposing rigid body motions)
-            centroid_def = np.array(polygon.centroid.coords).reshape(-1)
-            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            # Remove rigid body motions (translation and rotation)
-            if is_remove_rbm:
-                # Compute centroid displacement
-                centroid_disp = centroid_def - centroid_ref
-                # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-                # Get number of boundary nodes
-                n_boundary_nodes = boundary_coords_array_ref.shape[0]
-                # Build centroid tile arrays
-                centroid_ref_tile = \
-                    np.tile(centroid_ref, (n_boundary_nodes, 1))
-                centroid_def_tile = \
-                    np.tile(centroid_def, (n_boundary_nodes, 1))
-                # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-                # Compute negative mean rotation angle of boundary nodes
-                # around centroid (after removing rigid body translation by
-                # recentering the centroid in the deformed configuration with
-                # its reference configuration counterpart)
-                if self._n_dim == 2:
-                    # Compute negative mean rotation angle
-                    mean_angle_deg = -mean_rotation_angle_2d(
-                        boundary_coords_array_ref - centroid_ref_tile,
-                        boundary_coords_array_def - centroid_def_tile)
-                    # Set Euler angles
-                    rotation_angles = (mean_angle_deg, 0, 0)
-                else:
-                    raise RuntimeError('Missing 3D implementation.')
-                # Compute rotation tensor
-                rotation = rotation_tensor_from_euler_angles(
-                    tuple(rotation_angles))
-                # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-                # Loop over dimensions
-                for i in range(self._n_dim):
-                    # Loop over edges
-                    for coords_array in edges_coords_def[str(i)]:
-                        # Get number of boundary edge nodes
-                        n_nodes = coords_array.shape[0]
-                        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-                        # Remove rigid body translation (in-place update)
-                        coords_array += -np.tile(centroid_disp, (n_nodes, 1))
-                        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-                        # Build centroid tile array (local)
-                        centroid_ref_tile = np.tile(centroid_ref, (n_nodes, 1))
-                        # Remove rigid body rotation (in-place update)
-                        coords_array[:, :] = \
-                            centroid_ref_tile + self._rotate_coords_array(
-                                coords_array - centroid_ref_tile, rotation)
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~   
             # Check whether simulation of patch is physically admissible
-            is_admissible = self._is_admissible_simulation(edges_coords_def)
+            is_admissible = self._is_admissible_simulation(edges_coords_def)   # 3D STATUS: PENDING
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ 
             if is_verbose:
                 print('    > Is admissible deformation? ', is_admissible)  
@@ -502,7 +436,7 @@ class FiniteElementPatchGenerator:
                 # Generate finite element mesh (reference configuration)
                 mesh_nodes_matrix, mesh_nodes_coords_ref = \
                     self._generate_finite_element_mesh(elem_type,
-                                                       n_elems_per_dim)
+                                                       n_elems_per_dim)        # 3D STATUS: CHECK
                 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                 if is_verbose:
                     print('    > Computing boundary nodes displacements...')
@@ -511,7 +445,7 @@ class FiniteElementPatchGenerator:
                 mesh_boundary_nodes_disps = \
                     self._get_mesh_boundary_nodes_disps(
                         edges_coords_ref, edges_coords_def,
-                        mesh_nodes_coords_ref)
+                        mesh_nodes_coords_ref)                                 # 3D STATUS: PENDING
                 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                 if is_verbose:
                     print('    > Generating finite element patch...')
@@ -564,7 +498,7 @@ class FiniteElementPatchGenerator:
             if self._n_dim == 2:
                 n_min_bc = 3
             else:
-                raise RuntimeError('Missing 3D implementation.')
+                n_min_bc = 6
             # Generate random set of minimal constraints
             random_bc = np.zeros(self._n_corners*self._n_dim, dtype=int)
             random_bc[:n_min_bc] = 1
@@ -698,7 +632,7 @@ class FiniteElementPatchGenerator:
         if self._n_dim == 2:
             n_edges_per_dim = 2
         else:
-            raise RuntimeError('Missing 3D implementation.')
+            n_edges_per_dim = 8
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Initialize edges deformation polynomials orders
         edge_poly_orders = {str(i): n_edges_per_dim*[0,]
@@ -771,7 +705,7 @@ class FiniteElementPatchGenerator:
         if self._n_dim == 2:
             n_edges_per_dim = 2
         else:
-            raise RuntimeError('Missing 3D implementation.')
+            n_edges_per_dim = 8
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Initialize edges displacements range
         edge_disp_range = {str(i): n_edges_per_dim*[(),]
@@ -857,7 +791,32 @@ class FiniteElementPatchGenerator:
             edges_mapping = {'1': ('0', 0), '2': ('0', 1),
                              '3': ('1', 0), '4': ('1', 1)}
         else:
-            raise RuntimeError('Missing 3D implementation.')     
+            # Set edges connectities with respect to corners
+            edges_per_dim = {'0': ((0, 1), (3, 2), (4, 5), (7, 6),
+                                   (0, 1), (4, 5), (3, 2), (7, 6)),
+                             '1': ((0, 3), (1, 2), (4, 7), (5, 6),
+                                   (0, 3), (4, 7), (1, 2), (5, 6)),
+                             '2': ((0, 4), (3, 7), (1, 5), (2, 6),
+                                   (0, 4), (1, 5), (3, 7), (2, 6))}
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Set outward orthogonal edge direction euler angles with respect
+            # to edge connectivities order
+            orth_edge_dir = {
+                '0': ((-90, 0, 0), (90, 0, 0), (-90, 0, 0), (90, 0, 0),
+                      (0, 90, -90), (0, 90, 90), (0, 90, -90), (0, 90, 90)),
+                '1': ((90, 0, 0), (-90, 0, 0), (90, 0, 0), (-90, 0, 0),
+                      (90, -90, 0), (90, 90, 0), (90, -90, 0), (90, 90, 0)),
+                '2': ((0, 90, 0), (0, -90, 0), (0, 90, 0), (0, -90, 0),
+                      (90, -90, 0), (90, 90, 0), (90, -90, 0), (90, 90, 0))}
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Set mapping between edges labels and internal indexing
+            edges_mapping = {
+                '1': ('0', 0), '2': ('0', 1), '3': ('1', 0), '4': ('1', 1),
+                '5': ('0', 2), '6': ('0', 3), '7': ('1', 2), '8': ('1', 3),
+                '9': ('1', 4), '10': ('1', 5), '11': ('2', 0), '12': ('2', 1),
+                '13': ('1', 6), '14': ('1', 7), '15': ('2', 2), '16': ('2', 3),
+                '17': ('0', 4), '18': ('0', 5), '19': ('2', 4), '20': ('2', 5),
+                '21': ('0', 6), '22': ('0', 7), '23': ('2', 6), '24': ('2', 7)}
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         self._edges_per_dim = edges_per_dim
         self._orth_edge_dir = orth_edge_dir
@@ -1358,6 +1317,39 @@ class FiniteElementPatchGenerator:
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         return translation, rotation
     # -------------------------------------------------------------------------
+    def _get_patch_centroid(self, corners_coords, edges_coords):
+        """Compute patch centroid.
+        
+        Parameters
+        ----------
+        corners_coords : numpy.ndarray(2d)
+            Patch corners coordinates (numpy.ndarray(n_corners, n_dim)).
+        edges_coords : dict[list[numpy.ndarray(2d)]]
+            For each dimension (key, str[int]), store the corresponding edges
+            coordinates (item, list[numpy.ndarray(2d)]). Each edge coordinates
+            are stored as a numpy.ndarray(n_edge_nodes, n_dim). Corner nodes
+            are assumed part of the edge.
+
+        Returns
+        -------
+        centroid : numpy.ndarray(2d)
+            Patch centroid.
+        """
+        # Get patch (geometrical) centroid
+        if self._n_dim == 2:
+            # Build boundary nodes coordinates array (close polygon)
+            boundary_coords_array = self._build_boundary_coords_array(
+                edges_coords, is_close_polygon=True)
+            # Generate boundary polygon
+            polygon = shapely.geometry.Polygon(boundary_coords_array)
+            # Get boundary polygon centroid
+            centroid = np.array(polygon.centroid.coords).reshape(-1)
+        else:
+            # Set patch (geometrical) centroid as unknown                      # Idea: Approximate with average of corners coordinates?
+            centroid = None
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        return centroid
+    # -------------------------------------------------------------------------
     def _build_boundary_coords_array(self, edges_coords,
                                      is_close_polygon=False):
         """Build patch boundary nodes coordinates array.
@@ -1442,6 +1434,7 @@ class FiniteElementPatchGenerator:
         is_admissible : bool
             If True, the patch simulation is physically admissible.
         """
+        # Check patch simulation physical admissibility
         if self._n_dim == 2:
             # Build boundary nodes coordinates array (close polygon)
             coords_array = self._build_boundary_coords_array(
@@ -1458,7 +1451,8 @@ class FiniteElementPatchGenerator:
             is_admissible = is_geometry_valid and is_counterclockwise
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         else:
-            raise RuntimeError('Missing 3D implementation.')
+            # Unavailable checking procedure
+            is_admissible = True
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         return is_admissible
     # -------------------------------------------------------------------------
@@ -1505,28 +1499,33 @@ class FiniteElementPatchGenerator:
             transformation (- theta) and passive transformation (+ theta)).
         """
         # Initialize rotation tensor
-        rotation = np.zeros((3, 3))
+        rotation = np.eye(3)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Compute edge direction unit vector
         edge_dir = np.array(end_node_def) - np.array(init_node_def)
         edge_dir = (1.0/np.linalg.norm(edge_dir))*edge_dir
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        # Build rotation tensor for suitable passive transformation (basis
-        # rotation)
+        # Get outward orthogonal rotation euler angles
+        rotation_angle = self._orth_edge_dir[str(edge_dim)][edge_index]
+        # Get corresponding rotation tensor
+        orth_rotation = rotation_tensor_from_euler_angles(rotation_angle)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Compute edge orthogonal direction unit vector 
+        orth_dir = \
+            np.matmul(orth_rotation[:self._n_dim, :self._n_dim], edge_dir)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Build rotation tensor
         if self._n_dim == 2:
-            # Get outward orthogonal rotation euler angles
-            rotation_angle = self._orth_edge_dir[str(edge_dim)][edge_index]
-            # Compute corresponding rotation tensor
-            rotation = \
-                rotation_tensor_from_euler_angles(rotation_angle)[:2, :2]
-            # Compute edge orthogonal direction unit vector 
-            orth_dir = np.matmul(rotation, edge_dir)
-            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            # Build rotation tensor 
+            # Assemble rotation tensor from deformed boundary edge local
+            # coordinates unit vectors
             rotation[0, 0:2] = edge_dir
             rotation[1, 0:2] = orth_dir
         else:
-            raise RuntimeError('Missing 3D implementation.')
+            # Assemble rotation tensor from deformed boundary edge local
+            # coordinates unit vectors
+            rotation[0, :] = edge_dir
+            rotation[1, :] = orth_dir
+            rotation[2, :] = np.cross(edge_dir, orth_dir)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~        
         return rotation
     # -------------------------------------------------------------------------
@@ -1722,6 +1721,24 @@ class FiniteElementPatchGenerator:
                                       j*coord_step_per_dim[1]])
                         # Increment nodel label
                         node_label += 1
+        else:
+            for k in range(n_edge_nodes_per_dim[2]):
+                for j in range(n_edge_nodes_per_dim[1]):
+                    for i in range(n_edge_nodes_per_dim[0]):
+                        # Get element node local index
+                        elem_node_index = self._get_elem_node_index(
+                            elem_type, n_elems_per_dim, (i, j, k))
+                        # Set mesh node
+                        if nodes_matrix[elem_node_index] != 0:
+                            # Set mesh node label
+                            mesh_nodes_matrix[i, j, k] = node_label
+                            # Set mesh node coordinates
+                            mesh_nodes_coords[str(node_label)] = \
+                                np.array([i*coord_step_per_dim[0],
+                                          j*coord_step_per_dim[1],
+                                          k*coord_step_per_dim[2]])
+                            # Increment nodel label
+                            node_label += 1
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         return mesh_nodes_matrix, mesh_nodes_coords
     # -------------------------------------------------------------------------
@@ -1750,19 +1767,17 @@ class FiniteElementPatchGenerator:
         # Get number of edge nodes per element
         n_edge_nodes_elem = elem.get_n_edge_nodes()
         # Get number of patch edge nodes along each dimension
-        n_edge_nodes_per_dim = self._get_n_edge_nodes_per_dim(elem_type,
-                                                              n_elems_per_dim)
+        n_edge_nodes_per_dim = \
+            self._get_n_edge_nodes_per_dim(elem_type, n_elems_per_dim)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        # Get element node index
-        if self._n_dim == 2:
-            # Get global mesh finite element index
-            elem_index = tuple([np.max((1, int(np.ceil(
-                (global_index[k]/(n_edge_nodes_per_dim[k] - 1))
-                *n_elems_per_dim[k])))) for k in range(2)])
-            # Get finite element node local index
-            local_index = tuple([global_index[k] - (
-                (elem_index[k] - 1)*n_edge_nodes_elem - (elem_index[k] - 1))
-                for k in range(2)])
+        # Get global mesh finite element index
+        elem_index = tuple([np.max((1, int(np.ceil(
+            (global_index[k]/(n_edge_nodes_per_dim[k] - 1))
+            *n_elems_per_dim[k])))) for k in range(self._n_dim)])
+        # Get finite element node local index
+        local_index = tuple([global_index[k] - (
+            (elem_index[k] - 1)*n_edge_nodes_elem - (elem_index[k] - 1))
+            for k in range(self._n_dim)])
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         return local_index
     # -------------------------------------------------------------------------

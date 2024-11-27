@@ -87,7 +87,7 @@ class FiniteElement:
         """
         # Set available finite element types
         available = ('SQUAD4', 'SQUAD8', 'SQUAD12', 'LQUAD4', 'LQUAD9',
-                     'LQUAD16')
+                     'LQUAD16', 'HEXA8')
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         return available
     # -------------------------------------------------------------------------
@@ -202,6 +202,20 @@ class FiniteElement:
             nodes_matrix[1, 3] = 14
             nodes_matrix[2, 3] = 15
             nodes_matrix[3, 3] = 16
+        elif self._elem_type == 'HEXA8':
+            n_dim = 3
+            n_nodes = 8
+            n_edges = 12
+            n_edge_nodes = 2
+            nodes_matrix = np.zeros(n_dim*(n_edge_nodes,), dtype=int)
+            nodes_matrix[0, 0, 0] = 1
+            nodes_matrix[1, 0, 0] = 2
+            nodes_matrix[1, 1, 0] = 3
+            nodes_matrix[0, 1, 0] = 4
+            nodes_matrix[0, 0, 1] = 5
+            nodes_matrix[1, 0, 1] = 6
+            nodes_matrix[1, 1, 1] = 7
+            nodes_matrix[0, 1, 1] = 8
         else:
             raise RuntimeError('Unknown finite element type.')
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

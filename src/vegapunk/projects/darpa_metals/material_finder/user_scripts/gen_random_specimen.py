@@ -62,12 +62,12 @@ def generate_random_specimen(simulations_dir, plots_dir):
     n_dim = 2
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Get material patch geometric parameters
-    patch_geometric_params = set_patch_geometric_params(n_dim)
+    patch_geometric_params = set_patch_geometric_params(n_dim)                 # 3D STATUS: CHECK
     # Get material patch mesh parameters
-    patch_mesh_params = set_patch_mesh_params(n_dim)
+    patch_mesh_params = set_patch_mesh_params(n_dim)                           # 3D STATUS: CHECK
     # Get material patch material parameters
-    patch_material_params = set_patch_material_params(
-        n_dim, patch_mesh_params['n_elems_per_dim'])
+    patch_material_params = set_patch_material_params(                         # 3D STATUS: CHECK
+        patch_mesh_params['n_elems_per_dim'])
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Generate material patch
     patch = generate_material_patch(patch_geometric_params, patch_mesh_params)
@@ -115,8 +115,6 @@ def generate_material_patch(patch_geometric_params, patch_mesh_params):
     translation_range = patch_geometric_params['translation_range']
     # Set rigid body rotation
     rotation_angles_range = patch_geometric_params['rotation_angles_range']
-    # Set rigid body motions removal flag
-    is_remove_rbm = patch_geometric_params['is_remove_rbm']
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Get deformation noise
     deformation_noise = patch_geometric_params['deformation_noise']
@@ -136,7 +134,6 @@ def generate_material_patch(patch_geometric_params, patch_mesh_params):
         edges_lab_disp_range=edges_lab_disp_range,
         translation_range=translation_range,
         rotation_angles_range=rotation_angles_range,
-        is_remove_rbm=is_remove_rbm,
         deformation_noise=deformation_noise)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Check material patch deformation geometric admissibility
@@ -172,7 +169,7 @@ def set_patch_geometric_params(n_dim):
                                   '3': ((-0.1, 0.1), (-0.1, 0.1)),
                                   '4': ((-0.1, 0.1), (-0.1, 0.1))}
         # Set polynomial deformation order for each edge label
-        edge_deformation_order = {'1': 1, '2': 1, '3': 1, '4': 1}
+        edge_deformation_order = {'1': 2, '2': 3, '3': 2, '4': 3}
         # Set range of polynomial deformation for each edge label
         edge_deformation_magnitude_ranges = {'1': (-0.2, 0.2),
                                              '2': (-0.2, 0.2),
@@ -184,9 +181,6 @@ def set_patch_geometric_params(n_dim):
         # Set rigid body rotation
         rotation_angles_range = {'alpha': (0.0, 0.0), 'beta': (0.0, 0.0),
                                  'gamma': (0.0, 0.0)}
-        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        # Set rigid body motions removal flag
-        is_remove_rbm = True
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Set boundary deformation noise
         deformation_noise = 0.0
@@ -203,11 +197,44 @@ def set_patch_geometric_params(n_dim):
         patch_geometric_params['translation_range'] = translation_range
         patch_geometric_params['rotation_angles_range'] = \
             rotation_angles_range
-        patch_geometric_params['is_remove_rbm'] = is_remove_rbm
         patch_geometric_params['deformation_noise'] = deformation_noise
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     elif n_dim == 3:
-        raise RuntimeError('Missing 3D implementation.')
+        # Set material patch size along each dimension
+        patch_dims = (1.0, 1.0, 1.0)
+        # Set range of average deformation along each dimension for each corner
+        avg_deformation_ranges = \
+            {str(i): ((-0.1, 0.1), (-0.1, 0.1), (-0.1, 0.1))
+             for i in range(1, 9)}
+        # Set polynomial deformation order for each edge label
+        edge_deformation_order = \
+            {str(i): 1 for i in range(1, 25)}
+        # Set range of polynomial deformation for each edge label
+        edge_deformation_magnitude_ranges = \
+            {str(i): (-0.2, 0.2) for i in range(1, 25)}
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set rigid body translation
+        translation_range = {'1': (0.0, 0.0), '2': (0.0, 0.0), '3': (0.0, 0.0)}
+        # Set rigid body rotation
+        rotation_angles_range = {'alpha': (0.0, 0.0), 'beta': (0.0, 0.0),
+                                 'gamma': (0.0, 0.0)}
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set boundary deformation noise
+        deformation_noise = 0.0
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Build material patch geometric parameters
+        patch_geometric_params['n_dim'] = n_dim
+        patch_geometric_params['patch_dims'] = patch_dims
+        patch_geometric_params['avg_deformation_ranges'] = \
+            avg_deformation_ranges
+        patch_geometric_params['edge_deformation_order'] = \
+            edge_deformation_order
+        patch_geometric_params['edge_deformation_magnitude_ranges'] = \
+            edge_deformation_magnitude_ranges
+        patch_geometric_params['translation_range'] = translation_range
+        patch_geometric_params['rotation_angles_range'] = \
+            rotation_angles_range
+        patch_geometric_params['deformation_noise'] = deformation_noise
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     else:
         raise RuntimeError('Invalid number of spatial dimensions.')
@@ -235,10 +262,13 @@ def set_patch_mesh_params(n_dim):
         # Set finite element type
         elem_type = 'SQUAD4'
         # Set number of finite elements per dimension
-        n_elems_per_dim = (3, 3)
+        n_elems_per_dim = (6, 3)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     elif n_dim == 3:
-        raise RuntimeError('Missing 3D implementation.')
+        # Set finite element type
+        elem_type = 'HEXA8'
+        # Set number of finite elements per dimension
+        n_elems_per_dim = (6, 3, 1)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     else:
         raise RuntimeError('Invalid number of spatial dimensions.')
@@ -249,7 +279,7 @@ def set_patch_mesh_params(n_dim):
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     return patch_mesh_params
 # =============================================================================
-def set_patch_material_params(n_dim, n_elems_per_dim):
+def set_patch_material_params(n_elems_per_dim):
     """Set material patch material parameters.
     
     Parameters
@@ -268,23 +298,14 @@ def set_patch_material_params(n_dim, n_elems_per_dim):
     # Initialize material patch material parameters
     patch_material_params = {}
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Set material patch material parameters
-    if n_dim == 2:
-        # Set material phases spatial domains
-        mesh_elem_material = np.ones(n_elems_per_dim, dtype=int)
-        # Set material phase descriptors
-        mat_phases_descriptors = {}
-        mat_phases_descriptors['1'] = \
-            {'name': 'ELASTIC',
-             'density': 0.0,
-             'young': 110e3,
-             'poisson': 0.33}
-    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    elif n_dim == 3:
-        raise RuntimeError('Missing 3D implementation.')
-    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    else:
-        raise RuntimeError('Invalid number of spatial dimensions.')
+    # Set material phases spatial domains
+    mesh_elem_material = np.ones(n_elems_per_dim, dtype=int)
+    # Set material phase descriptors
+    mat_phases_descriptors = {}
+    mat_phases_descriptors['1'] = {'name': 'ELASTIC',
+                                   'density': 0.0,
+                                   'young': 110e3,
+                                   'poisson': 0.33}
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Build material patch material parameters
     patch_material_params['mesh_elem_material'] = mesh_elem_material
@@ -319,7 +340,7 @@ def perform_links_simulation(simulations_dir, patch, patch_material_params):
     # Set Links input data file parameters
     links_input_params = {}
     links_input_params['number_of_increments'] = 1
-    links_input_params['vtk_output'] = 'BINARY'
+    links_input_params['vtk_output'] = 'ASCII'
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Initialize Links simulator
     links_simulator = LinksSimulator(links_bin_path, strain_formulation,
