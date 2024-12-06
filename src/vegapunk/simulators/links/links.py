@@ -616,7 +616,7 @@ class LinksSimulator:
         elif self._analysis_type == 'axisymmetric':
             analysis_type = '3'
         elif self._analysis_type == 'tridimensional':
-            analysis_type = '4'
+            analysis_type = '6'
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Set solution algorithm
         solution_algorithm = '2'
@@ -707,11 +707,13 @@ class LinksSimulator:
         # Build elements data
         if n_dim == 2:
             # Loop over nodes
-            for j in range(0, n_edge_nodes_per_dim[1] - n_edge_nodes_elem + 1,
+            for j in range(0, n_edge_nodes_per_dim[1]
+                           - n_edge_nodes_elem + 1,
                            n_edge_nodes_elem - 1):
                 # Loop over nodes
-                for i in range(0, n_edge_nodes_per_dim[0] - n_edge_nodes_elem
-                               + 1, n_edge_nodes_elem - 1):                   
+                for i in range(0, n_edge_nodes_per_dim[0]
+                               - n_edge_nodes_elem + 1,
+                               n_edge_nodes_elem - 1):                   
                     # Initialize element nodes
                     elem_nodes = []
                     # Loop over element nodes
@@ -741,7 +743,48 @@ class LinksSimulator:
                     elem_label += 1
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         else:
-            raise RuntimeError('Missing 3D implementation.')        
+            # Loop over nodes
+            for k in range(0, n_edge_nodes_per_dim[2]
+                           - n_edge_nodes_elem + 1,
+                           n_edge_nodes_elem - 1):
+                # Loop over nodes
+                for j in range(0, n_edge_nodes_per_dim[1]
+                               - n_edge_nodes_elem + 1,
+                               n_edge_nodes_elem - 1):
+                    # Loop over nodes
+                    for i in range(0, n_edge_nodes_per_dim[0]
+                                   - n_edge_nodes_elem + 1,
+                                   n_edge_nodes_elem - 1):                   
+                        # Initialize element nodes
+                        elem_nodes = []
+                        # Loop over element nodes
+                        for p in range(1, n_nodes_elem + 1):
+                            # Get node local index
+                            local_index = \
+                                finite_element.get_node_label_index(p)
+                            # Get mesh node index and label
+                            node_index = tuple(np.add((i, j, k), local_index))
+                            node_label = mesh_nodes_matrix[node_index]
+                            # Store element node
+                            elem_nodes.append(node_label)
+                        # Store element nodes
+                        elements[str(elem_label)] = tuple(elem_nodes)
+                        # Increment element number
+                        elem_label += 1
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Initialize element number
+            elem_label = 1
+            # Loop over elements
+            for k in range(n_elems_per_dim[2]):
+                # Loop over elements
+                for j in range(n_elems_per_dim[1]):
+                    # Loop over elements
+                    for i in range(n_elems_per_dim[0]):        
+                        # Store element material phase
+                        elements_mat_phase[str(elem_label)] = \
+                            mesh_elem_material[i, j, k]
+                        # Increment element number
+                        elem_label += 1
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         return node_coords, elements, elements_mat_phase        
     # -------------------------------------------------------------------------
@@ -773,8 +816,16 @@ class LinksSimulator:
             elif elem_type == 'SQUAD8':
                 element_type = 'QUAD8'
                 n_gauss_points = 4
+            else:
+                raise RuntimeError(f'Unavailable 2D Links element type '
+                                   f'data ({elem_type}).')
         else:
-            raise RuntimeError('Missing 3D implementation.')
+            if elem_type == 'SHEXA8':
+                element_type = 'HEXA8'
+                n_gauss_points = 8
+            else:
+                raise RuntimeError(f'Unavailable 3D Links element type '
+                                   f'data ({elem_type}).')
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         return element_type, n_gauss_points
     # -------------------------------------------------------------------------
