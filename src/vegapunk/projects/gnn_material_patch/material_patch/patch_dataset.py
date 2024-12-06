@@ -677,7 +677,6 @@ class MaterialPatchSimulator(f3dasm.datageneration.DataGenerator):
             edges_lab_disp_range=edges_lab_disp_range,
             translation_range=translation_range,
             rotation_angles_range=rotation_angles_range,
-            is_remove_rbm=is_remove_rbm,
             deformation_noise=deformation_noise)
         # Save plot of deformed material patch
         is_save_plot_patch = kwargs['is_save_plot_patch']
