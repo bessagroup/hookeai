@@ -1872,7 +1872,7 @@ class FiniteElementPatchGenerator:
             Coordinates (item, numpy.ndarray(n_dim)) of each finite element
             mesh node (key, str[int]) in the reference configuration. Nodes are
             labeled from 1 to n_nodes.
-        is_interp_face_disps : bool, default=False
+        is_interp_face_disps : bool, default=True
             If True, then faces nodes displacements are computed by
             interpolating the corresponding edges nodes displacements. If
             False, then faces nodes degrees of freedom are left free.
