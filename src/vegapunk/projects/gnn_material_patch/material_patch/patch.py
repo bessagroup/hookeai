@@ -22,8 +22,7 @@ import copy
 import numpy as np
 import matplotlib.pyplot as plt
 # Local
-from projects.gnn_material_patch.discretization.finite_element import \
-    FiniteElement
+from simulators.links.discretization.finite_element import FiniteElement
 from ioput.iostandard import new_file_path_with_int
 #
 #                                                          Authorship & Credits
@@ -92,9 +91,12 @@ class FiniteElementPatch:
         Set number of patch edge nodes per dimension.
     get_boundary_nodes_labels(self)
         Get finite element mesh boundary nodes labels.
-    plot_deformed_patch(self, is_show_plot=None, is_save_plot=False, \
-                        save_directory=None, plot_name=None, \
-                        is_overwrite_file=False)
+    get_boundary_edges_nodes_labels(self):
+        Get finite element mesh boundary edges nodes labels.
+    plot_deformed_patch(self, is_hide_axes=False, is_show_fixed_dof=False,
+                        is_hide_deformed_faces=True, is_show_plot=False,
+                        is_save_plot=False, save_directory=None,
+                        plot_name=None, is_overwrite_file=False)
         Generate plot of material patch.
     """
     def __init__(self, n_dim, patch_dims, elem_type, n_elems_per_dim,
@@ -296,19 +298,60 @@ class FiniteElementPatch:
         """
         # Get finite element mesh boundary nodes labels 
         if self._n_dim == 2:
-            boundary_nodes_labels = tuple([
-                label for label in list(self._mesh_nodes_matrix[:, 0])\
+            boundary_nodes_labels = tuple(set([
+                label for label in list(self._mesh_nodes_matrix[:, 0]) \
                 + list(self._mesh_nodes_matrix[:, -1]) \
                 + list(self._mesh_nodes_matrix[0, :]) \
-                + list(self._mesh_nodes_matrix[-1, :])])
+                + list(self._mesh_nodes_matrix[-1, :])]))
         else:
-            raise RuntimeError('Missing 3D implementation.') 
+            boundary_nodes_labels = tuple(set([
+                label for label in
+                list(self._mesh_nodes_matrix[:, :, 0].flatten()) \
+                + list(self._mesh_nodes_matrix[:, :, -1].flatten()) \
+                + list(self._mesh_nodes_matrix[0, :, :].flatten()) \
+                + list(self._mesh_nodes_matrix[-1, :, :].flatten()) \
+                + list(self._mesh_nodes_matrix[:, 0, :].flatten()) \
+                + list(self._mesh_nodes_matrix[:, -1, :].flatten())]))
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        return boundary_nodes_labels    
+        return boundary_nodes_labels
     # -------------------------------------------------------------------------
-    def plot_deformed_patch(self, is_show_plot=False, is_save_plot=False,
-                            save_directory=None, plot_name=None,
-                            is_overwrite_file=False):
+    def get_boundary_edges_nodes_labels(self):
+        """Get finite element mesh boundary edges nodes labels.
+        
+        Returns
+        -------
+        boundary_edges_nodes_labels : tuple[int]
+            Finite element mesh boundary edges nodes labels.
+        """
+        # Get finite element mesh boundary edges nodes labels 
+        if self._n_dim == 2:
+            boundary_edges_nodes_labels = tuple(set([
+                label for label in list(self._mesh_nodes_matrix[:, 0]) \
+                + list(self._mesh_nodes_matrix[:, -1]) \
+                + list(self._mesh_nodes_matrix[0, :]) \
+                + list(self._mesh_nodes_matrix[-1, :])]))
+        else:
+            boundary_edges_nodes_labels = tuple(set([
+                label for label in
+                list(self._mesh_nodes_matrix[:, 0, 0].flatten()) \
+                + list(self._mesh_nodes_matrix[:, 0, -1].flatten()) \
+                + list(self._mesh_nodes_matrix[:, -1, 0].flatten()) \
+                + list(self._mesh_nodes_matrix[:, -1, -1].flatten()) \
+                + list(self._mesh_nodes_matrix[0, :, 0].flatten()) \
+                + list(self._mesh_nodes_matrix[0, :, -1].flatten()) \
+                + list(self._mesh_nodes_matrix[-1, :, 0].flatten()) \
+                + list(self._mesh_nodes_matrix[-1, :, -1].flatten()) \
+                + list(self._mesh_nodes_matrix[0, 0, :].flatten()) \
+                + list(self._mesh_nodes_matrix[0, -1, :].flatten()) \
+                + list(self._mesh_nodes_matrix[-1, 0, :].flatten()) \
+                + list(self._mesh_nodes_matrix[-1, -1, :].flatten())]))
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        return boundary_edges_nodes_labels
+    # -------------------------------------------------------------------------
+    def plot_deformed_patch(self, is_hide_axes=False, is_show_fixed_dof=False,
+                            is_hide_deformed_faces=True, is_show_plot=False,
+                            is_save_plot=False, save_directory=None,
+                            plot_name=None, is_overwrite_file=False):
         """Generate plot of finite element material patch.
         
         Deformed configuration is only plotted if all boundary degrees of
@@ -316,6 +359,13 @@ class FiniteElementPatch:
         
         Parameters
         ----------
+        is_hide_axes : bool, default=False
+            If True, then hide all visual components of axes.
+        is_show_fixed_dof : bool, default=False
+            If True, then signal fixed boundary degrees of freedom.
+        is_hide_deformed_faces : bool, default=True
+            If True, then hide boundary faces nodes deformed configuration
+            when available. Only effective for three-dimensional patch.
         is_show_plot : bool, default=False
             Display plot of finite element material patch if True.
         is_save_plot : bool, default=False
@@ -330,48 +380,63 @@ class FiniteElementPatch:
             generate non-existent file path by extending the original file path
             with an integer.
         """
-        # Generate plot
-        fig, ax = plt.subplots()
+        # Get finite element mesh nodes reference coordinates
+        mesh_nodes_coords_ref = self._mesh_nodes_coords_ref
+        # Get finite element mesh nodes labels
+        mesh_bnd_nodes_labels = self.get_boundary_nodes_labels()
+        mesh_bnd_edges_nodes_labels = self.get_boundary_edges_nodes_labels()
+        mesh_bnd_faces_nodes_labels = tuple(
+            set(mesh_bnd_nodes_labels) - set(mesh_bnd_edges_nodes_labels))
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Get finite element mesh boundary nodes labels with prescribed
+        # displacements
+        presc_bnd_nodes_labels = \
+            [int(label) for label in self._mesh_boundary_nodes_disps.keys()]
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Initialize multi-directional connectivities node labels
+        limit_nodes_labels = []
+        # Loop over dimensions
+        for i in range(self._n_dim):
+            # Initialize slicer
+            slicer = self._n_dim*[slice(None)]
+            # Loop over nodes
+            for j in range(self._mesh_nodes_matrix.shape[i] - 1):
+                # Set slices along dimension
+                slicer_1 = slicer[:]
+                slicer_1[i] = j
+                slicer_2 = slicer[:]
+                slicer_2[i] = j + 1
+                # Get connectivities node labels
+                limit_nodes_labels += list(zip(
+                    self._mesh_nodes_matrix[tuple(slicer_1)].flatten(),
+                    self._mesh_nodes_matrix[tuple(slicer_2)].flatten()))
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set nodes marker size
+        nodes_ms = 4
+        # Set reference and deformed configuration colors
+        ref_color = '#a9a9a9'
+        def_color = '#d62728'
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         if self._n_dim == 2:
-            # Get finite element
-            elem = FiniteElement(self._elem_type)
-            # Get number of edge nodes per finite element
-            n_edge_nodes_elem = elem.get_n_edge_nodes()
+            # Generate plot
+            fig, ax = plt.subplots()
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            # Get finite element mesh labels and reference coordinates
-            mesh_nodes_labels = self._mesh_nodes_coords_ref.keys()
-            mesh_bnd_nodes_labels = self.get_boundary_nodes_labels()
-            mesh_nodes_coords_ref = self._mesh_nodes_coords_ref
+            # Remove non-boundary connectivities nodes labels
+            masked_limit_nodes_labels = []
+            for pair_labels in limit_nodes_labels:
+                # Store boundary connectivity nodes labels
+                if set(pair_labels).issubset(mesh_bnd_nodes_labels):
+                    masked_limit_nodes_labels.append(pair_labels)
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            # Loop over dimensions
-            for i in range(self._n_dim):
-                # Loop over nodes
-                for j in range(0, self._n_edge_nodes_per_dim[i],
-                               n_edge_nodes_elem - 1):
-                    # Get limit nodes mesh indexes
-                    index_1 = tuple([j if x == i else 0 for x in range(2)])
-                    index_2 = tuple([j if x == i else -1 for x in range(2)])
-                    # Get limit nodes labels
-                    node_1_label = self._mesh_nodes_matrix[index_1]
-                    node_2_label = self._mesh_nodes_matrix[index_2]
-                    # Plot finite elements countours
-                    ax.plot([mesh_nodes_coords_ref[str(label)][0]
-                        for label in (node_1_label, node_2_label)],
+            # Plot finite element mesh (reference configuration)
+            for pair_labels in masked_limit_nodes_labels:
+                ax.plot([mesh_nodes_coords_ref[str(label)][0]
+                         for label in pair_labels],
                         [mesh_nodes_coords_ref[str(label)][1]
-                        for label in (node_1_label, node_2_label)],
-                        '-', color='k')
-            # Plot finite element mesh reference configuration
-            ax.plot([mesh_nodes_coords_ref[str(label)][0]
-                     for label in mesh_nodes_labels],
-                    [mesh_nodes_coords_ref[str(label)][1]
-                     for label in mesh_nodes_labels],
-                    'o', color='k')
-            ax.plot([], [], '-', color='k', label='Reference configuration')
+                         for label in pair_labels],
+                        'o-', color=ref_color, ms=nodes_ms)
+            ax.plot([], [], '-', color=ref_color, label='Reference')
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            # Get finite element mesh boundary nodes labels with prescribed
-            # displacements
-            presc_bnd_nodes_labels = [int(label) for label in
-                                       self._mesh_boundary_nodes_disps.keys()]
             # Set deformed boundary configuration plot flag
             is_plot_deformed_boundary = False
             if set(presc_bnd_nodes_labels) == set(mesh_bnd_nodes_labels):
@@ -386,27 +451,129 @@ class FiniteElementPatch:
                 # Loop over finite element mesh boundary nodes
                 mesh_bnd_nodes_coords_def = {}
                 for label in mesh_bnd_nodes_labels:
+                    # Compute finite element mesh boundary nodes coordinates
+                    # (deformed configuration)
                     mesh_bnd_nodes_coords_def[str(label)] = \
                         mesh_nodes_coords_ref[str(label)] \
                         + self._mesh_boundary_nodes_disps[str(label)]
-                # Get finite element mesh boundary nodes labels sorted in
-                # clockwise order (closed boundary)
-                nodes_labels_clockwise = tuple([
-                    str(label) for label in
-                    list(self._mesh_nodes_matrix[:, 0])\
-                    + list(self._mesh_nodes_matrix[-1, 1:]) \
-                    + list(self._mesh_nodes_matrix[-2::-1, -1]) \
-                    + list(self._mesh_nodes_matrix[0, -2::-1])])
-                # Plot finite element mesh boundary deformed configuration
-                ax.plot([mesh_bnd_nodes_coords_def[str(label)][0]
-                        for label in nodes_labels_clockwise],
-                        [mesh_bnd_nodes_coords_def[str(label)][1]
-                        for label in nodes_labels_clockwise],
-                        'o-', color='#d62728', label='Deformed configuration')
-            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~  
-            # Set fixed degrees of freedom markers
+                # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                # Remove non-edge connectivities nodes labels
+                masked_limit_nodes_labels = []
+                for pair_labels in limit_nodes_labels:
+                    # Store edge-to-edge connectivity nodes labels
+                    if set(pair_labels).issubset(mesh_bnd_edges_nodes_labels):
+                        masked_limit_nodes_labels.append(pair_labels)    
+                # Plot finite element mesh (deformed configuration)
+                for pair_labels in masked_limit_nodes_labels:
+                    ax.plot([mesh_bnd_nodes_coords_def[str(label)][0]
+                            for label in pair_labels],
+                            [mesh_bnd_nodes_coords_def[str(label)][1]
+                            for label in pair_labels],
+                            'o-', color=def_color, ms=nodes_ms)
+                ax.plot([], [], '-', color=def_color, label='Deformed')
+                # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                # Set axes labels  
+                ax.set_xlabel('Dim 1')
+                ax.set_ylabel('Dim 2')
+        else:
+            # Generate plot
+            fig, ax = plt.subplots(subplot_kw=dict(projection='3d'))
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Remove non-boundary connectivities nodes labels
+            masked_limit_nodes_labels = []
+            for pair_labels in limit_nodes_labels:
+                # Store boundary connectivity nodes labels
+                if set(pair_labels).issubset(mesh_bnd_nodes_labels):
+                    masked_limit_nodes_labels.append(pair_labels)
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Plot finite element mesh (reference configuration)
+            for pair_labels in masked_limit_nodes_labels:
+                ax.plot([mesh_nodes_coords_ref[str(label)][0]
+                         for label in pair_labels],
+                        [mesh_nodes_coords_ref[str(label)][1]
+                         for label in pair_labels],
+                        [mesh_nodes_coords_ref[str(label)][2]
+                         for label in pair_labels],
+                        'o-', color=ref_color, ms=nodes_ms)
+            ax.plot([], [], '-', color=ref_color, label='Reference')
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Set boundary deformed configuration plot flags
+            is_plot_deformed_boundary_edges = False
+            is_plot_deformed_boundary_faces = False
+            if set(mesh_bnd_edges_nodes_labels).issubset(
+                    presc_bnd_nodes_labels):
+                # Plot boundary edges deformed configuration only if all
+                # degrees of freedom displacements are known                
+                is_plot_deformed_boundary_edges = not np.any([
+                    None in self._mesh_boundary_nodes_disps[str(label)]
+                    for label in mesh_bnd_edges_nodes_labels])
+            if set(mesh_bnd_faces_nodes_labels).issubset(
+                    presc_bnd_nodes_labels):
+                # Plot boundary faces deformed configuration only if all
+                # degrees of freedom displacements are known                
+                is_plot_deformed_boundary_faces = not np.any([
+                    None in self._mesh_boundary_nodes_disps[str(label)]
+                    for label in mesh_bnd_faces_nodes_labels])
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Plot finite element mesh boundary deformed configuration
+            if is_plot_deformed_boundary_edges:
+                # Loop over finite element mesh boundary nodes
+                mesh_bnd_nodes_coords_def = {}
+                for label in presc_bnd_nodes_labels:
+                    # Compute finite element mesh boundary nodes coordinates
+                    # (deformed configuration)
+                    mesh_bnd_nodes_coords_def[str(label)] = \
+                        mesh_nodes_coords_ref[str(label)] \
+                        + self._mesh_boundary_nodes_disps[str(label)]
+                # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                # Remove non-boundary connectivities nodes labels
+                masked_limit_nodes_labels = []
+                for pair_labels in limit_nodes_labels:
+                    # Store edge-to-edge connectivity nodes labels
+                    if is_plot_deformed_boundary_edges:
+                        # Store edge connectivity nodes labels
+                        if set(pair_labels).issubset(
+                                mesh_bnd_edges_nodes_labels):
+                            masked_limit_nodes_labels.append(pair_labels)
+                    # Store face-to-face and face-to-edge connectivity nodes
+                    # labels
+                    if (not is_hide_deformed_faces
+                            and is_plot_deformed_boundary_faces):
+                        # Store edge connectivity nodes labels
+                        if (set(pair_labels).issubset(mesh_bnd_nodes_labels)
+                                and not set(pair_labels).issubset(
+                                mesh_bnd_edges_nodes_labels)):
+                            masked_limit_nodes_labels.append(pair_labels)
+                # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                # Plot finite element mesh (deformed configuration)
+                for pair_labels in masked_limit_nodes_labels:
+                    ax.plot([mesh_bnd_nodes_coords_def[str(label)][0]
+                            for label in pair_labels],
+                            [mesh_bnd_nodes_coords_def[str(label)][1]
+                            for label in pair_labels],
+                            [mesh_bnd_nodes_coords_def[str(label)][2]
+                            for label in pair_labels],
+                            'o-', color=def_color, ms=nodes_ms)
+                ax.plot([], [], '-', color=def_color, label='Deformed')
+                # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                # Set axes labels  
+                ax.set_xlabel('Dim 1')
+                ax.set_ylabel('Dim 2')
+                ax.set_zlabel('Dim 3')
+                # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                # Set grid off
+                ax.grid(False)
+                # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                # Adjust view angle
+                ax.view_init(elev=33, azim=36)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set fixed degrees of freedom markers
+        if self._n_dim == 2:
             markers_dim = ('>', '^')
-            # Plot fixed boundary degrees of freedom
+        else:
+            markers_dim = ('>', '<', '^')
+        # Plot fixed boundary degrees of freedom
+        if is_show_fixed_dof:
             for label in presc_bnd_nodes_labels:
                 # Get boundary node coordinates (reference configuration)
                 coord = mesh_nodes_coords_ref[str(label)]
@@ -415,28 +582,30 @@ class FiniteElementPatch:
                 # Loop over dimensions
                 for i in range(self._n_dim):
                     if isinstance(disp[i], float) and np.isclose(disp[i], 0.0):
-                        ax.plot([coord[0],], [coord[1],],
+                        ax.plot(*list(coord),
                                 marker=markers_dim[i],
-                                markersize=15,
+                                markersize=nodes_ms + 4,
                                 markerfacecolor='None',
                                 markeredgecolor='#1f77b4',
-                                markeredgewidth=2,
+                                markeredgewidth=1,
                                 zorder=15)
-            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            # Set plot legend
-            ax.legend(loc='center', ncol=2, numpoints=1, frameon=True,
-                      fancybox=True, facecolor='inherit', edgecolor='inherit',
-                      fontsize=10, framealpha=1.0,
-                      bbox_to_anchor=(0, 1.05, 1.0, 0.1),
-                      borderaxespad=0.0, markerscale=0.0)
-            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            # Set axes properties
-            ax.set_aspect('equal', adjustable='box') 
-            # Set plot properties
-            fig.set_figheight(8, forward=True)
-            fig.set_figwidth(8, forward=True)
-        else:
-            raise RuntimeError('Missing 3D implementation.') 
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Hide axes components
+        if is_hide_axes:
+            ax.set_axis_off()
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set plot legend
+        ax.legend(loc='center', ncol=2, numpoints=1, frameon=True,
+                    fancybox=True, facecolor='inherit', edgecolor='inherit',
+                    fontsize=10, framealpha=1.0,
+                    bbox_to_anchor=(0, 1.03, 1.0, 0.1),
+                    borderaxespad=0.0, markerscale=0.0)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set axes properties
+        ax.set_aspect('equal', adjustable='box') 
+        # Set plot properties
+        fig.set_figheight(8, forward=True)
+        fig.set_figwidth(8, forward=True)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Display figure
         if is_show_plot:
@@ -455,9 +624,14 @@ class FiniteElementPatch:
             # Set figure size (inches)
             fig.set_figheight(3.6, forward=False)
             fig.set_figwidth(3.6, forward=False)
+            # Set padding
+            if self._n_dim == 3 and not is_hide_axes:
+                pad_inches = 0.25
+            else:
+                pad_inches = None
             # Save figure file
             fig.savefig(fig_path, transparent=False, dpi=300,
-                        bbox_inches='tight')
+                        bbox_inches='tight', pad_inches=pad_inches)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Close plot
         plt.close(fig)
