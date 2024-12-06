@@ -15,7 +15,6 @@ rotation_tensor_from_euler_angles
 # =============================================================================
 # Standard
 import copy
-import random
 # Third-party
 import numpy as np
 import matplotlib.pyplot as plt
@@ -23,8 +22,7 @@ import shapely.geometry
 # Local
 from projects.gnn_material_patch.material_patch.patch import \
     FiniteElementPatch
-from projects.gnn_material_patch.discretization.finite_element import \
-    FiniteElement
+from simulators.links.discretization.finite_element import FiniteElement
 #
 #                                                          Authorship & Credits
 # =============================================================================
@@ -58,12 +56,12 @@ class FiniteElementPatchGenerator:
         (item, tuple[tuple]) oriented along that dimension in the reference
         configuration. Each edge is stored as tuple[int](2) containing the
         indexes of the two corresponding corners. Corners are stored such that
-        (sorted in asceding order of
-        coordinate).
-    _orth_edge_dir : dict
-        2D: For each dimension (key, str[int]), stores the edges
-        (item, tuple[tuple]) outward orthogonal edge direction euler angles
-        with respect to edge connectivities order.
+        edges nodes are sorted in asceding order of coordinate.        
+    _edges_diag_per_dim : dict
+        For each dimension (key, str[int]), store the edges reference diagonal
+        (item, tuple[tuple]) for edges oriented along that dimension in the
+        reference configuration. Each reference diagonal is stored as a
+        tuple[int](2) containing the indexes of the two corresponding corners.
     _edges_mapping : dict
         For each edge label (key, str[int]), store the edge orientation
         dimension and internal index consistent with `_edges_per_dim`
@@ -77,6 +75,7 @@ class FiniteElementPatchGenerator:
                             edges_lab_disp_range=None, \
                             translation_range=None, \
                             rotation_angles_range=None, \
+                            deformation_noise=0.0, \
                             max_iter=10, is_verbose=False)
         Generate finite element deformed patch.
     _build_corners_bc(self, corners_lab_bc=None)
@@ -94,6 +93,8 @@ class FiniteElementPatchGenerator:
         Set patch corners coordinates (reference configuration).
     _set_edges_attributes(self)
         Set patch edges attributes.
+    _get_matching_edges_idxs(self)
+        Get matching edges indexes along each dimension.
     _get_n_edge_nodes_per_dim(self, elem_type, n_elems_per_dim)
         Get number of patch edge nodes along each dimension.
     _get_elem_type_attributes(self, elem_type)
@@ -115,8 +116,8 @@ class FiniteElementPatchGenerator:
         Check whether simulation of patch is physically admissible.
     _get_orthogonal_dims(self, dim)
         Get orthogonal dimensions to given dimension.
-    _rotation_tensor_deformed_edge(self, edge_dim, edge_index, init_node_def, \
-                                   end_node_def)
+    _rotation_tensor_deformed_edge(self, edge_dim, edge_index, \
+                                   corners_coords_def)
         Set rotation tensor to deformed boundary edge local coordinates.
     _transform_to_edge_local_coordinates(self, init_node_def, end_node_def, \
                                          nodes_coords_ref, \
@@ -131,9 +132,9 @@ class FiniteElementPatchGenerator:
         Generate patch finite element mesh (reference configuration).
     _get_elem_node_index(self, elem_type, n_elems_per_dim, global_index)
         Get element node local index from global mesh index.
-    _get_mesh_boundary_nodes_disps(self, edges_coords_ref, edges_coords_def, \
-                                   mesh_nodes_coords_ref)
-        Compute finite element patch boundary displacements.
+    _get_mesh_boundary_nodes_disps(self, edges_coords_ref, edges_coords_def,
+                                   mesh_nodes_matrix, mesh_nodes_coords_ref,
+                                   is_interp_face_disps=False)
     _get_node_label_from_coords(mesh_nodes_coords_ref, node_coords)
         Get finite element mesh node label from coordinates.
     """
@@ -160,12 +161,12 @@ class FiniteElementPatchGenerator:
         else:
             raise RuntimeError('Invalid number of spatial dimensions.')
         # Set corners attributes
-        self._set_corners_attributes()                                         # 3D STATUS: CHECK
+        self._set_corners_attributes()
         # Set patch corners coordinates (reference configuration)
-        self._set_corners_coords_ref()                                         # 3D STATUS: CHECK
+        self._set_corners_coords_ref()
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Set edges attributes
-        self._set_edges_attributes()                                           # 3D STATUS: CHECK
+        self._set_edges_attributes()
     # -------------------------------------------------------------------------  
     def generate_deformed_patch(self, elem_type, n_elems_per_dim,
                                 corners_lab_bc=None,
@@ -174,7 +175,6 @@ class FiniteElementPatchGenerator:
                                 edges_lab_disp_range=None,
                                 translation_range=None,
                                 rotation_angles_range=None,
-                                is_remove_rbm=False,
                                 deformation_noise=0.0,
                                 max_iter=10, is_verbose=False):
         """Generate finite element deformed patch.
@@ -217,13 +217,11 @@ class FiniteElementPatchGenerator:
             for each dimension. Null range is assumed for unspecified
             dimensions. If None, then there is no translational motion.
         rotation_angles_range : dict, default=None
-            Rotational angle range (item, tuple[float](2)) for each Euler angle
-            (key, str). Euler angles follow Bunge convention (Z1-X2-Z3) and are
-            labelled ('alpha', 'beta', 'gamma'), respectively. Null range is
-            assumed for unspecified angles. If None, then there is no
-            rotational motion.
-        is_remove_rbm : bool, default=False
-            Remove rigid body motions. Deprecated.
+            Rotational angle (degrees) range (item, tuple[float](2)) for each
+            Euler angle (key, str). Euler angles follow Bunge convention
+            (Z1-X2-Z3) and are labeled ('alpha', 'beta', 'gamma'),
+            respectively. Null range is assumed for unspecified angles. If
+            None, then there is no rotational motion.
         deformation_noise : float, default=0.0
             Parameter that controls the normally distributed noise superimposed
             to the boundary edges interior nodes coordinates in the deformed
@@ -249,16 +247,16 @@ class FiniteElementPatchGenerator:
             print('\n> Setting patch reference configuration...')
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Set corners boundary conditions
-        corners_bc = self._build_corners_bc(corners_lab_bc=corners_lab_bc)     # 3D STATUS: CHECK
+        corners_bc = self._build_corners_bc(corners_lab_bc=corners_lab_bc)
         # Build corners displacement range
         corners_disp_range = self._build_corners_disp_range(
             corners_lab_disp_range=corners_lab_disp_range,
-            corners_bc=corners_bc)                                             # 3D STATUS: CHECK
+            corners_bc=corners_bc)
         # Build edges deformation polynomials orders and displacement range
         edges_poly_orders = self._build_edges_poly_orders(
-            edges_lab_def_order=edges_lab_def_order)                           # 3D STATUS: CHECK
+            edges_lab_def_order=edges_lab_def_order)
         edges_disp_range = self._build_edges_disp_range(
-            edges_lab_disp_range=edges_lab_disp_range)                         # 3D STATUS: CHECK
+            edges_lab_disp_range=edges_lab_disp_range)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Get corners coordinates (reference configuration)
         corners_coords_ref = self._corners_coords_ref
@@ -267,7 +265,7 @@ class FiniteElementPatchGenerator:
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Get number of patch edge nodes along each dimension
         n_edge_nodes_per_dim = \
-            self._get_n_edge_nodes_per_dim(elem_type, n_elems_per_dim)         # 3D STATUS: CHECK
+            self._get_n_edge_nodes_per_dim(elem_type, n_elems_per_dim)
         # Set edges nodes coordinates (reference configuration)
         edges_coords_ref = {}
         for i in range(self._n_dim):
@@ -304,7 +302,7 @@ class FiniteElementPatchGenerator:
             # Compute corners random displacements
             corners_disp, corners_disp_range = \
                 self._get_corners_random_displacements(
-                    corners_disp_range, edges_poly_orders=edges_poly_orders)   # 3D STATUS: CHECK (CHECK 0 ORDER LOGIC)
+                    corners_disp_range, edges_poly_orders=edges_poly_orders)
             # Compute corners deformed coordinates
             corners_coords_def = self._corners_coords_ref + corners_disp
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -328,8 +326,7 @@ class FiniteElementPatchGenerator:
                     # Get rotation tensor from patch coordinates to deformed
                     # boundary edge local coordinates
                     rotation = self._rotation_tensor_deformed_edge(
-                        i, j, init_node_def, end_node_def)[:self._n_dim,
-                                                            :self._n_dim]
+                        i, j, corners_coords_def)[:self._n_dim, :self._n_dim]
                     # Get translation from patch coordinates to deformed
                     # boundary edge local coordinates
                     translation = np.matmul(rotation, init_node_def)
@@ -349,6 +346,11 @@ class FiniteElementPatchGenerator:
                     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                     # Discard out-of-deformation-plane spatial dimension
                     if self._n_dim == 3:
+                        # Store three-dimensional edge nodes deformed
+                        # boundary edge local coordinates (reference
+                        # configuration)
+                        local_nodes_coords_ref_3d = local_nodes_coords_ref
+                        # Discard out-of-deformation-plane spatial dimension
                         local_init_node_def = local_init_node_def[:2]
                         local_end_node_def = local_end_node_def[:2]
                         local_nodes_coords_ref = local_nodes_coords_ref[:, :2]
@@ -364,11 +366,14 @@ class FiniteElementPatchGenerator:
                     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                     # Restore out-of-deformation-plane spatial dimension
                     if self._n_dim == 3:
+                        # Get edge number of nodes
                         n_nodes = local_nodes_coords_def.shape[0]
+                        # Set out-of-deformation-plane coordinates
                         local_nodes_coords_def = np.hstack(
                             (local_nodes_coords_def, np.zeros((n_nodes, 1))))
-                        local_nodes_disp = np.hstack(
-                            (local_nodes_disp, np.zeros((n_nodes, 1))))
+                        # Compute boundary edge nodes displacements
+                        local_nodes_disp = \
+                            local_nodes_coords_def - local_nodes_coords_ref_3d
                     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                     # Get translation from deformed boundary edge local
                     # coordinates to patch coordinates
@@ -388,7 +393,7 @@ class FiniteElementPatchGenerator:
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~            
             # Compute random rigid body motions
             rbm_translation, rbm_rotation = self._get_random_rigid_motions(
-                translation_range, rotation_angles_range)                      # 3D STATUS: CHECK
+                translation_range, rotation_angles_range)
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Get patch centroid (deformed configuration)
             centroid_def = self._get_patch_centroid(corners_coords_def,
@@ -419,9 +424,9 @@ class FiniteElementPatchGenerator:
                             np.tile(rbm_translation, (n_nodes, 1))
                         # Superimpose rigid body translation (in-place update)
                         coords_array += translation_tile
-            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~   
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Check whether simulation of patch is physically admissible
-            is_admissible = self._is_admissible_simulation(edges_coords_def)   # 3D STATUS: PENDING
+            is_admissible = self._is_admissible_simulation(edges_coords_def)
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ 
             if is_verbose:
                 print('    > Is admissible deformation? ', is_admissible)  
@@ -436,7 +441,7 @@ class FiniteElementPatchGenerator:
                 # Generate finite element mesh (reference configuration)
                 mesh_nodes_matrix, mesh_nodes_coords_ref = \
                     self._generate_finite_element_mesh(elem_type,
-                                                       n_elems_per_dim)        # 3D STATUS: CHECK
+                                                       n_elems_per_dim)
                 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                 if is_verbose:
                     print('    > Computing boundary nodes displacements...')
@@ -445,7 +450,7 @@ class FiniteElementPatchGenerator:
                 mesh_boundary_nodes_disps = \
                     self._get_mesh_boundary_nodes_disps(
                         edges_coords_ref, edges_coords_def,
-                        mesh_nodes_coords_ref)                                 # 3D STATUS: PENDING
+                        mesh_nodes_matrix, mesh_nodes_coords_ref)
                 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                 if is_verbose:
                     print('    > Generating finite element patch...')
@@ -624,9 +629,9 @@ class FiniteElementPatchGenerator:
             
         Returns
         -------
-        edge_poly_orders : dict
+        edges_poly_orders : dict
             For each dimension (key, str[int]), store the corresponding edges
-            deformation polynomials orders (item, tuple[int]).
+            deformation polynomials orders (item, list[int]).
         """
         # Set number of edges oriented along each dimension
         if self._n_dim == 2:
@@ -635,20 +640,20 @@ class FiniteElementPatchGenerator:
             n_edges_per_dim = 8
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Initialize edges deformation polynomials orders
-        edge_poly_orders = {str(i): n_edges_per_dim*[0,]
+        edges_poly_orders = {str(i): n_edges_per_dim*[0,]
                             for i in range(self._n_dim)}
         # Build edges deformation polynomials orders
         if edges_lab_def_order is None:
             # Set zero order deformation polynomial by default
             for i in range(self._n_dim):
-                edge_poly_orders[str(i)] = n_edges_per_dim*(0,)
+                edges_poly_orders[str(i)] = n_edges_per_dim*[0,]
         elif isinstance(edges_lab_def_order, int):
             # Enforce minimum of zero order polynomial
             edges_lab_def_order = np.max((0, edges_lab_def_order))
             # Set edges deformation polynomials orders
             for i in range(self._n_dim):
-                edge_poly_orders[str(i)] = \
-                    n_edges_per_dim*(edges_lab_def_order,)
+                edges_poly_orders[str(i)] = \
+                    n_edges_per_dim*[edges_lab_def_order,]
         elif isinstance(edges_lab_def_order, dict):
             # Get mapping between edges labels and internal indexing
             edges_mapping = self._edges_mapping
@@ -671,14 +676,11 @@ class FiniteElementPatchGenerator:
                     # Assume zero order polynomial
                     order = 0
                 # Set edge deformation polynomial order
-                edge_poly_orders[dim][index] = order
-            # Convert to tuple
-            for i in range(self._n_dim):
-                edge_poly_orders[str(i)] = tuple(edge_poly_orders[str(i)])
+                edges_poly_orders[dim][index] = order
         else:
             raise RuntimeError('Invalid specification of edges_lab_def_order.')
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~     
-        return edge_poly_orders
+        return edges_poly_orders
     # -------------------------------------------------------------------------
     def _build_edges_disp_range(self, edges_lab_disp_range=None):
         """Build patch edges displacements range.
@@ -782,10 +784,9 @@ class FiniteElementPatchGenerator:
             edges_per_dim = {'0': ((0, 1), (3, 2)),
                              '1': ((0, 3), (1, 2))}
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            # Set outward orthogonal edge direction euler angles with respect
-            # to edge connectivities order
-            orth_edge_dir = {'0': ((-90, 0, 0), (90, 0, 0)),
-                             '1': ((90, 0, 0), (-90, 0, 0))}
+            # Set edges reference diagonal with respect to corners
+            edges_diag_per_dim = {'0': ((0, 2), (3, 1)),
+                                  '1': ((0, 2), (1, 3))}
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Set mapping between edges labels and internal indexing
             edges_mapping = {'1': ('0', 0), '2': ('0', 1),
@@ -799,15 +800,13 @@ class FiniteElementPatchGenerator:
                              '2': ((0, 4), (3, 7), (1, 5), (2, 6),
                                    (0, 4), (1, 5), (3, 7), (2, 6))}
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            # Set outward orthogonal edge direction euler angles with respect
-            # to edge connectivities order
-            orth_edge_dir = {
-                '0': ((-90, 0, 0), (90, 0, 0), (-90, 0, 0), (90, 0, 0),
-                      (0, 90, -90), (0, 90, 90), (0, 90, -90), (0, 90, 90)),
-                '1': ((90, 0, 0), (-90, 0, 0), (90, 0, 0), (-90, 0, 0),
-                      (90, -90, 0), (90, 90, 0), (90, -90, 0), (90, 90, 0)),
-                '2': ((0, 90, 0), (0, -90, 0), (0, 90, 0), (0, -90, 0),
-                      (90, -90, 0), (90, 90, 0), (90, -90, 0), (90, 90, 0))}
+            # Set edges reference diagonal with respect to corners
+            edges_diag_per_dim = {'0': ((0, 2), (3, 1), (4, 6), (7, 5),
+                                        (0, 5), (4, 1), (3, 6), (7, 2)),
+                                  '1': ((0, 2), (1, 3), (4, 6), (5, 7),
+                                        (0, 7), (4, 3), (1, 6), (5, 2)),
+                                  '2': ((0, 7), (3, 4), (1, 6), (2, 5),
+                                        (0, 5), (1, 4), (3, 6), (2, 7))}
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Set mapping between edges labels and internal indexing
             edges_mapping = {
@@ -819,8 +818,41 @@ class FiniteElementPatchGenerator:
                 '21': ('0', 6), '22': ('0', 7), '23': ('2', 6), '24': ('2', 7)}
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         self._edges_per_dim = edges_per_dim
-        self._orth_edge_dir = orth_edge_dir
+        self._edges_diag_per_dim = edges_diag_per_dim
         self._edges_mapping = edges_mapping
+    # -------------------------------------------------------------------------
+    def _get_matching_edges_idxs(self):
+        """Get matching edges indexes along each dimension.
+            
+        Returns
+        -------
+        matching_edges_idxs_per_dim : dict
+            For each dimension (key, str[int]), store maching edges internal
+            indexes (item, tuple[tuple]). Matching edges share the same
+            connectivities with respect to corners.
+        """
+        # Initialize matching edges indexes
+        matching_edges_idxs_per_dim = {str(i): [] for i in range(self._n_dim)}
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Loop over dimensions
+        for i in range(self._n_dim):
+            # Get unique edges connectivities with respect to corners
+            unique_edges = set(self._edges_per_dim[str(i)])
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Loop over unique edges
+            for target_pair in unique_edges:
+                # Get matching edges indexes
+                indices = tuple(
+                    [j for j, pair in enumerate(self._edges_per_dim[str(i)])
+                     if pair == target_pair])
+                # Store unique edge indexes
+                matching_edges_idxs_per_dim[str(i)].append(indices)
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Convert to tuple
+            matching_edges_idxs_per_dim[str(i)] = \
+                tuple(matching_edges_idxs_per_dim[str(i)])
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        return matching_edges_idxs_per_dim
     # -------------------------------------------------------------------------
     def _get_n_edge_nodes_per_dim(self, elem_type, n_elems_per_dim): 
         """Get number of patch edge nodes along each dimension.
@@ -853,6 +885,10 @@ class FiniteElementPatchGenerator:
     def _get_corners_random_displacements(self, corners_disp_range,
                                           edges_poly_orders=None):
         """Compute patch corners random displacements.
+        
+        Edges deformation polynomial order may be updated in-place to enforce
+        a zero order deformation polynomial in all matching edges if at least
+        one of them has been prescribed a zero order deformation polynomial.
         
         Parameters
         ----------
@@ -889,6 +925,9 @@ class FiniteElementPatchGenerator:
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Enforce edge zero order deformation polynomial
         if edges_poly_orders is not None:
+            # Get matching edges indexes along each dimension
+            matching_edges_idxs_per_dim = self._get_matching_edges_idxs()
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Loop over dimensions
             for i in range(self._n_dim):
                 # Get orthogonal dimensions
@@ -926,10 +965,19 @@ class FiniteElementPatchGenerator:
                                 disp_r = np.random.uniform(low=range_r[0],
                                                            high=range_r[1])
                                 disp = np.average((disp_l, disp_r))
-                            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~                          
+                            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                             # Enforce the same displacement on both corners
                             corners_disp[cid_init, k] = disp
                             corners_disp[cid_end, k] = disp
+                        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                        # Loop over matching edges indexes
+                        for indexes in matching_edges_idxs_per_dim[str(i)]:
+                            # Check for current edge matching indexes
+                            if j in indexes:
+                                # Enforce matching edge zero order deformation
+                                # polynomial (in-place update)
+                                for k in indexes:
+                                    edges_poly_orders[str(i)][k] = 0
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~     
         return corners_disp, corners_disp_range
     # -------------------------------------------------------------------------
@@ -1260,11 +1308,11 @@ class FiniteElementPatchGenerator:
             for each dimension. Null range is assumed for unspecified
             dimensions. If None, then there is no translational motion.
         rotation_angles_range : dict, default=None
-            Rotational angle range (item, tuple[float](2)) for each Euler angle
-            (key, str). Euler angles follow Bunge convention (Z1-X2-Z3) and are
-            labelled ('alpha', 'beta', 'gamma'), respectively. Null range is
-            assumed for unspecified angles. If None, then there is no
-            rotational motion.
+            Rotational angle (degrees) range (item, tuple[float](2)) for each
+            Euler angle (key, str). Euler angles follow Bunge convention
+            (Z1-X2-Z3) and are labeled ('alpha', 'beta', 'gamma'),
+            respectively. Null range is assumed for unspecified angles. If
+            None, then there is no rotational motion.
         
         Returns
         -------
@@ -1320,6 +1368,9 @@ class FiniteElementPatchGenerator:
     def _get_patch_centroid(self, corners_coords, edges_coords):
         """Compute patch centroid.
         
+        In the three-dimensional case, the patch (geometrical) centroid is
+        approximated by the average of the corners coordinates.
+        
         Parameters
         ----------
         corners_coords : numpy.ndarray(2d)
@@ -1345,8 +1396,9 @@ class FiniteElementPatchGenerator:
             # Get boundary polygon centroid
             centroid = np.array(polygon.centroid.coords).reshape(-1)
         else:
-            # Set patch (geometrical) centroid as unknown                      # Idea: Approximate with average of corners coordinates?
-            centroid = None
+            # Approximate patch (geometrical) centroid by averaging the corners
+            # coordinates
+            centroid = np.mean(corners_coords, axis=0)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         return centroid
     # -------------------------------------------------------------------------
@@ -1474,7 +1526,7 @@ class FiniteElementPatchGenerator:
         return orthogonal_dims
     # -------------------------------------------------------------------------
     def _rotation_tensor_deformed_edge(self, edge_dim, edge_index,
-                                       init_node_def, end_node_def):
+                                       corners_coords_def):
         """Set rotation tensor to deformed boundary edge local coordinates.
         
         Parameters
@@ -1485,12 +1537,9 @@ class FiniteElementPatchGenerator:
         edge_index : int
             Edge index with respect to edges oriented along the corresponding
             dimension.
-        init_node_def : numpy.ndarray(2d)
-            Boundary edge initial corner node coordinates (deformed
-            configuration) stored as numpy.ndarray(n_dim).
-        end_node_def : numpy.ndarray(2d)
-            Boundary edge ending corner node coordinates (deformed
-            configuration) stored as numpy.ndarray(n_dim).
+        corners_coords_def : numpy.ndarray(2d)
+            Patch corners coordinates in the deformed configuration
+            (numpy.ndarray(n_corners, n_dim)).
             
         Returns
         -------
@@ -1501,32 +1550,44 @@ class FiniteElementPatchGenerator:
         # Initialize rotation tensor
         rotation = np.eye(3)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Get edge corners
+        cid_init, cid_end = self._edges_per_dim[str(edge_dim)][edge_index]
+        # Get edge initial end end corner node coordinates
+        init_node_def = corners_coords_def[cid_init, :]
+        end_node_def = corners_coords_def[cid_end, :]
+        # Get edge reference diagonal corners
+        diagid_init, diagid_end = \
+            self._edges_diag_per_dim[str(edge_dim)][edge_index]
+        dinit_node_def = corners_coords_def[diagid_init, :]
+        dend_node_def = corners_coords_def[diagid_end, :]
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Compute edge direction unit vector
         edge_dir = np.array(end_node_def) - np.array(init_node_def)
         edge_dir = (1.0/np.linalg.norm(edge_dir))*edge_dir
+        # Compute edge reference diagonal direction unit vector
+        diag_dir = np.array(dend_node_def) - np.array(dinit_node_def)
+        diag_dir = (1.0/np.linalg.norm(diag_dir))*diag_dir
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        # Get outward orthogonal rotation euler angles
-        rotation_angle = self._orth_edge_dir[str(edge_dim)][edge_index]
-        # Get corresponding rotation tensor
-        orth_rotation = rotation_tensor_from_euler_angles(rotation_angle)
+        # Add out-of-plane spatial dimension
+        if self._n_dim == 2:
+            edge_dir = np.append(edge_dir, 0.0)
+            diag_dir = np.append(diag_dir, 0.0)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        # Compute edge orthogonal direction unit vector 
-        orth_dir = \
-            np.matmul(orth_rotation[:self._n_dim, :self._n_dim], edge_dir)
+        # Compute out-of-plane direction unit vector
+        oop_dir = np.cross(diag_dir, edge_dir)
+        oop_dir = (1.0/np.linalg.norm(oop_dir))*oop_dir
+        # Compute edge deformation plane unit vector
+        orth_dir = -np.cross(edge_dir, oop_dir)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Build rotation tensor
-        if self._n_dim == 2:
-            # Assemble rotation tensor from deformed boundary edge local
-            # coordinates unit vectors
-            rotation[0, 0:2] = edge_dir
-            rotation[1, 0:2] = orth_dir
-        else:
-            # Assemble rotation tensor from deformed boundary edge local
-            # coordinates unit vectors
-            rotation[0, :] = edge_dir
-            rotation[1, :] = orth_dir
-            rotation[2, :] = np.cross(edge_dir, orth_dir)
-        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~        
+        rotation[0, :] = edge_dir
+        rotation[1, :] = orth_dir
+        rotation[2, :] = oop_dir
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Check rotation tensor
+        if not np.allclose(np.transpose(rotation), np.linalg.inv(rotation)):
+            raise RuntimeError('The rotation tensor is not orthogonal.')
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         return rotation
     # -------------------------------------------------------------------------
     def _transform_to_edge_local_coordinates(self, init_node_def, end_node_def,
@@ -1782,8 +1843,9 @@ class FiniteElementPatchGenerator:
         return local_index
     # -------------------------------------------------------------------------
     def _get_mesh_boundary_nodes_disps(self, edges_coords_ref,
-                                       edges_coords_def,
-                                       mesh_nodes_coords_ref):
+                                       edges_coords_def, mesh_nodes_matrix,
+                                       mesh_nodes_coords_ref,
+                                       is_interp_face_disps=True):
         """Compute finite element patch boundary displacements.
         
         Parameters
@@ -1800,10 +1862,20 @@ class FiniteElementPatchGenerator:
             (item, list[numpy.ndarray(2d)]). Each edge coordinates are stored
             as a numpy.ndarray(n_edge_nodes, n_dim). Corner nodes are assumed
             part of the edge.
+        mesh_nodes_matrix : numpy.ndarray(2d or 3d)
+            Finite element mesh nodes matrix
+            (numpy.ndarray[int](n_edge_nodes_per_dim) where each element
+            corresponds to a given node position and whose value is set either
+            as the global node label or zero (if the node does not exist).
+            Nodes are labeled from 1 to n_nodes.
         mesh_nodes_coords_ref : dict
             Coordinates (item, numpy.ndarray(n_dim)) of each finite element
             mesh node (key, str[int]) in the reference configuration. Nodes are
             labeled from 1 to n_nodes.
+        is_interp_face_disps : bool, default=False
+            If True, then faces nodes displacements are computed by
+            interpolating the corresponding edges nodes displacements. If
+            False, then faces nodes degrees of freedom are left free.
         
         Returns
         -------
@@ -1814,26 +1886,101 @@ class FiniteElementPatchGenerator:
         """
         # Initialize finite element mesh boundary nodes displacements
         mesh_boundary_nodes_disps = {}
-        # Loop over dimensions
-        for i in range(self._n_dim):
-            # Loop over edges
-            for j in range(len(self._edges_per_dim[str(i)])):
-                # Get edge nodes coordinates
-                edge_nodes_coords_ref = edges_coords_ref[str(i)][j]
-                edge_nodes_coords_def = edges_coords_def[str(i)][j]
-                # Loop over edge nodes
-                for k in range(edge_nodes_coords_ref.shape[0]):
-                    # Get node coordinates
-                    coord_ref = edge_nodes_coords_ref[k, :]
-                    coord_def = edge_nodes_coords_def[k, :]
-                    # Compute node displacement
-                    disp = coord_def - coord_ref
-                    # Get node label
-                    label = type(self)._get_node_label_from_coords(
-                        mesh_nodes_coords_ref, coord_ref)
-                    # Store node displacement
-                    if str(label) not in mesh_boundary_nodes_disps.keys():
-                        mesh_boundary_nodes_disps[label] = disp
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Build boundary nodes displacements
+        if self._n_dim == 2:
+            # Loop over dimensions
+            for i in range(self._n_dim):
+                # Loop over edges
+                for j in range(len(self._edges_per_dim[str(i)])):
+                    # Get edge nodes coordinates
+                    edge_nodes_coords_ref = edges_coords_ref[str(i)][j]
+                    edge_nodes_coords_def = edges_coords_def[str(i)][j]
+                    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                    # Loop over edge nodes
+                    for k in range(edge_nodes_coords_ref.shape[0]):
+                        # Get node coordinates
+                        coord_ref = edge_nodes_coords_ref[k, :]
+                        coord_def = edge_nodes_coords_def[k, :]
+                        # Compute node displacement
+                        disp = coord_def - coord_ref
+                        # Get node label
+                        label = type(self)._get_node_label_from_coords(
+                            mesh_nodes_coords_ref, coord_ref)
+                        # Store node displacement
+                        if str(label) not in mesh_boundary_nodes_disps.keys():
+                            mesh_boundary_nodes_disps[label] = disp
+        else:
+            # Get matching edges indexes along each dimension
+            matching_edges_idxs_per_dim = self._get_matching_edges_idxs()
+            # Loop over dimensions
+            for i in range(self._n_dim):
+                # Loop over matching edges indexes
+                for indexes in matching_edges_idxs_per_dim[str(i)]:
+                    # Get edge nodes coordinates (reference configuration)
+                    edge_nodes_coords_ref = \
+                        edges_coords_ref[str(i)][indexes[0]]                    
+                    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                    # Average edges nodes coordinates (deformed configuration)
+                    edge_nodes_coords_def = np.mean(np.stack(
+                        [edges_coords_def[str(i)][j] for j in indexes],
+                        axis=0), axis=0)
+                    # Broadcast average edges nodes coordinates
+                    for j in indexes:
+                        edges_coords_def[str(i)][j] = edge_nodes_coords_def
+                    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                    # Loop over edge nodes
+                    for k in range(edge_nodes_coords_ref.shape[0]):
+                        # Get node coordinates
+                        coord_ref = edge_nodes_coords_ref[k, :]
+                        coord_def = edge_nodes_coords_def[k, :]
+                        # Compute node displacement
+                        disp = coord_def - coord_ref
+                        # Get node label
+                        label = type(self)._get_node_label_from_coords(
+                            mesh_nodes_coords_ref, coord_ref)
+                        # Store node displacement
+                        if str(label) not in mesh_boundary_nodes_disps.keys():
+                            mesh_boundary_nodes_disps[label] = disp
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Enforce faces nodes displacements
+            if is_interp_face_disps:
+                # Set faces nodes
+                faces_nodes = {'1': mesh_nodes_matrix[:, :, 0],
+                               '2': mesh_nodes_matrix[:, :, -1],
+                               '3': mesh_nodes_matrix[0, :, :],
+                               '4': mesh_nodes_matrix[-1, :, :],
+                               '5': mesh_nodes_matrix[:, 0, :],
+                               '6': mesh_nodes_matrix[:, -1, :]}
+                # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                # Loop over faces
+                for _, face_nodes in faces_nodes.items():
+                    # Loop over face nodes
+                    for j in range(1, face_nodes.shape[1]):
+                        # Loop over face nodes
+                        for i in range(1, face_nodes.shape[0]):
+                            # Get face node label
+                            label = str(face_nodes[i, j])
+                            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                            # Skip if node does not exist
+                            if label == 0:
+                                continue
+                            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                            # Compute node displacement
+                            disp = np.mean(
+                                (mesh_boundary_nodes_disps[
+                                    str(face_nodes[i, 0])],
+                                 mesh_boundary_nodes_disps[
+                                    str(face_nodes[i, -1])],
+                                 mesh_boundary_nodes_disps[
+                                    str(face_nodes[0, j])],
+                                 mesh_boundary_nodes_disps[
+                                    str(face_nodes[-1, j])]), axis=0)
+                            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                            # Store node displacement
+                            if (str(label) not in
+                                    mesh_boundary_nodes_disps.keys()):
+                                mesh_boundary_nodes_disps[label] = disp          
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~       
         return mesh_boundary_nodes_disps
     # -------------------------------------------------------------------------
@@ -1852,7 +1999,7 @@ class FiniteElementPatchGenerator:
         
         Returns
         -------
-        nodel_label : int
+        nodel_label : str[int]
             Target node label.
         """
         # Initialize node label

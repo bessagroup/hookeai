@@ -59,14 +59,14 @@ def generate_random_specimen(simulations_dir, plots_dir):
     is_save_plot_patch = True
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set number of spatial dimensions
-    n_dim = 2
+    n_dim = 3
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Get material patch geometric parameters
-    patch_geometric_params = set_patch_geometric_params(n_dim)                 # 3D STATUS: CHECK
+    patch_geometric_params = set_patch_geometric_params(n_dim)
     # Get material patch mesh parameters
-    patch_mesh_params = set_patch_mesh_params(n_dim)                           # 3D STATUS: CHECK
+    patch_mesh_params = set_patch_mesh_params(n_dim)
     # Get material patch material parameters
-    patch_material_params = set_patch_material_params(                         # 3D STATUS: CHECK
+    patch_material_params = set_patch_material_params(
         patch_mesh_params['n_elems_per_dim'])
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Generate material patch
@@ -75,6 +75,7 @@ def generate_random_specimen(simulations_dir, plots_dir):
     # Save plot of deformed material patch
     if is_save_plot_patch:
         patch.plot_deformed_patch(
+            is_hide_axes=False, is_show_fixed_dof=True,
             is_save_plot=is_save_plot_patch, save_directory=plots_dir,
             plot_name='specimen_deformed_configuration',
             is_overwrite_file=True)
@@ -177,7 +178,7 @@ def set_patch_geometric_params(n_dim):
                                              '4': (-0.2, 0.2)}
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Set rigid body translation
-        translation_range = {'1': (0.0, 0.0), '2': (0.0, 0.0)}
+        translation_range = {'1': (-0.5, 0.5), '2': (-0.5, 0.5)}
         # Set rigid body rotation
         rotation_angles_range = {'alpha': (0.0, 0.0), 'beta': (0.0, 0.0),
                                  'gamma': (0.0, 0.0)}
@@ -208,10 +209,10 @@ def set_patch_geometric_params(n_dim):
              for i in range(1, 9)}
         # Set polynomial deformation order for each edge label
         edge_deformation_order = \
-            {str(i): 1 for i in range(1, 25)}
+            {str(i): 3 for i in range(1, 25)}
         # Set range of polynomial deformation for each edge label
         edge_deformation_magnitude_ranges = \
-            {str(i): (-0.2, 0.2) for i in range(1, 25)}
+            {str(i): (-0.1, 0.1) for i in range(1, 25)}
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Set rigid body translation
         translation_range = {'1': (0.0, 0.0), '2': (0.0, 0.0), '3': (0.0, 0.0)}
@@ -266,9 +267,9 @@ def set_patch_mesh_params(n_dim):
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     elif n_dim == 3:
         # Set finite element type
-        elem_type = 'HEXA8'
+        elem_type = 'SHEXA8'
         # Set number of finite elements per dimension
-        n_elems_per_dim = (6, 3, 1)
+        n_elems_per_dim = (4, 3, 2)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     else:
         raise RuntimeError('Invalid number of spatial dimensions.')
