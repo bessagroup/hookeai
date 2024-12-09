@@ -1966,7 +1966,7 @@ class FiniteElementPatchGenerator:
                             label = str(face_nodes[i, j])
                             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                             # Skip if node does not exist
-                            if label == 0:
+                            if int(label) == 0:
                                 continue
                             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                             # Interpolate displacement along first dimension

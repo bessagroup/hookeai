@@ -88,7 +88,7 @@ class FiniteElement:
         """
         # Set available finite element types
         available = ('SQUAD4', 'SQUAD8', 'SQUAD12', 'LQUAD4', 'LQUAD9',
-                     'LQUAD16', 'SHEXA8')
+                     'LQUAD16', 'SHEXA8', 'SHEXA20')
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         return available
     # -------------------------------------------------------------------------
@@ -217,6 +217,32 @@ class FiniteElement:
             nodes_matrix[1, 0, 1] = 6
             nodes_matrix[1, 1, 1] = 7
             nodes_matrix[0, 1, 1] = 8
+        elif self._elem_type == 'SHEXA20':
+            n_dim = 3
+            n_nodes = 20
+            n_edges = 12
+            n_edge_nodes = 3
+            nodes_matrix = np.zeros(n_dim*(n_edge_nodes,), dtype=int)
+            nodes_matrix[0, 0, 0] = 1
+            nodes_matrix[2, 0, 0] = 2
+            nodes_matrix[2, 2, 0] = 3
+            nodes_matrix[0, 2, 0] = 4
+            nodes_matrix[0, 0, 2] = 5
+            nodes_matrix[2, 0, 2] = 6
+            nodes_matrix[2, 2, 2] = 7
+            nodes_matrix[0, 2, 2] = 8
+            nodes_matrix[1, 0, 0] = 9
+            nodes_matrix[2, 1, 0] = 10
+            nodes_matrix[1, 2, 0] = 11
+            nodes_matrix[0, 1, 0] = 12
+            nodes_matrix[0, 0, 1] = 13
+            nodes_matrix[2, 0, 1] = 14
+            nodes_matrix[2, 2, 1] = 15
+            nodes_matrix[0, 2, 1] = 16
+            nodes_matrix[1, 0, 2] = 17
+            nodes_matrix[2, 1, 2] = 18
+            nodes_matrix[1, 2, 2] = 19
+            nodes_matrix[0, 1, 2] = 20
         else:
             raise RuntimeError('Unknown finite element type.')
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

@@ -311,7 +311,8 @@ class FiniteElementPatch:
                 + list(self._mesh_nodes_matrix[0, :, :].flatten()) \
                 + list(self._mesh_nodes_matrix[-1, :, :].flatten()) \
                 + list(self._mesh_nodes_matrix[:, 0, :].flatten()) \
-                + list(self._mesh_nodes_matrix[:, -1, :].flatten())]))
+                + list(self._mesh_nodes_matrix[:, -1, :].flatten())
+                if label != 0]))
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         return boundary_nodes_labels
     # -------------------------------------------------------------------------
@@ -410,6 +411,10 @@ class FiniteElementPatch:
                 limit_nodes_labels += list(zip(
                     self._mesh_nodes_matrix[tuple(slicer_1)].flatten(),
                     self._mesh_nodes_matrix[tuple(slicer_2)].flatten()))
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Remove connectivities involving unexistent nodes
+        limit_nodes_labels = [pair_label for pair_label in limit_nodes_labels
+                              if 0 not in pair_label]
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Set nodes marker size
         nodes_ms = 4

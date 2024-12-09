@@ -823,6 +823,9 @@ class LinksSimulator:
             if elem_type == 'SHEXA8':
                 element_type = 'HEXA8'
                 n_gauss_points = 8
+            elif elem_type == 'SHEXA20':
+                element_type = 'HEXA20'
+                n_gauss_points = 8
             else:
                 raise RuntimeError(f'Unavailable 3D Links element type '
                                    f'data ({elem_type}).')
