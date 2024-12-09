@@ -70,6 +70,8 @@ class LinksSimulator:
         Get Links finite element mesh data.
     _get_links_elem_type_data(self, patch)
         Get Links finite element type data.
+    _get_links_loading_incrementation(self)
+        Get Links loading incrementation.
     remove_mesh_elements(cls, remove_elements_labels, node_coords, elements, \
                          elements_mat_phase, boundary_nodes_labels=None)
         Remove elements from finite element mesh.
@@ -517,12 +519,14 @@ class LinksSimulator:
             + ['\nANALYSIS_TYPE ' + ip['analysis_type'] + '\n'] \
             + ['\nLARGE_STRAIN_FORMULATION ' + ip['large_strain_formulation'] \
                + '\n'] \
-            + ['\nSOLUTION_ALGORITHM ' + ip['solution_algorithm'] + '\n'] \
-            + ['\nNumber_of_Increments ' + str(ip['number_of_increments']) \
-               + '\n'] \
-            + ['\nCONVERGENCE_TOLERANCE' + '\n' + ip['convergence_tolerance'] \
-               + '\n'] \
-            + ['\nSOLVER ' + ip['solver'] + '\n'] \
+            + ['\nSOLUTION_ALGORITHM ' + ip['solution_algorithm'] + '\n']
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Append loading increment
+        write_lines += self._get_links_loading_incrementation()
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Continue input file data
+        write_lines += \
+            ['\nSOLVER ' + ip['solver'] + '\n'] \
             + ['\nPARALLEL_SOLVER ' + str(ip['parallel_solver']) + '\n'] \
             + ['\nVTK_OUTPUT ' + ip['vtk_output'] + '\n'] \
             + ['\n' + ip['Node_Data_Output'] + '\n'] \
@@ -621,11 +625,6 @@ class LinksSimulator:
         # Set solution algorithm
         solution_algorithm = '2'
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        # Set number of loading increments
-        number_of_increments = 1
-        # Set convergence tolerance
-        convergence_tolerance = '{:<16.8e}'.format(1e-6)
-        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Set solver
         solver = 'PARDISO'
         # Set number of threads (solver parallelization)
@@ -644,8 +643,6 @@ class LinksSimulator:
             large_strain_formulation
         default_parameters['analysis_type'] = analysis_type
         default_parameters['solution_algorithm'] = solution_algorithm
-        default_parameters['number_of_increments'] = number_of_increments
-        default_parameters['convergence_tolerance'] = convergence_tolerance
         default_parameters['solver'] = solver
         default_parameters['parallel_solver'] = parallel_solver
         default_parameters['vtk_output'] = vtk_output
@@ -831,6 +828,118 @@ class LinksSimulator:
                                    f'data ({elem_type}).')
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         return element_type, n_gauss_points
+    # -------------------------------------------------------------------------
+    def _get_links_loading_incrementation(self):
+        """Get Links loading incrementation.
+        
+        Returns
+        -------
+        increm_input_lines : list[str]
+            Loading incrementation formatted to Links input data file.
+        """
+        # Set available incrementation modes
+        available_incrementation_modes = ('n_increments', 'increment_list')
+        # Set available cyclic loading types
+        available_loading_cycles = ('monotonic', 'cyclic_plus', 'cyclic_sym')
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set incrementation mode
+        incrementation_mode = available_incrementation_modes[1]
+        # Set cyclic loading type
+        loading_cycle = available_loading_cycles[2]
+        # Set number of loading reversal (effective for cyclic loadings)
+        n_reverse = 2
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set number of increments
+        n_inc = 20
+        # Set convergence tolerance
+        conv_tol = '{:<16.8e}'.format(1e-6)
+        # Set maximum number of iterations
+        max_n_iter = 20
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Initialize formatted loading incrementation
+        increm_input_lines = []
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set formatted loading incrementation
+        if incrementation_mode == 'n_increments':
+            # Check cyclic loading type
+            if loading_cycle != 'monotonic':
+                raise RuntimeError(
+                    f'The incrementation mode \'{incrementation_mode}\' only '
+                    f'accepts the cyclic loading type \'monotonic\'.')
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Set formatted loading incrementation
+            increm_input_lines += \
+                [f'\nNumber_of_Increments {n_inc}\n'] \
+                + [f'\nCONVERGENCE_TOLERANCE\n{conv_tol}\n']
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        elif incrementation_mode == 'increment_list':
+            # Set loading incrementation
+            if loading_cycle in ('monotonic', 'cyclic_plus', 'cyclic_sym'):
+                # Override number of loading reversals if monotonic loading
+                if loading_cycle == 'monotonic':
+                    n_reverse = 0
+                # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                # Check minimum number of loading increments
+                if loading_cycle == 'cyclic_plus' and (n_inc < n_reverse + 1):
+                    raise RuntimeError(
+                        f'In order to generate a loading path with '
+                        f'{n_reverse} reversions for cyclic loading type '
+                        f'{loading_cycle}, the minimum required number of '
+                        f'loading increments is {n_reverse + 1}.')
+                elif (loading_cycle == 'cyclic_sym'
+                        and (n_inc < 2*n_reverse + 1)):
+                    raise RuntimeError(
+                        f'In order to generate a loading path with '
+                        f'{n_reverse} reversions for cyclic loading type '
+                        f'{loading_cycle}, the minimum required number of '
+                        f'loading increments is {2*n_reverse + 1}.')
+                # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                # Set number of monotonic increments and switch frequency
+                if loading_cycle in ('monotonic', 'cyclic_plus'):
+                    n_inc_mon = int(np.floor(n_inc/(n_reverse + 1)))
+                    dfact_switch = 1
+                elif loading_cycle == 'cyclic_sym':
+                    n_inc_mon = int(np.floor(n_inc/(2*n_reverse + 1)))
+                    dfact_switch = 2
+                # Compute incremental load factor
+                dfact = 1.0/n_inc_mon
+                # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                # Compute effective number of increments
+                n_inc_eff = n_inc_mon*(dfact_switch*n_reverse + 1)
+                # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                # Set initial monotonic loading increments
+                increm_input_lines += \
+                    [f'\nINCREMENTS {n_inc}'] \
+                    + n_inc_mon*[f'\n{dfact:>16.8e} {conv_tol} {max_n_iter}']
+                # Loop over loading reversals
+                for _ in range(n_reverse):
+                    # Switch loading direction
+                    dfact = -dfact
+                    # Append monotonic loading increments
+                    increm_input_lines += dfact_switch*n_inc_mon*[
+                        f'\n{dfact:>16.8e} {conv_tol} {max_n_iter}']
+                # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                # Set null increments until prescribed number of increments
+                # is met
+                if n_inc > n_inc_eff:
+                    # Compute number of null increments
+                    n_inc_diff = n_inc - n_inc_eff
+                    # Append null loading increments
+                    increm_input_lines += n_inc_diff*[
+                        f'\n1.0 {0.0:>16.8e} {conv_tol} {max_n_iter}']
+                # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                # Add lineskip
+                increm_input_lines += ['\n']
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            else:
+                raise RuntimeError('Unavailable cyclic loading type for '
+                                   'incrementation mode '
+                                   '\'{incrementation_mode}\'.')
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        else:
+            raise RuntimeError('Unavailable loading incrementation mode.')
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        return increm_input_lines
     # -------------------------------------------------------------------------
     @classmethod
     def remove_mesh_elements(cls, remove_elements_labels, node_coords,
