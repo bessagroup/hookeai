@@ -1955,10 +1955,13 @@ class FiniteElementPatchGenerator:
                 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                 # Loop over faces
                 for _, face_nodes in faces_nodes.items():
+                    # Get number of nodes along each dimension
+                    n_node_1, n_node_2 = face_nodes.shape
+                    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                     # Loop over face nodes
-                    for j in range(1, face_nodes.shape[1]):
+                    for j in range(1, n_node_2):
                         # Loop over face nodes
-                        for i in range(1, face_nodes.shape[0]):
+                        for i in range(1, n_node_1):
                             # Get face node label
                             label = str(face_nodes[i, j])
                             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -1966,16 +1969,20 @@ class FiniteElementPatchGenerator:
                             if label == 0:
                                 continue
                             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                            # Interpolate displacement along first dimension
+                            disp_1 = (
+                                (1.0 - i/n_node_1)*mesh_boundary_nodes_disps[
+                                    str(face_nodes[0, j])]
+                                + (i/n_node_1)*mesh_boundary_nodes_disps[
+                                    str(face_nodes[-1, j])])
+                            # Interpolate displacement along second dimension
+                            disp_2 = (
+                                (1.0 - j/n_node_2)*mesh_boundary_nodes_disps[
+                                    str(face_nodes[i, 0])]
+                                + (j/n_node_2)*mesh_boundary_nodes_disps[
+                                    str(face_nodes[i, -1])])
                             # Compute node displacement
-                            disp = np.mean(
-                                (mesh_boundary_nodes_disps[
-                                    str(face_nodes[i, 0])],
-                                 mesh_boundary_nodes_disps[
-                                    str(face_nodes[i, -1])],
-                                 mesh_boundary_nodes_disps[
-                                    str(face_nodes[0, j])],
-                                 mesh_boundary_nodes_disps[
-                                    str(face_nodes[-1, j])]), axis=0)
+                            disp = np.mean((disp_1, disp_2), axis=0)
                             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                             # Store node displacement
                             if (str(label) not in
