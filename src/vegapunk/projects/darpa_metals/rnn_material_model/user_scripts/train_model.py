@@ -447,9 +447,8 @@ if __name__ == "__main__":
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set case studies base directory
     base_dir = ('/home/bernardoferreira/Documents/brown/projects/'
-                'darpa_project/7_local_hybrid_training/'
-                'case_learning_drucker_prager_pressure/2_vanilla_gru_model/'
-                'strain_to_stress/mean_relative_error/training_random')
+                'darpa_project/8_global_random_specimen/von_mises/'
+                '1_local_vanilla_GRU/strain_to_stress')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Initialize case study directories
     case_study_dirs = []
@@ -460,7 +459,7 @@ if __name__ == "__main__":
         # Set case study directories
         case_study_dirs += [os.path.join(os.path.normpath(base_dir), f'n{n}/')
                             for n in training_sizes]
-    elif True:
+    elif False:
         case_study_dirs += [os.path.join(os.path.normpath(base_dir),
                                          f'n2560/0_pretraining/'),]
     else:

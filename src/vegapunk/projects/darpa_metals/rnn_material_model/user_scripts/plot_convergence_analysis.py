@@ -132,9 +132,8 @@ if __name__ == "__main__":
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set convergence analysis base directory
     base_dir = ('/home/bernardoferreira/Documents/brown/projects/'
-                'darpa_project/7_local_hybrid_training/'
-                'case_learning_drucker_prager_pressure_dependency/'
-                'w_candidate_dp_model_1deg/1_gru_model_convergence_analysis')
+                'darpa_project/8_global_random_specimen/von_mises/'
+                '1_local_vanilla_GRU/strain_to_stress')
     # Set training data set sizes
     training_sizes = (10, 20, 40, 80, 160, 320, 640, 1280, 2560)
     # Set convergence analyses models base directories

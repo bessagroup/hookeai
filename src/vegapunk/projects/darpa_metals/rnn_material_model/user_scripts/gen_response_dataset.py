@@ -1700,10 +1700,10 @@ def generate_dataset_plots(strain_formulation, n_dim, dataset,
 # =============================================================================
 if __name__ == '__main__':
     # Set default float precision
-    torch.set_default_dtype(torch.float64)
+    #torch.set_default_dtype(torch.float64)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set data set type
-    dataset_type = ('training', 'validation', 'testing_id', 'testing_od')[0]
+    dataset_type = ('training', 'validation', 'testing_id', 'testing_od')[2]
     # Set data set storage type
     is_in_memory_dataset = True
     # Set save dataset plots flags
@@ -1731,7 +1731,7 @@ if __name__ == '__main__':
         # Set data sets base directory
         datasets_base_dir = \
             ('/home/bernardoferreira/Documents/brown/projects/darpa_project/'
-             '3_local_rc_training/lou')
+             '8_global_random_specimen/von_mises/0_local_datasets')
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Check data sets directory
         if not os.path.isdir(datasets_base_dir):
@@ -1795,24 +1795,25 @@ if __name__ == '__main__':
         n_cycle = 0
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Set constitutive model
-        model_name = 'lou_zhang_yoon'
+        model_name = 'von_mises'
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Set constitutive model parameters:
         if model_name == 'von_mises':
             # Set constitutive model parameters
-            model_parameters = {'elastic_symmetry': 'isotropic',
-                                'E': 110e3, 'v': 0.33,
-                                'euler_angles': (0.0, 0.0, 0.0),
-                                'hardening_law':
-                                    get_hardening_law('nadai_ludwik'),
-                                'hardening_parameters':
-                                    {'s0': 900,
-                                    'a': 700,
-                                    'b': 0.5,
-                                    'ep0': 1e-5}}
+            model_parameters = {
+                'elastic_symmetry': 'isotropic',
+                'E': 110e3, 'v': 0.33,
+                'euler_angles': (0.0, 0.0, 0.0),
+                'hardening_law': get_hardening_law('nadai_ludwik'),
+                'hardening_parameters':
+                    {'s0': 900,
+                     'a': 700,
+                     'b': 0.5,
+                     'ep0': 1e-5}}
             # Set constitutive state variables to be additionally included in
             # the data set
-            state_features = {'acc_p_strain': 1}
+            state_features = {'acc_p_strain': 1,
+                              'e_strain_mf': len(strain_comps_order)}
         elif model_name == 'drucker_prager':
             # Set frictional angle
             friction_angle = np.deg2rad(10)

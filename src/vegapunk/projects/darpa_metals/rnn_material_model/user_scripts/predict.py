@@ -238,7 +238,7 @@ def perform_model_prediction(predict_directory, dataset_file_path,
     generate_prediction_plots(dataset_file_path, predict_subdir)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set remove sample prediction files flag
-    is_remove_sample_prediction = True
+    is_remove_sample_prediction = False
     # Remove sample prediction files
     if is_remove_sample_prediction:
         # Set sample prediction file regex
@@ -278,7 +278,7 @@ def generate_prediction_plots(dataset_file_path, predict_subdir):
     stress_comps_order = probe_response_path['stress_comps_order']
     # Build strain and stress components predictions labels
     stress_labels = tuple([f'stress_{x}' for x in stress_comps_order])
-    p_strain_labels = tuple([f'p_strain_{x}' for x in strain_comps_order])
+    #p_strain_labels = tuple([f'p_strain_{x}' for x in strain_comps_order])
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set prediction types and corresponding labels
     prediction_types = {}
@@ -389,10 +389,8 @@ if __name__ == "__main__":
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set case studies base directory
     base_dir = ('/home/bernardoferreira/Documents/brown/projects/'
-                'darpa_project/7_local_hybrid_training/'
-                'case_learning_drucker_prager_pressure/'
-                '2_vanilla_gru_model/strain_to_stress/mean_relative_error/'
-                'training_random')
+                'darpa_project/8_global_random_specimen/von_mises/'
+                '1_local_vanilla_GRU/strain_to_stress')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Initialize case study directories
     case_study_dirs = []
