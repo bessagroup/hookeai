@@ -24,6 +24,7 @@ import numpy as np
 from ioput.iostandard import make_directory, new_file_path_with_int
 from simulators.links.discretization.finite_element import FiniteElement
 from simulators.links.models.links_elastic import LinksElastic
+from simulators.links.models.links_von_mises import LinksVonMises
 #
 #                                                          Authorship & Credits
 # =============================================================================
@@ -548,6 +549,10 @@ class LinksSimulator:
             # Initialize constitutive model
             if name == 'ELASTIC':
                 model = LinksElastic()
+            elif name == 'VON_MISES':
+                model = LinksVonMises()
+            else:
+                raise RuntimeError('Unknown Links constitutive model.')
             # Append constitutive model descriptors to input file data
             write_lines += model._format_material_descriptors(mat_phase,
                                                               descriptors)

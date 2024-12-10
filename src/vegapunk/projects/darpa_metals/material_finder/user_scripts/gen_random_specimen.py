@@ -33,6 +33,8 @@ import re
 import numpy as np
 # Local
 from simulators.links.links import LinksSimulator
+from simulators.fetorch.material.models.standard.hardening import \
+    get_hardening_law
 from projects.gnn_material_patch.material_patch.patch_generator import \
     FiniteElementPatchGenerator
 from ioput.iostandard import make_directory
@@ -165,20 +167,20 @@ def set_patch_geometric_params(n_dim):
         # Set material patch size along each dimension
         patch_dims = (1.0, 1.0)
         # Set range of average deformation along each dimension for each corner
-        avg_deformation_ranges = {'1': ((-0.1, 0.1), (-0.1, 0.1)),
-                                  '2': ((-0.1, 0.1), (-0.1, 0.1)),
-                                  '3': ((-0.1, 0.1), (-0.1, 0.1)),
-                                  '4': ((-0.1, 0.1), (-0.1, 0.1))}
+        avg_deformation_ranges = {'1': ((-0.05, 0.05), (-0.05, 0.05)),
+                                  '2': ((-0.05, 0.05), (-0.05, 0.05)),
+                                  '3': ((-0.05, 0.05), (-0.05, 0.05)),
+                                  '4': ((-0.05, 0.05), (-0.05, 0.05))}
         # Set polynomial deformation order for each edge label
         edge_deformation_order = {'1': 2, '2': 3, '3': 2, '4': 3}
         # Set range of polynomial deformation for each edge label
-        edge_deformation_magnitude_ranges = {'1': (-0.2, 0.2),
-                                             '2': (-0.2, 0.2),
-                                             '3': (-0.2, 0.2),
-                                             '4': (-0.2, 0.2)}
+        edge_deformation_magnitude_ranges = {'1': (-0.05, 0.05),
+                                             '2': (-0.05, 0.05),
+                                             '3': (-0.05, 0.05),
+                                             '4': (-0.05, 0.05)}
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Set rigid body translation
-        translation_range = {'1': (-0.5, 0.5), '2': (-0.5, 0.5)}
+        translation_range = {'1': (0.0, 0.0), '2': (0.0, 0.0)}
         # Set rigid body rotation
         rotation_angles_range = {'alpha': (0.0, 0.0), 'beta': (0.0, 0.0),
                                  'gamma': (0.0, 0.0)}
@@ -205,14 +207,14 @@ def set_patch_geometric_params(n_dim):
         patch_dims = (1.0, 1.0, 1.0)
         # Set range of average deformation along each dimension for each corner
         avg_deformation_ranges = \
-            {str(i): ((-0.1, 0.1), (-0.1, 0.1), (-0.1, 0.1))
+            {str(i): ((-0.05, 0.05), (-0.05, 0.05), (-0.05, 0.05))
              for i in range(1, 9)}
         # Set polynomial deformation order for each edge label
         edge_deformation_order = \
             {str(i): 3 for i in range(1, 25)}
         # Set range of polynomial deformation for each edge label
         edge_deformation_magnitude_ranges = \
-            {str(i): (-0.1, 0.1) for i in range(1, 25)}
+            {str(i): (-0.05, 0.05) for i in range(1, 25)}
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Set rigid body translation
         translation_range = {'1': (0.0, 0.0), '2': (0.0, 0.0), '3': (0.0, 0.0)}
@@ -269,7 +271,7 @@ def set_patch_mesh_params(n_dim):
         # Set finite element type
         elem_type = 'SHEXA8'
         # Set number of finite elements per dimension
-        n_elems_per_dim = (4, 3, 2)
+        n_elems_per_dim = (8, 8, 8)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     else:
         raise RuntimeError('Invalid number of spatial dimensions.')
@@ -301,12 +303,36 @@ def set_patch_material_params(n_elems_per_dim):
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set material phases spatial domains
     mesh_elem_material = np.ones(n_elems_per_dim, dtype=int)
-    # Set material phase descriptors
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Set material model
+    model_name = 'VON_MISES'
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Initialize material phase descriptors
     mat_phases_descriptors = {}
-    mat_phases_descriptors['1'] = {'name': 'ELASTIC',
-                                   'density': 0.0,
-                                   'young': 110e3,
-                                   'poisson': 0.33}
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Set material phase descriptors
+    if model_name == 'ELASTIC':
+        mat_phases_descriptors['1'] = {
+            'name': 'ELASTIC',
+            'density': 0.0,
+            'young': 110e3,
+            'poisson': 0.33}
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    elif model_name == 'VON_MISES':
+        mat_phases_descriptors['1'] = {
+            'name': 'VON_MISES',
+            'density': 0.0,
+            'young': 110e3,
+            'poisson': 0.33,
+            'n_hard_point': 200,
+            'hardening_law': get_hardening_law('nadai_ludwik'),
+            'hardening_parameters': {'s0': 900,
+                                    'a': 700,
+                                    'b': 0.5,
+                                    'ep0': 1e-5}}
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    else:
+        raise RuntimeError('Unknown material constitutive model.')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Build material patch material parameters
     patch_material_params['mesh_elem_material'] = mesh_elem_material
@@ -366,7 +392,9 @@ def perform_links_simulation(simulations_dir, patch, patch_material_params):
 # =============================================================================
 if __name__ == "__main__":
     # Set base directory
-    base_dir = ('/home/bernardoferreira/Documents/brown/projects/test_patches')
+    base_dir = ('/home/bernardoferreira/Documents/brown/projects/'
+                'darpa_project/8_global_random_specimen/von_mises/'
+                '2_random_specimen_hexa8/solid')
     # Set specimen name
     specimen_name = 'random_specimen'
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
