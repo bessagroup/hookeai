@@ -20,8 +20,10 @@ import copy
 import itertools
 # Third-party
 import numpy as np
+import matplotlib.pyplot as plt
 # Local
 from ioput.iostandard import make_directory, new_file_path_with_int
+from ioput.plots import plot_xy_data
 from simulators.links.discretization.finite_element import FiniteElement
 from simulators.links.models.links_elastic import LinksElastic
 from simulators.links.models.links_von_mises import LinksVonMises
@@ -844,18 +846,20 @@ class LinksSimulator:
         """
         # Set available incrementation modes
         available_incrementation_modes = ('n_increments', 'increment_list')
-        # Set available cyclic loading types
-        available_loading_cycles = ('monotonic', 'cyclic_plus', 'cyclic_sym')
+        # Set available loading types
+        available_loading_type = (
+            'proportional', 'cyclic_plus', 'cyclic_sym', 'polynomial')
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Set incrementation mode
         incrementation_mode = available_incrementation_modes[1]
-        # Set cyclic loading type
-        loading_cycle = available_loading_cycles[2]
-        # Set number of loading reversal (effective for cyclic loadings)
+        # Set loading type
+        loading_type = available_loading_type[3]
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set number of loading reversal (effective for cyclic loadings only)
         n_reverse = 2
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Set number of increments
-        n_inc = 20
+        n_inc = 100
         # Set convergence tolerance
         conv_tol = '{:<16.8e}'.format(1e-6)
         # Set maximum number of iterations
@@ -866,11 +870,11 @@ class LinksSimulator:
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Set formatted loading incrementation
         if incrementation_mode == 'n_increments':
-            # Check cyclic loading type
-            if loading_cycle != 'monotonic':
+            # Check loading type
+            if loading_type != 'proportional':
                 raise RuntimeError(
                     f'The incrementation mode \'{incrementation_mode}\' only '
-                    f'accepts the cyclic loading type \'monotonic\'.')
+                    f'accepts the loading type \'proportional\'.')
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Set formatted loading incrementation
             increm_input_lines += \
@@ -879,31 +883,31 @@ class LinksSimulator:
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         elif incrementation_mode == 'increment_list':
             # Set loading incrementation
-            if loading_cycle in ('monotonic', 'cyclic_plus', 'cyclic_sym'):
-                # Override number of loading reversals if monotonic loading
-                if loading_cycle == 'monotonic':
+            if loading_type in ('proportional', 'cyclic_plus', 'cyclic_sym'):
+                # Override number of loading reversals if proportional loading
+                if loading_type == 'proportional':
                     n_reverse = 0
                 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                 # Check minimum number of loading increments
-                if loading_cycle == 'cyclic_plus' and (n_inc < n_reverse + 1):
+                if loading_type == 'cyclic_plus' and (n_inc < n_reverse + 1):
                     raise RuntimeError(
                         f'In order to generate a loading path with '
-                        f'{n_reverse} reversions for cyclic loading type '
-                        f'{loading_cycle}, the minimum required number of '
+                        f'{n_reverse} reversions for loading type '
+                        f'{loading_type}, the minimum required number of '
                         f'loading increments is {n_reverse + 1}.')
-                elif (loading_cycle == 'cyclic_sym'
+                elif (loading_type == 'cyclic_sym'
                         and (n_inc < 2*n_reverse + 1)):
                     raise RuntimeError(
                         f'In order to generate a loading path with '
-                        f'{n_reverse} reversions for cyclic loading type '
-                        f'{loading_cycle}, the minimum required number of '
+                        f'{n_reverse} reversions for loading type '
+                        f'{loading_type}, the minimum required number of '
                         f'loading increments is {2*n_reverse + 1}.')
                 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-                # Set number of monotonic increments and switch frequency
-                if loading_cycle in ('monotonic', 'cyclic_plus'):
+                # Set number of proportional increments and switch frequency
+                if loading_type in ('proportional', 'cyclic_plus'):
                     n_inc_mon = int(np.floor(n_inc/(n_reverse + 1)))
                     dfact_switch = 1
-                elif loading_cycle == 'cyclic_sym':
+                elif loading_type == 'cyclic_sym':
                     n_inc_mon = int(np.floor(n_inc/(2*n_reverse + 1)))
                     dfact_switch = 2
                 # Compute incremental load factor
@@ -912,7 +916,7 @@ class LinksSimulator:
                 # Compute effective number of increments
                 n_inc_eff = n_inc_mon*(dfact_switch*n_reverse + 1)
                 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-                # Set initial monotonic loading increments
+                # Set initial proportional loading increments
                 increm_input_lines += \
                     [f'\nINCREMENTS {n_inc}'] \
                     + n_inc_mon*[f'\n{dfact:>16.8e} {conv_tol} {max_n_iter}']
@@ -920,7 +924,7 @@ class LinksSimulator:
                 for _ in range(n_reverse):
                     # Switch loading direction
                     dfact = -dfact
-                    # Append monotonic loading increments
+                    # Append proportional loading increments
                     increm_input_lines += dfact_switch*n_inc_mon*[
                         f'\n{dfact:>16.8e} {conv_tol} {max_n_iter}']
                 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -936,8 +940,67 @@ class LinksSimulator:
                 # Add lineskip
                 increm_input_lines += ['\n']
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            elif loading_type == 'polynomial':
+                # Set discrete time history
+                time_hist = \
+                    np.linspace(0.0, 1.0, n_inc + 1, endpoint=True,
+                                dtype=float)
+                # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                # Set number of control points sampling bounds
+                n_control_bounds = (4, 6)
+                # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                # Sample number of polynomial control points
+                n_control = np.random.randint(n_control_bounds[0],
+                                              n_control_bounds[1] + 1)
+                # Set polynomial degree
+                polynomial_degree = n_control - 1
+                # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                # Set strain control times
+                control_time = \
+                    np.linspace(0.0, 1.0, n_control, endpoint=True,
+                                dtype=float)
+                # Sample control total load factor
+                control_tfact = \
+                    np.random.uniform(low=-1.0, high=1.0, size=n_control)
+                # Enforce initial null total load factor
+                control_tfact[0] = 0.0
+                # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                # Fit polynomial model
+                polynomial_coefficients = \
+                    np.polyfit(control_time, control_tfact, polynomial_degree)
+                # Get polynomial model
+                polynomial_model = np.poly1d(polynomial_coefficients)
+                # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                # Get total load factor history with polynomial model
+                tfact_hist = np.array(
+                    [polynomial_model(x) for x in time_hist])
+                # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                # Set loading increments header
+                increm_input_lines += [f'\nINCREMENTS {n_inc}']
+                # Loop over increments
+                for i in range(n_inc):
+                    # Compute incremental load factor
+                    dfact = tfact_hist[i + 1] - tfact_hist[i]
+                    # Append loading increment
+                    increm_input_lines += [
+                        f'\n1.0 {dfact:>16.8e} {conv_tol} {max_n_iter}']
+                # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                # Set plot flag
+                is_display_tfact_hist = True
+                # Display total load factor history
+                if is_display_tfact_hist:
+                    # Assemble total load factor history data
+                    data_xy = np.column_stack((time_hist, tfact_hist))
+                    # Plot total load factor history data
+                    _, _ = plot_xy_data(data_xy, x_lims=(0.0, 1.0),
+                                        x_label='Time',
+                                        y_label='Total load factor',
+                                        is_latex=True)
+                    # Display total load factor history
+                    plt.show()
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             else:
-                raise RuntimeError('Unavailable cyclic loading type for '
+                raise RuntimeError('Unavailable loading type for '
                                    'incrementation mode '
                                    '\'{incrementation_mode}\'.')
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
