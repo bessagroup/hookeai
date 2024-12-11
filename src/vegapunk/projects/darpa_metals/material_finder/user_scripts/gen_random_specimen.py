@@ -28,7 +28,8 @@ if root_dir not in sys.path:
     sys.path.insert(0, root_dir)
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 import os
-import re
+import time
+import datetime
 # Third-party
 import numpy as np
 # Local
@@ -47,7 +48,7 @@ __status__ = 'Planning'
 # =============================================================================
 #
 # =============================================================================
-def generate_random_specimen(simulations_dir, plots_dir):
+def generate_random_specimen(simulations_dir, plots_dir, is_verbose=False):
     """Generate random specimen.
     
     Parameters
@@ -56,12 +57,22 @@ def generate_random_specimen(simulations_dir, plots_dir):
         Simulations directory.
     plots_dir : str
         Plots directory.
+    is_verbose : bool, default=False
+        If True, enable verbose output.
     """
+    start_time_sec = time.time()
+    if is_verbose:
+        print('\nGeneration and simulation of material patch'
+              '\n-------------------------------------------')
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set plot deformed material patch flag
     is_save_plot_patch = True
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set number of spatial dimensions
     n_dim = 3
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    if is_verbose:
+        print('\n> Setting material patch parameters...')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Get material patch geometric parameters
     patch_geometric_params = set_patch_geometric_params(n_dim)
@@ -71,19 +82,49 @@ def generate_random_specimen(simulations_dir, plots_dir):
     patch_material_params = set_patch_material_params(
         patch_mesh_params['n_elems_per_dim'])
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    if is_verbose:
+        print(f'\n  > Number of dimensions: {n_dim}')
+        print(f'\n  > Patch dimensions: '
+              f'{patch_geometric_params["patch_dims"]}')
+        print(f'\n  > Mesh element type: '
+              f'{patch_mesh_params["elem_type"]}')
+        print(f'\n  > Number of elements: '
+              f'{patch_mesh_params["n_elems_per_dim"]}')
+        print(f'\n  > Material model: '
+              f'{patch_material_params["mat_phases_descriptors"]["1"]["name"]}'
+              )
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    if is_verbose:
+        print('\n> Generating material patch...')
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Generate material patch
     patch = generate_material_patch(patch_geometric_params, patch_mesh_params)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Save plot of deformed material patch
     if is_save_plot_patch:
+        if is_verbose:
+            print('\n> Plotting material patch...')
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Plot deformed material patch
         patch.plot_deformed_patch(
             is_hide_axes=False, is_show_fixed_dof=True,
             is_save_plot=is_save_plot_patch, save_directory=plots_dir,
             plot_name='specimen_deformed_configuration',
             is_overwrite_file=True)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    if is_verbose:
+        print('\n> Performing material patch FEM simulation...')
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Perform Links simulation
     perform_links_simulation(simulations_dir, patch, patch_material_params)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Compute total time
+    total_time_sec = time.time() - start_time_sec
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    if is_verbose:
+        print(f'\n> Total time: '
+              f'{str(datetime.timedelta(seconds=int(total_time_sec)))}')
+        print()
 # =============================================================================
 def generate_material_patch(patch_geometric_params, patch_mesh_params):
     """Generate material patch.
@@ -422,4 +463,4 @@ if __name__ == "__main__":
         make_directory(plots_dir)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Generate random specimen
-    generate_random_specimen(simulations_dir, plots_dir)
+    generate_random_specimen(simulations_dir, plots_dir, is_verbose=True)
