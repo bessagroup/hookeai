@@ -34,6 +34,7 @@ from simulators.fetorch.element.type.tri3 import FETri3
 from simulators.fetorch.element.type.quad4 import FEQuad4
 from simulators.fetorch.element.type.tetra4 import FETetra4
 from simulators.fetorch.element.type.hexa8 import FEHexa8
+from simulators.fetorch.element.type.hexa20 import FEHexa20
 from simulators.fetorch.structure.structure_state import StructureMaterialState
 from simulators.fetorch.math.matrixops import get_problem_type_parameters
 from simulators.fetorch.material.models.standard.hardening import \
@@ -310,6 +311,8 @@ def elem_type_abaqus_to_fetorch(elem_abaqus_type):
         elem_fetorch_type = FETetra4(n_gauss=4)
     elif elem_abaqus_type in ('C3D8',):
         elem_fetorch_type = FEHexa8(n_gauss=8)
+    elif elem_abaqus_type in ('C3D20R',):
+        elem_fetorch_type = FEHexa20(n_gauss=8)
     else:
         raise RuntimeError(f'The ABAQUS element type {elem_fetorch_type} '
                            f'is unknown or cannot be converted to a FETorch '
