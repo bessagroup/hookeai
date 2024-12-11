@@ -96,6 +96,12 @@ def gen_specimen_local_dataset(specimen_data_path,
                            'parameters when generating the specimen material '
                            'state.')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Get number of degrees of freedom subject to Dirichlet boundary conditions
+    n_dirichlet_dof = specimen_data.specimen_mesh.get_n_dirichlet_dof()
+    # Compute average force inbalance (average per Dirichlet degree of freedom)
+    avg_force_inbalance = \
+        torch.sqrt(force_equilibrium_hist_loss)/n_dirichlet_dof
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set data set directory
     dataset_directory = os.path.join(os.path.normpath(model_directory),
                                      'local_response_dataset')
@@ -123,6 +129,8 @@ def gen_specimen_local_dataset(specimen_data_path,
         print(f'\nForce equilibrium history loss: '
               f'{force_equilibrium_hist_loss:.4e}')
         print(f'Force normalization:  {str(False):>15s}')
+        print(f'\nAvg. force inbalance (per Dirichlet dof): '
+              f'{avg_force_inbalance:.4e}')
         print(f'\nSpecimen local data set: {dataset_file_path}')
         print('-------------------------------------------------------------'
               '--------------')
