@@ -79,6 +79,8 @@ class StructureMesh:
         Get finite element mesh elements connectivities stored (tensor).
     get_dirichlet_bool_mesh(self)
         Get degrees of freedom subject to Dirichlet boundary conditions.
+    get_n_dirichlet_dof(self)
+        Get number of degrees of freedom subject to Dirichlet conditions.
     get_element_configuration(self, element_id, time='current')
         Get element nodes coordinates and displacements.
     get_mesh_configuration(self, time='current')
@@ -254,6 +256,17 @@ class StructureMesh:
             labeled 1, otherwise 0.
         """
         return self._dirichlet_bool_mesh.clone()
+    # -------------------------------------------------------------------------
+    def get_n_dirichlet_dof(self):
+        """Get number of degrees of freedom subject to Dirichlet conditions.
+        
+        Returns
+        -------
+        n_dof_dirichlet : int
+            Number of degrees of freedom subject to Dirichlet boundary
+            conditions.
+        """
+        return torch.sum(self._dirichlet_bool_mesh == 1)
     # -------------------------------------------------------------------------
     def get_element_configuration(self, element_id, time='current'):
         """Get element nodes coordinates and displacements.
