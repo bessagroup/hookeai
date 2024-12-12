@@ -92,14 +92,40 @@ def perform_model_standard_training(specimen_data_path,
     specimen_material_state = torch.load(specimen_material_state_path)
     # Update material models device
     specimen_material_state.update_material_models_device(device_type)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Set loss scaling flag
+    is_loss_scaling_factor = False
+    # Set loss scaling factor
+    if is_loss_scaling_factor:
+        # Set characteristic Young modulus (MPa)
+        young_ref = 100e3
+        # Set characteristic length (mm)
+        length_ref = 1.0
+        # Set characteristic time (s)
+        time_ref = 1.0
+        # Set loss scaling factor
+        loss_scaling_factor = (young_ref**2)*(length_ref**4)*time_ref
+    else:
+        # Set loss scaling factor
+        loss_scaling_factor = None
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Set loss time weights flag
+    is_loss_time_weights = False
+    # Set loss time weights
+    if is_loss_time_weights:
+        loss_time_weights = None
+    else:
+        loss_time_weights = None
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~    
-    # Training of recurrent constitutive model
+    # Discovery of material model
     model, _, _ = train_model(n_max_epochs, specimen_data,
                               specimen_material_state, model_init_args,
                               lr_init, opt_algorithm=opt_algorithm,
                               lr_scheduler_type=lr_scheduler_type,
                               lr_scheduler_kwargs=lr_scheduler_kwargs,
                               is_explicit_model_parameters=True,
+                              loss_scaling_factor=loss_scaling_factor,
+                              loss_time_weights=loss_time_weights,
                               save_every=None, device_type=device_type,
                               seed=None, is_verbose=is_verbose)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

@@ -63,6 +63,17 @@ class MaterialModelFinder(torch.nn.Module):
     _is_force_normalization : bool, default=False
         If True, then normalize forces prior to the computation of the force
         equilibrium loss.
+    _data_scalers : dict
+        Data scaler (item, TorchStandardScaler) for each feature data
+        (key, str).
+    _loss_scaling_factor : torch.Tensor(0d)
+        Loss scaling factor. If provided, then loss is pre-multiplied by
+        loss scaling factor.
+    _loss_time_weights : torch.Tensor(1d), default=None
+        Loss time weights stored as torch.Tensor(1d) of shape (n_time).
+        If provided, then each discrete time loss contribution is
+        pre-multiplied by corresponding weight. If None, time weights are
+        set to 1.0.
     _is_store_local_paths : bool
         If True, then store data set of specimen local (Gauss integration
         points) strain-stress paths in dedicated model subdirectory.
@@ -318,7 +329,8 @@ class MaterialModelFinder(torch.nn.Module):
             model.model_directory = model_dir
     # -------------------------------------------------------------------------
     def set_specimen_data(self, specimen_data, specimen_material_state,
-                          force_minimum=None, force_maximum=None):
+                          force_minimum=None, force_maximum=None,
+                          loss_scaling_factor=None, loss_time_weights=None):
         """Set specimen data and material state.
         
         Parameters
@@ -331,10 +343,18 @@ class MaterialModelFinder(torch.nn.Module):
             Forces normalization minimum tensor stored as a torch.Tensor with
             shape (n_dim,). Only required if force normalization is set to
             True, otherwise ignored.
-        force_maximum : torch.Tensor(1d)
+        force_maximum : torch.Tensor(1d), default=None
             Forces normalization maximum tensor stored as a torch.Tensor with
             shape (n_dim,). Only required if force normalization is set to
             True, otherwise ignored.
+        loss_scaling_factor : torch.Tensor(0d), default=None
+            Loss scaling factor. If provided, then loss is pre-multiplied by
+            loss scaling factor.
+        loss_time_weights : torch.Tensor(1d), default=None
+            Loss time weights stored as torch.Tensor(1d) of shape (n_time).
+            If provided, then each discrete time loss contribution is
+            pre-multiplied by corresponding weight. If None, time weights are
+            set to 1.0.
         """
         # Set specimen numerical data
         self._specimen_data = specimen_data
@@ -356,6 +376,30 @@ class MaterialModelFinder(torch.nn.Module):
                                    'force normalization.')
             # Set fitted force data scalers
             self.set_fitted_force_data_scalers(force_minimum, force_maximum)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set loss scaling factor
+        self._loss_scaling_factor = loss_scaling_factor
+        # Check loss time weights
+        if isinstance(loss_time_weights, torch.Tensor):
+            # Get number of time steps
+            n_time = len(self._specimen_data.time_hist)
+            # Check loss time weights
+            if len(loss_time_weights.shape) != 1:
+                raise RuntimeError('Loss time weights must be provided as '
+                                   'torch.Tensor(1d) of shape (n_time).')
+            elif (loss_time_weights.shape[0]
+                  != len(self._specimen_data.time_hist)):
+                raise RuntimeError(f'Loss time weights must be provided as '
+                                   f'torch.Tensor(1d) of shape (n_time), '
+                                   f'where n_time = {n_time} (got '
+                                   f'{loss_time_weights.shape[0]}).')
+            # Set loss time weights
+            self._loss_time_weights = loss_time_weights
+        else:
+            # Get number of time steps
+            n_time = len(self._specimen_data.time_hist)
+            # Set loss time weights
+            self._loss_time_weights = torch.ones(n_time, device=self._device)
     # -------------------------------------------------------------------------
     def get_material_models(self):
         """Get material models.
@@ -668,9 +712,10 @@ class MaterialModelFinder(torch.nn.Module):
 
         Returns
         -------
-        force_equilibrium_hist_loss : float
+        force_equilibrium_hist_loss : torch.Tensor(0d)
             Force equilibrium history loss.
         """
+        # Compute force equilibrium history loss
         if sequential_mode == 'sequential_time':
             force_equilibrium_hist_loss = self.forward_sequential_time()
         elif sequential_mode == 'sequential_element':
@@ -680,6 +725,11 @@ class MaterialModelFinder(torch.nn.Module):
         else:
             raise RuntimeError('Unknown sequential mode.')
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Apply loss scaling factor
+        if self._loss_scaling_factor is not None:
+            force_equilibrium_hist_loss = \
+                self._loss_scaling_factor*force_equilibrium_hist_loss
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         return force_equilibrium_hist_loss
     # -------------------------------------------------------------------------
     def forward_sequential_time(self):
@@ -687,7 +737,7 @@ class MaterialModelFinder(torch.nn.Module):
 
         Returns
         -------
-        force_equilibrium_hist_loss : float
+        force_equilibrium_hist_loss : torch.Tensor(0d)
             Force equilibrium history loss.
         """
         # Get specimen numerical data
@@ -786,10 +836,14 @@ class MaterialModelFinder(torch.nn.Module):
             reaction_forces_mesh = \
                 specimen_data.reaction_forces_mesh_hist[:, :, time_idx]
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Get discrete time loss weight
+            time_weight = self._loss_time_weights[time_idx]
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Add contribution to force equilibrium history loss
-            force_equilibrium_hist_loss += self.force_equilibrium_loss(
-                internal_forces_mesh, external_forces_mesh,
-                reaction_forces_mesh, dirichlet_bool_mesh)
+            force_equilibrium_hist_loss += \
+                time_weight*self.force_equilibrium_loss(
+                    internal_forces_mesh, external_forces_mesh,
+                    reaction_forces_mesh, dirichlet_bool_mesh)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         return force_equilibrium_hist_loss
     # -------------------------------------------------------------------------
@@ -798,7 +852,7 @@ class MaterialModelFinder(torch.nn.Module):
 
         Returns
         -------
-        force_equilibrium_hist_loss : float
+        force_equilibrium_hist_loss : torch.Tensor(0d)
             Force equilibrium history loss.
         """
         # Get specimen numerical data
@@ -940,12 +994,16 @@ class MaterialModelFinder(torch.nn.Module):
             # element mesh nodes
             reaction_forces_mesh = \
                 specimen_data.reaction_forces_mesh_hist[:, :, time_idx].to(
-                    self._device)
+                    self._device)    
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Get discrete time loss weight
+            time_weight = self._loss_time_weights[time_idx]
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Add contribution to force equilibrium history loss
-            force_equilibrium_hist_loss += self.force_equilibrium_loss(
-                internal_forces_mesh, external_forces_mesh,
-                reaction_forces_mesh, dirichlet_bool_mesh)
+            force_equilibrium_hist_loss += \
+                time_weight*self.force_equilibrium_loss(
+                    internal_forces_mesh, external_forces_mesh,
+                    reaction_forces_mesh, dirichlet_bool_mesh)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Store specimen local strain-stress paths data set
         if self._is_store_local_paths:
@@ -2045,10 +2103,11 @@ class MaterialModelFinder(torch.nn.Module):
                        in_dims=(2, 2, 2, None), out_dims=(0,))
         # Compute force equilibrium history loss
         force_equilibrium_hist_loss = torch.sum(
-            vmap_force_equilibrium_loss(internal_forces_mesh_hist,
-                                        external_forces_mesh_hist,
-                                        reaction_forces_mesh_hist,
-                                        dirichlet_bool_mesh))
+            self._loss_time_weights[:, None, None, None]
+            *vmap_force_equilibrium_loss(internal_forces_mesh_hist,
+                                         external_forces_mesh_hist,
+                                         reaction_forces_mesh_hist,
+                                         dirichlet_bool_mesh))
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         return force_equilibrium_hist_loss
     # -------------------------------------------------------------------------
