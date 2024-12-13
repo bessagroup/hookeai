@@ -312,7 +312,7 @@ def set_patch_mesh_params(n_dim):
         # Set finite element type
         elem_type = 'SHEXA8'
         # Set number of finite elements per dimension
-        n_elems_per_dim = (8, 8, 8)
+        n_elems_per_dim = (10, 10, 10)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     else:
         raise RuntimeError('Invalid number of spatial dimensions.')
@@ -414,8 +414,33 @@ def perform_links_simulation(simulations_dir, patch, patch_material_params):
     links_simulator = LinksSimulator(links_bin_path, strain_formulation,
                                      analysis_type)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Set configuration
+    configuration = 'voids_center_and_internal_corners'
     # Set elements to be removed (create structure internal voids)
-    remove_elements_labels = None
+    if configuration == 'voids':
+        remove_elements_labels = [555, 455, 445, 545, 546, 556, 446, 456,
+                                  723, 773, 273, 223, 728, 778, 278, 228]
+    elif configuration == 'voids_internal_corners':
+        remove_elements_labels = [723, 733, 623, 633, 624, 724, 734,
+                                  763, 773, 663, 673, 764, 774, 674,
+                                  363, 373, 263, 273, 374, 274, 264,
+                                  323, 333, 223, 233, 324, 224, 234,
+                                  778, 768, 678, 668, 777, 767, 677,
+                                  738, 728, 638, 628, 737, 727, 627,
+                                  338, 328, 238, 228, 327, 227, 237,
+                                  378, 368, 278, 268, 377, 277, 267]
+    elif configuration == 'voids_center_and_internal_corners':
+        remove_elements_labels = [555, 455, 445, 545, 546, 556, 446, 456,
+                                  723, 733, 623, 633, 624, 724, 734,
+                                  763, 773, 663, 673, 764, 774, 674,
+                                  363, 373, 263, 273, 374, 274, 264,
+                                  323, 333, 223, 233, 324, 224, 234,
+                                  778, 768, 678, 668, 777, 767, 677,
+                                  738, 728, 638, 628, 737, 727, 627,
+                                  338, 328, 238, 228, 327, 227, 237,
+                                  378, 368, 278, 268, 377, 277, 267]
+    else:
+        remove_elements_labels = None
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Generate Links input data file
     links_file_path = links_simulator.generate_input_data_file(
@@ -435,7 +460,8 @@ if __name__ == "__main__":
     # Set base directory
     base_dir = ('/home/bernardoferreira/Documents/brown/projects/'
                 'darpa_project/8_global_random_specimen/von_mises/'
-                '2_random_specimen_hexa8/solid')
+                '2_random_specimen_hexa8/voids_center_and_internal_corners/'
+                '0_links_simulation')
     # Set specimen name
     specimen_name = 'random_specimen'
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
