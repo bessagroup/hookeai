@@ -45,9 +45,9 @@ __status__ = 'Planning'
 def train_model(n_max_epochs, specimen_data, specimen_material_state,
                 model_init_args, lr_init, opt_algorithm='adam',
                 lr_scheduler_type=None, lr_scheduler_kwargs={},
-                is_explicit_model_parameters=False,
-                save_every=None, device_type='cpu', seed=None,
-                is_verbose=False):
+                is_explicit_model_parameters=False, loss_scaling_factor=None,
+                loss_time_weights=None, save_every=None, device_type='cpu',
+                seed=None, is_verbose=False):
     """Training of recurrent constitutive model.
     
     Parameters
@@ -85,6 +85,14 @@ def train_model(n_max_epochs, specimen_data, specimen_material_state,
         includes enforcing available bounds on the parameters during the
         training procedure and storing the model parameters history for
         post-processing.
+    loss_scaling_factor : torch.Tensor(0d), default=None
+        Loss scaling factor. If provided, then loss is pre-multiplied by
+        loss scaling factor.
+    loss_time_weights : torch.Tensor(1d), default=None
+        Loss time weights stored as torch.Tensor(1d) of shape (n_time).
+        If provided, then each discrete time loss contribution is
+        pre-multiplied by corresponding weight. If None, time weights are
+        set to 1.0.
     save_every : int, default=None
         Save model every save_every epochs. If None, then saves only last epoch
         and best performance states.
@@ -124,7 +132,9 @@ def train_model(n_max_epochs, specimen_data, specimen_material_state,
     # Initialize material model finder
     model = MaterialModelFinder(**model_init_args)
     # Set specimen data and material state
-    model.set_specimen_data(specimen_data, specimen_material_state)
+    model.set_specimen_data(specimen_data, specimen_material_state,
+                            loss_scaling_factor=loss_scaling_factor,
+                            loss_time_weights=loss_time_weights)
     # Set model device
     model.set_device(device_type)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~  
