@@ -76,7 +76,8 @@ class LinksSimulator:
     _get_links_loading_incrementation(self)
         Get Links loading incrementation.
     remove_mesh_elements(cls, remove_elements_labels, node_coords, elements, \
-                         elements_mat_phase, boundary_nodes_labels=None)
+                         elements_mat_phase, node_disps=None, \
+                         boundary_nodes_labels=None)
         Remove elements from finite element mesh.
     """
     def __init__(self, links_bin_path, strain_formulation, analysis_type):
@@ -186,15 +187,22 @@ class LinksSimulator:
         node_coords, elements, elements_mat_phase = \
             self._get_links_mesh_data(patch, mesh_elem_material)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        if is_verbose:
+            print('\n> Getting prescribed node displacements...')
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Get Links prescribed node displacements
+        node_displacements = patch.get_mesh_boundary_nodes_disps()
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Remove elements from Links finite elements mesh
         if remove_elements_labels is not None:
             # Get mesh boundary nodes labels
             boundary_nodes_labels = patch.get_boundary_nodes_labels()
             # Remove elements from Links finite elements mesh
-            node_coords, elements, elements_mat_phase = \
-                self.remove_mesh_elements(remove_elements_labels, node_coords,
-                                          elements, elements_mat_phase,
-                                          boundary_nodes_labels)
+            node_coords, elements, elements_mat_phase, node_displacements = \
+                self.remove_mesh_elements(
+                    remove_elements_labels, node_coords, elements,
+                    elements_mat_phase, node_disps=node_displacements,
+                    boundary_nodes_labels=boundary_nodes_labels)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Get Links finite element type
         element_type, n_gauss_points = self._get_links_elem_type_data(patch)
@@ -207,12 +215,6 @@ class LinksSimulator:
             raise RuntimeError('Material descriptors were not provided '
                                'for all material phases in the material '
                                'patch.')
-        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        if is_verbose:
-            print('\n> Getting prescribed node displacements...')
-        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        # Get Links prescribed node displacements
-        node_displacements = patch.get_mesh_boundary_nodes_disps()
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         if is_verbose:
             print('\n> Writing Links simulation input data file...')
@@ -529,7 +531,7 @@ class LinksSimulator:
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Continue input file data
         write_lines += \
-            ['\nSOLVER ' + ip['solver'] + '\n'] \
+            ['\n\nSOLVER ' + ip['solver'] + '\n'] \
             + ['\nPARALLEL_SOLVER ' + str(ip['parallel_solver']) + '\n'] \
             + ['\nVTK_OUTPUT ' + ip['vtk_output'] + '\n'] \
             + ['\n' + ip['Node_Data_Output'] + '\n'] \
@@ -1011,7 +1013,7 @@ class LinksSimulator:
     # -------------------------------------------------------------------------
     @classmethod
     def remove_mesh_elements(cls, remove_elements_labels, node_coords,
-                             elements, elements_mat_phase,
+                             elements, elements_mat_phase, node_disps=None,
                              boundary_nodes_labels=None):
         """Remove elements from finite element mesh.
 
@@ -1026,6 +1028,9 @@ class LinksSimulator:
             Nodes (item, tuple[int]) of each finite element (key, str[int]).
         elements_mat_phase : dict
             Material phase (item, int) of each finite element (key, str).
+        node_disps : dict, default=None
+            Displacements (item, numpy.ndarray(n_dim)) of each finite element
+            mesh node (key, str[int]).
         boundary_nodes_labels : tuple[int], default=None
             Finite element mesh boundary nodes labels. If provided, then
             removal of elements that would lead to the removal of a boundary
@@ -1040,6 +1045,9 @@ class LinksSimulator:
             Nodes (item, tuple[int]) of each finite element (key, str[int]).
         elements_mat_phase : dict
             Material phase (item, int) of each finite element (key, str).
+        node_disps : dict
+            Displacements (item, numpy.ndarray(n_dim)) of each finite element
+            mesh node (key, str[int]). None if displacements are not provided.
         """
         # Store old nodes coordinates
         node_coords_old = copy.deepcopy(node_coords)
@@ -1102,7 +1110,7 @@ class LinksSimulator:
         # Loop over old nodes
         for node_old_label, node_old_coords in node_coords_old.items():
             # Process remaining node
-            if node_old_label not in remove_nodes_labels:
+            if int(node_old_label) not in remove_nodes_labels:
                 # Collect remaining node coordinates
                 node_coords[str(node_label)] = node_old_coords
                 # Assemble nodes mapping (old to new)
@@ -1130,4 +1138,19 @@ class LinksSimulator:
                 elements_mat_phase[str(elem_label_map[elem_old_label])] = \
                     mat_phase
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        return node_coords, elements, elements_mat_phase
+        # Map nodes displacements
+        if isinstance(node_disps, dict):
+            # Store old nodes displacements
+            node_disps_old = copy.deepcopy(node_disps)
+            # Initialize nodes displacements
+            node_disps = {}
+            # Loop over old nodes
+            for node_old_label, node_old_disps in node_disps_old.items():
+                # Get node label
+                node_label = node_label_map[str(node_old_label)]
+                # Collect node displacements
+                node_disps[str(node_label)] = node_old_disps
+        else:
+            node_disps = None
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        return node_coords, elements, elements_mat_phase, node_disps
