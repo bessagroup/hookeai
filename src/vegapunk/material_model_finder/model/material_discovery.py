@@ -592,8 +592,8 @@ class MaterialModelFinder(torch.nn.Module):
         # Get material models
         material_models = self._specimen_material_state.get_material_models()
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        # Loop over parameters
-        for model_key, param_dict in self.get_model_parameters().items():
+        # Loop over material models
+        for _, model in material_models.items():
             # Enforce bounds in models explicit learnable parameters
             if isinstance(model, HybridModel):
                 # Get hybridized material models
@@ -609,8 +609,11 @@ class MaterialModelFinder(torch.nn.Module):
                     if not is_collect_params:
                         continue
                     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-                    # Loop over hybridized material model parameters
-                    for param in submodel.get_model_parameters().keys():
+                    # Get submodel parameters
+                    param_dict = submodel.get_model_parameters()
+                    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                    # Loop over submodel parameters
+                    for param in param_dict.keys():
                         # Get parameter bounds
                         if submodel.is_normalized_parameters:
                             lower_bound, upper_bound = \
@@ -633,11 +636,11 @@ class MaterialModelFinder(torch.nn.Module):
                 if not is_collect_params:
                     continue
                 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-                # Get material model
-                model = material_models[model_key]
+                # Get material model parameters
+                param_dict = model.get_model_parameters()
                 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                 # Loop over material model parameters
-                for param in model.get_model_parameters().keys():
+                for param in param_dict.keys():
                     # Get parameter bounds
                     if model.is_normalized_parameters:
                         lower_bound, upper_bound = \
