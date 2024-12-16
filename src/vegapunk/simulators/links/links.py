@@ -949,7 +949,7 @@ class LinksSimulator:
                                 dtype=float)
                 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                 # Set number of control points sampling bounds
-                n_control_bounds = (4, 6)
+                n_control_bounds = (4, 7)
                 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                 # Sample number of polynomial control points
                 n_control = np.random.randint(n_control_bounds[0],
