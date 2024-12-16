@@ -30,6 +30,7 @@ if root_dir not in sys.path:
 import os
 import time
 import datetime
+import pickle
 # Third-party
 import numpy as np
 # Local
@@ -48,15 +49,23 @@ __status__ = 'Planning'
 # =============================================================================
 #
 # =============================================================================
-def generate_random_specimen(simulations_dir, plots_dir, is_verbose=False):
+def generate_random_specimen(simulations_dir, patch_dir, plots_dir,
+                             is_save_material_patch=False,
+                             is_load_material_patch=False, is_verbose=False):
     """Generate random specimen.
     
     Parameters
     ----------
     simulations_dir : str
         Simulations directory.
+    patch_dir : str
+        Material patch directory.
     plots_dir : str
         Plots directory.
+    is_save_material_patch : bool, default=False
+        If True, then save material patch file in material patch directory.
+    is_load_material_patch : bool, default=False
+        If True, then load material patch file from material patch directory.
     is_verbose : bool, default=False
         If True, enable verbose output.
     """
@@ -71,34 +80,64 @@ def generate_random_specimen(simulations_dir, plots_dir, is_verbose=False):
     # Set number of spatial dimensions
     n_dim = 3
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    if is_verbose:
-        print('\n> Setting material patch parameters...')
+    # Generate or load material patch
+    if is_load_material_patch:
+        if is_verbose:
+            print('\n> Loading material patch...')
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set material patch file path
+        patch_file_path = os.path.join(patch_dir, 'material_patch.pkl')
+        # Check material patch file
+        if not os.path.isfile(patch_file_path):
+            raise RuntimeError(f'The material patch file has not been found:'
+                               f'\n\n{patch_file_path}')
+        # Load material patch
+        with open(patch_file_path, 'rb') as patch_file:
+            patch = pickle.load(patch_file)
+    else:
+        if is_verbose:
+            print('\n> Setting material patch parameters...')
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Get material patch geometric parameters
+        patch_geometric_params = set_patch_geometric_params(n_dim)
+        # Get material patch mesh parameters
+        patch_mesh_params = set_patch_mesh_params(n_dim)
+        # Get material patch material parameters
+        patch_material_params = set_patch_material_params(
+            patch_mesh_params['n_elems_per_dim'])
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        if is_verbose:
+            print(f'\n  > Number of dimensions: {n_dim}')
+            print(f'\n  > Patch dimensions: '
+                  f'{patch_geometric_params["patch_dims"]}')
+            print(f'\n  > Mesh element type: '
+                  f'{patch_mesh_params["elem_type"]}')
+            print(f'\n  > Number of elements: '
+                  f'{patch_mesh_params["n_elems_per_dim"]}')
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        if is_verbose:
+            print('\n> Generating material patch...')
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Generate material patch
+        patch = generate_material_patch(patch_geometric_params,
+                                        patch_mesh_params)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Get material patch geometric parameters
-    patch_geometric_params = set_patch_geometric_params(n_dim)
-    # Get material patch mesh parameters
-    patch_mesh_params = set_patch_mesh_params(n_dim)
     # Get material patch material parameters
     patch_material_params = set_patch_material_params(
-        patch_mesh_params['n_elems_per_dim'])
+        patch.get_n_elems_per_dim())
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     if is_verbose:
-        print(f'\n  > Number of dimensions: {n_dim}')
-        print(f'\n  > Patch dimensions: '
-              f'{patch_geometric_params["patch_dims"]}')
-        print(f'\n  > Mesh element type: '
-              f'{patch_mesh_params["elem_type"]}')
-        print(f'\n  > Number of elements: '
-              f'{patch_mesh_params["n_elems_per_dim"]}')
-        print(f'\n  > Material model: '
-              f'{patch_material_params["mat_phases_descriptors"]["1"]["name"]}'
-              )
+        model_name = \
+            patch_material_params["mat_phases_descriptors"]["1"]["name"]
+        print(f'\n  > Material model: {model_name}')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    if is_verbose:
-        print('\n> Generating material patch...')
-    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Generate material patch
-    patch = generate_material_patch(patch_geometric_params, patch_mesh_params)
+    # Save material patch
+    if is_save_material_patch:
+        # Set material patch file path
+        patch_file_path = os.path.join(patch_dir, 'material_patch.pkl')
+        # Save material patch file
+        with open(patch_file_path, 'wb') as patch_file:
+            pickle.dump(patch, patch_file)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Save plot of deformed material patch
     if is_save_plot_patch:
@@ -497,6 +536,11 @@ if __name__ == "__main__":
     # Set specimen name
     specimen_name = 'random_specimen'
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Set material patch storage flag
+    is_save_material_patch = True
+    # Set material patch loading flag
+    is_load_material_patch = True
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Check base directory
     if not os.path.isdir(base_dir):
         raise RuntimeError('The case study directory has not been found:\n\n'
@@ -504,21 +548,29 @@ if __name__ == "__main__":
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set specimen directory
     specimen_dir = os.path.join(os.path.normpath(base_dir), specimen_name)
-    # Create simulations directory (overwrite)
-    make_directory(specimen_dir, is_overwrite=True)
+    # Create simulations directory
+    if not os.path.isdir(specimen_dir):
+        make_directory(specimen_dir)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set simulations directory
     simulations_dir = \
         os.path.join(os.path.normpath(specimen_dir), 'simulations')
     # Create simulations directory
-    if not os.path.isdir(simulations_dir):
-        make_directory(simulations_dir)
+    make_directory(simulations_dir, is_overwrite=True)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Set patch directory
+    patch_dir = os.path.join(os.path.normpath(specimen_dir), 'material_patch')
+    # Create material patch directory
+    if not os.path.isdir(patch_dir) or not is_load_material_patch:
+        make_directory(patch_dir, is_overwrite=True)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set plots directory
     plots_dir = os.path.join(os.path.normpath(specimen_dir), 'plots')
     # Create plots directory
-    if not os.path.isdir(plots_dir):
-        make_directory(plots_dir)
+    make_directory(plots_dir, is_overwrite=True)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Generate random specimen
-    generate_random_specimen(simulations_dir, plots_dir, is_verbose=True)
+    generate_random_specimen(simulations_dir, patch_dir, plots_dir,
+                             is_save_material_patch=is_save_material_patch,
+                             is_load_material_patch=is_load_material_patch,
+                             is_verbose=True)
