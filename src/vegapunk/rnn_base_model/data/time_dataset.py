@@ -28,6 +28,9 @@ sum_dataset_features(dataset, new_feature_label, sum_features_labels,
     Sum existing features of time series data set into new feature.
 write_time_series_dataset_summary_file
     Write summary data file for time series data set generation.
+split_dataset(dataset, split_sizes, is_save_subsets=False, \
+              subsets_directory=None, subsets_basename=None, seed=None)
+    Randomly split data set into non-overlapping subsets.
 """
 #
 #                                                                       Modules
@@ -39,6 +42,7 @@ import copy
 import pickle
 # Third-party
 import torch
+import numpy as np
 # Local
 from ioput.iostandard import write_summary_file
 #
@@ -789,3 +793,94 @@ class TimeSeriesDataset(torch.utils.data.Dataset):
                                    + dataset_directory)
             else:
                 self._dataset_sample_files[i] = new_file_path
+# =============================================================================
+def split_dataset(dataset, split_sizes, is_save_subsets=False,
+                  subsets_directory=None, subsets_basename=None, seed=None):
+    """Randomly split data set into non-overlapping subsets.
+    
+    Parameters
+    ----------
+    dataset : torch.utils.data.Dataset
+        Time series data set. Each sample is stored as a dictionary where
+        each feature (key, str) data is a torch.Tensor(2d) of shape
+        (sequence_length, n_features).
+    split_sizes : dict
+        Size (item, float) of each data subset name (key, str), where size is a
+        fraction contained between 0 and 1. The sum of all sizes must equal 1.
+    is_save_subsets : bool, False
+        If True, then save data subsets to files.
+    subsets_directory : str, default=None
+        Directory where the data subsets files are stored.
+    subset_basename : str, default=None
+        Subset file base name.
+    seed : int, default=None
+        Seed for random data set split generator.
+    
+    Returns
+    -------
+    dataset_split : dict
+        Data subsets (key, str, item, torch.utils.data.Subset).
+    """
+    # Initialize data subsets names and sizes
+    subsets_names = []
+    subsets_sizes = []
+    # Assemble data subsets names and sizes
+    for key, val in split_sizes.items():
+        # Check if subset size is valid
+        if val < 0.0 or val > 1.0:
+            raise RuntimeError(f'Subset size must be contained between 0 and '
+                               f'1. Check subset (size): {key} ({val})')
+        # Assemble subset name and size
+        subsets_names.append(str(key))
+        subsets_sizes.append(val)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Check if split sizes are valid
+    if not np.isclose(np.sum(subsets_sizes), 1.0):
+        raise RuntimeError('Sum of subset split sizes must equal 1. '
+                           f'Current sum: {np.sum(subsets_sizes):.2f}')
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Set random split generator
+    if seed is not None:
+        generator = torch.Generator().manual_seed(seed)
+    else:
+        generator = torch.Generator()
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Randomly split data set into non-overlapping subsets
+    subsets_list = torch.utils.data.random_split(dataset, subsets_sizes,
+                                                 generator=generator)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Build data subsets
+    dataset_split = {}
+    for i, subset in enumerate(subsets_names):
+        # Check subset
+        if len(subsets_list[i]) < 1:
+            raise RuntimeError(f'Subset "{subset}" resulting from data set '
+                               f'split is empty.')
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Assemble data subet
+        dataset_split[str(subset)] = subsets_list[i]
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Save data subsets files
+    if is_save_subsets:
+        # Check subsets directory
+        if not os.path.isdir(subsets_directory):
+            raise RuntimeError('The data subsets directory has not been '
+                               'specified or found:\n\n'
+                               + subsets_directory)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Loop over data subsets
+        for key, val in dataset_split.items():
+            # Set data subset file name
+            subset_file = ''
+            if subsets_basename is not None:
+                subset_file += f'{subsets_basename}_'
+            subset_file += f'{str(key)}_n{len(val)}'
+            # Set data subset file path
+            subset_path = os.path.join(subsets_directory,
+                                       subset_file + '.pkl')
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Save data subset
+            with open(subset_path, 'wb') as subset_file:
+                pickle.dump(val, subset_file)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~    
+    return dataset_split
