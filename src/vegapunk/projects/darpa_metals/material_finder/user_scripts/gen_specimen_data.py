@@ -582,6 +582,7 @@ if __name__ == "__main__":
                         'model_name': model_name,
                         'is_model_in_normalized': is_model_in_normalized,
                         'is_model_out_normalized': is_model_out_normalized,
+                        'gru_model_source': gru_model_source,
                         'device_type': device_type}
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Check case study directory

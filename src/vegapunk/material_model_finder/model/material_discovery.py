@@ -108,10 +108,6 @@ class MaterialModelFinder(torch.nn.Module):
     set_specimen_data(self, specimen_data, specimen_material_state,
                       force_minimum=None, force_maximum=None)
         Set specimen data and material state.
-    _set_model_parameters(self)
-        Set model parameters (collect material models parameters).
-    get_model_parameters(self)
-        Get model parameters (material models parameters).
     get_detached_model_parameters(self)
         Get model parameters (material models) detached of gradients.
     get_model_parameters_bounds(self)
@@ -358,14 +354,11 @@ class MaterialModelFinder(torch.nn.Module):
         """
         # Set specimen numerical data
         self._specimen_data = specimen_data
-        # Set specimen material state
+        # Set specimen material state (material models parameters linkage)
         self._specimen_material_state = specimen_material_state
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Set material models directories
         self._set_material_models_dirs()
-        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        # Collect specimen underlying material models parameters
-        self._set_model_parameters()
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Fit force data scalers
         if self._is_force_normalization:
@@ -411,30 +404,6 @@ class MaterialModelFinder(torch.nn.Module):
             ConstitutiveModel). Models are labeled from 1 to n_mat_model.
         """
         return self._specimen_material_state.get_material_models()
-    # -------------------------------------------------------------------------
-    def _set_model_parameters(self):
-        """Set model parameters (collect material models parameters)."""
-        # Initialize parameters
-        self._model_parameters = torch.nn.ParameterDict({})
-        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        # Get material models
-        material_models = self._specimen_material_state.get_material_models()
-        # Loop over material models
-        for model_key, model in material_models.items():
-            # Assemble material model parameters
-            if hasattr(model, 'get_model_parameters'):
-                self._model_parameters[model_key] = \
-                    model.get_model_parameters()
-    # -------------------------------------------------------------------------
-    def get_model_parameters(self):
-        """Get model parameters (material models parameters).
-        
-        Returns
-        -------
-        model_parameters : torch.nn.ParameterDict
-            Model parameters.
-        """
-        return self._model_parameters
     # -------------------------------------------------------------------------
     def get_detached_model_parameters(self):
         """Get model parameters (material models) detached of gradients.
@@ -1953,6 +1922,8 @@ class MaterialModelFinder(torch.nn.Module):
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Compute output features
         features_out = constitutive_model(features_in)
+        # Extract output features
+        features_out = self.features_out_extractor(features_out)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Build state path history
         if strain_formulation == 'infinitesimal':

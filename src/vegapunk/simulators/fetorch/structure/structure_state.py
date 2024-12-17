@@ -11,6 +11,8 @@ StructureMaterialState
 # Standard
 import copy
 import re
+# Third-party
+import torch
 # Local
 from simulators.fetorch.math.matrixops import get_problem_type_parameters
 from simulators.fetorch.material.models.standard.elastic import Elastic
@@ -30,7 +32,7 @@ __status__ = 'Planning'
 # =============================================================================
 #
 # =============================================================================
-class StructureMaterialState:
+class StructureMaterialState(torch.nn.Module):
     """FETorch structure material state.
     
     Attributes
@@ -110,6 +112,9 @@ class StructureMaterialState:
         n_elem : int
             Number of elements of finite element mesh.
         """
+        # Initialize from base class
+        super(StructureMaterialState, self).__init__()
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Set problem strain formulation and type
         self._strain_formulation = strain_formulation
         self._problem_type = problem_type
@@ -117,7 +122,7 @@ class StructureMaterialState:
         # Initialize number of material models
         self._n_mat_model = 0
         # Initialize material models
-        self._material_models = {}
+        self._material_models = torch.nn.ModuleDict()
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Initialize elements material model
         self._elements_material = {str(i): None for i in range(1, n_elem + 1)}
@@ -262,6 +267,8 @@ class StructureMaterialState:
             # Get model input and output features normalization
             is_model_in_normalized = model_kwargs['is_model_in_normalized']
             is_model_out_normalized = model_kwargs['is_model_out_normalized']
+            # Set GRU model source
+            gru_model_source = model_kwargs['gru_model_source']
             # Get device type
             device_type = model_kwargs['device_type']
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -276,6 +283,7 @@ class StructureMaterialState:
                 'model_name': model_name,
                 'is_model_in_normalized': is_model_in_normalized,
                 'is_model_out_normalized': is_model_out_normalized,
+                'gru_model_source': gru_model_source,
                 'device_type': device_type}
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Initialize constitutive model
