@@ -252,7 +252,7 @@ def set_patch_geometric_params(n_dim):
                                   '3': ((-0.05, 0.05), (-0.05, 0.05)),
                                   '4': ((-0.05, 0.05), (-0.05, 0.05))}
         # Set polynomial deformation order for each edge label
-        edge_deformation_order = {'1': 2, '2': 3, '3': 2, '4': 3}
+        edge_deformation_order = {'1': 3, '2': 3, '3': 3, '4': 3}
         # Set range of polynomial deformation for each edge label
         edge_deformation_magnitude_ranges = {'1': (-0.05, 0.05),
                                              '2': (-0.05, 0.05),
@@ -345,13 +345,13 @@ def set_patch_mesh_params(n_dim):
         # Set finite element type
         elem_type = 'SQUAD4'
         # Set number of finite elements per dimension
-        n_elems_per_dim = (6, 3)
+        n_elems_per_dim = (11, 11)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     elif n_dim == 3:
         # Set finite element type
         elem_type = 'SHEXA8'
         # Set number of finite elements per dimension
-        n_elems_per_dim = (10, 10, 10)
+        n_elems_per_dim = (11, 11, 11)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     else:
         raise RuntimeError('Invalid number of spatial dimensions.')
@@ -494,21 +494,40 @@ def perform_links_simulation(simulations_dir, patch, patch_material_params):
             raise RuntimeError('Void elements not available.')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     elif configuration == 'voids_lattice':
+        # Check number of elements along dimensions
+        if any(x % 2 == 0 for x in n_elems_per_dim):
+            raise RuntimeError('In order to generate a lattice configuration '
+                               'with internal voids, the number of elements '
+                               'along each dimension must be odd (avoid '
+                               'removing boundary elements.')
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Initialize element number
         elem_label = 1
         # Initialize removed elements
         remove_elements_labels = []
-        # Loop over elements
-        for k in range(n_elems_per_dim[2]):
+        # Select removed elements
+        if patch.get_n_dim() == 2:
             # Loop over elements
             for j in range(n_elems_per_dim[1]):
                 # Loop over elements
                 for i in range(n_elems_per_dim[0]):
                     # Check void position
-                    if all(x % 2 != 0 for x in (i, j, k)):
+                    if all(x % 2 != 0 for x in (i, j)):
                         remove_elements_labels.append(elem_label)
                     # Update element number
                     elem_label += 1
+        else:
+            # Loop over elements
+            for k in range(n_elems_per_dim[2]):
+                # Loop over elements
+                for j in range(n_elems_per_dim[1]):
+                    # Loop over elements
+                    for i in range(n_elems_per_dim[0]):
+                        # Check void position
+                        if all(x % 2 != 0 for x in (i, j, k)):
+                            remove_elements_labels.append(elem_label)
+                        # Update element number
+                        elem_label += 1
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     else:
         remove_elements_labels = None
@@ -532,7 +551,7 @@ if __name__ == "__main__":
     # Set base directory
     base_dir = ('/home/bernardoferreira/Documents/brown/projects/'
                 'darpa_project/8_global_random_specimen/von_mises/'
-                '2_random_specimen_hexa8/voids_center_and_internal_corners/'
+                '2_random_specimen_hexa8/test_save_load/'
                 '0_links_simulation')
     # Set specimen name
     specimen_name = 'random_specimen'
@@ -540,7 +559,7 @@ if __name__ == "__main__":
     # Set material patch storage flag
     is_save_material_patch = True
     # Set material patch loading flag
-    is_load_material_patch = True
+    is_load_material_patch = False
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Check base directory
     if not os.path.isdir(base_dir):
