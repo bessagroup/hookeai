@@ -37,11 +37,11 @@ def yield_function(s1, s2, s3, sy, model_name, model_parameters,
         Yield function value.
     """
     # Get model yield function
-    if model_name == 'von_mises':
+    if 'von_mises' in model_name:
         yf = yf_von_mises
-    elif model_name == 'drucker_prager':
+    elif 'drucker_prager' in model_name:
         yf = yf_drucker_prager
-    elif model_name == 'lou_zhang_yoon':
+    elif 'lou_zhang_yoon' in model_name:
         yf = yf_lou_zhang_yoon
     else:
         raise RuntimeError('Unknown constitutive model.')
@@ -496,14 +496,20 @@ def plot_yield_surface(models_names, models_parameters, models_sy,
 if __name__ == '__main__':
     # Set models names
     models_names = ('von_mises', 'drucker_prager', 'lou_zhang_yoon')
+    models_names = ('lou_zhang_yoon',)
     # Set models parameters
     models_parameters = {}
     models_parameters['von_mises'] = {}
     models_parameters['drucker_prager'] = {'friction_angle': np.deg2rad(10)}
     models_parameters['lou_zhang_yoon'] = {'yield_a': 1.5838,
-                                           'yield_b': 0.0,
+                                           'yield_b': 0.05,
                                            'yield_c': -0.2669,
                                            'yield_d': 0.8161}
+    models_parameters['lou_zhang_yoon'] = {'yield_a': 1.5838,
+                                           'yield_b': 0.05,
+                                           'yield_c': -1,
+                                           'yield_d': 0.25*np.sqrt(3)}
+
     # Set models yield stress
     models_sy = {'von_mises': 0.5,
                  'drucker_prager': 0.5,
@@ -512,6 +518,7 @@ if __name__ == '__main__':
     models_labels = {'von_mises': 'Von Mises',
                      'drucker_prager': 'Drucker-Prager',
                      'lou_zhang_yoon': 'Lou-Zhang-Yoon'}
+
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Plot constitutive material models yield surface
     plot_yield_surface(models_names, models_parameters, models_sy,
