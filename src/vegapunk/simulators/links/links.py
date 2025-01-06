@@ -116,7 +116,9 @@ class LinksSimulator:
                                  patch_material_data,
                                  remove_elements_labels=None,
                                  links_input_params=None,
-                                 is_overwrite_file=False, is_verbose=False):
+                                 is_overwrite_file=False, 
+                                 is_save_increm_file=False,
+                                 is_verbose=False):
         """Generate Links input data file.
         
         Parameters
@@ -145,6 +147,9 @@ class LinksSimulator:
             Overwrite existing Links input data file if True, otherwise
             generate non-existent file path by extending the original file path
             with an integer.
+        is_save_increm_file : bool, default=False
+            If True, then save data file with Links input data file loading
+            incrementation data.
         is_verbose : bool, default=False
             If True, enable verbose output.
             
@@ -223,7 +228,8 @@ class LinksSimulator:
         self._write_links_input_data_file(
             links_file_path, input_params, node_coords, elements,
             elements_mat_phase, element_type, n_gauss_points,
-            mesh_elem_material, mat_phases_descriptors, node_displacements)
+            mesh_elem_material, mat_phases_descriptors, node_displacements,
+            is_save_increm_file=is_save_increm_file)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         if is_verbose:
             print('\n> File: ' + links_file_path + '\n')
@@ -467,7 +473,8 @@ class LinksSimulator:
                                      elements_mat_phase, element_type,
                                      n_gauss_points, mesh_elem_material,
                                      mat_phases_descriptors,
-                                     node_displacements):
+                                     node_displacements,
+                                     is_save_increm_file=False):
         """Write Links input data file.
         
         Parameters
@@ -498,7 +505,10 @@ class LinksSimulator:
         node_displacements : dict
             Displacements (item, numpy.ndarray(n_dim)) prescribed on each
             finite element mesh node (key, str[int]). Free degrees of
-            freedom must be set as None. 
+            freedom must be set as None.
+        is_save_increm_file : bool, default=False
+            If True, then save data file with Links input data file loading
+            incrementation data.
         """
         # Open Links input data file
         links_file = open(links_file_path, 'w')
@@ -526,8 +536,21 @@ class LinksSimulator:
                + '\n'] \
             + ['\nSOLUTION_ALGORITHM ' + ip['solution_algorithm'] + '\n']
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Get loading incrementation
+        increm_lines = self._get_links_loading_incrementation()
         # Append loading increment
-        write_lines += self._get_links_loading_incrementation()
+        write_lines += increm_lines
+        # Save loading incrementation data file
+        if is_save_increm_file:
+            # Set loading incrementation data file path
+            increm_file_path = os.path.join(os.path.dirname(links_file_path),
+                                            'loading_incrementation.dat')
+            # Open loading incrementation data file
+            increm_file = open(increm_file_path, 'w')
+            # Write loading incrementation data file
+            increm_file.writelines(increm_lines)
+            # Close loading incrementation data file
+            increm_file.close()
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Continue input file data
         write_lines += \

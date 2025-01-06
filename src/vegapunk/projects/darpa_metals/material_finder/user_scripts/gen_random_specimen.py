@@ -517,7 +517,8 @@ def perform_links_simulation(simulations_dir, patch, patch_material_params):
     links_file_path = links_simulator.generate_input_data_file(
         'random_specimen', simulations_dir, patch, patch_material_params,
         remove_elements_labels=remove_elements_labels,
-        links_input_params=links_input_params, is_overwrite_file=True)
+        links_input_params=links_input_params, is_overwrite_file=True,
+        is_save_increm_file=True)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Perform Links simulation
     is_success, _ = \
