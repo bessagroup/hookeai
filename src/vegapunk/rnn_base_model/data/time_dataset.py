@@ -23,14 +23,14 @@ add_dataset_feature_init
     Add feature initialization to all samples of time series data set.
 concatenate_dataset_features
     Concatenate existing features of time series data set into new feature.
-sum_dataset_features(dataset, new_feature_label, sum_features_labels,
-                     features_weights=None, is_remove_features=False)
+sum_dataset_features
     Sum existing features of time series data set into new feature.
 write_time_series_dataset_summary_file
     Write summary data file for time series data set generation.
-split_dataset(dataset, split_sizes, is_save_subsets=False, \
-              subsets_directory=None, subsets_basename=None, seed=None)
+split_dataset
     Randomly split data set into non-overlapping subsets.
+get_parent_dataset_indices
+    Get parent data set indices from subset indices.
 """
 #
 #                                                                       Modules
@@ -490,6 +490,14 @@ class TimeSeriesDatasetInMemory(torch.utils.data.Dataset):
         Return size of data set (number of samples).
     __getitem__(self, index)
         Return data set sample from corresponding index.
+    get_dataset_samples(self)
+        Get data set samples data.
+    add_dataset_samples(self, samples)
+        Add samples to data set.
+    remove_dataset_samples(self, indices)
+        Remove samples from data set.
+    from_dataset(cls, dataset)
+        Convert data set to TimeSeriesDatasetInMemory data set.
     """
     def __init__(self, dataset_samples):
         """Constructor.
@@ -536,6 +544,71 @@ class TimeSeriesDatasetInMemory(torch.utils.data.Dataset):
         sample_data = self._dataset_samples[index]
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         return sample_data
+    # -------------------------------------------------------------------------
+    def get_dataset_samples(self):
+        """Get data set samples data.
+        
+        Returns
+        -------
+        dataset_samples : list[dict]
+            Time series data set samples data. Each sample is stored as a
+            dictionary where each feature (key, str) data is a torch.Tensor(2d)
+            of shape (sequence_length, n_features).
+        """
+        return copy.deepcopy(self._dataset_samples)
+    # -------------------------------------------------------------------------
+    def add_dataset_samples(self, samples):
+        """Add samples to data set.
+        
+        Parameters
+        ----------
+        samples : list[dict]
+            Time series samples data. Each sample is stored as a dictionary
+            where each feature (key, str) data is a torch.Tensor(2d) of shape
+            (sequence_length, n_features).
+        """
+        # Append samples data
+        self._dataset_samples += samples
+    # -------------------------------------------------------------------------
+    def remove_dataset_samples(self, indices):
+        """Remove samples from data set.
+        
+        Parameters
+        ----------
+        indices : list[int]
+            Indices of data set samples to be removed (index must be in
+            [0, n_sample]).
+        """
+        # Remove samples data
+        self._dataset_samples = \
+            [sample for i, sample in enumerate(self._dataset_samples)
+             if i not in set(indices)]
+    # -------------------------------------------------------------------------
+    @classmethod
+    def from_dataset(cls, dataset):
+        """Convert data set to TimeSeriesDatasetInMemory data set.
+        
+        Parameters
+        ----------
+        dataset : torch.utils.data.Dataset
+            Time series data set. Each sample is stored as a dictionary where
+            each feature (key, str) data is a torch.Tensor(2d) of shape
+            (sequence_length, n_features).
+        
+        Returns
+        -------
+        dataset : TimeSeriesDatasetInMemory
+            Time series data set. Each sample is stored as a dictionary where
+            each feature (key, str) data is a torch.Tensor(2d) of shape
+            (sequence_length, n_features).
+        """
+        # Collect data set samples
+        dataset_samples = [x for x in dataset]
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Create data set
+        dataset = cls(dataset_samples)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        return dataset
 # =============================================================================
 class TimeSeriesDataset(torch.utils.data.Dataset):
     """Time series data set.
@@ -794,8 +867,9 @@ class TimeSeriesDataset(torch.utils.data.Dataset):
             else:
                 self._dataset_sample_files[i] = new_file_path
 # =============================================================================
-def split_dataset(dataset, split_sizes, is_save_subsets=False,
-                  subsets_directory=None, subsets_basename=None, seed=None):
+def split_dataset(dataset, split_sizes, is_copy_dataset=False,
+                  is_save_subsets=False, subsets_directory=None,
+                  subsets_basename=None, seed=None):
     """Randomly split data set into non-overlapping subsets.
     
     Parameters
@@ -807,7 +881,9 @@ def split_dataset(dataset, split_sizes, is_save_subsets=False,
     split_sizes : dict
         Size (item, float) of each data subset name (key, str), where size is a
         fraction contained between 0 and 1. The sum of all sizes must equal 1.
-    is_save_subsets : bool, False
+    is_copy_dataset : bool, default=False
+        If True, then subsets are disconnected from original parent data set.
+    is_save_subsets : bool, default=False
         If True, then save data subsets to files.
     subsets_directory : str, default=None
         Directory where the data subsets files are stored.
@@ -843,7 +919,11 @@ def split_dataset(dataset, split_sizes, is_save_subsets=False,
     if seed is not None:
         generator = torch.Generator().manual_seed(seed)
     else:
-        generator = torch.Generator()
+        generator = None
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Copy original data set
+    if is_copy_dataset:
+        dataset = copy.deepcopy(dataset)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Randomly split data set into non-overlapping subsets
     subsets_list = torch.utils.data.random_split(dataset, subsets_sizes,
@@ -884,3 +964,31 @@ def split_dataset(dataset, split_sizes, is_save_subsets=False,
                 pickle.dump(val, subset_file)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~    
     return dataset_split
+# =============================================================================
+def get_parent_dataset_indices(subset, subset_indices):
+    """Get parent data set indices from subset indices.
+    
+    Parameters
+    ----------
+    subset : torch.utils.data.Subset
+        Time series subset. Each sample is stored as a dictionary where
+        each feature (key, str) data is a torch.Tensor(2d) of shape
+        (sequence_length, n_features).
+    subset_indices : list[int]
+        Subset samples indices.
+        
+    Returns
+    -------
+    parent_indices : list[int]
+        Parent data set samples indices.
+    """
+    # Check subset
+    if not isinstance(subset, torch.utils.data.Subset):
+        raise RuntimeError(f'Expecting time series subset of class '
+                           f'torch.utils.data.Subset, but found '
+                           f'{type(subset).__name__} instead.')
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Get parent data set samples indices
+    parent_indices = [subset.indices[i] for i in subset_indices]
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    return parent_indices
