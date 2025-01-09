@@ -9,11 +9,12 @@ if root_dir not in sys.path:
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 import os
 import shutil
+import random
 # Third-party
 import numpy as np
 # Local
 from rnn_base_model.data.time_dataset import save_dataset, load_dataset, \
-    split_dataset, TimeSeriesDatasetInMemory
+    split_dataset, get_parent_dataset_indices, TimeSeriesDatasetInMemory
 from ioput.iostandard import make_directory, find_unique_file_with_regex
 # =============================================================================
 # Summary: Time series data set pruning procedure
@@ -47,25 +48,21 @@ def prune_time_series_dataset(pruning_dir, testing_types, pruning_params=None):
         pruning_params = set_default_pruning_parameters()
     # Get number of pruning steps
     n_prun_step = pruning_params['n_prun_step']
-    # Get minimum data set size ratio
-    min_size_ratio = pruning_params['min_size_ratio']
-    # Get pruning step data set split sizes
-    pruning_step_sizes = pruning_params['pruning_step_sizes']
     # Get pruning iteration data set split sizes
     pruning_iter_sizes = pruning_params['pruning_iter_sizes']
+    # Add full data set size to pruning parameters
+    pruning_params['n_full'] = n_full
+    
+    
+    
+    # IMPLEMENT METHOD TO CHECK IF N_PRUNE_SAMPLE IS VALID GIVEN PRUNING PARAMETERS!
+    
+    
+    
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Initialize summary file
-    write_summary_file(pruning_dir, pruning_params, mode='init',
-                       mode_data={'n_full': n_full})
+    write_summary_file(pruning_dir, pruning_params, mode='init')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Compute number of pruned samples (per pruning step)
-    n_prun_sample = \
-        int(np.floor((1.0 - min_size_ratio)*(n_full/n_prun_step) + 1e-10))
-    # Check number of pruned sample (per pruning step)
-    if n_prun_sample < 1:
-        raise RuntimeError(f'Number of pruned samples (per pruning step) must '
-                           f'be greater than 0, but got {n_prun_sample} as '
-                           f'the result of the pruning parameters.')
     # Compute number of iterations
     n_iter = n_prun_step + 1
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -78,7 +75,9 @@ def prune_time_series_dataset(pruning_dir, testing_types, pruning_params=None):
             # Initialize unused data set
             unused_dataset = TimeSeriesDatasetInMemory([])
         else:
-            pass
+            # Perform pruning step
+            dev_dataset, unused_dataset = perform_pruning_step(
+                prun_datasets_dir, pruning_params, dev_dataset, unused_dataset)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Randomly split development data set
         dev_dataset_split = split_dataset(dev_dataset, pruning_iter_sizes)
@@ -87,11 +86,12 @@ def prune_time_series_dataset(pruning_dir, testing_types, pruning_params=None):
         val_dataset = dev_dataset_split['validation']
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Set pruning iteration directory
-        train_dataset_file_path, val_dataset_file_path, \
-            test_dataset_file_paths = set_pruning_iter_dir(
-                prun_datasets_dir, train_dataset, val_dataset,
-                test_dataset_dirs=test_dataset_dirs,
-                unused_dataset=unused_dataset)
+        pruning_iter_dir, model_directory, train_dataset_file_path, \
+            val_dataset_file_path, test_dataset_file_paths = \
+                set_pruning_iter_dir(prun_datasets_dir, train_dataset,
+                                     val_dataset,
+                                     test_dataset_dirs=test_dataset_dirs,
+                                     unused_dataset=unused_dataset)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         pass
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -219,6 +219,10 @@ def set_pruning_iter_dir(prun_datasets_dir, train_dataset,
         
     Returns
     -------
+    pruning_iter_dir : str
+        Pruning iteration directory.
+    model_directory : str
+        Directory where model is stored.
     train_dataset_file_path : str
         Training data set file path.
     val_dataset_file_path : str
@@ -315,8 +319,8 @@ def set_pruning_iter_dir(prun_datasets_dir, train_dataset,
         # Store testing data set file path
         test_dataset_file_paths[testing_type] = test_dataset_file_path
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    return train_dataset_file_path, val_dataset_file_path, \
-        test_dataset_file_paths
+    return pruning_iter_dir, model_directory, train_dataset_file_path, \
+        val_dataset_file_path, test_dataset_file_paths
 # =============================================================================
 def set_default_pruning_parameters():
     """Set default pruning parameters.
@@ -343,6 +347,168 @@ def set_default_pruning_parameters():
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     return pruning_params
 # =============================================================================
+def perform_pruning_step(prun_datasets_dir, pruning_params, dev_dataset,
+                         unused_dataset):
+    """Perform pruning step.
+    
+    Parameters
+    ----------
+    prun_datasets_dir : str
+        Pruned data sets directory.
+    pruning_params : dict
+        Pruning parameters.
+    dev_dataset : torch.utils.data.Dataset
+        Time series development data set. Each sample is stored as a dictionary
+        where each feature (key, str) data is a torch.Tensor(2d) of shape
+        (sequence_length, n_features).
+    unused_dataset : torch.utils.data.Dataset
+        Time series unused data set. Each sample is stored as a dictionary
+        where each feature (key, str) data is a torch.Tensor(2d) of shape
+        (sequence_length, n_features).
+    """
+    # Get pruning step data set split sizes
+    pruning_step_sizes = pruning_params['pruning_step_sizes']
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Randomly split development data set
+    dev_dataset_split = split_dataset(dev_dataset, pruning_step_sizes)
+    # Get pruning step data sets
+    train_dataset = dev_dataset_split['training']
+    val_dataset = dev_dataset_split['validation']
+    test_dataset = dev_dataset_split['testing']
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Set pruning step directory
+    pruning_step_dir, model_directory, train_dataset_file_path, \
+        val_dataset_file_path, test_dataset_file_path = set_pruning_step_dir(
+            prun_datasets_dir, train_dataset, val_dataset, test_dataset)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    pass
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    
+    # WIP
+    
+    # Get full data set size
+    n_full = pruning_params['n_full']
+    # Get number of pruning steps
+    n_prun_step = pruning_params['n_prun_step']
+    # Get minimum data set size ratio
+    min_size_ratio = pruning_params['min_size_ratio']
+    # Compute number of pruned samples (per pruning step)
+    n_prun_sample = \
+        int(np.floor((1.0 - min_size_ratio)*(n_full/n_prun_step) + 1e-10))
+    
+    n_prun_sample = 3
+    # Check number of pruned samples (per pruning step)
+    if n_prun_sample < 1:
+        raise RuntimeError(f'Number of pruned samples (per pruning step) must '
+                           f'be greater than 0, but got {n_prun_sample} as '
+                           f'the result of the pruning parameters.')
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    
+    # DUMMY: Get pruned samples testing indices
+    prune_samples_test_indices = \
+        random.sample(list(range(len(test_dataset))), n_prun_sample)
+
+
+
+
+    # Get pruned samples development indices
+    prune_samples_dev_indices = \
+        get_parent_dataset_indices(test_dataset, prune_samples_test_indices)
+    # Get pruned samples data
+    prune_samples = [dev_dataset[i] for i in prune_samples_dev_indices]
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Prune development data set
+    dev_dataset.remove_dataset_samples(prune_samples_dev_indices)
+    # Update unused data set
+    unused_dataset.add_dataset_samples(prune_samples)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Remove pruning step directory
+    shutil.rmtree(pruning_step_dir)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    return dev_dataset, unused_dataset
+# =============================================================================
+def set_pruning_step_dir(prun_datasets_dir, train_dataset, val_dataset,
+                         test_dataset, dataset_basename='ss_paths_dataset'):
+    """Setup pruning iteration directory.
+    
+    Parameters
+    ----------
+    prun_datasets_dir : str
+        Pruned data sets directory.
+    train_dataset : torch.utils.data.Dataset
+        Time series training data set. Each sample is stored as a dictionary
+        where each feature (key, str) data is a torch.Tensor(2d) of shape
+        (sequence_length, n_features).
+    val_dataset : torch.utils.data.Dataset
+        Time series validation data set. Each sample is stored as a dictionary
+        where each feature (key, str) data is a torch.Tensor(2d) of shape
+        (sequence_length, n_features).
+    test_dataset : torch.utils.data.Dataset
+        Time series testing data set. Each sample is stored as a dictionary
+        where each feature (key, str) data is a torch.Tensor(2d) of shape
+        (sequence_length, n_features).
+    dataset_basename : str, defaut='ss_paths_dataset'
+        Data set file base name.
+        
+    Returns
+    -------
+    pruning_step_dir : str
+        Pruning step directory.
+    model_directory : str
+        Directory where model is stored.
+    train_dataset_file_path : str
+        Training data set file path.
+    val_dataset_file_path : str
+        Validation data set file path.
+    test_dataset_file_path : str
+        Testing data set file path.
+    """
+    # Set pruning step directory
+    pruning_step_dir = os.path.join(os.path.normpath(prun_datasets_dir),
+                                    f'pruning_step')
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Create pruning step directory
+    make_directory(pruning_step_dir, is_overwrite=True)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Set pruning training data set directory
+    train_dataset_dir = os.path.join(os.path.normpath(pruning_step_dir),
+                                     '1_training_dataset') 
+    # Create pruning training data set directory
+    make_directory(train_dataset_dir, is_overwrite=True)
+    # Save pruning training data set
+    train_dataset_file_path = \
+        save_dataset(train_dataset, dataset_basename, train_dataset_dir,
+                     is_append_n_sample=True)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Set pruning validation data set directory
+    val_dataset_dir = os.path.join(os.path.normpath(pruning_step_dir),
+                                   '2_validation_dataset') 
+    # Create pruning validation data set directory
+    make_directory(val_dataset_dir, is_overwrite=True)
+    # Save pruning validation data set
+    val_dataset_file_path = \
+        save_dataset(val_dataset, dataset_basename, val_dataset_dir,
+                     is_append_n_sample=True)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Set model directory
+    model_directory = os.path.join(os.path.normpath(pruning_step_dir),
+                                   '3_model')
+    # Create model directory
+    make_directory(model_directory, is_overwrite=True)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Set pruning testing data set directory
+    test_dataset_dir = os.path.join(os.path.normpath(pruning_step_dir),
+                                    '5_testing_id_dataset') 
+    # Create pruning testing data set directory
+    make_directory(test_dataset_dir, is_overwrite=True)
+    # Save pruning testing data set
+    test_dataset_file_path = \
+        save_dataset(test_dataset, dataset_basename, val_dataset_dir,
+                     is_append_n_sample=True)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    return pruning_step_dir, model_directory, train_dataset_file_path, \
+        val_dataset_file_path, test_dataset_file_path
+# =============================================================================
 def write_summary_file(pruning_dir, pruning_params, mode='init', mode_data={}):
     """Write summary file.
     
@@ -368,7 +534,7 @@ def write_summary_file(pruning_dir, pruning_params, mode='init', mode_data={}):
         sep = len(string)*'-'
         summary += [f'\n{string}\n{sep}\n',]
         # Assemble full data set size
-        n_full = mode_data['n_full']
+        n_full = pruning_params['n_full']
         summary += [f'\n> Full data set size: {n_full}\n',]
         # Assemble pruning parameters
         n_prun_step = pruning_params['n_prun_step']
