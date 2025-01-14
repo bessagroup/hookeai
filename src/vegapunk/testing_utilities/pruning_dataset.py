@@ -10,8 +10,6 @@ if root_dir not in sys.path:
 import os
 import shutil
 import random
-# Third-party
-import numpy as np
 # Local
 from rnn_base_model.data.time_dataset import save_dataset, load_dataset, \
     split_dataset, get_parent_dataset_indices, TimeSeriesDatasetInMemory
@@ -35,7 +33,7 @@ def prune_time_series_dataset(pruning_dir, testing_types, pruning_params=None):
         is adopted.
     """
     # Setup main pruning process directories
-    base_datasets_dir, prun_datasets_dir, full_dataset_dir, \
+    _, prun_datasets_dir, full_dataset_dir, \
         test_dataset_dirs = setup_pruning_dirs(pruning_dir, testing_types) 
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Load full data set
@@ -46,28 +44,22 @@ def prune_time_series_dataset(pruning_dir, testing_types, pruning_params=None):
     # Get default pruning parameters
     if not isinstance(pruning_params, dict):
         pruning_params = set_default_pruning_parameters()
-    # Get number of pruning steps
-    n_prun_step = pruning_params['n_prun_step']
+    # Get maximum number of pruning iterations
+    n_iter_max = pruning_params['n_iter_max']
     # Get pruning iteration data set split sizes
     pruning_iter_sizes = pruning_params['pruning_iter_sizes']
     # Add full data set size to pruning parameters
     pruning_params['n_full'] = n_full
-    
-    
-    
-    # IMPLEMENT METHOD TO CHECK IF N_PRUNE_SAMPLE IS VALID GIVEN PRUNING PARAMETERS!
-    
-    
-    
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Initialize summary file
     write_summary_file(pruning_dir, pruning_params, mode='init')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Compute number of iterations
-    n_iter = n_prun_step + 1
-    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Initialize pruning iteration counter
+    iter = 0
+    # Initialize pruning termination flag
+    is_keep_pruning = True
     # Loop over iterations
-    for iter in range(n_iter):        
+    while is_keep_pruning:      
         # Build development data set
         if iter == 0:
             # Initialize development data set
@@ -76,8 +68,17 @@ def prune_time_series_dataset(pruning_dir, testing_types, pruning_params=None):
             unused_dataset = TimeSeriesDatasetInMemory([])
         else:
             # Perform pruning step
-            dev_dataset, unused_dataset = perform_pruning_step(
-                prun_datasets_dir, pruning_params, dev_dataset, unused_dataset)
+            is_valid_pruning_step, step_status, dev_dataset, unused_dataset = \
+                perform_pruning_step(prun_datasets_dir, pruning_params,
+                                     dev_dataset, unused_dataset)
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Check pruning step admissibility
+            if not is_valid_pruning_step:
+                # Set termination status
+                termination_status = step_status
+                # Terminate pruning
+                is_keep_pruning = False
+                continue
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Randomly split development data set
         dev_dataset_split = split_dataset(dev_dataset, pruning_iter_sizes)
@@ -93,7 +94,8 @@ def prune_time_series_dataset(pruning_dir, testing_types, pruning_params=None):
                                      test_dataset_dirs=test_dataset_dirs,
                                      unused_dataset=unused_dataset)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        pass
+        # Training and prediction of iterative model
+        # ...
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Add iteration data to summary file
         testing_types_loss = {'in_distribution': 0.0,
@@ -107,6 +109,21 @@ def prune_time_series_dataset(pruning_dir, testing_types, pruning_params=None):
                      'testing_types_loss': testing_types_loss}
         write_summary_file(pruning_dir, pruning_params, mode='iter',
                            mode_data=iter_data)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Check pruning iterations
+        if iter >= n_iter_max:
+            # Set termination status
+            termination_status = \
+                'Maximum number of pruning iterations reached.'
+            # Terminate pruning
+            is_keep_pruning = False
+        else:
+            # Update pruning iteration counter
+            iter += 1
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Add termination status to summary file
+    write_summary_file(pruning_dir, pruning_params, mode='end',
+                       mode_data={'termination_status': termination_status})
 # =============================================================================
 def setup_pruning_dirs(pruning_dir, testing_types):
     """Setup main pruning process directories.
@@ -330,18 +347,28 @@ def set_default_pruning_parameters():
     pruning_params : dict
         Pruning parameters.
     """
-    # Set number of pruning steps
-    n_prun_step = 5
-    # Set minimum data set size ratio
-    min_size_ratio = 0.05
+    # Set number of pruned samples (per pruning step)
+    n_prun_sample = 10
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Set maximum number of pruning iterations
+    n_iter_max = 100
+    # Set minimum development data set size
+    n_dev_min = 10
+    # Set minimum pruning testing data set size
+    n_prun_test_min = 10
+    # Set maximum pruned samples testing ratio
+    prun_test_ratio_max = 0.5
     # Set pruning step data sets split sizes
     pruning_step_sizes = {'training': 0.7, 'validation': 0.2, 'testing': 0.1}
     # Set pruning iteration data sets split sizes
     pruning_iter_sizes = {'training': 0.8, 'validation': 0.2}
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Build pruning parameters
-    pruning_params = {'n_prun_step': n_prun_step,
-                      'min_size_ratio': min_size_ratio,
+    pruning_params = {'n_iter_max': n_iter_max,
+                      'n_prun_sample': n_prun_sample,
+                      'n_dev_min': n_dev_min,
+                      'n_prun_test_min': n_prun_test_min,
+                      'prun_test_ratio_max': prun_test_ratio_max,
                       'pruning_step_sizes': pruning_step_sizes,
                       'pruning_iter_sizes': pruning_iter_sizes}
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -365,7 +392,32 @@ def perform_pruning_step(prun_datasets_dir, pruning_params, dev_dataset,
         Time series unused data set. Each sample is stored as a dictionary
         where each feature (key, str) data is a torch.Tensor(2d) of shape
         (sequence_length, n_features).
+        
+    Returns
+    -------
+    is_valid_pruning_step : bool
+        If True, then pruning step is admissible and is performed. If False,
+        then pruning step is non-admissible and data sets are unchanged.
+    step_status : str
+        Pruning step status.
+    dev_dataset : torch.utils.data.Dataset
+        Time series development data set. Each sample is stored as a dictionary
+        where each feature (key, str) data is a torch.Tensor(2d) of shape
+        (sequence_length, n_features).
+    unused_dataset : torch.utils.data.Dataset
+        Time series unused data set. Each sample is stored as a dictionary
+        where each feature (key, str) data is a torch.Tensor(2d) of shape
+        (sequence_length, n_features).
     """
+    # Compute number of pruned samples (per pruning step)
+    n_prun_sample = pruning_params['n_prun_sample']
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Get minimum development data set size
+    n_dev_min = pruning_params['n_dev_min']
+    # Get minimum pruning testing data set size
+    n_prun_test_min = pruning_params['n_prun_test_min']
+    # Get maximum pruned samples testing ratio
+    prun_test_ratio_max = pruning_params['prun_test_ratio_max']
     # Get pruning step data set split sizes
     pruning_step_sizes = pruning_params['pruning_step_sizes']
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -376,56 +428,54 @@ def perform_pruning_step(prun_datasets_dir, pruning_params, dev_dataset,
     val_dataset = dev_dataset_split['validation']
     test_dataset = dev_dataset_split['testing']
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Set pruning step directory
-    pruning_step_dir, model_directory, train_dataset_file_path, \
-        val_dataset_file_path, test_dataset_file_path = set_pruning_step_dir(
-            prun_datasets_dir, train_dataset, val_dataset, test_dataset)
+    # Initialize pruning step status
+    step_status = None
+    # Check pruning step admissibility
+    if len(dev_dataset) <= n_dev_min:
+        step_status = 'Minimum development data set size reached.'
+    elif len(test_dataset) < n_prun_test_min:
+        step_status = 'Minimum pruning testing data set size reached.'
+    elif n_prun_sample/len(test_dataset) > prun_test_ratio_max:
+        step_status = 'Maximum pruned samples testing ratio reached.'
+    # Set pruning step admissibility
+    if step_status is None:
+        is_valid_pruning_step = True
+    else:
+        is_valid_pruning_step = False
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    pass
+    # Perform pruning step
+    if is_valid_pruning_step:
+        # Set pruning step directory
+        pruning_step_dir, model_directory, train_dataset_file_path, \
+            val_dataset_file_path, test_dataset_file_path = \
+                set_pruning_step_dir(prun_datasets_dir, train_dataset,
+                                     val_dataset, test_dataset)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Training and prediction of pruning step model
+        # ...
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # DUMMY: Get pruned samples testing indices
+        prune_samples_test_indices = \
+            random.sample(list(range(len(test_dataset))), n_prun_sample)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Get pruned samples development indices
+        prune_samples_dev_indices = get_parent_dataset_indices(
+            test_dataset, prune_samples_test_indices)
+        # Get pruned samples data
+        prune_samples = [dev_dataset[i] for i in prune_samples_dev_indices]
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Prune development data set
+        dev_dataset.remove_dataset_samples(prune_samples_dev_indices)
+        # Update unused data set
+        unused_dataset.add_dataset_samples(prune_samples)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Remove pruning step directory
+        shutil.rmtree(pruning_step_dir)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set step status
+        step_status = 'Pruning step performed successfully.'
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    
-    # WIP
-    
-    # Get full data set size
-    n_full = pruning_params['n_full']
-    # Get number of pruning steps
-    n_prun_step = pruning_params['n_prun_step']
-    # Get minimum data set size ratio
-    min_size_ratio = pruning_params['min_size_ratio']
-    # Compute number of pruned samples (per pruning step)
-    n_prun_sample = \
-        int(np.floor((1.0 - min_size_ratio)*(n_full/n_prun_step) + 1e-10))
-    
-    n_prun_sample = 3
-    # Check number of pruned samples (per pruning step)
-    if n_prun_sample < 1:
-        raise RuntimeError(f'Number of pruned samples (per pruning step) must '
-                           f'be greater than 0, but got {n_prun_sample} as '
-                           f'the result of the pruning parameters.')
-    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    
-    # DUMMY: Get pruned samples testing indices
-    prune_samples_test_indices = \
-        random.sample(list(range(len(test_dataset))), n_prun_sample)
-
-
-
-
-    # Get pruned samples development indices
-    prune_samples_dev_indices = \
-        get_parent_dataset_indices(test_dataset, prune_samples_test_indices)
-    # Get pruned samples data
-    prune_samples = [dev_dataset[i] for i in prune_samples_dev_indices]
-    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Prune development data set
-    dev_dataset.remove_dataset_samples(prune_samples_dev_indices)
-    # Update unused data set
-    unused_dataset.add_dataset_samples(prune_samples)
-    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Remove pruning step directory
-    shutil.rmtree(pruning_step_dir)
-    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    return dev_dataset, unused_dataset
+    return is_valid_pruning_step, step_status, dev_dataset, unused_dataset
 # =============================================================================
 def set_pruning_step_dir(prun_datasets_dir, train_dataset, val_dataset,
                          test_dataset, dataset_basename='ss_paths_dataset'):
@@ -518,8 +568,10 @@ def write_summary_file(pruning_dir, pruning_params, mode='init', mode_data={}):
         Pruning main directory.
     pruning_params : dict
         Pruning parameters.
-    mode : {'init', 'iter'}, default='init'
-        Summary data mode.
+    mode : {'init', 'iter', 'end'}, default='init'
+        Summary mode.
+    mode_data : dict, default={}
+        Summary mode data.
     """
     # Set summary file path
     summary_file_path = os.path.join(os.path.normpath(pruning_dir),
@@ -537,13 +589,18 @@ def write_summary_file(pruning_dir, pruning_params, mode='init', mode_data={}):
         n_full = pruning_params['n_full']
         summary += [f'\n> Full data set size: {n_full}\n',]
         # Assemble pruning parameters
-        n_prun_step = pruning_params['n_prun_step']
-        summary += [f'\n> Number of pruning steps: {n_prun_step}\n',]
-        min_size_ratio = pruning_params['min_size_ratio']
-        summary += [f'\n> Minimum data set size ratio: {min_size_ratio}\n',]
+        n_prun_sample = pruning_params['n_prun_sample']
+        summary += [f'\n> Number of pruned samples (per pruning step): '
+                    f'{n_prun_sample}\n',]
+        n_prun_test_min = pruning_params['n_prun_test_min']
+        summary += [f'\n> Minimum pruning testing data set size: '
+                    f'{n_prun_test_min}\n',]
+        prun_test_ratio_max = pruning_params['prun_test_ratio_max']
+        summary += [f'\n> Maximum pruned samples testing ratio: '
+                    f'{prun_test_ratio_max}\n',]
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Assemble pruning iterations header
-        summary += [f'\n> Data set pruning iterations ({n_prun_step + 1}):\n',]
+        summary += [f'\n> Data set pruning iterations:\n',]
         size_sep = 59*'-'
         perf_sep = 35*'-'
         summary += [f'\n{"Data sets":>44s} {"Testing performance":>60s}',
@@ -596,8 +653,17 @@ def write_summary_file(pruning_dir, pruning_params, mode='init', mode_data={}):
         # Write summary file
         open(summary_file_path, 'a').writelines(summary)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    elif mode == 'end':
+        # Get termination status
+        termination_status = mode_data['termination_status']
+        # Assemble termination status
+        summary += [f'\n> Termination status: {termination_status}\n\n',]
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Write summary file
+        open(summary_file_path, 'a').writelines(summary)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     else:
-        raise RuntimeError('Unknown summary data mode.')
+        raise RuntimeError('Unknown summary mode.')
 # =============================================================================
 def load_full_dataset(full_dataset_dir):
     """Load full data set.
