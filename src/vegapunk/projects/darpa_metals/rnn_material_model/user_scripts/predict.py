@@ -71,6 +71,9 @@ def perform_model_prediction(predict_directory, dataset_file_path,
     -------
     predict_subdir : str
         Subdirectory where samples predictions results files are stored.
+    avg_predict_loss : float
+        Average prediction loss per sample. Defaults to None if ground-truth is
+        not available for all data set samples.
     """
     # Set default model prediction options
     loss_nature, loss_type, loss_kwargs = set_default_prediction_options()
@@ -226,7 +229,7 @@ def perform_model_prediction(predict_directory, dataset_file_path,
     load_model_state = 'best'
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Prediction with RNN-based model
-    predict_subdir, _ = \
+    predict_subdir, avg_predict_loss = \
         predict(dataset, model_directory, predict_directory=predict_directory,
                 load_model_state=load_model_state, loss_nature=loss_nature,
                 loss_type=loss_type, loss_kwargs=loss_kwargs,
@@ -254,7 +257,7 @@ def perform_model_prediction(predict_directory, dataset_file_path,
                     # Remove sample prediction file
                     os.remove(sample_file_path)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    return predict_subdir
+    return predict_subdir, avg_predict_loss
 # =============================================================================
 def generate_prediction_plots(dataset_file_path, predict_subdir):
     """Generate plots of model predictions.

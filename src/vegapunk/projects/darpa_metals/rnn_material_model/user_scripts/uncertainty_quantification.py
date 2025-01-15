@@ -134,7 +134,7 @@ def perform_model_uq(uq_directory, n_model_sample, train_dataset_file_path,
             make_directory(predict_directory, is_overwrite=True)
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Perform model prediction
-            predict_subdir = perform_model_prediction(
+            predict_subdir, _ = perform_model_prediction(
                 predict_directory, test_dataset_file_path, sample_model_dir,
                 device_type=device_type, is_verbose=is_verbose)
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
