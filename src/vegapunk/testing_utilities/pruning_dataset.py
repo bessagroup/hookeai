@@ -9,15 +9,26 @@ if root_dir not in sys.path:
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 import os
 import shutil
-import random
+import re
+import pickle
+# Third-party
+import torch
+import numpy as np
+import matplotlib.pyplot as plt
 # Local
 from rnn_base_model.data.time_dataset import save_dataset, load_dataset, \
     split_dataset, get_parent_dataset_indices, TimeSeriesDatasetInMemory
+from projects.darpa_metals.rnn_material_model.user_scripts.train_model import \
+    perform_model_standard_training
+from projects.darpa_metals.rnn_material_model.user_scripts.predict import \
+    perform_model_prediction
+from ioput.plots import scatter_xy_data, save_figure
 from ioput.iostandard import make_directory, find_unique_file_with_regex
 # =============================================================================
-# Summary: Time series data set pruning procedure
+# Summary: Pruning procedure of time series data set 
 # =============================================================================
-def prune_time_series_dataset(pruning_dir, testing_types, pruning_params=None):
+def prune_time_series_dataset(pruning_dir, testing_types, pruning_params=None,
+                              device_type='cpu', is_verbose=False):
     """Prune time series data set.
     
     Parameters
@@ -31,6 +42,18 @@ def prune_time_series_dataset(pruning_dir, testing_types, pruning_params=None):
     pruning_params : dict, default=None
         Pruning parameters. If None, then a default set of pruning parameters
         is adopted.
+    device_type : {'cpu', 'cuda'}, default='cpu'
+        Type of device on which torch.Tensor is allocated.
+    is_verbose : bool, default=False
+        If True, enable verbose output.
+
+    Returns
+    -------
+    pruning_params : dict
+        Pruning parameters.
+    pruning_iterative_data : dict
+        Pruning iterative data (item, dict) for each pruning iteration
+        (key, str).
     """
     # Setup main pruning process directories
     _, prun_datasets_dir, full_dataset_dir, \
@@ -53,6 +76,8 @@ def prune_time_series_dataset(pruning_dir, testing_types, pruning_params=None):
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Initialize summary file
     write_summary_file(pruning_dir, pruning_params, mode='init')
+    # Initialize pruning iterative data
+    pruning_iterative_data = {}
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Initialize pruning iteration counter
     iter = 0
@@ -70,7 +95,9 @@ def prune_time_series_dataset(pruning_dir, testing_types, pruning_params=None):
             # Perform pruning step
             is_valid_pruning_step, step_status, dev_dataset, unused_dataset = \
                 perform_pruning_step(prun_datasets_dir, pruning_params,
-                                     dev_dataset, unused_dataset)
+                                     dev_dataset, unused_dataset,
+                                     device_type=device_type,
+                                     is_verbose=is_verbose)
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Check pruning step admissibility
             if not is_valid_pruning_step:
@@ -88,27 +115,48 @@ def prune_time_series_dataset(pruning_dir, testing_types, pruning_params=None):
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Set pruning iteration directory
         pruning_iter_dir, model_directory, train_dataset_file_path, \
-            val_dataset_file_path, test_dataset_file_paths = \
-                set_pruning_iter_dir(prun_datasets_dir, train_dataset,
-                                     val_dataset,
-                                     test_dataset_dirs=test_dataset_dirs,
-                                     unused_dataset=unused_dataset)
+            val_dataset_file_path, test_dataset_file_paths, \
+                test_prediction_dirs = \
+                    set_pruning_iter_dir(prun_datasets_dir, train_dataset,
+                                         val_dataset,
+                                         test_dataset_dirs=test_dataset_dirs,
+                                         unused_dataset=unused_dataset)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        # Training and prediction of iterative model
-        # ...
+        # Perform pruning iteration model standard training
+        perform_model_standard_training(
+            train_dataset_file_path, model_directory,
+            val_dataset_file_path=val_dataset_file_path,
+            device_type=device_type, is_verbose=is_verbose)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        # Add iteration data to summary file
-        testing_types_loss = {'in_distribution': 0.0,
-                              'unused_data': 0.0}
+        # Initialize pruning iteration model testing loss
+        testing_types_loss = {}
+        # Loop over testing types
+        for testing_type in testing_types: 
+            # Get testing type prediction directory
+            prediction_subdir = test_prediction_dirs[testing_type]
+            # Get testing type data set file path
+            test_dataset_file_path = test_dataset_file_paths[testing_type]
+            # Perform pruning iteration model prediction
+            predict_subdir, avg_predict_loss = perform_model_prediction(
+                prediction_subdir, test_dataset_file_path, model_directory,
+                device_type=device_type, is_verbose=is_verbose)
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Store testing loss
+            testing_types_loss[testing_type] = avg_predict_loss
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Build pruning iteration data
         iter_data = {'n_full': n_full,
                      'iter': iter,
                      'n_dev': len(dev_dataset),
                      'n_train': len(train_dataset),
                      'n_valid': len(val_dataset),
                      'n_unused': len(unused_dataset),
-                     'testing_types_loss': testing_types_loss}
+                     'testing_types_loss': testing_types_loss}     
+        # Add pruning iteration data to summary file
         write_summary_file(pruning_dir, pruning_params, mode='iter',
                            mode_data=iter_data)
+        # Store pruning iteration data
+        pruning_iterative_data[str(iter)] = iter_data
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Check pruning iterations
         if iter >= n_iter_max:
@@ -124,6 +172,18 @@ def prune_time_series_dataset(pruning_dir, testing_types, pruning_params=None):
     # Add termination status to summary file
     write_summary_file(pruning_dir, pruning_params, mode='end',
                        mode_data={'termination_status': termination_status})
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Build pruning data
+    pruning_data = {'pruning_params': pruning_params,
+                    'pruning_iterative_data': pruning_iterative_data}
+    # Set pruning data file path
+    pruning_data_file_path = os.path.join(os.path.normpath(pruning_dir),
+                                          'pruning_data.pkl')
+    # Save pruning data
+    with open(pruning_data_file_path, 'wb') as pruning_file:
+        pickle.dump(pruning_data, pruning_file)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    return pruning_params, pruning_iterative_data
 # =============================================================================
 def setup_pruning_dirs(pruning_dir, testing_types):
     """Setup main pruning process directories.
@@ -203,6 +263,11 @@ def setup_pruning_dirs(pruning_dir, testing_types):
     # Create model predictions directory
     make_directory(prun_datasets_dir, is_overwrite=True)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Set pruning plots directory
+    prun_plots_dir = os.path.join(os.path.normpath(pruning_dir), 'plots')
+    # Create pruning plots directory
+    make_directory(prun_plots_dir, is_overwrite=True)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     return base_datasets_dir, prun_datasets_dir, full_dataset_dir, \
         test_dataset_dirs
 # =============================================================================
@@ -247,6 +312,9 @@ def set_pruning_iter_dir(prun_datasets_dir, train_dataset,
     test_dataset_file_paths : dict
         Testing data set file path (item, str) for each testing type
         (key, str).
+    test_prediction_dirs : dict
+        Directory (item, str) where samples predictions results files are
+        stored for each testing type (key, str).
     """
     # Set pruning iteration directory
     pruning_iter_dir = os.path.join(os.path.normpath(prun_datasets_dir),
@@ -336,8 +404,26 @@ def set_pruning_iter_dir(prun_datasets_dir, train_dataset,
         # Store testing data set file path
         test_dataset_file_paths[testing_type] = test_dataset_file_path
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Set pruning predictions directory
+    prediction_dir = os.path.join(os.path.normpath(pruning_iter_dir),
+                                  '7_prediction')
+    # Create pruning predictions directory
+    make_directory(prediction_dir, is_overwrite=True)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Initialize testing prediction directories
+    test_prediction_dirs = {}
+    # Loop over testing types
+    for testing_type in test_dataset_dirs.keys():
+        # Set testing predictions subdirectory
+        prediction_subdir = os.path.join(
+            os.path.normpath(prediction_dir), testing_type)
+        # Create prediction subdirectory
+        make_directory(prediction_subdir, is_overwrite=True)
+        # Store testing predictions subdirectory
+        test_prediction_dirs[testing_type] = prediction_subdir  
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     return pruning_iter_dir, model_directory, train_dataset_file_path, \
-        val_dataset_file_path, test_dataset_file_paths
+        val_dataset_file_path, test_dataset_file_paths, test_prediction_dirs
 # =============================================================================
 def set_default_pruning_parameters():
     """Set default pruning parameters.
@@ -348,10 +434,10 @@ def set_default_pruning_parameters():
         Pruning parameters.
     """
     # Set number of pruned samples (per pruning step)
-    n_prun_sample = 10
+    n_prun_sample = 2
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set maximum number of pruning iterations
-    n_iter_max = 100
+    n_iter_max = 2
     # Set minimum development data set size
     n_dev_min = 10
     # Set minimum pruning testing data set size
@@ -375,7 +461,7 @@ def set_default_pruning_parameters():
     return pruning_params
 # =============================================================================
 def perform_pruning_step(prun_datasets_dir, pruning_params, dev_dataset,
-                         unused_dataset):
+                         unused_dataset, device_type='cpu', is_verbose=False):
     """Perform pruning step.
     
     Parameters
@@ -392,6 +478,10 @@ def perform_pruning_step(prun_datasets_dir, pruning_params, dev_dataset,
         Time series unused data set. Each sample is stored as a dictionary
         where each feature (key, str) data is a torch.Tensor(2d) of shape
         (sequence_length, n_features).
+    device_type : {'cpu', 'cuda'}, default='cpu'
+        Type of device on which torch.Tensor is allocated.
+    is_verbose : bool, default=False
+        If True, enable verbose output.
         
     Returns
     -------
@@ -447,16 +537,28 @@ def perform_pruning_step(prun_datasets_dir, pruning_params, dev_dataset,
     if is_valid_pruning_step:
         # Set pruning step directory
         pruning_step_dir, model_directory, train_dataset_file_path, \
-            val_dataset_file_path, test_dataset_file_path = \
-                set_pruning_step_dir(prun_datasets_dir, train_dataset,
-                                     val_dataset, test_dataset)
+            val_dataset_file_path, test_dataset_file_path, \
+                    prediction_subdir = set_pruning_step_dir(
+                        prun_datasets_dir, train_dataset, val_dataset,
+                        test_dataset)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        # Training and prediction of pruning step model
-        # ...
+        # Perform pruning step model standard training
+        perform_model_standard_training(
+            train_dataset_file_path, model_directory,
+            val_dataset_file_path=val_dataset_file_path,
+            device_type=device_type, is_verbose=is_verbose)
+        # Perform pruning step model prediction
+        predict_subdir, _ = perform_model_prediction(
+            prediction_subdir, test_dataset_file_path, model_directory,
+            device_type=device_type, is_verbose=is_verbose)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        # DUMMY: Get pruned samples testing indices
-        prune_samples_test_indices = \
-            random.sample(list(range(len(test_dataset))), n_prun_sample)
+        # Collect samples prediction loss
+        _, samples_loss = read_samples_loss_from_dir(predict_subdir)
+        # Get sorted indices based on samples prediction loss
+        sorted_indices = sorted(range(len(samples_loss)),
+                                key=lambda i: samples_loss[i])
+        # Extract pruned samples testing indices
+        prune_samples_test_indices = sorted_indices[:n_prun_sample]
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Get pruned samples development indices
         prune_samples_dev_indices = get_parent_dataset_indices(
@@ -512,6 +614,8 @@ def set_pruning_step_dir(prun_datasets_dir, train_dataset, val_dataset,
         Validation data set file path.
     test_dataset_file_path : str
         Testing data set file path.
+    prediction_subdir : str
+        Directory where samples predictions results files are stored.
     """
     # Set pruning step directory
     pruning_step_dir = os.path.join(os.path.normpath(prun_datasets_dir),
@@ -556,8 +660,20 @@ def set_pruning_step_dir(prun_datasets_dir, train_dataset, val_dataset,
         save_dataset(test_dataset, dataset_basename, val_dataset_dir,
                      is_append_n_sample=True)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Set pruning predictions directory
+    prediction_dir = os.path.join(os.path.normpath(pruning_step_dir),
+                                        '7_prediction')
+    # Create pruning predictions directory
+    make_directory(prediction_dir, is_overwrite=True)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Create pruning predictions subdirectory
+    prediction_subdir = os.path.join(
+        os.path.normpath(prediction_dir), 'in_distribution')
+    # Create prediction subdirectory
+    make_directory(prediction_subdir, is_overwrite=True)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     return pruning_step_dir, model_directory, train_dataset_file_path, \
-        val_dataset_file_path, test_dataset_file_path
+        val_dataset_file_path, test_dataset_file_path, prediction_subdir
 # =============================================================================
 def write_summary_file(pruning_dir, pruning_params, mode='init', mode_data={}):
     """Write summary file.
@@ -693,14 +809,220 @@ def load_full_dataset(full_dataset_dir):
     # Load data set
     dataset = load_dataset(full_dataset_file_path)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    return dataset   
+    return dataset
+# =============================================================================
+def read_samples_loss_from_dir(predictions_dir):
+    """Read loss samples from prediction directory.
+    
+    Parameters
+    ----------
+    predictions_dir : str
+        Directory where samples predictions results files are stored.
+        
+    Returns
+    -------
+    samples_id : list[int]
+        Samples IDs.
+    samples_loss : list[float]
+        Samples prediction loss.
+    """
+    # Check sample predictions directory
+    if not os.path.isdir(predictions_dir):
+        raise RuntimeError('The samples predictions directory has not been '
+                           'found:\n\n' + predictions_dir)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Get files in samples predictions results directory
+    directory_list = os.listdir(predictions_dir)
+    # Check directory
+    if not directory_list:
+        raise RuntimeError('No files have been found in directory where '
+                           'samples predictions results files are stored.')
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Initialize samples predictions files
+    prediction_files = []
+    prediction_files_id = []
+    # Get samples prediction files
+    for filename in directory_list:
+        # Check if file is sample prediction file
+        id = re.search(r'^prediction_sample_([0-9]+).pkl$', filename)
+        # Store sample prediction file and ID
+        if id is not None:
+            # Store sample file path
+            prediction_files.append(
+                os.path.join(os.path.normpath(predictions_dir), filename))
+            # Store sample ID
+            prediction_files_id.append(int(id.groups()[0]))
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Check prediction files
+    if not prediction_files:
+        raise RuntimeError('No sample results files have been found in '
+                           'directory where samples predictions results files '
+                           'are stored.')
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Get sorted indices based on samples prediction files
+    sorted_indices = sorted(
+        range(len(prediction_files)),
+        key=lambda i: int(re.search(r'(\d+)\D*$',
+                                    prediction_files[i]).groups()[-1]))
+    # Sort samples prediction files
+    prediction_files = [prediction_files[i] for i in sorted_indices]
+    prediction_files_id = [prediction_files_id[i] for i in sorted_indices]
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Set samples IDs
+    samples_id = prediction_files_id
+    # Initialize samples prediction loss
+    samples_loss = []
+    # Loop over samples prediction files
+    for sample_file_path in prediction_files:
+        # Load sample predictions results
+        with open(sample_file_path, 'rb') as sample_file:
+            sample_results = pickle.load(sample_file)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Get sample prediction loss
+        if 'prediction_loss_data' in sample_results.keys():
+            # Get sample prediction loss data
+            prediction_loss_data = sample_results['prediction_loss_data']
+            # Gather sample prediction loss
+            loss = prediction_loss_data[2]
+            # Store sample prediction loss
+            samples_loss.append(loss)
+        else:
+            raise RuntimeError(f'Sample prediction loss data is not available '
+                               f'in sample prediction file:\n\n'
+                               f'{sample_file_path}')
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    return samples_id, samples_loss
+# =============================================================================
+def plot_pruning_iterative_testing_loss(
+        pruning_dir, pruning_params, testing_types, pruning_iterative_data,
+        save_dir=None, is_save_fig=False, is_stdout_display=False,
+        is_latex=True):
+    """Plot pruning iterations testing loss.
+    
+    Parameters
+    ----------
+    pruning_dir : str
+        Pruning main directory.
+    pruning_params : dict
+        Pruning parameters.
+    testing_types : tuple[str]
+        Types of testing data sets used to assess the performance of the model
+        trained on the pruned training data sets.
+    pruning_iterative_data : dict
+        Pruning iterative data (item, dict) for each pruning iteration
+        (key, str).
+    save_dir : str, default=None
+        Directory where data set plots are saved. If None, then plots are
+        saved in current working directory.
+    is_save_fig : bool, default=False
+        Save figure.
+    is_stdout_display : bool, default=False
+        True if displaying figure to standard output device, False otherwise.
+    is_latex : bool, default=False
+        If True, then render all strings in LaTeX. If LaTex is not available,
+        then this option is silently set to False and all input strings are
+        processed to remove $(...)$ enclosure.
+    """
+    # Get full data set size
+    n_full = pruning_params['n_full']
+    # Get number of pruning iterations
+    n_iter = len(pruning_iterative_data.keys())
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Loop over testing types
+    for testing_type in testing_types:
+        # Initialize data array
+        data_xy = np.full((n_iter, 2), fill_value=None)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Loop over pruning iterations
+        for iter in range(n_iter):
+            # Get pruning iteration data
+            iter_data = pruning_iterative_data[str(iter)]
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Get iteration development data set size
+            n_dev = iter_data['n_dev']
+            ratio_dev = (n_dev/n_full)*100
+            # Get iteration testing loss
+            avg_predict_loss = iter_data['testing_types_loss'][testing_type]
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Assemble iteration data
+            data_xy[iter, 0] = ratio_dev
+            data_xy[iter, 1] = avg_predict_loss
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Set axes labels
+            x_label = 'Development size (\% of full data set)'
+            y_label = 'Avg. prediction loss'
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Plot data
+            figure, _ = scatter_xy_data(
+                data_xy, x_label=x_label, y_label=y_label, x_scale='linear',
+                y_scale='linear', is_latex=is_latex)
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Set filename
+            filename = f'pruning_testing_convergence_{testing_type}'
+            # Save figure
+            if is_save_fig:
+                save_figure(figure, filename, format='pdf', save_dir=save_dir)
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Display figure
+            if is_stdout_display:
+                plt.show()
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Close plot
+            plt.close('all')
 # =============================================================================
 if __name__ == "__main__":
+    # Set computation processes
+    is_dataset_pruning = True
+    is_plot_pruning = True
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set pruning main directory
     pruning_dir = \
         '/home/bernardoferreira/Documents/brown/projects/test_pruning'
     # Set types of testing data sets
     testing_types = ('in_distribution',)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Prune time series data set
-    prune_time_series_dataset(pruning_dir, testing_types)
+    # Set device type
+    if torch.cuda.is_available():
+        device_type = 'cuda'
+    else:
+        device_type = 'cpu'
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Data set pruning
+    if is_dataset_pruning:
+        # Prune time series data set
+        pruning_params, pruning_iterative_data = prune_time_series_dataset(
+            pruning_dir, testing_types, device_type=device_type,
+            is_verbose=True)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Pruning plot
+    if is_plot_pruning:
+        # Set pruning data file path
+        pruning_data_file_path = os.path.join(os.path.normpath(pruning_dir),
+                                              'pruning_data.pkl')
+        # Load pruning data
+        if os.path.isfile(pruning_data_file_path):
+            # Load pruning data
+            with open(pruning_data_file_path, 'rb') as pruning_file:
+                pruning_data = pickle.load(pruning_file)
+            # Collect pruning data
+            pruning_params = pruning_data['pruning_params']
+            pruning_iterative_data = pruning_data['pruning_iterative_data']
+        else:
+            raise RuntimeError(f'Pruning data file has not been found:\n\n'
+                               f'{pruning_data_file_path}')
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set pruning plots directory
+        prun_plots_dir = os.path.join(os.path.normpath(pruning_dir), 'plots')
+        # Create pruning plots directory
+        if not os.path.isdir(prun_plots_dir):
+            make_directory(prun_plots_dir)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Plot pruning iterations testing loss
+        plot_pruning_iterative_testing_loss(
+            pruning_dir, pruning_params, testing_types, pruning_iterative_data,
+            save_dir=prun_plots_dir, is_save_fig=True, is_stdout_display=False,
+            is_latex=True)
+    
+
+    
+    
