@@ -11,6 +11,8 @@ import os
 import shutil
 import re
 import pickle
+import time
+import datetime
 # Third-party
 import torch
 import numpy as np
@@ -22,7 +24,7 @@ from projects.darpa_metals.rnn_material_model.user_scripts.train_model import \
     perform_model_standard_training
 from projects.darpa_metals.rnn_material_model.user_scripts.predict import \
     perform_model_prediction
-from ioput.plots import scatter_xy_data, save_figure
+from ioput.plots import plot_xy_data, save_figure
 from ioput.iostandard import make_directory, find_unique_file_with_regex
 # =============================================================================
 # Summary: Pruning procedure of time series data set 
@@ -55,9 +57,17 @@ def prune_time_series_dataset(pruning_dir, testing_types, pruning_params=None,
         Pruning iterative data (item, dict) for each pruning iteration
         (key, str).
     """
+    start_time_sec = time.time()
+    if is_verbose:
+        print('\nTime series data set pruning'
+              '\n----------------------------')
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Setup main pruning process directories
     _, prun_datasets_dir, full_dataset_dir, \
         test_dataset_dirs = setup_pruning_dirs(pruning_dir, testing_types) 
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    if is_verbose:
+        print('\n> Loading full data set...')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Load full data set
     full_dataset = load_full_dataset(full_dataset_dir)
@@ -79,12 +89,18 @@ def prune_time_series_dataset(pruning_dir, testing_types, pruning_params=None,
     # Initialize pruning iterative data
     pruning_iterative_data = {}
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    if is_verbose:
+        print('\n> Initializing pruning iterative loop...')
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Initialize pruning iteration counter
     iter = 0
     # Initialize pruning termination flag
     is_keep_pruning = True
     # Loop over iterations
-    while is_keep_pruning:      
+    while is_keep_pruning:
+        if is_verbose:
+            print(f'\n> Pruning iteration {iter}:')
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Build development data set
         if iter == 0:
             # Initialize development data set
@@ -92,12 +108,15 @@ def prune_time_series_dataset(pruning_dir, testing_types, pruning_params=None,
             # Initialize unused data set
             unused_dataset = TimeSeriesDatasetInMemory([])
         else:
+            if is_verbose:
+                print(f'\n  > Performing pruning step...')
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Perform pruning step
             is_valid_pruning_step, step_status, dev_dataset, unused_dataset = \
                 perform_pruning_step(prun_datasets_dir, pruning_params,
                                      dev_dataset, unused_dataset,
                                      device_type=device_type,
-                                     is_verbose=is_verbose)
+                                     is_verbose=False)
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Check pruning step admissibility
             if not is_valid_pruning_step:
@@ -106,6 +125,10 @@ def prune_time_series_dataset(pruning_dir, testing_types, pruning_params=None,
                 # Terminate pruning
                 is_keep_pruning = False
                 continue
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        if is_verbose:
+            print(f'\n  > Development data set size ratio: '
+                  f'{(len(dev_dataset)/n_full)*100:>6.1f}%')
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Randomly split development data set
         dev_dataset_split = split_dataset(dev_dataset, pruning_iter_sizes)
@@ -122,24 +145,39 @@ def prune_time_series_dataset(pruning_dir, testing_types, pruning_params=None,
                                          test_dataset_dirs=test_dataset_dirs,
                                          unused_dataset=unused_dataset)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        if is_verbose:
+            print(f'\n  > Performing pruning iteration model training...')
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Perform pruning iteration model standard training
         perform_model_standard_training(
             train_dataset_file_path, model_directory,
             val_dataset_file_path=val_dataset_file_path,
-            device_type=device_type, is_verbose=is_verbose)
+            device_type=device_type, is_verbose=False)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Initialize pruning iteration model testing loss
         testing_types_loss = {}
         # Loop over testing types
-        for testing_type in testing_types: 
+        for testing_type in testing_types:
             # Get testing type prediction directory
             prediction_subdir = test_prediction_dirs[testing_type]
             # Get testing type data set file path
             test_dataset_file_path = test_dataset_file_paths[testing_type]
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Perform pruning iteration model prediction
-            predict_subdir, avg_predict_loss = perform_model_prediction(
-                prediction_subdir, test_dataset_file_path, model_directory,
-                device_type=device_type, is_verbose=is_verbose)
+            if len(load_dataset(test_dataset_file_path)) == 0:
+                # Set testing loss to None if testing data set is null
+                avg_predict_loss = None
+            else:
+                # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                if is_verbose:
+                    print(f'\n  > Performing pruning iteration model testing '
+                          f'({testing_type})...')
+                # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                # Perform pruning iteration model prediction
+                predict_subdir, avg_predict_loss = perform_model_prediction(
+                    prediction_subdir, test_dataset_file_path, model_directory,
+                    is_remove_sample_prediction=True,
+                    device_type=device_type, is_verbose=False)
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Store testing loss
             testing_types_loss[testing_type] = avg_predict_loss
@@ -158,6 +196,11 @@ def prune_time_series_dataset(pruning_dir, testing_types, pruning_params=None,
         # Store pruning iteration data
         pruning_iterative_data[str(iter)] = iter_data
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        if is_verbose:
+            total_time_sec = time.time() - start_time_sec
+            print(f'\n  > Total elapsed time (s): '
+                  f'{str(datetime.timedelta(seconds=int(total_time_sec)))}')
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Check pruning iterations
         if iter >= n_iter_max:
             # Set termination status
@@ -168,6 +211,10 @@ def prune_time_series_dataset(pruning_dir, testing_types, pruning_params=None,
         else:
             # Update pruning iteration counter
             iter += 1
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    if is_verbose:
+        print(f'\n> Termination status: {termination_status}')
+        print('\n> Pruning iterative loop finished successfully!\n')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Add termination status to summary file
     write_summary_file(pruning_dir, pruning_params, mode='end',
@@ -499,7 +546,7 @@ def perform_pruning_step(prun_datasets_dir, pruning_params, dev_dataset,
         where each feature (key, str) data is a torch.Tensor(2d) of shape
         (sequence_length, n_features).
     """
-    # Compute number of pruned samples (per pruning step)
+    # Get number of pruned samples (per pruning step)
     n_prun_sample = pruning_params['n_prun_sample']
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Get minimum development data set size
@@ -708,6 +755,9 @@ def write_summary_file(pruning_dir, pruning_params, mode='init', mode_data={}):
         n_prun_sample = pruning_params['n_prun_sample']
         summary += [f'\n> Number of pruned samples (per pruning step): '
                     f'{n_prun_sample}\n',]
+        n_dev_min = pruning_params['n_dev_min']
+        summary += [f'\n> Minimum development data set size: '
+                    f'{n_dev_min}\n',]
         n_prun_test_min = pruning_params['n_prun_test_min']
         summary += [f'\n> Minimum pruning testing data set size: '
                     f'{n_prun_test_min}\n',]
@@ -893,11 +943,11 @@ def read_samples_loss_from_dir(predictions_dir):
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     return samples_id, samples_loss
 # =============================================================================
-def plot_pruning_iterative_testing_loss(
+def plot_pruning_iterative_data(
         pruning_dir, pruning_params, testing_types, pruning_iterative_data,
         save_dir=None, is_save_fig=False, is_stdout_display=False,
         is_latex=True):
-    """Plot pruning iterations testing loss.
+    """Plot pruning iterative data.
     
     Parameters
     ----------
@@ -928,6 +978,59 @@ def plot_pruning_iterative_testing_loss(
     # Get number of pruning iterations
     n_iter = len(pruning_iterative_data.keys())
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Initialize data array
+    data_xy = np.zeros((n_iter, 8))
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Loop over pruning iterations
+    for iter in range(n_iter):
+        # Get pruning iteration data
+        iter_data = pruning_iterative_data[str(iter)]
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Get iteration development data set size
+        n_dev = iter_data['n_dev']
+        ratio_dev = (n_dev/n_full)*100
+        # Compute training data set size
+        n_train = iter_data['n_train']
+        ratio_train = (n_train/n_full)*100
+        # Compute validation data set size
+        n_valid = iter_data['n_valid']
+        ratio_valid = (n_valid/n_full)*100
+        # Compute unused data set size
+        n_unused = iter_data['n_unused']
+        ratio_unused = (n_unused/n_full)*100
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Assemble iteration data
+        data_xy[iter, :] = \
+            (iter, ratio_dev, iter, ratio_train, iter, ratio_valid,
+             iter, ratio_unused)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set data labels
+        data_labels = ('Development', 'Training', 'Validation', 'Unused')
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set axes labels
+        x_label = 'Pruning iterations'
+        y_label = '\% of full data set'
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Plot data
+        figure, _ = plot_xy_data(
+            data_xy, data_labels=data_labels, x_label=x_label, y_label=y_label,
+            marker='o', is_latex=True)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set filename
+        filename = f'pruning_iterations_dataset_sizes'
+        # Save figure
+        if is_save_fig:
+            save_figure(figure, filename, format='pdf', save_dir=save_dir)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Display figure
+        if is_stdout_display:
+            plt.show()
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Close plot
+        plt.close('all')
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Initialize data array
+    data_xy_all = np.full((n_iter, 0), fill_value=None)
     # Loop over testing types
     for testing_type in testing_types:
         # Initialize data array
@@ -953,9 +1056,9 @@ def plot_pruning_iterative_testing_loss(
             y_label = 'Avg. prediction loss'
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Plot data
-            figure, _ = scatter_xy_data(
+            figure, _ = plot_xy_data(
                 data_xy, x_label=x_label, y_label=y_label, x_scale='linear',
-                y_scale='linear', is_latex=is_latex)
+                y_scale='linear', marker='o', is_latex=is_latex)
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Set filename
             filename = f'pruning_testing_convergence_{testing_type}'
@@ -969,23 +1072,208 @@ def plot_pruning_iterative_testing_loss(
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Close plot
             plt.close('all')
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Store testing type data
+        data_xy_all = np.concatenate((data_xy_all, data_xy), axis=1)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Set data labels mapping
+    data_labels_map = {'in_distribution': 'In-distribution',
+                       'out_distribution': 'Out-of-distribution',
+                       'unused_data': 'Unused'}
+    # Set data labels
+    data_labels = tuple([data_labels_map[x] for x in testing_types])
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Set axes labels
+    x_label = 'Development size (\% of full data set)'
+    y_label = 'Avg. prediction loss'
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Plot data
+    figure, _ = plot_xy_data(
+        data_xy_all, data_labels=data_labels, x_label=x_label, y_label=y_label,
+        x_scale='linear', y_scale='linear', marker='o', is_latex=is_latex)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Set filename
+    filename = f'pruning_testing_convergence'
+    # Save figure
+    if is_save_fig:
+        save_figure(figure, filename, format='pdf', save_dir=save_dir)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Display figure
+    if is_stdout_display:
+        plt.show()
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Close plot
+    plt.close('all')
+# =============================================================================
+def preview_pruning_iterations(pruning_dir, pruning_params=None):
+    """Preview pruning iterations.
+    
+    Parameters
+    ----------
+    pruning_dir : str
+        Pruning main directory.
+    pruning_params : dict, default=None
+        Pruning parameters. If None, then a default set of pruning parameters
+        is adopted.
+    """
+    print('\nPreview - Time series data set pruning'
+          '\n--------------------------------------')
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Set full data set directory
+    full_dataset_dir = os.path.join(os.path.normpath(pruning_dir),
+                                    'base_datasets', '1_training_dataset')
+    # Check full data set directory
+    if not os.path.isdir(full_dataset_dir):
+        raise RuntimeError('The full data set directory has not been found:'
+                           '\n\n' + full_dataset_dir)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Load full data set
+    full_dataset = load_full_dataset(full_dataset_dir)
+    # Get full data set size
+    n_full = len(full_dataset)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Get default pruning parameters
+    if not isinstance(pruning_params, dict):
+        pruning_params = set_default_pruning_parameters()
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Get number of pruned samples (per pruning step)
+    n_prun_sample = pruning_params['n_prun_sample']
+    # Get maximum number of pruning iterations
+    n_iter_max = pruning_params['n_iter_max']
+    # Get pruning iteration data set split sizes
+    pruning_iter_sizes = pruning_params['pruning_iter_sizes']
+    # Get minimum development data set size
+    n_dev_min = pruning_params['n_dev_min']
+    # Get minimum pruning testing data set size
+    n_prun_test_min = pruning_params['n_prun_test_min']
+    # Get maximum pruned samples testing ratio
+    prun_test_ratio_max = pruning_params['prun_test_ratio_max']
+    # Get pruning step data set split sizes
+    pruning_step_sizes = pruning_params['pruning_step_sizes']
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Display
+    print(f'\n> Full data set size: {n_full}')
+    print(f'\n> Number of pruned samples (per pruning step): {n_prun_sample}')
+    print(f'\n> Minimum development data set size: {n_dev_min}')
+    print(f'\n> Minimum pruning testing data set size: {n_prun_test_min}')
+    print(f'\n> Maximum pruned samples testing ratio: {prun_test_ratio_max}')
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Display
+    print(f'\n> Data set pruning iterations:')
+    size_sep = 59*'-'
+    print(f'\n{"Data sets":>44s}',
+          f'\n{size_sep:>71s}',
+          f'\n{"iter":>6s} '
+          f'{"dev":>8s} {"%full":>6s} '
+          f'{"train":>8s} {"%full":>6s} '
+          f'{"valid":>8s} {"%full":>6s} '
+          f'{"unused":>9s} {"%full":>6s}')
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Initialize pruning iteration counter
+    iter = 0
+    # Initialize pruning termination flag
+    is_keep_pruning = True
+    # Loop over iterations
+    while is_keep_pruning:
+        # Compute development data set size
+        if iter == 0:
+            n_dev = n_full
+        else:
+            # Compute pruning training data set size
+            n_prun_train = \
+                int(np.floor(pruning_step_sizes['training']*n_dev))
+            # Compute pruning validation data set size
+            n_prun_valid = \
+                int(np.floor(pruning_step_sizes['validation']*n_dev))
+            # Compute pruning testing data set size
+            n_prun_test = n_dev - (n_prun_train + n_prun_valid)
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Display pruning step
+            if iter > 0:
+                print(26*' '
+                    + f'(pruning step: '
+                    f'T{n_prun_train}|V{n_prun_valid}|T{n_prun_test})')
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Initialize pruning step status
+            step_status = None
+            # Check pruning step admissibility
+            if n_dev <= n_dev_min:
+                step_status = 'Minimum development data set size reached.'
+            elif n_prun_test < n_prun_test_min:
+                step_status = 'Minimum pruning testing data set size reached.'
+            elif n_prun_sample/n_prun_test > prun_test_ratio_max:
+                step_status = 'Maximum pruned samples testing ratio reached.'
+            # Set pruning step admissibility
+            if step_status is None:
+                is_valid_pruning_step = True
+            else:
+                is_valid_pruning_step = False
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Check pruning step admissibility
+            if not is_valid_pruning_step:
+                # Set termination status
+                termination_status = step_status
+                # Terminate pruning
+                is_keep_pruning = False
+                continue
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Update development data set size
+            n_dev = n_dev - n_prun_sample
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Compute development data set size ratio
+        ratio_dev = (n_dev/n_full)*100
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Compute training data set size
+        n_train = int(np.floor(pruning_iter_sizes['training']*n_dev))
+        ratio_train = (n_train/n_full)*100
+        # Compute validation data set size
+        n_valid = n_dev - n_train
+        ratio_valid = (n_valid/n_full)*100
+        # Compute unused data set size
+        n_unused = iter*n_prun_sample
+        ratio_unused = (n_unused/n_full)*100
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Display pruning iteration
+        print(f'{iter:>6d} '
+              f'{n_dev:>8d} {ratio_dev:>6.1f} '
+              f'{n_train:>8d} {ratio_train:>6.1f} '
+              f'{n_valid:>8d} {ratio_valid:>6.1f} '
+              f'{n_unused:>9d} {ratio_unused:>6.1f} ')
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Check pruning iterations
+        if iter >= n_iter_max:
+            # Set termination status
+            termination_status = \
+                'Maximum number of pruning iterations reached.'
+            # Terminate pruning
+            is_keep_pruning = False
+        else:
+            # Update pruning iteration counter
+            iter += 1
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    print(f'\n> Termination status: {termination_status}\n')
 # =============================================================================
 if __name__ == "__main__":
     # Set computation processes
+    is_pruning_preview = False
     is_dataset_pruning = True
-    is_plot_pruning = True
+    is_plot_pruning = False
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set pruning main directory
     pruning_dir = \
         '/home/bernardoferreira/Documents/brown/projects/test_pruning'
     # Set types of testing data sets
-    testing_types = ('in_distribution',)
+    testing_types = ('in_distribution', 'unused_data')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set device type
     if torch.cuda.is_available():
         device_type = 'cuda'
     else:
         device_type = 'cpu'
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Pruning preview
+    if is_pruning_preview:
+        preview_pruning_iterations(pruning_dir)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Data set pruning
     if is_dataset_pruning:
@@ -1017,8 +1305,8 @@ if __name__ == "__main__":
         if not os.path.isdir(prun_plots_dir):
             make_directory(prun_plots_dir)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        # Plot pruning iterations testing loss
-        plot_pruning_iterative_testing_loss(
+        # Plot pruning iterative data
+        plot_pruning_iterative_data(
             pruning_dir, pruning_params, testing_types, pruning_iterative_data,
             save_dir=prun_plots_dir, is_save_fig=True, is_stdout_display=False,
             is_latex=True)
