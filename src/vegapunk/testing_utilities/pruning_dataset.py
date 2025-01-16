@@ -30,6 +30,7 @@ from ioput.iostandard import make_directory, find_unique_file_with_regex
 # Summary: Pruning procedure of time series data set 
 # =============================================================================
 def prune_time_series_dataset(pruning_dir, testing_types, pruning_params=None,
+                              is_remove_pruning_models=False,
                               device_type='cpu', is_verbose=False):
     """Prune time series data set.
     
@@ -44,6 +45,9 @@ def prune_time_series_dataset(pruning_dir, testing_types, pruning_params=None,
     pruning_params : dict, default=None
         Pruning parameters. If None, then a default set of pruning parameters
         is adopted.
+    is_remove_pruning_models : bool, default=False
+        If True, then remove pruning iteration models when pruning iteration is
+        complete.
     device_type : {'cpu', 'cuda'}, default='cpu'
         Type of device on which torch.Tensor is allocated.
     is_verbose : bool, default=False
@@ -181,6 +185,10 @@ def prune_time_series_dataset(pruning_dir, testing_types, pruning_params=None,
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Store testing loss
             testing_types_loss[testing_type] = avg_predict_loss
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Remove pruning iteration model
+        if is_remove_pruning_models:
+            shutil.rmtree(model_directory)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Build pruning iteration data
         iter_data = {'n_full': n_full,
@@ -480,13 +488,20 @@ def set_default_pruning_parameters():
     pruning_params : dict
         Pruning parameters.
     """
-    # Set number of pruned samples (per pruning step)
-    n_prun_sample = 2
+    # Set pruning scheduler
+    prun_scheduler_type = ('constant', 'proportional')[1]
+    # Set pruning scheduler parameters
+    if prun_scheduler_type == 'proportional':
+        prun_scheduler_params = {'prun_ratio': 0.05}
+    else:
+        prun_scheduler_params = {'n_prun_sample': 10}
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set maximum number of pruning iterations
-    n_iter_max = 2
+    n_iter_max = 100
     # Set minimum development data set size
     n_dev_min = 10
+    # Set minimum development data set size ratio
+    ratio_dev_min = 0.05
     # Set minimum pruning testing data set size
     n_prun_test_min = 10
     # Set maximum pruned samples testing ratio
@@ -498,14 +513,56 @@ def set_default_pruning_parameters():
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Build pruning parameters
     pruning_params = {'n_iter_max': n_iter_max,
-                      'n_prun_sample': n_prun_sample,
+                      'prun_scheduler_type': prun_scheduler_type,
+                      'prun_scheduler_params': prun_scheduler_params,
                       'n_dev_min': n_dev_min,
+                      'ratio_dev_min': ratio_dev_min,
                       'n_prun_test_min': n_prun_test_min,
                       'prun_test_ratio_max': prun_test_ratio_max,
                       'pruning_step_sizes': pruning_step_sizes,
                       'pruning_iter_sizes': pruning_iter_sizes}
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     return pruning_params
+# =============================================================================
+def get_n_prun_sample(prun_scheduler_type, prun_scheduler_params, dev_dataset):
+    """Get number of pruned samples.
+    
+    Parameters
+    ----------
+    prun_scheduler_type : {'constant', 'proportional'}
+        Pruning scheduler type defining the number of pruned samples in each
+        pruning iteration. 'constant' sets a constant number of pruned samples,
+        while 'proportional' sets the number of pruned samples as a ratio of
+        the current development data set size.
+    prun_scheduler_params : dict
+        Pruning scheduler type parameters.
+    dev_dataset : torch.utils.data.Dataset
+        Time series development data set. Each sample is stored as a dictionary
+        where each feature (key, str) data is a torch.Tensor(2d) of shape
+        (sequence_length, n_features).
+    
+    Returns
+    -------
+    n_prun_sample : int
+        Number of pruned samples.
+    """
+    # Get number of pruned samples
+    if prun_scheduler_type == 'constant':
+        # Get number of pruned samples
+        n_prun_sample = prun_scheduler_params['n_prun_sample']
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    elif prun_scheduler_type == 'proportional':
+        # Get pruning ratio w.r.t. development data set size
+        prun_ratio = prun_scheduler_params['prun_ratio']
+        # Get development data set size
+        n_dev = len(dev_dataset)
+        # Get number of pruned samples
+        n_prun_sample = int(prun_ratio*n_dev)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    else:
+        raise RuntimeError('Unknown pruning scheduler.')
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    return n_prun_sample
 # =============================================================================
 def perform_pruning_step(prun_datasets_dir, pruning_params, dev_dataset,
                          unused_dataset, device_type='cpu', is_verbose=False):
@@ -546,11 +603,21 @@ def perform_pruning_step(prun_datasets_dir, pruning_params, dev_dataset,
         where each feature (key, str) data is a torch.Tensor(2d) of shape
         (sequence_length, n_features).
     """
-    # Get number of pruned samples (per pruning step)
-    n_prun_sample = pruning_params['n_prun_sample']
+    # Get full data set size
+    n_full = pruning_params['n_full']
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Get pruning scheduler type
+    prun_scheduler_type = pruning_params['prun_scheduler_type']
+    # Get pruning scheduler type parameters
+    prun_scheduler_params = pruning_params['prun_scheduler_params']
+    # Get number of pruned samples
+    n_prun_sample = get_n_prun_sample(
+        prun_scheduler_type, prun_scheduler_params, dev_dataset)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Get minimum development data set size
     n_dev_min = pruning_params['n_dev_min']
+    # Get minimum development data set size ratio
+    ratio_dev_min = pruning_params['ratio_dev_min']
     # Get minimum pruning testing data set size
     n_prun_test_min = pruning_params['n_prun_test_min']
     # Get maximum pruned samples testing ratio
@@ -558,6 +625,8 @@ def perform_pruning_step(prun_datasets_dir, pruning_params, dev_dataset,
     # Get pruning step data set split sizes
     pruning_step_sizes = pruning_params['pruning_step_sizes']
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Get development data set size
+    n_dev = len(dev_dataset)
     # Randomly split development data set
     dev_dataset_split = split_dataset(dev_dataset, pruning_step_sizes)
     # Get pruning step data sets
@@ -568,9 +637,11 @@ def perform_pruning_step(prun_datasets_dir, pruning_params, dev_dataset,
     # Initialize pruning step status
     step_status = None
     # Check pruning step admissibility
-    if len(dev_dataset) <= n_dev_min:
+    if n_dev <= n_dev_min:
         step_status = 'Minimum development data set size reached.'
-    elif len(test_dataset) < n_prun_test_min:
+    elif n_dev/n_full < ratio_dev_min:
+        step_status = 'Minimum pruning testing data set size ratio reached.'
+    elif n_dev < n_prun_test_min:
         step_status = 'Minimum pruning testing data set size reached.'
     elif n_prun_sample/len(test_dataset) > prun_test_ratio_max:
         step_status = 'Maximum pruned samples testing ratio reached.'
@@ -752,12 +823,15 @@ def write_summary_file(pruning_dir, pruning_params, mode='init', mode_data={}):
         n_full = pruning_params['n_full']
         summary += [f'\n> Full data set size: {n_full}\n',]
         # Assemble pruning parameters
-        n_prun_sample = pruning_params['n_prun_sample']
-        summary += [f'\n> Number of pruned samples (per pruning step): '
-                    f'{n_prun_sample}\n',]
+        n_iter_max = pruning_params['n_iter_max']
+        summary += [f'\n> Maximum number of pruning iterations: '
+                    f'{n_iter_max}\n',]
         n_dev_min = pruning_params['n_dev_min']
         summary += [f'\n> Minimum development data set size: '
                     f'{n_dev_min}\n',]
+        ratio_dev_min = pruning_params['ratio_dev_min']
+        summary += [f'\n> Minimum development data set size ratio: '
+                    f'{ratio_dev_min}\n',]
         n_prun_test_min = pruning_params['n_prun_test_min']
         summary += [f'\n> Minimum pruning testing data set size: '
                     f'{n_prun_test_min}\n',]
@@ -788,13 +862,13 @@ def write_summary_file(pruning_dir, pruning_params, mode='init', mode_data={}):
         iter = mode_data['iter']
         # Gather iteration data sets data
         n_dev = mode_data['n_dev']
-        ratio_dev = (n_dev/n_full)*100
+        ratio_dev_pc = (n_dev/n_full)*100
         n_train = mode_data['n_train']
-        ratio_train = (n_train/n_full)*100
+        ratio_train_pc = (n_train/n_full)*100
         n_valid = mode_data['n_valid']
-        ratio_valid = (n_valid/n_full)*100
+        ratio_valid_pc = (n_valid/n_full)*100
         n_unused = mode_data['n_unused']
-        ratio_unused = (n_unused/n_full)*100
+        ratio_unused_pc = (n_unused/n_full)*100
         # Gather iteration testing performance data
         testing_types_loss = mode_data['testing_types_loss']
         testing_losses = []
@@ -809,10 +883,10 @@ def write_summary_file(pruning_dir, pruning_params, mode='init', mode_data={}):
                           for x in testing_losses]
         # Assemble iteration data
         summary += [f'{iter:>6d} '
-                    f'{n_dev:>8d} {ratio_dev:>6.1f} '
-                    f'{n_train:>8d} {ratio_train:>6.1f} '
-                    f'{n_valid:>8d} {ratio_valid:>6.1f} '
-                    f'{n_unused:>9d} {ratio_unused:>6.1f} ',
+                    f'{n_dev:>8d} {ratio_dev_pc:>6.1f} '
+                    f'{n_train:>8d} {ratio_train_pc:>6.1f} '
+                    f'{n_valid:>8d} {ratio_valid_pc:>6.1f} '
+                    f'{n_unused:>9d} {ratio_unused_pc:>6.1f} ',
                     ' '.join(testing_losses),
                     '\n']
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -988,21 +1062,21 @@ def plot_pruning_iterative_data(
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Get iteration development data set size
         n_dev = iter_data['n_dev']
-        ratio_dev = (n_dev/n_full)*100
+        ratio_dev_pc = (n_dev/n_full)*100
         # Compute training data set size
         n_train = iter_data['n_train']
-        ratio_train = (n_train/n_full)*100
+        ratio_train_pc = (n_train/n_full)*100
         # Compute validation data set size
         n_valid = iter_data['n_valid']
-        ratio_valid = (n_valid/n_full)*100
+        ratio_valid_pc = (n_valid/n_full)*100
         # Compute unused data set size
         n_unused = iter_data['n_unused']
-        ratio_unused = (n_unused/n_full)*100
+        ratio_unused_pc = (n_unused/n_full)*100
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Assemble iteration data
         data_xy[iter, :] = \
-            (iter, ratio_dev, iter, ratio_train, iter, ratio_valid,
-             iter, ratio_unused)
+            (iter, ratio_dev_pc, iter, ratio_train_pc, iter, ratio_valid_pc,
+             iter, ratio_unused_pc)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Set data labels
         data_labels = ('Development', 'Training', 'Validation', 'Unused')
@@ -1043,12 +1117,12 @@ def plot_pruning_iterative_data(
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Get iteration development data set size
             n_dev = iter_data['n_dev']
-            ratio_dev = (n_dev/n_full)*100
+            ratio_dev_pc = (n_dev/n_full)*100
             # Get iteration testing loss
             avg_predict_loss = iter_data['testing_types_loss'][testing_type]
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Assemble iteration data
-            data_xy[iter, 0] = ratio_dev
+            data_xy[iter, 0] = ratio_dev_pc
             data_xy[iter, 1] = avg_predict_loss
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Set axes labels
@@ -1136,14 +1210,19 @@ def preview_pruning_iterations(pruning_dir, pruning_params=None):
     if not isinstance(pruning_params, dict):
         pruning_params = set_default_pruning_parameters()
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Get number of pruned samples (per pruning step)
-    n_prun_sample = pruning_params['n_prun_sample']
+    # Get pruning scheduler type
+    prun_scheduler_type = pruning_params['prun_scheduler_type']
+    # Get pruning scheduler type parameters
+    prun_scheduler_params = pruning_params['prun_scheduler_params']
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Get maximum number of pruning iterations
     n_iter_max = pruning_params['n_iter_max']
     # Get pruning iteration data set split sizes
     pruning_iter_sizes = pruning_params['pruning_iter_sizes']
     # Get minimum development data set size
     n_dev_min = pruning_params['n_dev_min']
+    # Get minimum development data set size ratio
+    ratio_dev_min = pruning_params['ratio_dev_min']
     # Get minimum pruning testing data set size
     n_prun_test_min = pruning_params['n_prun_test_min']
     # Get maximum pruned samples testing ratio
@@ -1153,8 +1232,9 @@ def preview_pruning_iterations(pruning_dir, pruning_params=None):
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Display
     print(f'\n> Full data set size: {n_full}')
-    print(f'\n> Number of pruned samples (per pruning step): {n_prun_sample}')
+    print(f'\n> Maximum number of pruning iterations: {n_iter_max}')
     print(f'\n> Minimum development data set size: {n_dev_min}')
+    print(f'\n> Minimum development data set size ratio: {ratio_dev_min}')
     print(f'\n> Minimum pruning testing data set size: {n_prun_test_min}')
     print(f'\n> Maximum pruned samples testing ratio: {prun_test_ratio_max}')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -1178,7 +1258,16 @@ def preview_pruning_iterations(pruning_dir, pruning_params=None):
         # Compute development data set size
         if iter == 0:
             n_dev = n_full
+            ratio_dev_pc = (n_dev/n_full)*100
+            n_unused = 0
+            ratio_unused_pc = (n_unused/n_full)*100
         else:
+            # Create dummy development dataset
+            dev_dataset = [x for x in range(n_dev)]
+            # Get number of pruned samples
+            n_prun_sample = get_n_prun_sample(
+                prun_scheduler_type, prun_scheduler_params, dev_dataset)
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Compute pruning training data set size
             n_prun_train = \
                 int(np.floor(pruning_step_sizes['training']*n_dev))
@@ -1190,15 +1279,18 @@ def preview_pruning_iterations(pruning_dir, pruning_params=None):
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Display pruning step
             if iter > 0:
-                print(26*' '
-                    + f'(pruning step: '
-                    f'T{n_prun_train}|V{n_prun_valid}|T{n_prun_test})')
+                print(17*' ' + f'(pruning step: '
+                      f'n_prun = {n_prun_sample}, '
+                      f'T{n_prun_train}|V{n_prun_valid}|T{n_prun_test})')
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Initialize pruning step status
             step_status = None
             # Check pruning step admissibility
             if n_dev <= n_dev_min:
                 step_status = 'Minimum development data set size reached.'
+            elif n_dev/n_full <= ratio_dev_min:
+                step_status = \
+                    'Minimum development data set size ratio reached.'
             elif n_prun_test < n_prun_test_min:
                 step_status = 'Minimum pruning testing data set size reached.'
             elif n_prun_sample/n_prun_test > prun_test_ratio_max:
@@ -1219,26 +1311,24 @@ def preview_pruning_iterations(pruning_dir, pruning_params=None):
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Update development data set size
             n_dev = n_dev - n_prun_sample
-        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        # Compute development data set size ratio
-        ratio_dev = (n_dev/n_full)*100
+            ratio_dev_pc = (n_dev/n_full)*100
+            # Update unused data set size
+            n_unused += n_prun_sample
+            ratio_unused_pc = (n_unused/n_full)*100
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Compute training data set size
         n_train = int(np.floor(pruning_iter_sizes['training']*n_dev))
-        ratio_train = (n_train/n_full)*100
+        ratio_train_pc = (n_train/n_full)*100
         # Compute validation data set size
         n_valid = n_dev - n_train
-        ratio_valid = (n_valid/n_full)*100
-        # Compute unused data set size
-        n_unused = iter*n_prun_sample
-        ratio_unused = (n_unused/n_full)*100
+        ratio_valid_pc = (n_valid/n_full)*100
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Display pruning iteration
         print(f'{iter:>6d} '
-              f'{n_dev:>8d} {ratio_dev:>6.1f} '
-              f'{n_train:>8d} {ratio_train:>6.1f} '
-              f'{n_valid:>8d} {ratio_valid:>6.1f} '
-              f'{n_unused:>9d} {ratio_unused:>6.1f} ')
+              f'{n_dev:>8d} {ratio_dev_pc:>6.1f} '
+              f'{n_train:>8d} {ratio_train_pc:>6.1f} '
+              f'{n_valid:>8d} {ratio_valid_pc:>6.1f} '
+              f'{n_unused:>9d} {ratio_unused_pc:>6.1f} ')
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Check pruning iterations
         if iter >= n_iter_max:
@@ -1257,11 +1347,11 @@ if __name__ == "__main__":
     # Set computation processes
     is_pruning_preview = False
     is_dataset_pruning = True
-    is_plot_pruning = False
+    is_plot_pruning = True
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set pruning main directory
-    pruning_dir = \
-        '/home/bernardoferreira/Documents/brown/projects/test_pruning'
+    pruning_dir = ('/home/bernardoferreira/Documents/brown/projects/'
+                   'test_pruning/polynomial')
     # Set types of testing data sets
     testing_types = ('in_distribution', 'unused_data')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -1279,8 +1369,8 @@ if __name__ == "__main__":
     if is_dataset_pruning:
         # Prune time series data set
         pruning_params, pruning_iterative_data = prune_time_series_dataset(
-            pruning_dir, testing_types, device_type=device_type,
-            is_verbose=True)
+            pruning_dir, testing_types, is_remove_pruning_models=True,
+            device_type=device_type, is_verbose=True)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Pruning plot
     if is_plot_pruning:
