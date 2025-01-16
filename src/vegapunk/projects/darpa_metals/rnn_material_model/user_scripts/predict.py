@@ -274,8 +274,13 @@ def generate_prediction_plots(dataset_file_path, predict_subdir):
     if not os.path.isdir(plot_dir):
         make_directory(plot_dir)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Load testing data set
+    testing_dataset = load_dataset(dataset_file_path)
+    # Get testing data set size
+    n_sample = len(testing_dataset)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Get first sample from testing data set
-    probe_response_path = load_dataset(dataset_file_path)[0]
+    probe_response_path = testing_dataset[0]
     # Get strain and stress components
     strain_comps_order = probe_response_path['strain_comps_order']
     stress_comps_order = probe_response_path['stress_comps_order']
@@ -326,7 +331,7 @@ def generate_prediction_plots(dataset_file_path, predict_subdir):
     # Plot model time series prediction and ground-truth
     for prediction_type, prediction_labels in prediction_types.items():
         # Set samples for which time series data is plotted
-        samples_ids = list(np.arange(5, dtype=int))
+        samples_ids = list(np.arange(np.min((5, n_sample)), dtype=int))
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ 
         # Build times series predictions data arrays
         prediction_data_dicts = build_time_series_predictions_data(
