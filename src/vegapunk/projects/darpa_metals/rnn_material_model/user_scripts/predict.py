@@ -50,8 +50,9 @@ __status__ = 'Planning'
 #
 # =============================================================================
 def perform_model_prediction(predict_directory, dataset_file_path,
-                             model_directory, device_type='cpu',
-                             is_verbose=False):
+                             model_directory,
+                             is_remove_sample_prediction=False,
+                             device_type='cpu', is_verbose=False):
     """Perform prediction with RNN-based model.
     
     Parameters
@@ -62,6 +63,8 @@ def perform_model_prediction(predict_directory, dataset_file_path,
         Testing data set file path.
     model_directory : str
         Directory where model is stored.
+    is_remove_sample_prediction : bool, default=False
+        If True, then remove sample prediction files after plots are generated.
     device_type : {'cpu', 'cuda'}, default='cpu'
         Type of device on which torch.Tensor is allocated.
     is_verbose : bool, default=False
@@ -240,8 +243,6 @@ def perform_model_prediction(predict_directory, dataset_file_path,
     # Generate plots of model predictions
     generate_prediction_plots(dataset_file_path, predict_subdir)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Set remove sample prediction files flag
-    is_remove_sample_prediction = False
     # Remove sample prediction files
     if is_remove_sample_prediction:
         # Set sample prediction file regex
