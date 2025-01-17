@@ -105,7 +105,7 @@ def perform_model_prediction(predict_directory, dataset_file_path,
     # Set prediction loss normalization
     is_normalized_loss = False
     # Set prediction batch size
-    batch_size = len(dataset)
+    batch_size = min((512, len(dataset)))
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set model state loading
     load_model_state = 'best'
