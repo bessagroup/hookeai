@@ -168,11 +168,10 @@ def prune_time_series_dataset(pruning_dir, testing_types, pruning_params=None,
             test_dataset_file_path = test_dataset_file_paths[testing_type]
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Perform pruning iteration model prediction
-            if len(load_dataset(test_dataset_file_path)) == 0:
+            if testing_type == 'unused_data' and len(unused_dataset) == 0:
                 # Set testing loss to None if testing data set is null
                 avg_predict_loss = None
             else:
-                # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                 if is_verbose:
                     print(f'\n  > Performing pruning iteration model testing '
                           f'({testing_type})...')
