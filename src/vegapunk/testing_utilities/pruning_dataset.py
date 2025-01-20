@@ -74,7 +74,8 @@ def prune_time_series_dataset(pruning_dir, testing_types, pruning_params=None,
         print('\n> Loading full data set...')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Load full data set
-    full_dataset = load_full_dataset(full_dataset_dir)
+    full_dataset = TimeSeriesDatasetInMemory.from_dataset(
+        load_full_dataset(full_dataset_dir))
     # Get full data set size
     n_full = len(full_dataset)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
