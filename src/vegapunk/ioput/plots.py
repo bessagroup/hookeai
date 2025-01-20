@@ -215,10 +215,10 @@ def plot_xy_data(data_xy, data_labels=None, is_reference_data=False,
     if not all([x is None for x in data_labels]):
         # Set legend position and number of columns
         if len(data_labels) > 2:
-            loc = 'upper center'
+            loc = 'best'
             ncols = 2
         else:
-            loc = 'upper left'
+            loc = 'best'
             ncols = 1
         # Plot legend
         legend = axes.legend(loc=loc, ncols=ncols, frameon=True, fancybox=True,
@@ -639,10 +639,10 @@ def plot_xny_data(data_xy_list, range_type='min-max', is_error_bar=False,
     if not all([x is None for x in data_labels]):
         # Set legend position and number of columns
         if len(data_labels) > 2:
-            loc = 'upper center'
+            loc = 'best'
             ncols = 2
         else:
-            loc = 'upper left'
+            loc = 'best'
             ncols = 1
         # Plot legend
         legend = axes.legend(loc=loc, ncols=ncols, frameon=True, fancybox=True,
@@ -1703,10 +1703,10 @@ def plot_histogram(data, data_labels=None, bins=None, bins_range=None,
     if not all([x is None for x in data_labels]):
         # Set legend position and number of columns
         if len(data_labels) > 2:
-            loc = 'upper center'
+            loc = 'best'
             ncols = 2
         else:
-            loc = 'upper left'
+            loc = 'best'
             ncols = 1
         # Plot legend
         axes.legend(loc=loc, ncols=ncols, frameon=True, fancybox=True,
