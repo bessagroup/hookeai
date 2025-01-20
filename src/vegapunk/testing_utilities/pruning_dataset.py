@@ -1019,6 +1019,7 @@ def read_samples_loss_from_dir(predictions_dir):
 # =============================================================================
 def plot_pruning_iterative_data(
         pruning_dir, pruning_params, testing_types, pruning_iterative_data,
+        performance_threshold_ratio=0.1, is_plot_performance_threshold = False,
         save_dir=None, is_save_fig=False, is_stdout_display=False,
         is_latex=True):
     """Plot pruning iterative data.
@@ -1034,7 +1035,14 @@ def plot_pruning_iterative_data(
         trained on the pruned training data sets.
     pruning_iterative_data : dict
         Pruning iterative data (item, dict) for each pruning iteration
-        (key, str).
+        (key, str). 
+    performance_threshold_ratio : float, default=0.1
+        Performance degradation threshold ratio. Defines a relative increase
+        with the respect to the testing loss obtained with the largest training
+        data set size. Data that can be pruned without exceeding the
+        performance degradation threshold is considered redundant.
+    is_plot_performance_threshold : bool, default=False
+        If True, then plot performance degradation threshold. 
     save_dir : str, default=None
         Directory where data set plots are saved. If None, then plots are
         saved in current working directory.
@@ -1047,6 +1055,9 @@ def plot_pruning_iterative_data(
         then this option is silently set to False and all input strings are
         processed to remove $(...)$ enclosure.
     """
+    # Set plot marker size
+    markersize = 3.0
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Get full data set size
     n_full = pruning_params['n_full']
     # Get number of pruning iterations
@@ -1088,7 +1099,7 @@ def plot_pruning_iterative_data(
         # Plot data
         figure, _ = plot_xy_data(
             data_xy, data_labels=data_labels, x_label=x_label, y_label=y_label,
-            marker='o', is_latex=True)
+            marker='o', markersize=markersize, is_latex=True)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Set filename
         filename = f'pruning_iterations_dataset_sizes'
@@ -1124,28 +1135,48 @@ def plot_pruning_iterative_data(
             # Assemble iteration data
             data_xy[iter, 0] = ratio_dev_pc
             data_xy[iter, 1] = avg_predict_loss
-            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            # Set axes labels
-            x_label = 'Development size (\% of full data set)'
-            y_label = 'Avg. prediction loss'
-            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            # Plot data
-            figure, _ = plot_xy_data(
-                data_xy, x_label=x_label, y_label=y_label, x_scale='linear',
-                y_scale='linear', marker='o', is_latex=is_latex)
-            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            # Set filename
-            filename = f'pruning_testing_convergence_{testing_type}'
-            # Save figure
-            if is_save_fig:
-                save_figure(figure, filename, format='pdf', save_dir=save_dir)
-            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            # Display figure
-            if is_stdout_display:
-                plt.show()
-            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            # Close plot
-            plt.close('all')
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set axes labels
+        x_label = 'Development size (\% of full data set)'
+        y_label = 'Avg. prediction loss'
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Plot data
+        figure, axes = plot_xy_data(
+            data_xy, x_label=x_label, y_label=y_label, x_scale='linear',
+            y_scale='linear', marker='o', markersize=markersize,
+            is_latex=is_latex)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Plot performance degradation threshold
+        if is_plot_performance_threshold and testing_type != 'unused_data':
+            # Compute performance degradation threshold
+            performance_threshold = \
+                (1.0 + performance_threshold_ratio)*(data_xy[0, 1])
+            # Set label
+            performance_threshold_label = \
+                (f'Performance threshold ('
+                 f'{performance_threshold_ratio*100:.0f}\%)')
+            # Plot performance degradation threshold
+            axes.axhline(performance_threshold, linestyle='--', linewidth=1.0,
+                         color='k', label=performance_threshold_label)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Plot legend if there are data labels
+        if axes.get_legend_handles_labels()[1]:
+            axes.legend(loc='best', frameon=True, fancybox=True,
+                        facecolor='inherit', edgecolor='inherit', fontsize=8,
+                        framealpha=1.0)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set filename
+        filename = f'pruning_testing_convergence_{testing_type}'
+        # Save figure
+        if is_save_fig:
+            save_figure(figure, filename, format='pdf', save_dir=save_dir)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Display figure
+        if is_stdout_display:
+            plt.show()
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Close plot
+        plt.close('all')
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Store testing type data
         data_xy_all = np.concatenate((data_xy_all, data_xy), axis=1)
@@ -1164,7 +1195,8 @@ def plot_pruning_iterative_data(
     # Plot data
     figure, _ = plot_xy_data(
         data_xy_all, data_labels=data_labels, x_label=x_label, y_label=y_label,
-        x_scale='linear', y_scale='linear', marker='o', is_latex=is_latex)
+        x_scale='linear', y_scale='linear', marker='o', markersize=markersize,
+        is_latex=is_latex)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set filename
     filename = f'pruning_testing_convergence'
@@ -1178,6 +1210,62 @@ def plot_pruning_iterative_data(
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Close plot
     plt.close('all')
+# =============================================================================
+def display_pruning_data(pruning_data_file_path):
+    """Display data from pruning data file.
+    
+    Parameters
+    ----------
+    pruning_data_file_path : str
+        Pruning data file.
+    """
+    print('\nDisplay time series data set pruning data'
+          '\n-----------------------------------------')
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Load pruning data
+    if os.path.isfile(pruning_data_file_path):
+        # Load pruning data
+        with open(pruning_data_file_path, 'rb') as pruning_file:
+            pruning_data = pickle.load(pruning_file)
+        # Collect pruning data
+        pruning_params = pruning_data['pruning_params']
+        pruning_iterative_data = pruning_data['pruning_iterative_data']
+    else:
+        raise RuntimeError(f'Pruning data file has not been found:\n\n'
+                            f'{pruning_data_file_path}')
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Get number of pruning iterations
+    n_iter = len(pruning_iterative_data.keys())
+    # Get testing types
+    testing_types = \
+        tuple(pruning_iterative_data['0']['testing_types_loss'].keys())
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Initialize iterative data
+    training_size = []
+    testing_types_loss = {testing_type: [] for testing_type in testing_types}
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Loop over pruning iterations
+    for iter in range(n_iter):
+        # Get pruning iteration data
+        iter_data = pruning_iterative_data[str(iter)]
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Collect training data set size
+        training_size.append(iter_data['n_train'])
+        # Loop over testing types
+        for testing_type in testing_types:
+            # Get testing loss
+            testing_loss = iter_data['testing_types_loss'][testing_type]
+            # Collect testing loss
+            testing_types_loss[testing_type].append(testing_loss)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Display
+    print(f'\n> Training data set size:\n\n'
+          f'{training_size}')
+    for testing_type in testing_types:
+        print(f'\n> Testing loss ({testing_type}):\n\n'
+              f'{testing_types_loss[testing_type]}')
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    print()
 # =============================================================================
 def preview_pruning_iterations(pruning_dir, pruning_params=None):
     """Preview pruning iterations.
@@ -1346,8 +1434,9 @@ def preview_pruning_iterations(pruning_dir, pruning_params=None):
 if __name__ == "__main__":
     # Set computation processes
     is_pruning_preview = False
-    is_dataset_pruning = True
+    is_dataset_pruning = False
     is_plot_pruning = True
+    is_display_pruning_data = False
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set pruning main directory
     pruning_dir = ('/home/bernardoferreira/Documents/brown/projects/'
@@ -1398,9 +1487,17 @@ if __name__ == "__main__":
         # Plot pruning iterative data
         plot_pruning_iterative_data(
             pruning_dir, pruning_params, testing_types, pruning_iterative_data,
+            is_plot_performance_threshold=True,
             save_dir=prun_plots_dir, is_save_fig=True, is_stdout_display=False,
             is_latex=True)
-    
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Display pruning data
+    if is_display_pruning_data:
+        # Set pruning data file path
+        pruning_data_file_path = os.path.join(os.path.normpath(pruning_dir),
+                                              'pruning_data.pkl')
+        # Display pruning data
+        display_pruning_data(pruning_data_file_path)
 
     
     
