@@ -70,7 +70,7 @@ class MeanRelativeErrorLoss(torch.nn.Module):
     forward(self, input, target)
         Forward propagation.
     """
-    def __init__(self, zero_handling='absolute', small=0.1):
+    def __init__(self, zero_handling='absolute', small=1e-5):
         """Constructor.
         
         Parameters
@@ -87,7 +87,7 @@ class MeanRelativeErrorLoss(torch.nn.Module):
             'regularizer' : Add minimum threshold to target values
                             (denominator only)
             
-        small : float, default=0.1
+        small : float, default=1e-5
             Minimum threshold to handle target values close or equal to zero.
         """
         # Initialize from base class
@@ -134,7 +134,8 @@ class MeanRelativeErrorLoss(torch.nn.Module):
             relative_error = absolute_error/target.abs()
             # Assign absolute error to target values below minimum threshold
             relative_error = \
-                torch.where(target < small, absolute_error, relative_error)
+                torch.where(target.abs() < small, absolute_error,
+                            relative_error)
         elif zero_handling == 'clip':
             # Clip target values below minimum threshold
             clipped_target = torch.maximum(
