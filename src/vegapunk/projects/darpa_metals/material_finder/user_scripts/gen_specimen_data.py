@@ -2,12 +2,14 @@
 
 Functions
 ---------
-get_specimen_dataset
+gen_specimen_dataset
     Generate specimen data and material state files (training data set).
 get_specimen_mesh_from_inp_file
     Get specimen finite element mesh data from mesh input file (.inp).
 elem_type_abaqus_to_fetorch
     Convert ABAQUS element type to FETorch element type object.
+get_specimen_history_paths
+    Get specimen history time step file paths from directory.
 get_specimen_numerical_data
     Get specimen numerical data from history data files (.csv).
 """
@@ -25,6 +27,7 @@ if root_dir not in sys.path:
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 import os
 import re
+import random
 # Third-party
 import torch
 import pandas
@@ -50,7 +53,7 @@ __status__ = 'Planning'
 # =============================================================================
 #
 # =============================================================================
-def get_specimen_dataset(specimen_name, specimen_raw_dir, specimen_inp_path,
+def gen_specimen_dataset(specimen_name, specimen_raw_dir, specimen_inp_path,
                          specimen_history_paths, strain_formulation,
                          problem_type, n_dim, model_name, model_parameters,
                          model_kwargs, training_dataset_dir,
@@ -88,6 +91,14 @@ def get_specimen_dataset(specimen_name, specimen_raw_dir, specimen_inp_path,
         If True, then save the specimen data file.
     is_save_specimen_material_state : bool, default=True
         If True, then save the specimen material state file.
+        
+    Returns
+    -------
+    specimen_data_path : str
+        Path of file containing the specimen numerical data translated from
+        experimental results.
+    specimen_material_state_path : str
+        Path of file containing the FETorch specimen material state.
     """
     # Initialize specimen numerical data
     specimen_data = SpecimenNumericalData()
@@ -141,6 +152,8 @@ def get_specimen_dataset(specimen_name, specimen_raw_dir, specimen_inp_path,
                          'specimen_material_state.pt')
         # Save specimen material state
         torch.save(specimen_material_state, specimen_material_state_path)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    return specimen_data_path, specimen_material_state_path
 # =============================================================================
 def get_specimen_mesh_from_inp_file(specimen_inp_path, n_dim):
     """Get specimen finite element mesh data from mesh input file (.inp).
@@ -320,6 +333,56 @@ def elem_type_abaqus_to_fetorch(elem_abaqus_type):
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     return elem_fetorch_type
 # =============================================================================
+def get_specimen_history_paths(specimen_history_dir, specimen_name):
+    """Get specimen history time step file paths from directory.
+    
+    Parameters
+    ----------
+    specimen_history_dir : str
+        Specimen history data directory.
+    specimen_name : str
+        Specimen name.
+
+    Returns
+    -------
+    specimen_history_paths : tuple
+        Specimen history time step files paths (.csv). Files paths are sorted
+        according to history time.
+    """
+    # Check specimen history data directory
+    if not os.path.isdir(specimen_history_dir):
+        raise RuntimeError('The specimen history data directory has not been '
+                           'found:\n\n' + specimen_history_dir)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Initialize specimen history data file paths (.csv files)
+    specimen_history_paths = []
+    # Get files in specimen history data directory
+    directory_list = os.listdir(specimen_history_dir)
+    # Loop over files
+    for filename in directory_list:
+        # Check if file is specimen history time step file
+        is_time_step_file = bool(
+            re.search(r'^' + specimen_name + r'_tstep_[0-9]+' + r'\.csv',
+                      filename))
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Append specimen history time step file
+        if is_time_step_file:
+            specimen_history_paths.append(
+                os.path.join(os.path.normpath(specimen_history_dir), filename))
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Check specimen history time step files
+    if len(specimen_history_paths) == 0:
+        raise RuntimeError('No specimen history time step files (.csv) have '
+                           'been found in the specimen history data '
+                           'directory:\n\n' + specimen_history_dir)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Sort specimen history time step files
+    specimen_history_paths = tuple(
+        sorted(specimen_history_paths,
+               key=lambda x: int(re.search(r'(\d+)\D*$', x).groups()[-1])))
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    return specimen_history_paths
+# =============================================================================
 def get_specimen_numerical_data(specimen_history_paths, n_dim, n_node_mesh):
     """Get specimen numerical data from history data files (.csv).
     
@@ -378,24 +441,25 @@ def get_specimen_numerical_data(specimen_history_paths, n_dim, n_node_mesh):
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     return nodes_disps_mesh_hist, reaction_forces_mesh_hist, time_hist
 # =============================================================================
-if __name__ == "__main__":
-    # Set computation processes
-    is_save_specimen_data = True
-    is_save_specimen_material_state = True
-    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Set case study base directory
-    base_dir = ('/home/bernardoferreira/Documents/brown/projects/'
-                'darpa_project/4_global_toy_uniaxial_specimen/'
-                '3d_toy_uniaxial_specimen_hexa8_rc_drucker_prager_vmap/'
-                '4_elastoplastic_properties_E_v_s0_a')
-    # Set case study directory
-    case_study_name = 'material_model_finder'
-    case_study_dir = os.path.join(os.path.normpath(base_dir),
-                                  f'{case_study_name}')
-    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Set specimen name
-    specimen_name = '3D_toy_uniaxial_specimen_hexa8'
-    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+def set_material_model_parameters():
+    """Set material model parameters.
+
+    Returns
+    -------
+    strain_formulation: {'infinitesimal', 'finite'}
+        Problem strain formulation.
+    problem_type : int
+        Problem type: 2D plane strain (1), 2D plane stress (2),
+        2D axisymmetric (3) and 3D (4).
+    n_dim : int
+        Number of spatial dimensions.
+    model_name : str
+        Material constitutive model name.
+    model_parameters : dict
+        Material constitutive model parameters.
+    model_kwargs : dict, default={}
+        Other parameters required to initialize constitutive model.
+    """
     # Set strain formulation
     strain_formulation = 'infinitesimal'
     # Set problem type
@@ -403,8 +467,10 @@ if __name__ == "__main__":
     # Get problem type parameters
     n_dim, comp_order_sym, _ = get_problem_type_parameters(problem_type)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Set constitutive model name and parameters
-    model_name = 'rc_drucker_prager_vmap'
+    # Set constitutive model name
+    model_name = 'rc_von_mises_vmap'
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Set constitutive model name parameters
     if bool(re.search(r'^rc_.*$', model_name)):
         # Set constitutive model specific parameters
         if model_name == 'rc_elastic':
@@ -556,7 +622,7 @@ if __name__ == "__main__":
         # Set number of output features
         n_features_out = 6
         # Set hidden layer size
-        hidden_layer_size = 500
+        hidden_layer_size = 200
         # Set number of recurrent layers (stacked RNN)
         n_recurrent_layers = 2
         # Set dropout probability
@@ -585,6 +651,38 @@ if __name__ == "__main__":
                         'gru_model_source': gru_model_source,
                         'device_type': device_type}
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    return strain_formulation, problem_type, n_dim, model_name, \
+        model_parameters, model_kwargs
+# =============================================================================
+if __name__ == "__main__":
+    # Set computation processes
+    is_save_specimen_data = True
+    is_save_specimen_material_state = True
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Set case study base directory
+    base_dir = ('/home/bernardoferreira/Documents/brown/projects/'
+                'darpa_project/8_global_random_specimen/von_mises/'
+                '2_random_specimen_hexa8/solid/'
+                '4_discover_gru_material_model')
+    # Set case study directory
+    case_study_name = 'material_model_finder'
+    case_study_dir = os.path.join(os.path.normpath(base_dir),
+                                  f'{case_study_name}')
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Set specimen name
+    specimen_name = 'random_specimen'
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Set strain formulation
+    strain_formulation = 'infinitesimal'
+    # Set problem type
+    problem_type = 4
+    # Get problem type parameters
+    n_dim, comp_order_sym, _ = get_problem_type_parameters(problem_type)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Set material model name and parameters
+    strain_formulation, problem_type, n_dim, model_name, \
+        model_parameters, model_kwargs = set_material_model_parameters()
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Check case study directory
     if not os.path.isdir(case_study_dir):
         raise RuntimeError('The case study directory has not been found:\n\n'
@@ -611,36 +709,9 @@ if __name__ == "__main__":
     # Set specimen history data directory
     specimen_history_dir = os.path.join(os.path.normpath(specimen_raw_dir),
                                         'specimen_history_data')
-    # Check specimen history data directory
-    if not os.path.isdir(specimen_history_dir):
-        raise RuntimeError('The specimen history data directory has not been '
-                           'found:\n\n' + specimen_history_dir)
-    # Initialize specimen history data file paths (.csv files)
-    specimen_history_paths = []
-    # Get files in specimen history data directory
-    directory_list = os.listdir(specimen_history_dir)
-    # Loop over files
-    for filename in directory_list:
-        # Check if file is specimen history time step file
-        is_time_step_file = bool(
-            re.search(r'^' + specimen_name + r'_tstep_[0-9]+' + r'\.csv',
-                      filename))
-        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        # Append specimen history time step file
-        if is_time_step_file:
-            specimen_history_paths.append(
-                os.path.join(os.path.normpath(specimen_history_dir), filename))
-    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Check specimen history time step files
-    if len(specimen_history_paths) == 0:
-        raise RuntimeError('No specimen history time step files (.csv) have '
-                           'been found in the specimen history data '
-                           'directory:\n\n' + specimen_history_dir)
-    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Sort specimen history time step files
-    specimen_history_paths = tuple(
-        sorted(specimen_history_paths,
-               key=lambda x: int(re.search(r'(\d+)\D*$', x).groups()[-1])))
+    # Get specimen history time step file paths
+    specimen_history_paths = \
+        get_specimen_history_paths(specimen_history_dir, specimen_name)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set training data set directory
     training_dataset_dir = os.path.join(os.path.normpath(case_study_dir),
@@ -666,9 +737,8 @@ if __name__ == "__main__":
         model_kwargs['model_directory'] = material_model_dir
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Generate specimen data and material state files (training data set)
-    get_specimen_dataset(specimen_name, specimen_raw_dir, specimen_inp_path,
-                         specimen_history_paths, strain_formulation,
-                         problem_type, n_dim, model_name, model_parameters,
-                         model_kwargs, training_dataset_dir,
-                         is_save_specimen_data,
-                         is_save_specimen_material_state)
+    specimen_data_path, specimen_material_state_path = gen_specimen_dataset(
+        specimen_name, specimen_raw_dir, specimen_inp_path,
+        specimen_history_paths, strain_formulation, problem_type, n_dim,
+        model_name, model_parameters, model_kwargs, training_dataset_dir,
+        is_save_specimen_data, is_save_specimen_material_state)
