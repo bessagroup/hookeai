@@ -221,10 +221,7 @@ def perform_model_prediction(predict_directory, dataset_file_path,
     # Set loss parameters
     loss_kwargs = {}
     # Set prediction loss normalization
-    if loss_type == 'mre':
-        is_normalized_loss = True
-    else:
-        is_normalized_loss = False
+    is_normalized_loss = False
     # Set prediction batch size
     batch_size = min((512, len(dataset)))
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
