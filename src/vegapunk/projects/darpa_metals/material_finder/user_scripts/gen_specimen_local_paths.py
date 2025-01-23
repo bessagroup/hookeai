@@ -2,10 +2,10 @@
 
 Functions
 ---------
-gen_specimen_local_dataset(specimen_data_path, specimen_material_state_path, \
-                           model_directory, device_type='cpu', \
-                           is_verbose=False)
+gen_specimen_local_dataset
     Generate specimen local strain-stress paths data set.
+set_default_model_parameters
+    Set default model initialization parameters.
 """
 #
 #                                                                       Modules
@@ -39,8 +39,8 @@ __status__ = 'Planning'
 # =============================================================================
 def gen_specimen_local_dataset(specimen_data_path,
                                specimen_material_state_path,
-                               model_directory, device_type='cpu',
-                               is_verbose=False):
+                               model_directory, is_plot_dataset=False,
+                               device_type='cpu', is_verbose=False):
     """Generate specimen local strain-stress paths data set.
     
     Parameters
@@ -52,10 +52,20 @@ def gen_specimen_local_dataset(specimen_data_path,
         Path of file containing the FETorch specimen material state.
     model_directory : str
         Directory where model is stored.
+    is_plot_dataset : bool, default=False
+        If True, then generate plots for strain-stress material response path
+        data set.
     device_type : {'cpu', 'cuda'}, default='cpu'
         Type of device on which torch.Tensor is allocated.
     is_verbose : bool, default=False
         If True, enable verbose output.
+        
+    Returns
+    -------
+    dataset : torch.utils.data.Dataset
+        Time series data set. Each sample is stored as a dictionary where
+        each feature (key, str) data is a torch.Tensor(2d) of shape
+        (sequence_length, n_features).
     """
     # Load specimen numerical data
     specimen_data = torch.load(specimen_data_path)
@@ -72,7 +82,8 @@ def gen_specimen_local_dataset(specimen_data_path,
     # Set storage of specimen local strain-stress paths
     is_store_local_paths = True
     # Set elements of specimen local strain-stress data set
-    local_paths_elements = [2251, 2260, 2291]
+    local_paths_elements = \
+        [x for x in range(1, specimen_data.specimen_mesh.get_n_elem() + 1)]
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Initialize material model finder
     material_finder = MaterialModelFinder(
@@ -139,15 +150,19 @@ def gen_specimen_local_dataset(specimen_data_path,
     # Load data set
     dataset = load_dataset(dataset_file_path)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Set data set plots directory
-    plots_dir = os.path.join(dataset_directory, 'plots')
-    # Create plots directory
-    plots_dir = make_directory(plots_dir)
     # Generate data set plots
-    generate_dataset_plots(specimen_material_state.get_strain_formulation(),
-                           specimen_data.get_n_dim(), dataset,
-                           save_dir=plots_dir, is_save_fig=True,
-                           is_stdout_display=False)
+    if is_plot_dataset:
+        # Set data set plots directory
+        plots_dir = os.path.join(dataset_directory, 'plots')
+        # Create plots directory
+        plots_dir = make_directory(plots_dir)
+        # Generate data set plots
+        generate_dataset_plots(
+            specimen_material_state.get_strain_formulation(),
+            specimen_data.get_n_dim(), dataset, save_dir=plots_dir,
+            is_save_fig=True, is_stdout_display=False)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    return dataset
 # =============================================================================
 def set_default_model_parameters(model_directory, device_type='cpu'):
     """Set default model initialization parameters.
@@ -178,9 +193,9 @@ def set_default_model_parameters(model_directory, device_type='cpu'):
 if __name__ == "__main__":
     # Set case study base directory
     base_dir = ('/home/bernardoferreira/Documents/brown/projects/'
-                'darpa_project/5_global_specimens/'
-                'rowan_specimen_tension_bv_hexa8_rc_von_mises/'
-                'specimen_analysis')
+                'darpa_project/8_global_random_specimen/von_mises/'
+                '2_random_specimen_hexa8/voids_lattice/'
+                '1_get_specimen_local_paths')
     # Set case study directory
     case_study_name = 'material_model_finder'
     case_study_dir = os.path.join(os.path.normpath(base_dir),
@@ -227,6 +242,6 @@ if __name__ == "__main__":
         device_type = 'cpu'
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Generate specimen local strain-stress paths data set
-    gen_specimen_local_dataset(
+    _ = gen_specimen_local_dataset(
         specimen_data_path, specimen_material_state_path, model_directory,
-        device_type=device_type, is_verbose=True)
+        is_plot_dataset=True, device_type=device_type, is_verbose=True)
