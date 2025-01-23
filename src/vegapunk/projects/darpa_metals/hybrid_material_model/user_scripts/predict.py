@@ -143,7 +143,7 @@ def perform_model_prediction(predict_directory, dataset_file_path,
             is_remove_features=False) 
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set loss type
-    loss_type = 'mre'
+    loss_type = 'mse'
     # Set loss parameters
     loss_kwargs = {}
     # Set prediction loss normalization

@@ -217,7 +217,7 @@ def perform_model_prediction(predict_directory, dataset_file_path,
         dataset, 'hidden_features_in', hidden_features_in)    
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set loss type
-    loss_type = 'mre'
+    loss_type = 'mse'
     # Set loss parameters
     loss_kwargs = {}
     # Set prediction loss normalization

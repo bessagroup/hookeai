@@ -99,7 +99,7 @@ def perform_model_prediction(predict_directory, dataset_file_path,
         dataset, new_label_out, cat_features_out, is_remove_features=True)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set loss type
-    loss_type = 'mre'
+    loss_type = 'mse'
     # Set loss parameters
     loss_kwargs = {}
     # Set prediction loss normalization

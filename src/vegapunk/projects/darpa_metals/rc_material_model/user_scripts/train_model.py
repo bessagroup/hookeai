@@ -281,7 +281,7 @@ def perform_model_standard_training(train_dataset_file_path, model_directory,
         return
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set loss type
-    loss_type = 'mre'
+    loss_type = 'mse'
     # Set loss parameters
     loss_kwargs = {}
     # Set model state loading

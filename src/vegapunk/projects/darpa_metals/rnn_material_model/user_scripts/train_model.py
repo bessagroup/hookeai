@@ -261,7 +261,7 @@ def perform_model_standard_training(train_dataset_file_path, model_directory,
         train_dataset, 'hidden_features_in', hidden_features_in)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set loss type
-    loss_type = 'mre'
+    loss_type = 'mse'
     # Set loss parameters
     loss_kwargs = {}
     # Set model state loading
