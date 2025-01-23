@@ -41,6 +41,7 @@ from simulators.fetorch.material.models.standard.hardening import \
     get_hardening_law
 from projects.gnn_material_patch.material_patch.patch_generator import \
     FiniteElementPatchGenerator
+from testing_utilities.links_plot_tfact import plot_links_tfact_hist
 from ioput.iostandard import make_directory
 #
 #                                                          Authorship & Credits
@@ -427,7 +428,7 @@ def set_patch_mesh_params(n_dim):
         # Set finite element type
         elem_type = 'SHEXA8'
         # Set number of finite elements per dimension
-        n_elems_per_dim = (11, 11, 11)
+        n_elems_per_dim = (1, 1, 1)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     else:
         raise RuntimeError('Invalid number of spatial dimensions.')
@@ -483,9 +484,9 @@ def set_patch_material_params(n_elems_per_dim):
             'n_hard_point': 200,
             'hardening_law': get_hardening_law('nadai_ludwik'),
             'hardening_parameters': {'s0': 900,
-                                    'a': 700,
-                                    'b': 0.5,
-                                    'ep0': 1e-5}}
+                                     'a': 700,
+                                     'b': 0.5,
+                                     'ep0': 1e-5}}
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     else:
         raise RuntimeError('Unknown material constitutive model.')
@@ -530,7 +531,7 @@ def perform_links_simulation(simulations_dir, patch, patch_material_params):
                                      analysis_type)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set configuration
-    configuration = 'voids_lattice'
+    configuration = 'solid'
     # Get number of finite elements per dimension
     n_elems_per_dim = patch.get_n_elems_per_dim()
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -581,6 +582,9 @@ def perform_links_simulation(simulations_dir, patch, patch_material_params):
         remove_elements_labels=remove_elements_labels,
         links_input_params=links_input_params, is_overwrite_file=True,
         is_save_increm_file=True)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Plot Links total loading factor history
+    plot_links_tfact_hist(links_file_path, is_save_fig=True)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Perform Links simulation
     is_success, _ = \
