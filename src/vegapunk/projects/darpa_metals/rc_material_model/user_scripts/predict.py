@@ -345,4 +345,5 @@ if __name__ == "__main__":
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Perform prediction with model
         perform_model_prediction(prediction_subdir, dataset_file_path,
-                                 model_directory, device_type, is_verbose=True)
+                                 model_directory, device_type=device_type,
+                                 is_verbose=True)
