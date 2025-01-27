@@ -63,7 +63,7 @@ defaults:
   #- override hydra/sweeper: nevergrad
   # 3. Optuna (update sampler according with sweeper._target)
   - override hydra/sweeper: optuna
-  - override hydra/sweeper/sampler: grid
+  - override hydra/sweeper/sampler: tpe
   # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   # Disable Hydra logging
   - override hydra/hydra_logging: none
@@ -77,7 +77,7 @@ hydra:
   # Hydra job
   job:
     # Job basename
-    name: optimize_gru_material_model_von_mises
+    name: optimize_gru_material_model_composite_rve
     # Change working directory to last output directory
     chdir: false
 
@@ -151,6 +151,7 @@ hydra:
     _target_: hydra_plugins.hydra_optuna_sweeper.optuna_sweeper.OptunaSweeper
     # Store Optuna dashboard file
     #(python package sqlalchemy==1.4.44, delete old optuna_dashboard.db!)
+    storage: 'sqlite:////home/bernardoferreira/Documents/optuna_dashboard.db'
 
     # Maximum number of function evaluations to perform
     n_trials: 300
@@ -159,7 +160,7 @@ hydra:
     # Optuna optimizer settings:
     sampler:
       # Optuna optimizer
-      _target_: optuna.samplers.GridSampler
+      _target_: optuna.samplers.TPESampler
       # Optuna optimizer class parameters
       # ...
 
@@ -167,7 +168,7 @@ hydra:
     params:
       # Model parameters:
       # Hidden layer size
-      hidden_layer_size: choice(100, 200, 300, 400, 500, 600)
+      hidden_layer_size: range(100, 600)
       # Number of recurrent layers
       n_recurrent_layers: range(1, 6)
       
