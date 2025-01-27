@@ -23,7 +23,7 @@ import re
 import numpy as np
 import matplotlib.pyplot as plt
 # Local
-from ioput.plots import plot_xy_data, save_figure
+from ioput.plots import scatter_xy_data, save_figure
 #
 #                                                          Authorship & Credits
 # =============================================================================
@@ -37,7 +37,8 @@ def plot_optimization_history(optim_history, optim_metric, is_log_metric=False,
                               objective_scale='linear', is_data_labels=False,
                               filename=None,
                               save_dir=None, is_save_fig=False,
-                              is_stdout_display=False, is_latex=False):
+                              is_stdout_display=False, is_latex=False,
+                              is_verbose=False):
     """Plot Hydra multi-run optimization process history.
     
     Assumes that each Hydra multi-run optimization process generates a
@@ -77,7 +78,13 @@ def plot_optimization_history(optim_history, optim_metric, is_log_metric=False,
         If True, then render all strings in LaTeX. If LaTex is not available,
         then this option is silently set to False and all input strings are
         processed to remove $(...)$ enclosure.
+    is_verbose : bool, default=False
+        If True, enable verbose output.
     """
+    if is_verbose:
+        print('\nPlot Hydra multi-run optimization processes'
+              '\n-------------------------------------------')
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Get number of optimization processes
     n_optim_history = len(optim_history.keys())
     # Initialize maximum number of jobs (function evaluations)
@@ -92,6 +99,9 @@ def plot_optimization_history(optim_history, optim_metric, is_log_metric=False,
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Loop over optimization processes
     for i, (label, optim_dir) in enumerate(optim_history.items()):
+        if is_verbose:
+            print(f'\n> Process: {label}')
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Check optimization process directory
         if not os.path.isdir(optim_dir):
             raise RuntimeError('The optimization jobs directory has not been '
@@ -110,6 +120,8 @@ def plot_optimization_history(optim_history, optim_metric, is_log_metric=False,
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Initialize optimization metric history
         metric_hist = []
+        # Initialize optimization jobs history
+        job_hist = []
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Loop over optimization process jobs
         for job_dir in directory_list:
@@ -147,12 +159,13 @@ def plot_optimization_history(optim_history, optim_metric, is_log_metric=False,
                     if str(optim_metric) in line:
                         metric = float(line.split()[-1])
                         break
-                # Append job optimization metric to history
+                # Append job ID and optimization metric to history
                 if metric is None:
                     raise RuntimeError(f'Optimization metric {optim_metric} '
                                        f'has not been found in job summary '
                                        f'file:\n\n{job_summary_path}')
                 else:
+                    job_hist.append(job_id)
                     metric_hist.append(metric)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Update maximum number of jobs
@@ -164,6 +177,20 @@ def plot_optimization_history(optim_history, optim_metric, is_log_metric=False,
         # Assemble data label
         if is_data_labels:
             data_labels.append(label)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        if is_verbose:
+            # Get sorted indices based on optimization metric
+            sorted_indices = sorted(range(len(metric_hist)),
+                                    key=lambda i: metric_hist[i])
+            # Get sorted job IDs and optimization metric histories
+            job_hist_sorted = [job_hist[i] for i in sorted_indices]
+            metric_hist_sorted = [metric_hist[i] for i in sorted_indices]
+            # Diplay best performance
+            print(f'\n  > Best performance: {metric_hist_sorted[0]:15.8e} '
+                  f'(job #{job_hist_sorted[0]})')
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    if is_verbose:
+        print(f'\n> Generating optimization processes plot...')    
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Initialize data array and data labels
     data_xy = np.full((max_n_jobs, 2*n_optim_history), fill_value=None)
@@ -191,14 +218,14 @@ def plot_optimization_history(optim_history, optim_metric, is_log_metric=False,
         y_label = f'{optim_metric.capitalize()}'
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set title
-    title = 'Hyperparameter optimization history'
+    title = None
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Plot loss history
-    figure, axes = plot_xy_data(data_xy, data_labels=data_labels,
-                                x_lims=x_lims, y_lims=y_lims, title=title,
-                                x_label=x_label, y_label=y_label,
-                                y_scale=y_scale, x_tick_format='int',
-                                is_latex=is_latex)
+    figure, axes = scatter_xy_data(data_xy, data_labels=data_labels,
+                                   x_lims=x_lims, y_lims=y_lims, title=title,
+                                   x_label=x_label, y_label=y_label,
+                                   y_scale=y_scale, x_tick_format='int',
+                                   is_latex=is_latex)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Build best-so-far history
     data_min_xy = np.copy(data_xy)
@@ -211,9 +238,10 @@ def plot_optimization_history(optim_history, optim_metric, is_log_metric=False,
     axes.plot(data_min_xy[:, 0], data_min_xy[:, 1], color='#EE7733',
               label='Best-so-far', linestyle='-')
     # Plot best-so-far legend
-    axes.legend(loc = 'upper right', frameon=True, fancybox=True,
-                facecolor='inherit', edgecolor='inherit', fontsize=8,
-                framealpha=1.0)
+    legend = axes.legend(loc='upper right', frameon=True, fancybox=True,
+                         facecolor='inherit', edgecolor='inherit', fontsize=8,
+                         framealpha=1.0)
+    legend.set_zorder(10)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Display figure
     if is_stdout_display:
@@ -228,17 +256,18 @@ def plot_optimization_history(optim_history, optim_metric, is_log_metric=False,
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Close plot
     plt.close(figure)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    if is_verbose:
+        print() 
 # =============================================================================
 if __name__ == "__main__":
     # Set optimization processes
     optim_history = {}
     optim_history['label'] = \
-        ('/home/bernardoferreira/Desktop/hyperparameter_opt/'
-         'optimize_gru_material_model_von_mises/2024-10-10/09-16-06')
+        ('/home/bernardoferreira/Documents/hyperparameter_opt/'
+         'optimize_gru_material_model_composite_rve/2025-01-23/18-56-06')
     # Set plot directory
-    save_dir = ('/home/bernardoferreira/Documents/brown/projects/'
-                'darpa_project/7_local_hybrid_training/'
-                'case_erroneous_von_mises_properties/hyp_opt_datasets')
+    save_dir = ('/home/bernardoferreira/Documents/hyperparameter_opt')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set optimization metric
     optim_metric = 'objective'
