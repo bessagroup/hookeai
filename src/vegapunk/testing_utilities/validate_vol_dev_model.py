@@ -69,13 +69,13 @@ if not torch.allclose(stress, validate_stress):
     raise RuntimeError('Stress volumetric/deviatoric decomposition was not '
                        'satisfied.')
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-# Check results: Mean Relative Error (MRE)
+# Check results: Mean Squared Error (MSE)
 # Initialize loss function
-loss_function = get_pytorch_loss('mre')
+loss_function = get_pytorch_loss('mse')
 # Compute loss
 mre = loss_function(validate_stress, stress)
 # Display results
-print(f'\nmre = {mre:11.4e}')
+print(f'\nmse = {mre:11.4e}')
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Initialize volumetric/deviatoric composition model
 voldev_model = VolDevCompositionModel(device_type=device_type)
@@ -86,12 +86,12 @@ if not torch.allclose(stress, validate_stress):
     raise RuntimeError('Stress volumetric/deviatoric decomposition was not '
                        'satisfied.')
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-# Check results: Mean Relative Error (MRE)
+# Check results: Mean Squared Error (MSE)
 # Initialize loss function
-loss_function = get_pytorch_loss('mre')
+loss_function = get_pytorch_loss('mse')
 # Compute loss
-mre = loss_function(validate_stress, stress)
+mse = loss_function(validate_stress, stress)
 # Display results
-print(f'\nmre = {mre:11.4e}')
+print(f'\nmse = {mse:11.4e}')
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 print()

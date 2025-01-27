@@ -158,13 +158,13 @@ batch_elastic_model = BatchedElasticModel(
 # Compute batched elastic constitutive model prediction
 batch_elastic_features_out = batch_elastic_model(cat_strain_in)
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-# Check results: Mean Relative Error (MRE)
+# Check results: Mean Squared Error (MSE)
 # Initialize loss function
-loss_function = get_pytorch_loss('mre')
+loss_function = get_pytorch_loss('mse')
 # Compute loss
-mre = loss_function(rc_elastic_features_out, batch_elastic_features_out)
+mse = loss_function(rc_elastic_features_out, batch_elastic_features_out)
 # Display results
-print(f'\nmre = {mre:11.4e}')
+print(f'\nmse = {mse:11.4e}')
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Check results: Element by element maximum tolerance
 # Set absolute tolerance
