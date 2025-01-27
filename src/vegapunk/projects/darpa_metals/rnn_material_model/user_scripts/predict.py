@@ -474,5 +474,6 @@ if __name__ == "__main__":
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Perform prediction with model
         perform_model_prediction(prediction_subdir, dataset_file_path,
-                                 model_directory, device_type=device_type,
-                                 is_verbose=True)
+                                 model_directory,
+                                 is_remove_sample_prediction=True,
+                                 device_type=device_type, is_verbose=True)
