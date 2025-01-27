@@ -10,8 +10,7 @@ if root_dir not in sys.path:
 import os
 import pickle
 # Local
-from gnn_base_model.model.gnn_model import TorchStandardScaler
-from utilities.data_scalers import TorchMinMaxScaler
+from utilities.data_scalers import TorchStandardScaler, TorchMinMaxScaler
 # =============================================================================
 # Summary: Extract data scalers parameters from model initialization file.
 # =============================================================================
