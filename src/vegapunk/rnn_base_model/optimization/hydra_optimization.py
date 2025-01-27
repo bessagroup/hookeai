@@ -22,6 +22,7 @@ if root_dir not in sys.path:
     sys.path.insert(0, root_dir)
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 import os
+import re
 # Third-party
 import hydra
 import torch
@@ -95,11 +96,18 @@ def hydra_wrapper(process, dataset_paths, device_type='cpu'):
         model_init_args['dropout'] = cfg.dropout
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Set data features for training and prediction
-        features_option = 'stress'
-        if features_option == 'stress':
+        features_option = 'strain_to_stress'
+        if features_option == 'strain_to_stress':
             # Set input features
             new_label_in = 'features_in'
             cat_features_in = ('strain_path',)
+            # Set output features
+            new_label_out = 'features_out'
+            cat_features_out = ('stress_path',)
+        elif features_option == 'strain_vf_to_stress':
+            # Set input features
+            new_label_in = 'features_in'
+            cat_features_in = ('strain_path', 'vf_path')
             # Set output features
             new_label_out = 'features_out'
             cat_features_out = ('stress_path',)
@@ -232,6 +240,23 @@ def hydra_wrapper(process, dataset_paths, device_type='cpu'):
                 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                 # Set hyperparameter optimization objective
                 objective = avg_predict_loss_sample
+                # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                # Set flag to remove sample prediction files
+                is_remove_sample_prediction = True
+                # Remove sample prediction files
+                if is_remove_sample_prediction:
+                    # Set sample prediction file regex
+                    sample_regex = re.compile(r'^prediction_sample_\d+\.pkl$')
+                    # Walk through prediction set directory recursively
+                    for root, _, files in os.walk(predict_subdir):
+                        # Loop over prediction set directory files
+                        for file in files:
+                            # Remove sample prediction file
+                            if sample_regex.match(file):
+                                # Set sample prediction file path
+                                sample_file_path = os.path.join(root, file)
+                                # Remove sample prediction file
+                                os.remove(sample_file_path)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Display parameters
         print('\nParameters:')
@@ -273,16 +298,19 @@ if __name__ == "__main__":
     elif process == 'training-testing':
         datasets_paths['training'] = \
             ('/home/bernardoferreira/Documents/brown/projects/darpa_project/'
-             '7_local_hybrid_training/case_erroneous_von_mises_properties/'
-             'hyp_opt_datasets/1_training_dataset/ss_paths_dataset_n160.pkl')
+             '2_local_rnn_training/composite_rve/dataset_01_2025/'
+             '2_training_strain_vf_to_stress/1_training_dataset/'
+             'ss_paths_dataset_n7333.pkl')
         datasets_paths['validation'] = \
             ('/home/bernardoferreira/Documents/brown/projects/darpa_project/'
-             '7_local_hybrid_training/case_erroneous_von_mises_properties/'
-             'hyp_opt_datasets/2_validation_dataset/ss_paths_dataset_n32.pkl')
+             '2_local_rnn_training/composite_rve/dataset_01_2025/'
+             '2_training_strain_vf_to_stress/2_validation_dataset/'
+             'ss_paths_dataset_n916.pkl')
         datasets_paths['testing'] = \
             ('/home/bernardoferreira/Documents/brown/projects/darpa_project/'
-             '7_local_hybrid_training/case_erroneous_von_mises_properties/'
-             'hyp_opt_datasets/5_testing_id_dataset/ss_paths_dataset_n512.pkl')
+             '2_local_rnn_training/composite_rve/dataset_01_2025/'
+             '2_training_strain_vf_to_stress/5_testing_id_dataset/'
+             'ss_paths_dataset_n916.pkl')
     else:
         raise RuntimeError('Unknown hyperparameter optimization process.')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
