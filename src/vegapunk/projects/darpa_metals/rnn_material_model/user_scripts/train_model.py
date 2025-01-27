@@ -362,7 +362,7 @@ def set_default_model_parameters(model_directory, device_type='cpu'):
     is_model_in_normalized = True
     is_model_out_normalized = True
     # Set GRU model source
-    gru_model_source = 'custom'
+    gru_model_source = 'torch'
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Build model initialization parameters
     model_init_args = {'n_features_in': n_features_in,
