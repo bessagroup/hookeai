@@ -1,8 +1,19 @@
 # Standard
+import sys
+import pathlib
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# Add project root directory to sys.path
+root_dir = str(pathlib.Path(__file__).parents[1])
+if root_dir not in sys.path:
+    sys.path.insert(0, root_dir)
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 import os
 # Third-party
 import numpy as np
 import pyvista as pv
+import matplotlib.pyplot as plt
+# Local
+from ioput.plots import plot_xy_data, save_figure
 # =============================================================================
 # Solving: AttributeError: module 'numpy' has no attribute 'bool'
 # Cause: vtk 9.0.3 requires numpy < 1.24
@@ -338,8 +349,7 @@ def plot_yield_surface(models_names, models_parameters, models_sy,
     filename : str, default='yield_surfaces'
         Figure name.
     save_dir : str, default=None
-        Directory where figure is saved. If None, then figure is saved in
-        current working directory.
+        Directory where figure is saved.
     is_save_fig : bool, default=False
         Save figure.
     is_stdout_display : bool, default=False
@@ -378,6 +388,9 @@ def plot_yield_surface(models_names, models_parameters, models_sy,
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Collect grid points (pi-stress points)
     pi_stress_points = grid.points
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Initialize constitutive models pi-plane yield function
+    models_phi_pi_plane = {}
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Initialize plotter
     plotter = pv.Plotter(lighting='light kit', polygon_smoothing=True)
@@ -425,14 +438,16 @@ def plot_yield_surface(models_names, models_parameters, models_sy,
         # Set smooth shading
         mesh_smooth_shading = True
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Get yield surface slice at pi-plane
+        pi_plane = surface_mesh.slice(normal=(0, 0, 1), origin=(0.0, 0.0, 0.0))
+        # Store model yield surface slice at pi-plane
+        models_phi_pi_plane[model_name] = pi_plane.points[:, 0:2]
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Add yield surface to plot
         if is_pi_plane_only:
-            # Get yield surface slice at pi-plane
-            pi_plane = \
-                surface_mesh.slice(normal=(0, 0, 1), origin=(0.0, 0.0, 0.0))
             # Add yield surface slice mesh to plot
             _ = plotter.add_mesh(pi_plane, label=mesh_label, color=mesh_color,
-                                 line_width=4.0)
+                                 line_width=4.0) 
         else:
             # Clip yield surface
             #surface_mesh = surface_mesh.clip(
@@ -492,6 +507,101 @@ def plot_yield_surface(models_names, models_parameters, models_sy,
             os.path.join(os.norm.path(save_dir), filename + '.png')
         # Save figure
         plotter.screenshot(plot_file_path)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Plot constitutive material models yield surface in pi-plane
+    plot_yield_surface_pi_plane(models_names, models_phi_pi_plane,
+                                models_labels=models_labels,
+                                save_dir=save_dir, is_save_fig=is_save_fig,
+                                is_stdout_display=is_stdout_display,
+                                is_latex=True) 
+# =============================================================================
+def plot_yield_surface_pi_plane(models_names, models_phi_pi_plane,
+                                models_labels=None,
+                                filename='yield_surfaces_pi_plane',
+                                save_dir=None, is_save_fig=False,
+                                is_stdout_display=False, is_latex=False):
+    """Plot constitutive material models yield surface in pi-plane.
+    
+    Parameters
+    ----------
+    models_names : tuple[str]
+        Constitutive models for which the yield surface is plotted.
+    models_phi_pi_plane : dict
+        For each constitutive material model (key, str), store the
+        corresponding yield function points in the pi-plane
+        (item, numpy.ndarray(2d)). Each point should be stored as (pi1, pi2),
+        where pi1 and pi2 are the first and second pi-stress coordinates.
+    models_labels : dict, default=None
+        Constitutive model label (item, str) for each model (key, str).
+    filename : str, default='yield_surfaces_pi_plane'
+        Figure name.
+    save_dir : str, default=None
+        Directory where data set plots are saved.
+    is_save_fig : bool, default=False
+        Save figure.
+    is_stdout_display : bool, default=False
+        True if displaying figure to standard output device, False otherwise.
+    is_latex : bool, default=False
+        If True, then render all strings in LaTeX. If LaTex is not available,
+        then this option is silently set to False and all input strings are
+        processed to remove $(...)$ enclosure.
+    """
+    # Get number of models
+    n_model = len(models_names)
+    # Get maximum number of points
+    n_point_max = max([models_phi_pi_plane[model_name].shape[0]
+                       for model_name in models_names])
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Initialize data array
+    data_xy = np.full((n_point_max+1, 2*n_model), fill_value=np.nan)
+    # Initialize data labels
+    data_labels = []
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Loop over constitutive models
+    for i, model_name in enumerate(models_names):
+        # Get constitutive model yield function points
+        phi_pi_plane = models_phi_pi_plane[model_name]
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Compute centroid
+        centroid = np.mean(phi_pi_plane, axis=0)
+        # Compute angles relative to centroid
+        angles = np.arctan2(phi_pi_plane[:, 1] - centroid[1],
+                            phi_pi_plane[:, 0] - centroid[0])
+        # Sort yield function points in counter-clockwise order
+        phi_pi_plane = phi_pi_plane[np.argsort(angles)]
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Close yield surface
+        phi_pi_plane = np.append(phi_pi_plane, phi_pi_plane[0:1, :], axis=0)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Get number of yield function points
+        n_point = phi_pi_plane.shape[0]
+        # Store model yield function points
+        data_xy[:n_point, 2*i:2*i+2] = phi_pi_plane
+        # Store model label
+        data_labels.append(models_labels[model_name])
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Set axes labels
+    x_label = 'Pi-Stress 1'
+    y_label = 'Pi-Stress 2'
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Plot constitutive material models yield surface in pi-plane
+    figure, axes = plot_xy_data(
+        data_xy, data_labels=data_labels, x_label=x_label, y_label=y_label,
+        x_scale='linear', y_scale='linear', is_latex=is_latex)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Enforce equal axis scaling
+    axes.set_aspect("equal")
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Save figure
+    if is_save_fig:
+        save_figure(figure, filename, format='pdf', save_dir=save_dir)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Display figure
+    if is_stdout_display:
+        plt.show()
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Close plot
+    plt.close('all')
 # =============================================================================
 if __name__ == '__main__':
     # Set models names
