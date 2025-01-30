@@ -1,7 +1,9 @@
 """Lou-Zhang-Yoon model with general differentiable yield function.
 
 This module includes the implementation of the Lou-Zhang-Yoon model with
-general differentiable yield function and anisotropic hardening.
+general differentiable yield function and isotropic hardening.
+
+It also includes several tools to check the yield surface convexity.
 
 Classes
 -------
@@ -16,6 +18,8 @@ import math
 import copy
 # Third-party
 import torch
+import numpy as np
+import matplotlib.pyplot as plt
 # Local
 from simulators.fetorch.material.models.interface import ConstitutiveModel
 from simulators.fetorch.material.models.standard.elastic import Elastic
@@ -24,6 +28,7 @@ from simulators.fetorch.math.matrixops import get_problem_type_parameters, \
     vget_state_2Dmf_from_3Dmf
 from simulators.fetorch.math.tensorops import get_id_operators, dyad22_1, \
     ddot42_1, ddot24_1, ddot22_1, ddot44_1, fo_dinv_sym
+from ioput.plots import plot_xy_data, save_figure
 #
 #                                                          Authorship & Credits
 # =============================================================================
@@ -83,6 +88,20 @@ class LouZhangYoon(ConstitutiveModel):
                  yield_c, c_hard_slope, yield_d, d_hard_slope, \
                  e_consistent_tangent, is_associative_hardening=False)
         Compute state update Jacobian matrix.
+    convexity_return_mapping(cls, yield_c, yield_d)
+        Perform convexity return-mapping.
+    compute_convex_boundary(cls, n_theta=360)
+        Compute convexity domain boundary.
+    directional_convex_boundary(cls, theta, r_lower=0.0, r_upper=4.0, \
+                                search_tol=1e-6)
+        Compute convexity domain boundary along given angular direction.
+    check_yield_surface_convexity(cls, yield_c, yield_d)
+        Check yield surface convexity.
+    plot_convexity_boundary(cls, convex_boundary, parameters_paths=None, \
+                            is_plot_legend=False, save_dir=None, \
+                            is_save_fig=False, is_stdout_display=False, \
+                            is_latex=False)
+        Plot convexity domain boundary.
     """
     def __init__(self, strain_formulation, problem_type, model_parameters,
                  device_type='cpu'):
@@ -982,3 +1001,349 @@ class LouZhangYoon(ConstitutiveModel):
                               torch.cat((j31, j32, j33), dim=1)), dim=0)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         return jacobian
+    # -------------------------------------------------------------------------
+    @classmethod
+    def convexity_return_mapping(cls, yield_c, yield_d):
+        """Perform convexity return-mapping.
+        
+        For a given set (c, d), the convexity return-mapping works as follows:
+        
+        (1) If the yield parameters (c, d) lie inside the convexity domain
+            (yield surface is convex), then they are kept unchanged;
+            
+        (2) If the yield parameters (c, d) lie outside the convexity domain
+            (yield surface is not convex), then they are updated to the
+            convexity domain boundary point along the same angular direction.
+
+        Parameters
+        ----------
+        yield_c : torch.Tensor(0d)
+            Yield parameter.
+        yield_d : torch.Tensor(0d)
+            Yield parameter.
+
+        Returns
+        -------
+        is_convex : bool
+            If True, then yield surface is convex, False otherwise.
+        yield_c : torch.Tensor(0d)
+            Yield parameter.
+        yield_d : torch.Tensor(0d)
+            Yield parameter.
+        """
+        # Check yield surface convexity
+        is_convex = cls.check_yield_surface_convexity(yield_c, yield_d)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Perform convexity return-mapping
+        if not is_convex:
+            # Compute angular direction
+            theta = torch.atan2(yield_d, yield_c)
+            # Compute convexity boundary point
+            yield_c, yield_d = cls.directional_convex_boundary(theta)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        return is_convex, yield_c, yield_d
+    # -------------------------------------------------------------------------
+    @classmethod
+    def compute_convex_boundary(cls, n_theta=360):
+        """Compute convexity domain boundary.
+        
+        Parameters
+        ----------
+        n_theta : int, default=360
+            Number of discrete angular coordinates to discretize the convexity
+            boundary domain.
+
+        Returns
+        -------
+        convex_boundary : torch.Tensor(2d)
+            Convexity domain boundary stored as torch.Tensor(2d) of shape
+            (n_point, 2), where each point is stored as (yield_c, yield_d).
+        """
+        # Set discrete angular coordinates
+        thetas = torch.linspace(0, 2.0*torch.pi, steps=n_theta)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Initialize convexity domain boundary
+        convex_boundary = torch.zeros(n_theta, 2)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Loop over discrete angular coordinates
+        for i, theta in enumerate(thetas):
+            # Compute directional convexity domain boundary
+            yield_c, yield_d = cls.directional_convex_boundary(theta)
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Store convexity domain boundary point
+            convex_boundary[i, :] = torch.tensor((yield_c, yield_d)) 
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        return convex_boundary
+    # -------------------------------------------------------------------------
+    @classmethod
+    def directional_convex_boundary(cls, theta, r_lower=0.0, r_upper=4.0,
+                                    search_tol=1e-6):
+        """Compute convexity domain boundary along given angular direction.
+        
+        Parameters
+        ----------
+        theta : torch.Tensor(0d)
+            Angular coordinate in yield parameters domain (radians).
+        r_lower : float, default=0.0
+            Initial searching radius lower bound.
+        r_upper : float, default=4.0
+            Initial searching radius upper bound.
+        search_tol : float, default = 1e-6
+            Searching window tolerance.
+        
+        Return
+        ------
+        yield_c : torch.Tensor(0d)
+            Yield parameter.
+        yield_d : torch.Tensor(0d)
+            Yield parameter.
+        """
+        # Store input angle type
+        input_dtype = theta.dtype
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Initialize searching window
+        r_window = r_upper - r_lower
+        # Initialize mean searching radius
+        r_mean = (r_upper + r_lower)/2
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Convexity boundary searching loop
+        while (r_window > search_tol):
+            # Compute yield parameters
+            yield_c = r_mean*torch.cos(theta)
+            yield_d = r_mean*torch.sin(theta)
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Check yield surface convexity
+            is_convex = cls.check_yield_surface_convexity(yield_c, yield_d)
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Update searching bounds
+            if is_convex:
+                r_lower = r_mean
+            else:
+                r_upper = r_mean
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Update mean searching radius
+            r_mean = (r_upper + r_lower)/2
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Update searching window
+            r_window = r_upper - r_lower
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Enforce consistent output type
+        yield_c = yield_c.to(input_dtype)
+        yield_d = yield_d.to(input_dtype)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        return yield_c, yield_d
+    # =========================================================================
+    @classmethod
+    def check_yield_surface_convexity(cls, yield_c, yield_d):
+        """Check yield surface convexity.
+        
+        Geometry-Inspired Numerical Convex Analysis (GINCA) method.
+        
+        Parameters
+        ----------
+        yield_c : torch.Tensor(0d)
+            Yield parameter.
+        yield_d : torch.Tensor(0d)
+            Yield parameter.
+
+        Returns
+        -------
+        is_convex : bool
+            If True, then yield surface is convex, False otherwise.
+        """
+        def get_dev_stress(lode_angle):
+            """Compute deviatoric stress from Lode angle.
+            
+            Parameters
+            ----------
+            lode_angle : torch.Tensor(0d)
+                Lode angle (radians).
+                
+            Returns
+            -------
+            dev_stress : torch.Tensor(2d)
+                Deviatoric stress.
+            """
+            # Compute principal deviatoric stresses
+            s1 = (2/3)*torch.cos(lode_angle)
+            s2 = (2/3)*torch.cos((2*torch.pi/3) - lode_angle)
+            s3 = (2/3)*torch.cos((4*torch.pi/3) - lode_angle)
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Build deviatoric stress tensor
+            dev_stress = torch.diag(torch.stack([s1, s2, s3]))
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            return dev_stress
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        def convexity_function(dev_stress, yield_c, yield_d):
+            """Function to evaluate convexity.
+            
+            Parameters
+            ----------
+            dev_stress : torch.Tensor(2d)
+                Deviatoric stress.
+            yield_c : torch.Tensor(0d)
+                Yield parameter.
+            yield_d : torch.Tensor(0d)
+                Yield parameter.
+                
+            Returns
+            -------
+            val : torch.Tensor(0d)
+                Convexity function value.
+            """
+            # Compute second invariant of deviatoric stress tensor
+            j2 = 0.5*torch.sum(dev_stress*dev_stress)
+            # Compute third invariant of deviatoric stress tensor
+            j3 = torch.det(dev_stress)
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Compute convexity function
+            val = ((j2**3 - yield_c*j3**2)**(1/2) - yield_d*j3)**(1/3)
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            return val
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        def evaluate_convexity_lode(lode_angle, yield_c, yield_d, d_lode=None):
+            """Evaluate convexity function for given Lode angle.
+            
+            Parameters
+            ----------
+            lode_angle : torch.Tensor(0d)
+                Lode angle (radians).
+            yield_c : torch.Tensor(0d)
+                Yield parameter.
+            yield_d : torch.Tensor(0d)
+                Yield parameter.
+            d_lode : torch.Tensor(0d), default=None
+                Infinitesimal Lode angle (radians).
+            
+            Returns
+            -------
+            convex_fun_val : torch.Tensor(0d)
+                Convexity function value.
+            """
+            # Enforce double precision
+            lode_angle = lode_angle.double()
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Set infinitesimal Lode angle
+            if d_lode is None:
+                lode_small = torch.deg2rad(torch.tensor(0.001))
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Compute arc point A deviatoric stress
+            lode_angle_a = lode_angle
+            dev_stress_a = get_dev_stress(lode_angle_a)
+            dev_stress_a = \
+                dev_stress_a/convexity_function(dev_stress_a, yield_c, yield_d)
+            # Compute arc point B deviatoric stress
+            lode_angle_b = lode_angle + lode_small
+            dev_stress_b = get_dev_stress(lode_angle_b)
+            dev_stress_b = \
+                dev_stress_b/convexity_function(dev_stress_b, yield_c, yield_d)
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Compute midpoint C deviatoric stress
+            dev_stress_c = (dev_stress_a + dev_stress_b)/2
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Evaluate convexity function
+            convex_fun_val = convexity_function(dev_stress_c, yield_c, yield_d)
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            return convex_fun_val
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set discrete Lode angles
+        lode_angles = torch.deg2rad(torch.linspace(0, 360, steps=1000))
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set vectorized convexity function computation (batch along Lode
+        # angles)
+        vmap_evaluate_convexity_lode = \
+            torch.vmap(evaluate_convexity_lode,
+                    in_dims=(0, None, None), out_dims=(0,))
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Compute convexity function values
+        convex_fun_vals = \
+            vmap_evaluate_convexity_lode(lode_angles, yield_c, yield_d)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Check yield surface convexity
+        is_convex = torch.all(convex_fun_vals <= 1.0)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        return is_convex
+    # =========================================================================
+    @classmethod
+    def plot_convexity_boundary(cls, convex_boundary, parameters_paths=None,
+                                is_plot_legend=False, save_dir=None,
+                                is_save_fig=False, is_stdout_display=False,
+                                is_latex=False):
+        """Plot convexity domain boundary.
+        
+        Parameters
+        ----------
+        convex_boundary : torch.Tensor(2d)
+            Convexity domain boundary stored as torch.Tensor(2d) of shape
+            (n_point, 2), where each point is stored as (yield_c, yield_d).
+        parameters_paths : dict, default=None
+            For each yield parameters path (key, str), store a torch.Tensor(2d)
+            (item, torch.Tensor) of shape (n_point, 2), where each point is
+            stored as (yield_c, yield_d).
+        is_plot_legend : bool, default=False
+            If True, then plot legend.
+        save_dir : str, default=None
+            Directory where data set plots are saved.
+        is_save_fig : bool, default=False
+            Save figure.
+        is_stdout_display : bool, default=False
+            True if displaying figure to standard output device, False
+            otherwise.
+        is_latex : bool, default=False
+            If True, then render all strings in LaTeX. If LaTex is not
+            available, then this option is silently set to False and all input
+            strings are processed to remove $(...)$ enclosure.
+        """
+        # Set data array
+        data_xy = convex_boundary.numpy()
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set data labels
+        if is_plot_legend:
+            data_labels = ['Convexity boundary',]
+        else:
+            data_labels = None
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set axes labels
+        x_label = 'Yield parameter $c$'
+        y_label = 'Yield parameter $d$'
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Plot convexity domain boundary
+        figure, axes = plot_xy_data(
+            data_xy, data_labels=data_labels, x_label=x_label, y_label=y_label,
+            x_scale='linear', y_scale='linear', is_latex=is_latex)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Plot yield parameters paths
+        if isinstance(parameters_paths, dict):
+            # Loop over paths
+            for path_label, path_points in parameters_paths.items():
+                # Convert parameters path
+                path_points = path_points.numpy()
+                # Plot parameters path points
+                (line, ) = axes.plot(path_points[:, 0], path_points[:, 1],
+                                     lw=0, marker='o', ms=3, label=path_label)
+                # Plot parameters path directional arrows
+                if path_points.shape[0] > 1:
+                    axes.quiver(path_points[:-1, 0], path_points[:-1, 1],
+                                np.diff(path_points[:, 0]),
+                                np.diff(path_points[:, 1]),
+                                angles="xy", color=line.get_color(),
+                                scale_units="xy", scale=1, width=0.005)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Plot legend
+        if is_plot_legend:
+            legend = axes.legend(loc='best', frameon=True, fancybox=True,
+                                facecolor='inherit', edgecolor='inherit',
+                                fontsize=8, framealpha=1.0)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set filename
+        filename = f'lou_yield_convexity_domain'
+        # Save figure
+        if is_save_fig:
+            save_figure(figure, filename, format='pdf', save_dir=save_dir)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Display figure
+        if is_stdout_display:
+            plt.show()
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Close plot
+        plt.close('all')
