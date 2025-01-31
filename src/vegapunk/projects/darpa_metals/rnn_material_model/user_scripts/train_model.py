@@ -72,9 +72,9 @@ def perform_model_standard_training(train_dataset_file_path, model_directory,
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set default model training options
     opt_algorithm, lr_init, lr_scheduler_type, lr_scheduler_kwargs, \
-        loss_nature, loss_type, loss_kwargs, is_sampler_shuffle, \
-            is_early_stopping, early_stopping_kwargs = \
-                set_default_training_options()
+        loss_nature, loss_type, loss_kwargs, data_scaling_type, \
+        data_scaling_parameters, is_sampler_shuffle, is_early_stopping, \
+        early_stopping_kwargs = set_default_training_options()
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Initialize new strain-based feature
     strain_features_labels = None
@@ -266,14 +266,17 @@ def perform_model_standard_training(train_dataset_file_path, model_directory,
     loss_kwargs = {}
     # Set model state loading
     load_model_state = None
-    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~    
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Training of RNN-based model
     model, _, _ = train_model(n_max_epochs, train_dataset, model_init_args,
                               lr_init, opt_algorithm=opt_algorithm,
                               lr_scheduler_type=lr_scheduler_type,
                               lr_scheduler_kwargs=lr_scheduler_kwargs,
                               loss_nature=loss_nature, loss_type=loss_type,
-                              loss_kwargs=loss_kwargs, batch_size=batch_size,
+                              loss_kwargs=loss_kwargs,
+                              data_scaling_type=data_scaling_type,
+                              data_scaling_parameters=data_scaling_parameters,
+                              batch_size=batch_size,
                               is_sampler_shuffle=is_sampler_shuffle,
                               is_early_stopping=is_early_stopping,
                               early_stopping_kwargs=early_stopping_kwargs,
@@ -415,6 +418,16 @@ def set_default_training_options():
         
     loss_kwargs : dict
         Arguments of torch.nn._Loss initializer.
+    data_scaling_type : {'min-max', 'mean-std'}
+        Type of data scaling. Min-Max scaling ('min-max') or
+        standardization ('mean-std').
+    data_scaling_parameters : dict
+        Data scaling parameters (item, dict) for each features type
+        (key, str). For 'min-max' data scaling, the parameters are the
+        'minimum' and 'maximum' features normalization tensors, as well as
+        the 'norm_minimum' and 'norm_maximum' normalization bounds. For
+        'mean-std' data scaling, the parameters are the 'mean' and 'std'
+        features normalization tensors.
     is_sampler_shuffle : bool
         If True, shuffles data set samples at every epoch.
     is_early_stopping : bool
@@ -430,6 +443,8 @@ def set_default_training_options():
     loss_nature = 'features_out'
     loss_type = 'mse'
     loss_kwargs = {}
+    data_scaling_type='mean-std'
+    data_scaling_parameters={}
     is_sampler_shuffle = False
     is_early_stopping = True
     early_stopping_kwargs = {'validation_dataset': None,
@@ -438,8 +453,9 @@ def set_default_training_options():
                              'improvement_tolerance':1e-2}
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     return opt_algorithm, lr_init, lr_scheduler_type, lr_scheduler_kwargs, \
-        loss_nature, loss_type, loss_kwargs, is_sampler_shuffle, \
-        is_early_stopping, early_stopping_kwargs
+        loss_nature, loss_type, loss_kwargs, data_scaling_type, \
+        data_scaling_parameters, is_sampler_shuffle, is_early_stopping, \
+        early_stopping_kwargs
 # =============================================================================
 if __name__ == "__main__":
     # Set computation processes

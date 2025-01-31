@@ -44,7 +44,8 @@ def train_model(n_max_epochs, dataset, model_init_args, lr_init,
                 opt_algorithm='adam', lr_scheduler_type=None,
                 lr_scheduler_kwargs={}, loss_nature='features_out',
                 loss_type='mse', loss_kwargs={},
-                batch_size=1, is_sampler_shuffle=False,
+                batch_size=1, data_scaling_type='mean-std',
+                data_scaling_parameters={}, is_sampler_shuffle=False,
                 is_early_stopping=False, early_stopping_kwargs={},
                 load_model_state=None, save_every=None, dataset_file_path=None,
                 device_type='cpu', seed=None, is_verbose=False):
@@ -94,6 +95,18 @@ def train_model(n_max_epochs, dataset, model_init_args, lr_init,
         Arguments of torch.nn._Loss initializer.
     batch_size : int, default=1
         Number of samples loaded per batch.
+    data_scaling_type : {'min-max', 'mean-std'}, default='mean-std'
+        Type of data scaling. Min-Max scaling ('min-max') or
+        standardization ('mean-std'). Only effective if model input or output
+        features are normalized.
+    data_scaling_parameters : dict, default={}
+        Data scaling parameters (item, dict) for each features type
+        (key, str). For 'min-max' data scaling, the parameters are the
+        'minimum' and 'maximum' features normalization tensors, as well as
+        the 'norm_minimum' and 'norm_maximum' normalization bounds. For
+        'mean-std' data scaling, the parameters are the 'mean' and 'std'
+        features normalization tensors. Only effective if model input or output
+        features are normalized.
     is_sampler_shuffle : bool, default=False
         If True, shuffles data set samples at every epoch.
     is_early_stopping : bool, default=False
@@ -189,9 +202,10 @@ def train_model(n_max_epochs, dataset, model_init_args, lr_init,
         # Get model input and output features normalization
         is_model_in_normalized = model.is_model_in_normalized
         is_model_out_normalized = model.is_model_out_normalized
-        # Fit model data scalers  
+        # Fit model data scalers
         if is_model_in_normalized or is_model_out_normalized:
-            model.fit_data_scalers(dataset)
+            model.fit_data_scalers(dataset, scaling_type=data_scaling_type,
+                                   scaling_parameters=data_scaling_parameters)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~  
     # Save model initial state
     model.save_model_init_state()
@@ -272,9 +286,11 @@ def train_model(n_max_epochs, dataset, model_init_args, lr_init,
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     if is_verbose:
         input_normalization_str = 'Yes' if is_model_in_normalized else 'No'
-        print(f'\n> Input data normalization: {input_normalization_str}')
+        print(f'\n> Input data normalization ({data_scaling_type}): '
+              f'{input_normalization_str}')
         output_normalization_str = 'Yes' if is_model_out_normalized else 'No'
-        print(f'\n> Output data normalization: {output_normalization_str}')
+        print(f'\n> Output data normalization ({data_scaling_type}): '
+              f'{output_normalization_str}')
         print('\n\n> Starting training process...\n')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Loop over training iterations
