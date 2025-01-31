@@ -1909,39 +1909,40 @@ class RecurrentConstitutiveModel(torch.nn.Module):
             Type of data scaling. Min-Max scaling ('min-max') or
             standardization ('mean-std').
         scaling_parameters : dict
-            Data scaling parameters (item, tuple[2]) for each features type
-            (key, str). Each data scaling parameter is set as a
-            torch.Tensor(1d) according to the corresponding number of features.
-            For 'min-max' data scaling, the parameters are the 'minimum'[0] and
-            'maximum'[1] tensors, while for 'mean-std' data scaling the
-            parameters are the 'mean'[0] and 'std'[1] tensors.
+            Data scaling parameters (item, dict) for each features type
+            (key, str). For 'min-max' data scaling, the parameters are the
+            'minimum' and 'maximum' features normalization tensors, as well as
+            the 'norm_minimum' and 'norm_maximum' normalization bounds. For
+            'mean-std' data scaling, the parameters are the 'mean' and 'std'
+            features normalization tensors.
         """
         # Initialize data scalers
         self._init_data_scalers()
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Get input and output features scaling parameters
+        scaling_parameters_in = scaling_parameters['features_in']
+        scaling_parameters_out = scaling_parameters['features_out']
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Instantiate data scalers
         if scaling_type == 'min-max':
+            # Instantiate data scalers
             scaler_features_in = TorchMinMaxScaler(
                 self._n_features_in,
-                minimum=scaling_parameters['features_in'][0],
-                maximum=scaling_parameters['features_in'][1],
-                device_type=self._device_type)
+                device_type=self._device_type
+                **scaling_parameters_in)
             scaler_features_out = TorchMinMaxScaler(
                 self._n_features_out,
-                minimum=scaling_parameters['features_out'][0],
-                maximum=scaling_parameters['features_out'][1],
-                device_type=self._device_type)
+                device_type=self._device_type
+                **scaling_parameters_out)
         elif scaling_type == 'mean-std':
             scaler_features_in = TorchStandardScaler(
                 self._n_features_in,
-                mean=scaling_parameters['features_in'][0],
-                std=scaling_parameters['features_in'][1],
-                device_type=self._device_type)
+                device_type=self._device_type,
+                **scaling_parameters_in)
             scaler_features_out = TorchStandardScaler(
                 self._n_features_out,
-                mean=scaling_parameters['features_out'][0],
-                std=scaling_parameters['features_out'][1],
-                device_type=self._device_type)
+                device_type=self._device_type,
+                **scaling_parameters_out)
         else:
             raise RuntimeError('Unknown type of data scaling.')
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
