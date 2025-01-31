@@ -34,6 +34,10 @@ class TorchMinMaxScaler:
     _maximum : torch.Tensor
         Features normalization maximum tensor stored as a torch.Tensor with
         shape (n_features,).
+    _norm_minimum : float
+        Normalization lower bound, shared by all normalized features.
+    _norm_maximum : float
+        Normalization upper found, shared by all normalized features.
     _device : torch.device
         Device on which torch.Tensor is allocated.
     
@@ -63,6 +67,7 @@ class TorchMinMaxScaler:
         Check features tensor to be transformed.
     """
     def __init__(self, n_features, minimum=None, maximum=None,
+                 norm_minimum=-1.0, norm_maximum=1.0,
                  device_type='cpu'):
         """Constructor.
         
@@ -76,6 +81,10 @@ class TorchMinMaxScaler:
         maximum : torch.Tensor
             Features normalization maximum tensor stored as a torch.Tensor with
             shape (n_features,).
+        norm_minimum : float, default=-1.0
+            Normalization lower bound, shared by all normalized features.
+        norm_maximum : float, default=1.0
+            Normalization upper found, shared by all normalized features.
         device_type : {'cpu', 'cuda'}, default='cpu'
             Type of device on which torch.Tensor is allocated.
         """
@@ -91,6 +100,8 @@ class TorchMinMaxScaler:
             self._maximum = self._check_maximum(maximum)
         else:
             self._maximum = None
+        self._norm_minimum = float(norm_minimum)
+        self._norm_maximum = float(norm_maximum)
         self._device = torch.device(device_type)
     # -------------------------------------------------------------------------
     def set_device(self, device_type):
@@ -229,11 +240,15 @@ class TorchMinMaxScaler:
         # Build minimum and maximum tensors for normalization
         minimum = torch.tile(self._minimum, (n_samples, 1)).to(input_device)
         maximum = torch.tile(self._maximum, (n_samples, 1)).to(input_device)
+        # Get normalization bounds
+        norm_minimum = self._norm_minimum
+        norm_maximum = self._norm_maximum
         # Normalization features tensor
         transformed_tensor = \
-            -1.0*torch.ones_like(tensor, device=input_device) \
-            + torch.div(2.0*torch.ones_like(tensor, device=input_device),
-                        maximum - minimum)*(tensor - minimum)
+            norm_minimum*torch.ones_like(tensor, device=input_device) \
+            + torch.div((norm_maximum - norm_minimum)*torch.ones_like(
+                tensor, device=input_device), maximum - minimum)*(
+                    tensor - minimum)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Revert concatenation of sequential data
         if len(input_shape) == 3:
@@ -291,11 +306,15 @@ class TorchMinMaxScaler:
         # Build minimum and maximum tensors for normalization
         minimum = torch.tile(self._minimum, (n_samples, 1)).to(input_device)
         maximum = torch.tile(self._maximum, (n_samples, 1)).to(input_device)
+        # Get normalization bounds
+        norm_minimum = self._norm_minimum
+        norm_maximum = self._norm_maximum
         # Denormalize features tensor
-        transformed_tensor = minimum \
-            + torch.div(maximum - minimum,
-                        2.0*torch.ones_like(tensor, device=input_device))*(
-                tensor + torch.ones_like(tensor, device=input_device))
+        transformed_tensor = minimum + torch.div(
+            maximum - minimum, (norm_maximum - norm_minimum)*torch.ones_like(
+                tensor, device=input_device))*(
+                    tensor - norm_minimum*torch.ones_like(
+                        tensor, device=input_device))
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Revert concatenation of sequential data
         if len(input_shape) == 3:
