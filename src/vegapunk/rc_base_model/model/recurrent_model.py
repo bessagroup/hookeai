@@ -4,11 +4,6 @@ Classes
 -------
 RecurrentConstitutiveModel(torch.nn.Module)
     Recurrent constitutive model.
-    
-Functions
----------
-standard_partial_fit(dataset, features_type, n_features, is_verbose=False)
-    Perform batch fitting of standardization data scalers.
 """
 #
 #                                                                       Modules
@@ -41,6 +36,7 @@ from simulators.fetorch.math.matrixops import get_problem_type_parameters, \
 from simulators.fetorch.material.material_su import material_state_update
 from rnn_base_model.data.time_dataset import get_time_series_data_loader
 from utilities.data_scalers import TorchMinMaxScaler, TorchStandardScaler
+from utilities.fit_data_scalers import fit_data_scaler_from_dataset
 #
 #                                                          Authorship & Credits
 # =============================================================================
@@ -199,7 +195,8 @@ class RecurrentConstitutiveModel(torch.nn.Module):
         Set fitted model data scalers.
     set_fitted_data_scalers(self, scaling_type, scaling_parameters)
         Set fitted model data scalers from given scaler type and parameters.
-    fit_data_scalers(self, dataset, is_verbose=False)
+    fit_data_scalers(self, dataset, scaling_type='mean-std', \
+                     scaling_parameters={}, is_verbose=False)
         Fit model data scalers.
     get_fitted_data_scaler(self, features_type)
         Get fitted model data scalers.
@@ -1954,20 +1951,29 @@ class RecurrentConstitutiveModel(torch.nn.Module):
         if self._is_save_model_init_file:
             self.save_model_init_file()
     # -------------------------------------------------------------------------
-    def fit_data_scalers(self, dataset, is_verbose=False):
+    def fit_data_scalers(self, dataset, scaling_type='mean-std',
+                         scaling_parameters={}, is_verbose=False):
         """Fit model data scalers.
         
-        Data scalers are set as standard scalers, standardizing features to
-        zero mean and unit variance. The data scaling parameters (mean and
-        variance) are automatically fitted from the provided time series data
-        set. 
-        
+        Data scaler normalization tensors are fitted from given data set,
+        overriding provided data scaling parameters.
+
         Parameters
         ----------
         dataset : torch.utils.data.Dataset
             Time series data set. Each sample is stored as a dictionary where
             each feature (key, str) data is a torch.Tensor(2d) of shape
             (sequence_length, n_features).
+        scaling_type : {'min-max', 'mean-std'}, default='mean-std'
+            Type of data scaling. Min-Max scaling ('min-max') or
+            standardization ('mean-std').
+        scaling_parameters : dict, default={}
+            Data scaling parameters (item, dict) for each features type
+            (key, str). For 'min-max' data scaling, the parameters are the
+            'minimum' and 'maximum' features normalization tensors, as well as
+            the 'norm_minimum' and 'norm_maximum' normalization bounds. For
+            'mean-std' data scaling, the parameters are the 'mean' and 'std'
+            features normalization tensors.
         is_verbose : bool, default=False
             If True, enable verbose output.
         """
@@ -1978,20 +1984,16 @@ class RecurrentConstitutiveModel(torch.nn.Module):
         # Initialize data scalers
         self._init_data_scalers()
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        # Instantiate data scalers
-        scaler_features_in = TorchStandardScaler(
-            n_features=self._n_features_in, device_type=self._device_type)
-        scaler_features_out = TorchStandardScaler(
-            n_features=self._n_features_out, device_type=self._device_type)
-        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Get scaling parameters and fit data scalers: input features
-        mean, std = standard_partial_fit(dataset, features_type='features_in',
-                                         n_features=self._n_features_in)
-        scaler_features_in.set_mean_and_std(mean, std)
+        scaler_features_in = fit_data_scaler_from_dataset(
+            dataset, features_type='features_in',
+            n_features=self._n_features_in, scaling_type=scaling_type,
+            scaling_parameters=scaling_parameters)
         # Get scaling parameters and fit data scalers: output features
-        mean, std = standard_partial_fit(dataset, features_type='features_out',
-                                         n_features=self._n_features_out)
-        scaler_features_out.set_mean_and_std(mean, std)
+        scaler_features_out = fit_data_scaler_from_dataset(
+            dataset, features_type='features_out',
+            n_features=self._n_features_out, scaling_type=scaling_type,
+            scaling_parameters=scaling_parameters)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         if is_verbose:
             print('\n> Setting fitted standard scalers...\n')
@@ -2018,8 +2020,8 @@ class RecurrentConstitutiveModel(torch.nn.Module):
 
         Returns
         -------
-        data_scaler : sklearn.preprocessing.StandardScaler
-            Fitted data scaler.
+        data_scaler : {TorchStandardScaler, TorchMinMaxScaler}
+            Data scaler.
         """
         # Get fitted data scaler
         if features_type not in self._data_scalers.keys():
@@ -2123,97 +2125,3 @@ class RecurrentConstitutiveModel(torch.nn.Module):
                                'been set or fitted. Call set_data_scalers() '
                                'or fit_data_scalers() to make model '
                                'normalization procedures available.')
-# =============================================================================
-def standard_partial_fit(dataset, features_type, n_features, is_verbose=False):
-    """Perform batch fitting of standardization data scalers.
-    
-    Parameters
-    ----------
-    dataset : torch.utils.data.Dataset
-        Time series data set. Each sample is stored as a dictionary where each
-        feature (key, str) data is a torch.Tensor(2d) of shape
-        (sequence_length, n_features).
-    features_type : str
-        Features for which data scaler is required:
-        
-        'features_in'  : Input features
-
-        'features_out' : Output features
-    
-    n_features : int
-        Number of features to standardize.
-    is_verbose : bool, default=False
-        If True, enable verbose output.
-    
-    Returns
-    -------
-    mean : torch.Tensor
-        Features standardization mean tensor stored as a torch.Tensor with
-        shape (n_features,).
-    std : torch.Tensor
-        Features standardization standard deviation tensor stored as a
-        torch.Tensor with shape (n_features,).
-        
-    Notes
-    -----
-    A biased estimator is used to compute the standard deviation according with
-    scikit-learn 1.3.2 documentation (sklearn.preprocessing.StandardScaler).
-    """
-    # Instantiate data scaler
-    data_scaler = sklearn.preprocessing.StandardScaler()
-    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Set data loader
-    data_loader = get_time_series_data_loader(dataset=dataset)
-    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Loop over samples
-    for sample in tqdm.tqdm(data_loader,
-                            desc='> Processing data samples: ',
-                            disable=not is_verbose):        
-        # Check sample
-        if not isinstance(sample, dict):
-            raise RuntimeError('Time series sample must be dictionary where '
-                               'each feature (key, str) data is a '
-                               'torch.Tensor(2d) of shape '
-                               '(sequence_length, n_featues).')
-        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        # Check sample features tensor
-        if features_type not in sample.keys():
-            raise RuntimeError(f'Unavailable feature from sample.')
-        else:
-            features_tensor = sample[features_type]
-        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        # Process sample to fit data scaler
-        if isinstance(features_tensor, torch.Tensor):
-            # Check number of features
-            if features_tensor.shape[-1] != n_features:
-                raise RuntimeError(f'Mismatch between input features tensor '
-                                   f'({features_tensor.shape[-1]}) and '
-                                   f'model ({n_features}) number of '
-                                   f'features for features type: '
-                                   f'{features_type}')
-            # Process sample
-            data_scaler.partial_fit(features_tensor[:, 0, :].clone())
-        else:
-            raise RuntimeError('Sample features tensor is not torch.Tensor.')
-    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Get fitted mean and standard deviation tensors
-    mean = torch.tensor(data_scaler.mean_)
-    std = torch.sqrt(torch.tensor(data_scaler.var_))
-    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Check features standardization mean tensor
-    if not isinstance(mean, torch.Tensor):
-        raise RuntimeError('Features standardization mean tensor is not a '
-                           'torch.Tensor.')
-    elif len(mean) != features_tensor.shape[-1]:
-        raise RuntimeError('Features standardization mean tensor is not a '
-                           'torch.Tensor(1d) with shape (n_features,).')
-    # Check features standardization standard deviation tensor
-    if not isinstance(std, torch.Tensor):
-        raise RuntimeError('Features standardization standard deviation '
-                           'tensor is not a torch.Tensor.')
-    elif len(std) != features_tensor.shape[-1]:
-        raise RuntimeError('Features standardization standard deviation '
-                           'tensor is not a torch.Tensor(1d) with shape '
-                           '(n_features,).')
-    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    return mean, std
