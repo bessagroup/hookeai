@@ -261,8 +261,11 @@ def compute_mean_prediction_metrics(prediction_file_paths,
     # Loop over mean prediction metrics
     for metric in mean_prediction_metrics:
         # Compute mean prediction metric
-        mean_metrics_results[metric] = torch.mean(
-            torch.stack(samples_metrics_results[metric], dim=0), dim=0)
+        if len(samples_metrics_results[metric]) > 0:
+            mean_metrics_results[metric] = torch.mean(
+                torch.stack(samples_metrics_results[metric], dim=0), dim=0)
+        else:
+            mean_metrics_results[metric] = torch.empty(0)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     return mean_metrics_results
 # =============================================================================
