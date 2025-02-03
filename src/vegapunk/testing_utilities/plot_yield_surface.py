@@ -357,7 +357,7 @@ def plot_yield_surface(models_names, models_parameters, models_sy,
         otherwise.
     """
     # Set pi-stress range factor (bounding box)
-    pi_stress_factor = 2
+    pi_stress_factor = 2.5
     # Get maximum yield stress among all models
     max_sy = max(models_sy.values())
     # Set pi-stress range
@@ -478,21 +478,27 @@ def plot_yield_surface(models_names, models_parameters, models_sy,
             plotter.add_mesh(null_pi_plane, color=plane_color, opacity=0.5)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Add legend to plot
-    plotter.add_legend(border=True, size=(0.2, 0.2), loc='upper right',
+    plotter.add_legend(border=True, size=(0.15, 0.15), loc='upper right',
                        face='o', font_family='arial')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set axes titles
     xtitle = 'Pi-Stress 1'
     ytitle = 'Pi-Stress 2'
     ztitle = 'Pi-Stress 3'
-    # Set axes tick labels
+    # Set axes labels
     show_xlabels = True
     show_ylabels = True
     show_zlabels = True
+    # Set axes tick labels
+    is_show_tick_labels = True
+    if is_show_tick_labels:
+        fmt = None
+    else:
+        fmt = ' '
     # Plot bounding box
     plotter.show_bounds(grid="back", location="outer", bounds=grid.bounds,
                         font_family='arial', use_3d_text=False, font_size=16,
-                        xtitle=xtitle, ytitle=ytitle, ztitle=ztitle,
+                        fmt=fmt, xtitle=xtitle, ytitle=ytitle, ztitle=ztitle,
                         show_xlabels=show_xlabels, show_ylabels=show_ylabels,
                         show_zlabels=show_zlabels, padding=bbox_padding)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -504,7 +510,7 @@ def plot_yield_surface(models_names, models_parameters, models_sy,
     if is_save_fig:
         # Set plot file path
         plot_file_path = \
-            os.path.join(os.norm.path(save_dir), filename + '.png')
+            os.path.join(os.path.normpath(save_dir), filename + '.png')
         # Save figure
         plotter.screenshot(plot_file_path)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
