@@ -2,7 +2,7 @@
 
 Functions
 ---------
-get_fitted_data_scaler
+fit_data_scaler_from_dataset
     Get fitted data scaler for given data set features type.
 mean_std_batch_fit
     Perform batch fitting of standardization data scaler.
@@ -28,9 +28,13 @@ __status__ = 'Planning'
 # =============================================================================
 #
 # =============================================================================
-def get_fitted_data_scaler(dataset, features_type, n_features,
-                           scaling_type='mean-std'):
-    """Get fitted data scaler for given data set features type.
+def fit_data_scaler_from_dataset(dataset, features_type, n_features,
+                                 scaling_type='mean-std',
+                                 scaling_parameters={}):
+    """Fit features type data scaler from given data set.
+    
+    Data scaler normalization tensors are fitted from given data set,
+    overriding provided data scaling parameters.
     
     Parameters
     ----------
@@ -43,12 +47,16 @@ def get_fitted_data_scaler(dataset, features_type, n_features,
         'features_out'). Must be directly available from data set samples.
     n_features : int
         Number of features (dimensionality).
-    scaling_type : {'mean-std', 'min-max'}, default='mean-std'
-        Data scaling type:
-        
-        'mean-std' : Standardization
-        
-        'min-max'  : Min-max scaling
+    scaling_type : {'min-max', 'mean-std'}, default='mean-std'
+        Type of data scaling. Min-Max scaling ('min-max') or standardization
+        ('mean-std').
+    scaling_parameters : dict, default={}
+        Data scaling parameters (item, dict) for each features type
+        (key, str). For 'min-max' data scaling, the parameters are the
+        'minimum' and 'maximum' features normalization tensors, as well as
+        the 'norm_minimum' and 'norm_maximum' normalization bounds. For
+        'mean-std' data scaling, the parameters are the 'mean' and 'std'
+        features normalization tensors.
     
     Returns
     -------
@@ -63,17 +71,24 @@ def get_fitted_data_scaler(dataset, features_type, n_features,
                            f'\n\nAvailable data scaling types: '
                            f'{available_scaling_types}')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Get scaling parameters
+    if features_type in scaling_parameters.keys():
+        scaling_parameters_type = scaling_parameters[features_type]
+    else:
+        scaling_parameters_type = {}
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Fit data scaler
     if scaling_type == 'mean-std':
         # Initialize data scaler
-        data_scaler = TorchStandardScaler(n_features)
+        data_scaler = \
+            TorchStandardScaler(n_features, **scaling_parameters_type)
         # Perform batch fitting of data scaler parameters
         mean, std = mean_std_batch_fit(dataset, features_type, n_features)
         # Set fitted data scaler
         data_scaler.set_mean_and_std(mean, std)
     elif scaling_type == 'min-max':
         # Initialize data scaler
-        data_scaler = TorchMinMaxScaler(n_features=n_features)
+        data_scaler = TorchMinMaxScaler(n_features, **scaling_parameters_type)
         # Perform batch fitting of data scaler parameters
         minimum, maximum = \
             min_max_batch_fit(dataset, features_type, n_features)
