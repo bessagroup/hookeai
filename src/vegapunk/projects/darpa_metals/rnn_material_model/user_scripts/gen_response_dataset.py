@@ -282,7 +282,8 @@ class MaterialResponseDatasetGenerator():
                 stress_comps_order, stress_path, state_path, \
                     is_stress_path_fail = self.compute_stress_path(
                         strain_comps_order, time_hist, strain_path,
-                        constitutive_model, state_features=state_features)
+                        constitutive_model, state_features=state_features,
+                        is_verbose=is_verbose)
                 # Check maximum number of sample trials
                 if n_path_trials > max_path_trials:
                     raise RuntimeError(f'The maximum of number of trials '
@@ -357,7 +358,8 @@ class MaterialResponseDatasetGenerator():
         return dataset
     # -------------------------------------------------------------------------
     def compute_stress_path(self, strain_comps_order, time_hist, strain_path,
-                            constitutive_model, state_features={}):
+                            constitutive_model, state_features={},
+                            is_verbose=False):
         """Compute material stress response for given strain path.
 
         Parameters
@@ -378,6 +380,8 @@ class MaterialResponseDatasetGenerator():
             stored in matricial form are included in the data set without any
             matricial form coefficients (true components are extracted).
             Unavailable state variables are ignored.
+        is_verbose : bool, default=False
+            If True, enable verbose output.
 
         Returns
         -------
@@ -417,7 +421,8 @@ class MaterialResponseDatasetGenerator():
         # Loop over discrete time
         for time_idx in tqdm.tqdm(
                 range(1, n_time), leave=False,
-                desc='  > Computing time steps state update: '):    
+                desc='  > Computing time steps state update: ',
+                disable=not is_verbose):    
             # Get previous and current strain tensors
             strain_tensor_old = self.build_tensor_from_comps(
                 self._n_dim, strain_comps_order, strain_path[time_idx - 1, :],
