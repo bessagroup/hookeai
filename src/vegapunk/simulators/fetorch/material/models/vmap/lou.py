@@ -1,7 +1,7 @@
 """Lou-Zhang-Yoon model with general differentiable yield function.
 
 This module includes the implementation of the Lou-Zhang-Yoon model with
-general differentiable yield function and anisotropic hardening.
+general differentiable yield function and isotropic hardening.
 
 This implementation is made compatible with the use of PyTorch vectorizing
 maps that, at the current moment, do not support auto differentiable
@@ -762,11 +762,6 @@ class LouZhangYoonVMAP(ConstitutiveModel):
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Initialize norm of iterative solution vector (convergence check)
         diter_norm = torch.tensor(0.0, device=device)
-        
-        print(f'\n\nPlastic Increment - Newton-Raphson')
-        print('----------------------------------')
-        print('nr_iter   conv_norm_res_1   conv_norm_res_2   '
-                'conv_norm_res_3   diter_norm')
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Newton-Raphson iterative loop
         for _ in range(su_max_n_iterations):
@@ -808,27 +803,24 @@ class LouZhangYoonVMAP(ConstitutiveModel):
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Compute residuals convergence norm
             conv_norm_res_1 = (torch.linalg.norm(residual_1)/
-                                torch.linalg.norm(e_trial_strain))
-            if abs(acc_p_strain_old) < 1e-8:
-                conv_norm_res_2 = abs(residual_2)
-            else:
-                conv_norm_res_2 = abs(residual_2/acc_p_strain_old)
+                               torch.linalg.norm(e_trial_strain))
+            conv_norm_res_2 = torch.where(abs(acc_p_strain_old) < 1e-8,
+                                          abs(residual_2),
+                                          abs(residual_2/acc_p_strain_old))
             conv_norm_res_3 = abs(residual_3)*(init_yield_stress/E)
             # Compute residual vector convergence norm
             conv_norm_residual = torch.mean(
-                torch.tensor((conv_norm_res_1, conv_norm_res_2,
-                              conv_norm_res_3)))
-            
-            
-            print(f'{conv_norm_res_1:^15.4e}   '
-                    f'{conv_norm_res_2:^15.4e}   '
-                    f'{conv_norm_res_3:^15.4e}   {diter_norm:^10.4e}')
+                torch.stack((conv_norm_res_1, conv_norm_res_2,
+                             conv_norm_res_3)))
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Compute converge norms condition
+            conv_norm_cond = torch.all(
+                torch.stack((conv_norm_residual < su_conv_tol,
+                             diter_norm < su_conv_tol)))
             # Check Newton-Raphson iterative procedure convergence
             is_converged = torch.where(is_elastic_step,
                                        is_elastic_step,
-                                       (conv_norm_residual < su_conv_tol
-                                        and diter_norm < su_conv_tol))
+                                       conv_norm_cond)
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Compute iterative solution
             d_iter = torch.where(

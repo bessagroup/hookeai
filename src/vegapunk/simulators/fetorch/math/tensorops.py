@@ -239,6 +239,6 @@ def fo_dinv_sym(inv):
         dinv_list.append((inv[i, k]*inv[l, j] + inv[i, l]*inv[k, j]))
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Compute fourth-order derivative
-    dinv = -0.5*torch.tensor((dinv_list)).view(fo_shape)
+    dinv = -0.5*torch.stack(dinv_list).view(fo_shape)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     return dinv
