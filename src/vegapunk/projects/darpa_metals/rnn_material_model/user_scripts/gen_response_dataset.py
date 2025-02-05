@@ -1191,7 +1191,7 @@ class MaterialResponseDatasetGenerator():
                 if is_save_fig:
                     save_figure(figure, filename + '_pi_stress_'
                                 + f'{pi_stress_pair[0]}v{pi_stress_pair[1]}',
-                                format='pdf', save_dir=save_dir)
+                                format='png', save_dir=save_dir)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Initialize stress invariants
         stress_paths_invar = []
