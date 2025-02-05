@@ -141,9 +141,9 @@ def validate_force_equilibrium_loss(specimen_name, strain_formulation,
     # Set material models data scalers parameters
     models_scaling_parameters = {'1': {}}
     models_scaling_parameters['1']['features_in'] = \
-        (strain_minimum, strain_maximum)
+        {'minimum': strain_minimum, 'maximum': strain_maximum}
     models_scaling_parameters['1']['features_out'] = \
-        (stress_minimum, stress_maximum)
+        {'minimum': stress_minimum, 'maximum': stress_maximum}
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set number of force components
     n_force_comp = n_dim
