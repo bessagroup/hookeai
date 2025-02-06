@@ -294,7 +294,7 @@ class DruckerPragerVMAP(ConstitutiveModel):
             matricial form.
         """
         # Set state update convergence tolerance
-        su_conv_tol = 1e-6
+        su_conv_tol = 1e-5
         # Set state update maximum number of iterations
         su_max_n_iterations = 20
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
