@@ -849,6 +849,24 @@ class LouZhangYoonVMAP(ConstitutiveModel):
             acc_p_strain = acc_p_strain + acc_p_strain_iter
             inc_p_mult = inc_p_mult + inc_p_mult_iter
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Update elastic strain
+        e_strain_mf = vget_tensor_mf(e_strain, n_dim, comp_order_sym,
+                                     is_kelvin_notation=True, device=device)
+        # Update stress
+        stress_mf = torch.matmul(e_consistent_tangent_mf, e_strain_mf)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Expand plastic step convergence condition
+        is_converged_cond = is_converged.expand(e_strain_mf.shape)
+        # Set elastic strain to NaN if state update fails
+        e_strain_mf = torch.where(is_converged_cond,
+                                  e_strain_mf,
+                                  torch.full(e_strain_mf.shape, float('nan'),
+                                             device=device))
+        # Set stress to NaN if state update fails
+        stress_mf = torch.where(is_converged_cond,
+                                stress_mf,
+                                torch.full(stress_mf.shape, float('nan'),
+                                           device=device))
         # Set accumulated plastic strain to NaN if state update fails
         acc_p_strain = torch.where(is_converged,
                                    acc_p_strain,
