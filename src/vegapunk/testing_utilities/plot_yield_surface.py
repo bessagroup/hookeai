@@ -357,7 +357,7 @@ def plot_yield_surface(models_names, models_parameters, models_sy,
         otherwise.
     """
     # Set pi-stress range factor (bounding box)
-    pi_stress_factor = 2.5
+    pi_stress_factor = 2.0
     # Get maximum yield stress among all models
     max_sy = max(models_sy.values())
     # Set pi-stress range
@@ -490,7 +490,7 @@ def plot_yield_surface(models_names, models_parameters, models_sy,
     show_ylabels = True
     show_zlabels = True
     # Set axes tick labels
-    is_show_tick_labels = True
+    is_show_tick_labels = False
     if is_show_tick_labels:
         fmt = None
     else:
@@ -627,9 +627,9 @@ if __name__ == '__main__':
                                            'yield_d': 0.25*np.sqrt(3)}
 
     # Set models yield stress
-    models_sy = {'von_mises': 0.5,
-                 'drucker_prager': 0.5,
-                 'lou_zhang_yoon': 0.5}
+    models_sy = {'von_mises': 1.0,
+                 'drucker_prager': 1.0,
+                 'lou_zhang_yoon': 1.0}
     # Set models labels
     models_labels = {'von_mises': 'Von Mises',
                      'drucker_prager': 'Drucker-Prager',
