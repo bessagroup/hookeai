@@ -427,13 +427,10 @@ class DruckerPrager(ConstitutiveModel):
                     # Leave Newton-Raphson iterative loop (converged solution)
                     break
                 elif nr_iter == su_max_n_iterations:
-                    # If the maximum number of Newton-Raphson iterations is
-                    # reached without achieving convergence, recover last
-                    # converged state variables, set state update failure flag
-                    # and return
-                    state_variables = copy.deepcopy(state_variables_old)
-                    state_variables['is_su_fail'] = True
-                    return state_variables, None
+                    # Update state update failure flag
+                    is_su_fail = True
+                    # Leave Newton-Raphson iterative loop (failed solution)
+                    break
                 else:
                     # Increment iteration counter
                     nr_iter = nr_iter + 1
@@ -454,7 +451,7 @@ class DruckerPrager(ConstitutiveModel):
                 torch.sqrt(j2_dev_trial_stress) - G*inc_p_mult >= 0
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Compute return-mapping to cone apex
-            if not is_cone_surface:
+            if not is_su_fail and not is_cone_surface:
                 # Set return-mapping to apex flag
                 is_apex_return = True
                 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -521,6 +518,20 @@ class DruckerPrager(ConstitutiveModel):
             # Update elastic strain
             e_strain_mf = \
                 (1.0/(3.0*K))*pressure*soid_mf + (1.0/(2.0*G))*dev_stress_mf
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Set state variables to NaN if state update fails
+            if is_su_fail:
+                # Set elastic strain to NaN if state update fails
+                e_strain_mf = torch.full(e_strain_mf.shape, torch.nan,
+                                         device=self._device)
+                # Set stress to NaN if state update fails
+                stress_mf = torch.full(stress_mf.shape, torch.nan,
+                                       device=self._device)
+                # Set accumulated plastic strain to NaN if state update fails
+                acc_p_strain = torch.tensor(torch.nan, device=self._device)
+                # Set incremental plastic multiplier to NaN if state update
+                # fails
+                inc_p_mult = torch.tensor(torch.nan, device=self._device)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Get the out-of-plane strain and stress components
         if self._problem_type == 1:
@@ -529,38 +540,47 @@ class DruckerPrager(ConstitutiveModel):
         #
         #                                            Consistent tangent modulus
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        # If the state update was purely elastic, then the consistent tangent
-        # modulus is the elastic consistent tangent modulus. Otherwise, compute
-        # the elastoplastic consistent tangent modulus
-        if is_plast:
-            if is_apex_return:
-                # Compute elastoplastic consistent tangent modulus
-                # (cone surface)
-                consistent_tangent = \
-                    K*(1.0 - (K/(K + alpha*beta*H)))*dyad22_1(soid, soid)
-            else:
-                # Compute deviatoric elastic trial strain
-                dev_trial_e_strain = vget_tensor_from_mf(
-                    torch.matmul(fodevprojsym_mf, e_trial_strain_mf),
-                    n_dim, comp_order_sym, device=self._device)
-                # Compute deviatoric elastic strain unit vector
-                trial_unit = dev_trial_e_strain/torch.norm(dev_trial_e_strain)
-                # Compute common scalar terms
-                s1 = inc_p_mult/(math.sqrt(2)*torch.norm(dev_trial_e_strain))
-                s2 = 1.0/(G + K*etay*etaf + H*xi**2)
-                # Compute elastoplastic consistent tangent modulus
-                # (cone apex)
-                consistent_tangent = 2.0*G*(1.0 - s1)*fodevprojsym \
-                    + 2.0*G*(s1 - G*s2)*dyad22_1(trial_unit, trial_unit) \
-                    - math.sqrt(2)*G*s2*K*(etay*dyad22_1(trial_unit, soid)
-                                         + etaf*dyad22_1(soid, trial_unit)) \
-                    + K*(1.0 - K*etay*etaf*s2)*dyad22_1(soid, soid)
+        # Compute consistent tangent modulus if state update converged,
+        # otherwise set to NaN
+        if is_su_fail:
+            # Set consistent tangent modulus to NaN
+            consistent_tangent_mf = torch.full(e_consistent_tangent_mf.shape,
+                                               torch.nan, device=self._device)
         else:
-            consistent_tangent = e_consistent_tangent
-        # Build consistent tangent modulus matricial form
-        consistent_tangent_mf = vget_tensor_mf(consistent_tangent, n_dim,
-                                               comp_order_sym,
-                                               device=self._device)
+            # If the state update was purely elastic, then the consistent
+            # tangent modulus is the elastic consistent tangent modulus.
+            # Otherwise, compute the elastoplastic consistent tangent modulus
+            if is_plast:
+                if is_apex_return:
+                    # Compute elastoplastic consistent tangent modulus
+                    # (cone surface)
+                    consistent_tangent = \
+                        K*(1.0 - (K/(K + alpha*beta*H)))*dyad22_1(soid, soid)
+                else:
+                    # Compute deviatoric elastic trial strain
+                    dev_trial_e_strain = vget_tensor_from_mf(
+                        torch.matmul(fodevprojsym_mf, e_trial_strain_mf),
+                        n_dim, comp_order_sym, device=self._device)
+                    # Compute deviatoric elastic strain unit vector
+                    trial_unit = \
+                        dev_trial_e_strain/torch.norm(dev_trial_e_strain)
+                    # Compute common scalar terms
+                    s1 = inc_p_mult/(math.sqrt(2)*torch.norm(
+                        dev_trial_e_strain))
+                    s2 = 1.0/(G + K*etay*etaf + H*xi**2)
+                    # Compute elastoplastic consistent tangent modulus
+                    # (cone apex)
+                    consistent_tangent = 2.0*G*(1.0 - s1)*fodevprojsym \
+                        + 2.0*G*(s1 - G*s2)*dyad22_1(trial_unit, trial_unit) \
+                        - math.sqrt(2)*G*s2*K*(etay*dyad22_1(trial_unit, soid)
+                            + etaf*dyad22_1(soid, trial_unit)) \
+                            + K*(1.0 - K*etay*etaf*s2)*dyad22_1(soid, soid)
+            else:
+                consistent_tangent = e_consistent_tangent
+            # Build consistent tangent modulus matricial form
+            consistent_tangent_mf = vget_tensor_mf(consistent_tangent, n_dim,
+                                                   comp_order_sym,
+                                                   device=self._device)
         #
         #                                                    3D > 2D Conversion
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

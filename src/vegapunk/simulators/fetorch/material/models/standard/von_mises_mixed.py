@@ -401,13 +401,10 @@ class VonMisesMixed(ConstitutiveModel):
                     # Leave Newton-Raphson iterative loop (converged solution)
                     break
                 elif nr_iter == su_max_n_iterations:
-                    # If the maximum number of Newton-Raphson iterations is
-                    # reached without achieving convergence, recover last
-                    # converged state variables, set state update failure flag
-                    # and return
-                    state_variables = copy.deepcopy(state_variables_old)
-                    state_variables['is_su_fail'] = True
-                    return state_variables, None
+                    # Update state update failure flag
+                    is_su_fail = True
+                    # Leave Newton-Raphson iterative loop (failed solution)
+                    break
                 else:
                     # Increment iteration counter
                     nr_iter = nr_iter + 1
@@ -426,6 +423,23 @@ class VonMisesMixed(ConstitutiveModel):
             # Update back-stress
             back_stress_mf = back_stress_old_mf \
                 + (kin_hard_stress - kin_hard_stress_old)*flow_vector_mf
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Set state variables to NaN if state update fails
+            if is_su_fail:
+                # Set elastic strain to NaN if state update fails
+                e_strain_mf = torch.full(e_strain_mf.shape, torch.nan,
+                                         device=self._device)
+                # Set stress to NaN if state update fails
+                stress_mf = torch.full(stress_mf.shape, torch.nan,
+                                       device=self._device)
+                # Set accumulated plastic strain to NaN if state update fails
+                acc_p_strain = torch.tensor(torch.nan, device=self._device)
+                # Set incremental plastic multiplier to NaN if state update
+                # fails
+                inc_p_mult = torch.tensor(torch.nan, device=self._device)
+                # Set back-stress to NaN if state update fails
+                back_stress_mf = torch.full(back_stress_mf.shape, torch.nan,
+                                            device=self._device)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Get the out-of-plane strain and stress components
         if self._problem_type == 1:
@@ -469,27 +483,34 @@ class VonMisesMixed(ConstitutiveModel):
         #
         #                                            Consistent tangent modulus
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        # If the state update was purely elastic, then the consistent tangent
-        # modulus is the elastic consistent tangent modulus. Otherwise, compute
-        # the elastoplastic consistent tangent modulus
-        if is_plast:
-            # Compute elastoplastic consistent tangent modulus
-            factor_1 = ((inc_p_mult*6.0*G**2)/relative_eq_trial_stress)
-            factor_2 = (6.0*G**2)*((inc_p_mult/relative_eq_trial_stress)
-                                   - (1.0/(3.0*G + kin_hard_slope + H)))
-            unit_flow_vector = \
-                math.sqrt(2.0/3.0)*vget_tensor_from_mf(flow_vector_mf, n_dim,
-                                                       comp_order_sym,
-                                                       device=self._device)
-            consistent_tangent = e_consistent_tangent \
-                - factor_1*fodevprojsym + factor_2*dyad22_1(
-                    unit_flow_vector, unit_flow_vector)
+        # Compute consistent tangent modulus if state update converged,
+        # otherwise set to NaN
+        if is_su_fail:
+            # Set consistent tangent modulus to NaN
+            consistent_tangent_mf = torch.full(e_consistent_tangent_mf.shape,
+                                               torch.nan, device=self._device)
         else:
-            consistent_tangent = e_consistent_tangent
-        # Build consistent tangent modulus matricial form
-        consistent_tangent_mf = vget_tensor_mf(consistent_tangent, n_dim,
-                                               comp_order_sym,
-                                               device=self._device)
+            # If the state update was purely elastic, then the consistent
+            # tangent modulus is the elastic consistent tangent modulus.
+            # Otherwise, compute the elastoplastic consistent tangent modulus
+            if is_plast:
+                # Compute elastoplastic consistent tangent modulus
+                factor_1 = ((inc_p_mult*6.0*G**2)/relative_eq_trial_stress)
+                factor_2 = (6.0*G**2)*((inc_p_mult/relative_eq_trial_stress)
+                                       - (1.0/(3.0*G + kin_hard_slope + H)))
+                unit_flow_vector = \
+                    math.sqrt(2.0/3.0)*vget_tensor_from_mf(
+                        flow_vector_mf, n_dim, comp_order_sym,
+                        device=self._device)
+                consistent_tangent = e_consistent_tangent \
+                    - factor_1*fodevprojsym + factor_2*dyad22_1(
+                        unit_flow_vector, unit_flow_vector)
+            else:
+                consistent_tangent = e_consistent_tangent
+            # Build consistent tangent modulus matricial form
+            consistent_tangent_mf = vget_tensor_mf(consistent_tangent, n_dim,
+                                                   comp_order_sym,
+                                                   device=self._device)
         #
         #                                                    3D > 2D Conversion
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
