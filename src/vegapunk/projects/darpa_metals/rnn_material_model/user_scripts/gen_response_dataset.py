@@ -250,6 +250,8 @@ class MaterialResponseDatasetGenerator():
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Set maximum number of sample trials
         max_path_trials = 10
+        # Initialize total number of failed sample trials
+        total_n_path_fail = 0
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Initialize time series data set samples
         if is_in_memory_dataset:
@@ -284,6 +286,11 @@ class MaterialResponseDatasetGenerator():
                         strain_comps_order, time_hist, strain_path,
                         constitutive_model, state_features=state_features,
                         is_verbose=is_verbose)
+                # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                # Update total number of failed sample trials
+                if is_stress_path_fail:
+                    total_n_path_fail += 1
+                # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                 # Check maximum number of sample trials
                 if n_path_trials > max_path_trials:
                     raise RuntimeError(f'The maximum of number of trials '
@@ -336,6 +343,10 @@ class MaterialResponseDatasetGenerator():
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         if is_verbose:
             print('\n> Finished strain-stress paths generation process!\n')
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        if is_verbose:
+            print(f'\n Total number of failed sample trials: '
+                  f'{total_n_path_fail}')
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Create strain-stress material response path data set
         if is_in_memory_dataset:
