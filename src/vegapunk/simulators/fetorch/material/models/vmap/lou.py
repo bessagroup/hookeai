@@ -305,7 +305,7 @@ class LouZhangYoonVMAP(ConstitutiveModel):
             matricial form.
         """
         # Set state update convergence tolerance
-        su_conv_tol = 1e-5
+        su_conv_tol = 1e-4
         # Set state update maximum number of iterations
         su_max_n_iterations = 20
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -875,12 +875,6 @@ class LouZhangYoonVMAP(ConstitutiveModel):
         inc_p_mult = torch.where(is_converged,
                                  inc_p_mult,
                                  torch.tensor(torch.nan, device=device))
-        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        # Update elastic strain
-        e_strain_mf = vget_tensor_mf(e_strain, n_dim, comp_order_sym,
-                                     is_kelvin_notation=True, device=device)
-        # Update stress
-        stress_mf = torch.matmul(e_consistent_tangent_mf, e_strain_mf)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Build concatenated plastic step output
         plastic_step_output = \

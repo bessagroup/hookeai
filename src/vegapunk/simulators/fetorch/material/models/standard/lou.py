@@ -289,7 +289,7 @@ class LouZhangYoon(ConstitutiveModel):
         is_verbose = False
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Set state update convergence tolerance
-        su_conv_tol = 1e-5
+        su_conv_tol = 1e-4
         # Set state update maximum number of iterations
         su_max_n_iterations = 20
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -511,13 +511,10 @@ class LouZhangYoon(ConstitutiveModel):
                     # Display convergence status
                     if is_verbose:
                         print(f'{"Solution convergence failure!":^74s}')
-                    # If the maximum number of Newton-Raphson iterations is
-                    # reached without achieving convergence, recover last
-                    # converged state variables, set state update failure flag
-                    # and return
-                    state_variables = copy.deepcopy(state_variables_old)
-                    state_variables['is_su_fail'] = True
-                    return state_variables, None
+                    # Update state update failure flag
+                    is_su_fail = True
+                    # Leave Newton-Raphson iterative loop (failed solution)
+                    break
                 else:
                     # Increment iteration counter
                     nr_iter = nr_iter + 1
@@ -552,6 +549,20 @@ class LouZhangYoon(ConstitutiveModel):
                                          device=self._device)
             # Update stress
             stress_mf = torch.matmul(e_consistent_tangent_mf, e_strain_mf)
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Set state variables to NaN if state update fails
+            if is_su_fail:
+                # Set elastic strain to NaN if state update fails
+                e_strain_mf = torch.full(e_strain_mf.shape, torch.nan,
+                                         device=self._device)
+                # Set stress to NaN if state update fails
+                stress_mf = torch.full(stress_mf.shape, torch.nan,
+                                       device=self._device)
+                # Set accumulated plastic strain to NaN if state update fails
+                acc_p_strain = torch.tensor(torch.nan, device=self._device)
+                # Set incremental plastic multiplier to NaN if state update
+                # fails
+                inc_p_mult = torch.tensor(torch.nan, device=self._device)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Get the out-of-plane strain and stress components
         if self._problem_type == 1:
