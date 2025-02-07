@@ -1343,14 +1343,17 @@ class LouZhangYoon(ConstitutiveModel):
                 path_points = path_points.numpy()
                 # Plot parameters path points
                 (line, ) = axes.plot(path_points[:, 0], path_points[:, 1],
-                                     lw=0, marker='o', ms=3, label=path_label)
+                                     lw=lw, marker='o', ms=3,
+                                     markeredgecolor='k', markeredgewidth=0.5,
+                                     label=path_label, zorder=10)
                 # Plot parameters path directional arrows
                 if path_points.shape[0] > 1:
                     axes.quiver(path_points[:-1, 0], path_points[:-1, 1],
                                 np.diff(path_points[:, 0]),
                                 np.diff(path_points[:, 1]),
                                 angles="xy", color=line.get_color(),
-                                scale_units="xy", scale=1, width=0.005)
+                                scale_units="xy", scale=1, width=0.005,
+                                zorder=5)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Plot rectangular search domain boundary
         if isinstance(rect_search_domain, tuple):
@@ -1362,8 +1365,8 @@ class LouZhangYoon(ConstitutiveModel):
                 patches.Rectangle((search_x_min, search_y_min),
                                   search_x_max - search_x_min,
                                   search_y_max - search_y_min,
-                                  edgecolor='red', facecolor='none',
-                                  linewidth=2, linestyle='--')
+                                  edgecolor='#555555', facecolor='none',
+                                  linewidth=1.5, linestyle='--', zorder=2)
             # Plot rectangular search domain boundary
             axes.add_patch(search_domain)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
