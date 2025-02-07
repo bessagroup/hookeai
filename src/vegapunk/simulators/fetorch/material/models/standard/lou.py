@@ -15,11 +15,11 @@ LouZhangYoon
 # =============================================================================
 # Standard
 import math
-import copy
 # Third-party
 import torch
 import numpy as np
 import matplotlib.pyplot as plt
+import matplotlib.patches as patches
 # Local
 from simulators.fetorch.material.models.interface import ConstitutiveModel
 from simulators.fetorch.material.models.standard.elastic import Elastic
@@ -1277,6 +1277,7 @@ class LouZhangYoon(ConstitutiveModel):
     # =========================================================================
     @classmethod
     def plot_convexity_boundary(cls, convex_boundary, parameters_paths=None,
+                                is_path_arrows=True, rect_search_domain=None,
                                 is_plot_legend=False, save_dir=None,
                                 is_save_fig=False, is_stdout_display=False,
                                 is_latex=False):
@@ -1291,6 +1292,12 @@ class LouZhangYoon(ConstitutiveModel):
             For each yield parameters path (key, str), store a torch.Tensor(2d)
             (item, torch.Tensor) of shape (n_point, 2), where each point is
             stored as (yield_c, yield_d).
+        is_path_arrows : bool, default=True
+            If True, then yield parameters paths include directional arrows
+            along the path, False otherwise.
+        rect_search_domain : tuple, default=None
+            Rectangular search domain boundary defined by the corresponding
+            limits along each direction as ((x_min, x_max), (y_min, y_max)).
         is_plot_legend : bool, default=False
             If True, then plot legend.
         save_dir : str, default=None
@@ -1325,6 +1332,11 @@ class LouZhangYoon(ConstitutiveModel):
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Plot yield parameters paths
         if isinstance(parameters_paths, dict):
+            # Set line width
+            if is_path_arrows:
+                lw = 0
+            else:
+                lw = None
             # Loop over paths
             for path_label, path_points in parameters_paths.items():
                 # Convert parameters path
@@ -1339,6 +1351,21 @@ class LouZhangYoon(ConstitutiveModel):
                                 np.diff(path_points[:, 1]),
                                 angles="xy", color=line.get_color(),
                                 scale_units="xy", scale=1, width=0.005)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Plot rectangular search domain boundary
+        if isinstance(rect_search_domain, tuple):
+            # Get rectangular search domain boundaries
+            search_x_min, search_x_max = rect_search_domain[0]
+            search_y_min, search_y_max = rect_search_domain[1]
+            # Build rectangular search domain boundary
+            search_domain = \
+                patches.Rectangle((search_x_min, search_y_min),
+                                  search_x_max - search_x_min,
+                                  search_y_max - search_y_min,
+                                  edgecolor='red', facecolor='none',
+                                  linewidth=2, linestyle='--')
+            # Plot rectangular search domain boundary
+            axes.add_patch(search_domain)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Plot legend
         if is_plot_legend:

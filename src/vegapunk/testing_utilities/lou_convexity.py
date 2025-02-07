@@ -11,6 +11,7 @@ if root_dir not in sys.path:
 import torch
 import numpy as np
 import matplotlib.pyplot as plt
+import matplotlib.patches as patches
 # Local
 from ioput.plots import plot_xy_data, save_figure
 # =============================================================================
@@ -272,6 +273,7 @@ def check_yield_surface_convexity(yield_c, yield_d):
     return is_convex
 # =============================================================================
 def plot_convexity_boundary(convex_boundary, parameters_paths=None,
+                            is_path_arrows=True, rect_search_domain=None,
                             is_plot_legend=False, save_dir=None,
                             is_save_fig=False, is_stdout_display=False,
                             is_latex=False):
@@ -286,6 +288,12 @@ def plot_convexity_boundary(convex_boundary, parameters_paths=None,
         For each yield parameters path (key, str), store a torch.Tensor(2d)
         (item, torch.Tensor) of shape (n_point, 2), where each point is stored
         as (yield_c, yield_d).
+    is_path_arrows : bool, default=True
+        If True, then yield parameters paths include directional arrows along
+        the path, False otherwise.
+    rect_search_domain : tuple, default=None
+        Rectangular search domain boundary defined by the corresponding limits
+        along each direction as ((x_min, x_max), (y_min, y_max)).
     is_plot_legend : bool, default=False
         If True, then plot legend.
     save_dir : str, default=None
@@ -319,20 +327,39 @@ def plot_convexity_boundary(convex_boundary, parameters_paths=None,
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Plot yield parameters paths
     if isinstance(parameters_paths, dict):
+        # Set line width
+        if is_path_arrows:
+            lw = 0
+        else:
+            lw = None
         # Loop over paths
         for path_label, path_points in parameters_paths.items():
             # Convert parameters path
             path_points = path_points.numpy()
             # Plot parameters path points
-            (line, ) = axes.plot(path_points[:, 0], path_points[:, 1], lw=0,
+            (line, ) = axes.plot(path_points[:, 0], path_points[:, 1], lw=lw,
                                  marker='o', ms=3, label=path_label)
             # Plot parameters path directional arrows
-            if path_points.shape[0] > 1:
+            if is_path_arrows and path_points.shape[0] > 1:
                 axes.quiver(path_points[:-1, 0], path_points[:-1, 1],
                             np.diff(path_points[:, 0]),
                             np.diff(path_points[:, 1]),
                             angles="xy", color=line.get_color(),
                             scale_units="xy", scale=1, width=0.005)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Plot rectangular search domain boundary
+    if isinstance(rect_search_domain, tuple):
+        # Get rectangular search domain boundaries
+        search_x_min, search_x_max = rect_search_domain[0]
+        search_y_min, search_y_max = rect_search_domain[1]
+        # Build rectangular search domain boundary
+        search_domain = patches.Rectangle((search_x_min, search_y_min),
+                                          search_x_max - search_x_min,
+                                          search_y_max - search_y_min,
+                                          edgecolor='red', facecolor='none',
+                                          linewidth=2, linestyle='--')
+        # Plot rectangular search domain boundary
+        axes.add_patch(search_domain)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Plot legend
     if is_plot_legend:
@@ -375,7 +402,12 @@ if __name__ == '__main__':
             torch.tensor(([[yield_c_trial, yield_d_trial],
                            [yield_c, yield_d]]))
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Set rectangular search domain boundary
+    rect_search_domain = ((-3.5, 2.5), (-1.5, 1.5))
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Plot convexity domain boundary
     plot_convexity_boundary(convex_boundary, parameters_paths=parameters_paths,
+                            is_path_arrows=True,
+                            rect_search_domain=rect_search_domain,
                             is_plot_legend=False, is_stdout_display=True,
                             is_latex=True)
