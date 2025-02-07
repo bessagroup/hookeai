@@ -959,7 +959,15 @@ class RecurrentConstitutiveModel(torch.nn.Module):
                 strain_path = strain_paths[:, :]
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Compute material response
-            stress_path, state_path = self._compute_stress_path(strain_path)            
+            stress_path, state_path = self._compute_stress_path(strain_path)
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Check path stress history
+            if self._is_check_su_fail:
+                if torch.isnan(stress_path).any():
+                    raise RuntimeError(f'NaNs were detected in the stress '
+                                       f'path history. This may have resulted '
+                                       f'from a state update convergence '
+                                       f'failure.')
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Concatenate stress and state variables
             response_path = stress_path
