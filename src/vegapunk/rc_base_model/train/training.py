@@ -17,6 +17,8 @@ save_best_parameters
     Save best performance state model parameters.
 read_best_parameters_from_file
     Read best performance state model parameters from file.
+check_model_parameters_convergence
+    Check convergence of model parameters.
 """
 #
 #                                                                       Modules
@@ -54,7 +56,8 @@ def train_model(n_max_epochs, dataset, model_init_args, lr_init,
                 lr_scheduler_kwargs={}, loss_nature='features_out',
                 loss_type='mse', loss_kwargs={}, batch_size=1,
                 is_sampler_shuffle=False, is_early_stopping=False,
-                early_stopping_kwargs={}, load_model_state=None,
+                early_stopping_kwargs={}, is_params_stopping=True,
+                params_stopping_kwargs={}, load_model_state=None,
                 save_every=None, dataset_file_path=None, device_type='cpu',
                 seed=None, is_verbose=False):
     """Training of recurrent constitutive model.
@@ -110,6 +113,11 @@ def train_model(n_max_epochs, dataset, model_init_args, lr_init,
         is triggered.
     early_stopping_kwargs : dict, default={}
         Early stopping criterion parameters (key, str, item, value).
+    is_params_stopping : bool, default=True
+        If True, then training process is halted when parameters convergence
+        criterion is triggered.
+    params_stopping_kwargs : dict, default={}
+        Parameters convergence stopping criterion parameters.
     load_model_state : {'best', 'last', int, None}, default=None
         Load available model state from the model directory. Data scalers are
         also loaded from model initialization file.
@@ -336,6 +344,15 @@ def train_model(n_max_epochs, dataset, model_init_args, lr_init,
             if loss_nature == 'features_out':
                 # Get output features
                 features_out = model(features_in)
+                # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                # Check for invalid output features
+                if torch.isnan(features_out).any():
+                    raise RuntimeError(
+                        f'NaNs were detected in the output features of the '
+                        f'recurrent constitutive model. Potential causes '
+                        f'include:\n\n'
+                        f'> State update convergence failure for one or '
+                        f'multiple paths in the batch')
                 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~                
                 # Compute loss
                 loss = loss_function(features_out, targets)
@@ -449,9 +466,19 @@ def train_model(n_max_epochs, dataset, model_init_args, lr_init,
                 best_model_parameters = model.get_detached_model_parameters(
                     is_normalized_out=False)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Check model parameters convergence
+        if is_params_stopping:
+            is_stop_training = check_model_parameters_convergence(
+                model_parameters_history_epochs, is_verbose=is_verbose,
+                **params_stopping_kwargs)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Check training process flow
         if epoch >= n_max_epochs:
             # Completed maximum number of epochs
+            is_keep_training = False
+            break
+        elif is_params_stopping and is_stop_training:
+            # Parameters convergence criterion triggered
             is_keep_training = False
             break
         elif is_early_stopping and is_stop_training:
@@ -465,6 +492,9 @@ def train_model(n_max_epochs, dataset, model_init_args, lr_init,
     if is_verbose:
         if is_early_stopping and is_stop_training:
             print('\n\n> Early stopping has been triggered!',
+                  '\n\n> Finished training process!')
+        elif is_params_stopping and is_stop_training:
+            print('\n\n> Parameters convergence has been triggered!',
                   '\n\n> Finished training process!')
         else:
             print('\n\n> Finished training process!')
@@ -679,6 +709,98 @@ def read_best_parameters_from_file(parameters_file_path):
     model_parameters_bounds = parameters_record['model_parameters_bounds']
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     return best_model_parameters, model_parameters_bounds
+# =============================================================================
+def check_model_parameters_convergence(model_parameters_history_steps,
+                                       convergence_tolerance=0.01,
+                                       trigger_tolerance=5, is_verbose=False):
+    """Check convergence of model parameters.
+    
+    Parameters
+    ----------
+    model_parameters_history_steps : dict
+        History (item, list) of each model parameter (key, str).
+    convergence_tolerance : float, default=0.01
+        Minimum significative relative change.
+    trigger_tolerance : int, default=5
+        Number of consecutive steps without a significant relative change of
+        all parameters to trigger convergence.
+    is_verbose : bool, default=False
+        If True, enable verbose output.
+
+    Returns
+    -------
+    is_converged: bool
+        If True, then all model parameters have converged, False otherwise.
+    """
+    if is_verbose:
+        print('\n\n> Model parameters:')
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Initialize convergence flag
+    is_converged = False
+    # Set minimum threshold to handle values close or equal to zero
+    small = 1e-8
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Initialize model parameters convergence flag
+    parameters_convergence = {param_name: False for param_name in
+                              model_parameters_history_steps.keys()}
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Loop over model parameters
+    for param_name, param_hist in model_parameters_history_steps.items():
+        # Get model parameter history as tensor
+        param_hist_torch = torch.tensor(param_hist)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Check model parameter convergence
+        if len(param_hist) > 1:
+            # Compute model parameter consecutive difference history
+            diff_hist = torch.abs(param_hist_torch[1:] - param_hist_torch[:-1])
+            # Compute model parameter relative difference history
+            rdiff_hist = torch.where(
+                torch.abs(param_hist_torch[:-1]) > small,
+                torch.abs(diff_hist/param_hist_torch[:-1]),
+                torch.abs(diff_hist))
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Check convergence of model parameter
+            if len(param_hist) > trigger_tolerance:
+                is_param_converged = torch.all(
+                    rdiff_hist[-trigger_tolerance:] < convergence_tolerance)
+            else:
+                is_param_converged = False
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Store convergence status of model parameter
+            parameters_convergence[param_name] = is_param_converged
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Set formatted model parameter current value and change
+            frmt_param_value = f'{param_hist_torch[-1]:11.4e}'
+            frmt_param_change = f'{rdiff_hist[-1]:11.4e}'
+            # Set formatted absolute or relative change type
+            if torch.abs(param_hist_torch[-2]) > small:
+                frmt_change_type = 'Relative change'
+            else:
+                frmt_change_type = 'Absolute change'
+            # Set formatted model parameter convergence status
+            frmt_param_convergence = f'{is_param_converged}'
+        else:
+            # Set formatted model parameter current value and change
+            frmt_param_value = f'{param_hist_torch[-1]:11.4e}'
+            frmt_param_change = 'Unknown'
+            # Set formatted absolute or relative change type
+            frmt_change_type = 'Relative change'
+            # Set formatted model parameter convergence status
+            frmt_param_convergence = 'Unknown'
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        if is_verbose:
+            print(f'  > {param_name}: {frmt_param_value} | '
+                  f'{frmt_change_type}: {frmt_param_change} | '
+                  f'Converged? {frmt_param_convergence}')
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    if is_verbose:
+        print()
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Check convergence
+    if all(parameters_convergence.values()):
+        is_converged = True
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    return is_converged
 # =============================================================================
 class EarlyStopper:
     """Early stopping procedure (implicit regularizaton).
