@@ -345,7 +345,7 @@ class MaterialResponseDatasetGenerator():
             print('\n> Finished strain-stress paths generation process!\n')
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         if is_verbose:
-            print(f'\n Total number of failed sample trials: '
+            print(f'\n> Total number of failed sample trials: '
                   f'{total_n_path_fail}')
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Create strain-stress material response path data set
