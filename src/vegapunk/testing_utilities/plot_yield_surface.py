@@ -408,7 +408,11 @@ def plot_yield_surface(models_names, models_parameters, models_sy,
         # Get model yield stress
         sy = models_sy[model_name]
         # Get model label
-        model_label = models_labels[model_name]
+        if (isinstance(models_labels, dict)
+                and model_name in models_labels.keys()):
+            model_label = models_labels[model_name]
+        else:
+            model_label = None
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Compute model yield function
         phi_points = batched_yield_function(
@@ -478,8 +482,9 @@ def plot_yield_surface(models_names, models_parameters, models_sy,
             plotter.add_mesh(null_pi_plane, color=plane_color, opacity=0.5)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Add legend to plot
-    plotter.add_legend(border=True, size=(0.15, 0.15), loc='upper right',
-                       face='o', font_family='arial')
+    if isinstance(models_labels, dict):
+        plotter.add_legend(border=True, size=(0.15, 0.15), loc='upper right',
+                           face='o', font_family='arial')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set axes titles
     xtitle = 'Pi-Stress 1'
@@ -561,7 +566,10 @@ def plot_yield_surface_pi_plane(models_names, models_phi_pi_plane,
     # Initialize data array
     data_xy = np.full((n_point_max+1, 2*n_model), fill_value=np.nan)
     # Initialize data labels
-    data_labels = []
+    if isinstance(models_labels, dict):
+        data_labels = []
+    else:
+        data_labels = None
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Loop over constitutive models
     for i, model_name in enumerate(models_names):
@@ -584,7 +592,9 @@ def plot_yield_surface_pi_plane(models_names, models_phi_pi_plane,
         # Store model yield function points
         data_xy[:n_point, 2*i:2*i+2] = phi_pi_plane
         # Store model label
-        data_labels.append(models_labels[model_name])
+        if (isinstance(models_labels, dict)
+                and model_name in models_labels.keys()):
+            data_labels.append(models_labels[model_name])
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set axes labels
     x_label = 'Pi-Stress 1'
