@@ -138,7 +138,9 @@ class RecurrentConstitutiveModel(torch.nn.Module):
         Set recurrent constitutive model learnable parameters.
     sync_material_model_parameters(self)
         Synchronize material model parameters with learnable parameters.
-    _transform_parameter(self, name, value, mode='normalize')
+    get_material_model_name(self)
+        Get material constitutive model name.
+    transform_parameter(self, name, value, mode='normalize')
         Transform model parameter by means of min-max scaling.
     get_model_parameters(self)
         Get model parameters.
@@ -546,8 +548,8 @@ class RecurrentConstitutiveModel(torch.nn.Module):
                 # Set lower and upper bounds
                 self._model_parameters_norm_bounds[param] = (-1.0, 1.0)
                 # Normalize initial value
-                init_val = self._transform_parameter(param, init_val,
-                                                     mode='normalize')
+                init_val = self.transform_parameter(param, init_val,
+                                                    mode='normalize')
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Set model parameter
             self._model_parameters[param] = torch.nn.Parameter(
@@ -562,8 +564,8 @@ class RecurrentConstitutiveModel(torch.nn.Module):
         for param, value in self._model_parameters.items():
             # Get updated material constitutive model parameter
             if self.is_normalized_parameters:
-                sync_val = self._transform_parameter(param, value,
-                                                     mode='denormalize')
+                sync_val = self.transform_parameter(param, value,
+                                                    mode='denormalize')
             else:
                 sync_val = 1.0*value
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -755,7 +757,17 @@ class RecurrentConstitutiveModel(torch.nn.Module):
             else:
                 raise RuntimeError('Unknown material constitutive model.')
     # -------------------------------------------------------------------------
-    def _transform_parameter(self, name, value, mode='normalize'):
+    def get_material_model_name(self):
+        """Get material constitutive model name.
+        
+        Returns
+        -------
+        material_model_name : str
+            Material constitutive model name.
+        """
+        return self._material_model_name
+    # -------------------------------------------------------------------------
+    def transform_parameter(self, name, value, mode='normalize'):
         """Transform model parameter by means of min-max scaling.
         
         Parameters
@@ -846,13 +858,13 @@ class RecurrentConstitutiveModel(torch.nn.Module):
             # Denormalize model parameters
             if not is_normalized_out:
                 for param, value in base_model_parameters.items():
-                    model_parameters[param] = self._transform_parameter(
+                    model_parameters[param] = self.transform_parameter(
                         param, value, mode='denormalize')
         else:
             # Normalize model parameters
             if is_normalized_out:
                 for param, value in base_model_parameters.items():
-                    model_parameters[param] = self._transform_parameter(
+                    model_parameters[param] = self.transform_parameter(
                         param, value, mode='normalize')
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         return model_parameters
