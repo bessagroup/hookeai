@@ -269,6 +269,8 @@ class DruckerPrager(ConstitutiveModel):
         su_conv_tol = 1e-6
         # Set state update maximum number of iterations
         su_max_n_iterations = 20
+        # Set minimum threshold to handle values close or equal to zero
+        small = 1e-8
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Build incremental strain tensor matricial form
         inc_strain_mf = vget_tensor_mf(inc_strain, self._n_dim,
@@ -494,13 +496,10 @@ class DruckerPrager(ConstitutiveModel):
                         # solution)
                         break
                     elif nr_iter == su_max_n_iterations:
-                        # If the maximum number of Newton-Raphson iterations is
-                        # reached without achieving convergence, recover last
-                        # converged state variables, set state update failure
-                        # flag and return
-                        state_variables = copy.deepcopy(state_variables_old)
-                        state_variables['is_su_fail'] = True
-                        return state_variables, None
+                        # Update state update failure flag
+                        is_su_fail = True
+                        # Leave Newton-Raphson iterative loop (failed solution)
+                        break
                     else:
                         # Increment iteration counter
                         nr_iter = nr_iter + 1
@@ -561,12 +560,18 @@ class DruckerPrager(ConstitutiveModel):
                     dev_trial_e_strain = vget_tensor_from_mf(
                         torch.matmul(fodevprojsym_mf, e_trial_strain_mf),
                         n_dim, comp_order_sym, device=self._device)
+                    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                    # Compute deviatoric elastic trial strain norm divison
+                    # factor
+                    if torch.norm(e_trial_strain_mf) > small:
+                        norm_div_factor = 1.0/torch.norm(e_trial_strain_mf)
+                    else:
+                        norm_div_factor = torch.zeros(1, device=self._device)
                     # Compute deviatoric elastic strain unit vector
-                    trial_unit = \
-                        dev_trial_e_strain/torch.norm(dev_trial_e_strain)
+                    trial_unit = norm_div_factor*dev_trial_e_strain
+                    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~                    
                     # Compute common scalar terms
-                    s1 = inc_p_mult/(math.sqrt(2)*torch.norm(
-                        dev_trial_e_strain))
+                    s1 = norm_div_factor*(inc_p_mult/math.sqrt(2))
                     s2 = 1.0/(G + K*etay*etaf + H*xi**2)
                     # Compute elastoplastic consistent tangent modulus
                     # (cone apex)

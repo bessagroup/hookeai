@@ -295,6 +295,8 @@ class VonMisesVMAP(ConstitutiveModel):
         su_conv_tol = 1e-6
         # Set state update maximum number of iterations
         su_max_n_iterations = 20
+        # Set minimum threshold to handle values close or equal to zero
+        small = 1e-8
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Build incremental strain tensor matricial form
         inc_strain_mf = vget_tensor_mf(inc_strain, self._n_dim,
@@ -378,18 +380,13 @@ class VonMisesVMAP(ConstitutiveModel):
         yield_stress, _ = \
             hardening_law(hardening_parameters, acc_p_trial_strain)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        # Set admissible flow vector condition
-        cond_flow_vector_mf = torch.norm(dev_trial_stress_mf) \
-            *torch.ones_like(dev_trial_stress_mf) > 1e-10
-        # Set admissible flow vector
-        admissible_flow_vector_mf = math.sqrt(3.0/2.0) \
-            *(dev_trial_stress_mf/torch.norm(dev_trial_stress_mf))
-        # Set non-admissible flow vector
-        nadmissible_flow_vector_mf = torch.zeros_like(dev_trial_stress_mf)
+        # Compute deviatoric trial stress norm divison factor
+        norm_div_factor = torch.where(
+            torch.norm(dev_trial_stress_mf) > small,
+            1.0/torch.norm(dev_trial_stress_mf + small),
+            torch.zeros(1, device=self._device))
         # Compute flow vector
-        flow_vector_mf = torch.where(cond_flow_vector_mf,
-                                     admissible_flow_vector_mf,
-                                     nadmissible_flow_vector_mf)
+        flow_vector_mf = math.sqrt(3.0/2.0)*norm_div_factor*dev_trial_stress_mf
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Check yield function
         yield_function = vm_trial_stress - yield_stress        

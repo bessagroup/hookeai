@@ -248,6 +248,8 @@ class VonMisesMixed(ConstitutiveModel):
         su_conv_tol = 1e-6
         # Set state update maximum number of iterations
         su_max_n_iterations = 20
+        # Set minimum threshold to handle values close or equal to zero
+        small = 1e-8
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Build incremental strain tensor matricial form
         inc_strain_mf = vget_tensor_mf(inc_strain, self._n_dim,
@@ -334,16 +336,14 @@ class VonMisesMixed(ConstitutiveModel):
         dev_trial_stress_mf = torch.matmul(fodevprojsym_mf, trial_stress_mf)
         # Compute trial relative stress
         relative_stress_mf = dev_trial_stress_mf - back_stress_old_mf
-        # Compute flow vector
-        if torch.allclose(relative_stress_mf,
-                          torch.zeros(relative_stress_mf.shape,
-                                      device=self._device),
-                          atol=1e-10):
-            flow_vector_mf = torch.zeros(relative_stress_mf.shape,
-                                         device=self._device)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Compute trial relative stress norm divison factor
+        if torch.norm(relative_stress_mf) > small:
+            norm_div_factor = 1.0/torch.norm(relative_stress_mf)
         else:
-            flow_vector_mf = math.sqrt(3.0/2.0)*(
-                relative_stress_mf/torch.norm(relative_stress_mf))
+            norm_div_factor = torch.zeros(1, device=self._device)
+        # Compute flow vector
+        flow_vector_mf = math.sqrt(3.0/2.0)*norm_div_factor*relative_stress_mf
         # Compute relative equivalent trial stress
         relative_eq_trial_stress = \
             math.sqrt(3.0/2.0)*torch.norm(relative_stress_mf)

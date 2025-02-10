@@ -13,6 +13,7 @@ if root_dir not in sys.path:
     sys.path.insert(0, root_dir)
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 import os
+import math
 # Third-party
 import torch
 import numpy as np
@@ -829,18 +830,21 @@ if __name__ == '__main__':
             # (matching with Mohr-Coulomb under uniaxial tension and
             # compression)
             # Set yield surface cohesion parameter
-            yield_cohesion_parameter = (2.0/np.sqrt(3))*np.cos(friction_angle)
+            yield_cohesion_parameter = \
+                (2.0/math.sqrt(3))*math.cos(friction_angle)
             # Set yield pressure parameter
-            yield_pressure_parameter = (3.0/np.sqrt(3))*np.sin(friction_angle)
+            yield_pressure_parameter = \
+                (3.0/math.sqrt(3))*math.sin(friction_angle)
             # Set plastic flow pressure parameter
-            flow_pressure_parameter = (3.0/np.sqrt(3))*np.sin(dilatancy_angle)
+            flow_pressure_parameter = \
+                (3.0/math.sqrt(3))*math.sin(dilatancy_angle)
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Set constitutive model parameters
             model_parameters = {
                 'elastic_symmetry': 'isotropic',
                 'E': 100, 'v': 0.3,
                 'euler_angles': (0.0, 0.0, 0.0),
-                'hardening_law': get_hardening_law('piecewise_linear'),        # Fix: np.sqrt(3) matching factor!
+                'hardening_law': get_hardening_law('piecewise_linear'),        # Fix: np.sqrt(3) matching factor! + Repeat Links simulations
                 'hardening_parameters':
                     {'hardening_points':
                         torch.tensor([[0.0, 2.0/yield_cohesion_parameter],

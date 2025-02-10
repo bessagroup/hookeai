@@ -297,6 +297,8 @@ class DruckerPragerVMAP(ConstitutiveModel):
         su_conv_tol = 1e-6
         # Set state update maximum number of iterations
         su_max_n_iterations = 20
+        # Set minimum threshold to handle values close or equal to zero
+        small = 1e-8
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Build incremental strain tensor matricial form
         inc_strain_mf = vget_tensor_mf(inc_strain, self._n_dim,
@@ -457,8 +459,12 @@ class DruckerPragerVMAP(ConstitutiveModel):
         dev_trial_e_strain = vget_tensor_from_mf(
             torch.matmul(fodevprojsym_mf, e_trial_strain_mf),
             n_dim, comp_order_sym, device=self._device)
-        trial_unit = dev_trial_e_strain/torch.norm(dev_trial_e_strain)
-        s1 = inc_p_mult/(math.sqrt(2)*torch.norm(dev_trial_e_strain))
+        norm_div_factor = torch.where(
+            torch.norm(dev_trial_e_strain) > small,
+            1.0/torch.norm(dev_trial_e_strain + small),
+            torch.zeros(1, device=self._device))
+        trial_unit = norm_div_factor*dev_trial_e_strain
+        s1 = norm_div_factor*(inc_p_mult/math.sqrt(2))
         s2 = 1.0/(G + K*etay*etaf + H*xi**2)
         p_consistent_tangent_cone = 2.0*G*(1.0 - s1)*fodevprojsym \
             + 2.0*G*(s1 - G*s2)*dyad22_1(trial_unit, trial_unit) \
