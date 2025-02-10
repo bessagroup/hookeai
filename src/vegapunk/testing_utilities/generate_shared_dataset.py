@@ -12,7 +12,7 @@ import pickle
 # Third-party
 import torch
 # Local
-from rnn_base_model.data.time_dataset import save_dataset, load_dataset
+from time_series_data.time_dataset import save_dataset, load_dataset
 # =============================================================================
 # Summary: Convert torch.utils.data.Dataset file to given sharable format
 # =============================================================================

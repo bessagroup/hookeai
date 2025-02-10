@@ -16,7 +16,7 @@ import re
 # Third-party
 import numpy as np
 # Local
-from rnn_base_model.data.time_dataset import load_dataset
+from time_series_data.time_dataset import load_dataset
 from gnn_base_model.predict.prediction import load_sample_predictions
 #
 #                                                          Authorship & Credits

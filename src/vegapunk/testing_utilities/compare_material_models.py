@@ -13,7 +13,7 @@ import matplotlib.pyplot as plt
 # Local
 from projects.darpa_metals.rnn_material_model.user_scripts. \
     gen_response_dataset import MaterialResponseDatasetGenerator
-from rnn_base_model.data.time_dataset import load_dataset
+from time_series_data.time_dataset import load_dataset
 from simulators.fetorch.material.models.standard.von_mises import VonMises
 from simulators.fetorch.material.models.standard.lou import LouZhangYoon
 from simulators.fetorch.material.models.vmap.lou import LouZhangYoonVMAP

@@ -31,7 +31,7 @@ import torch
 import numpy as np
 import matplotlib.pyplot as plt
 # Local
-from rnn_base_model.data.time_dataset import load_dataset
+from time_series_data.time_dataset import load_dataset
 from rnn_base_model.predict.prediction_plots import plot_time_series_prediction
 from projects.darpa_metals.rnn_material_model.user_scripts.train_model import \
     perform_model_standard_training

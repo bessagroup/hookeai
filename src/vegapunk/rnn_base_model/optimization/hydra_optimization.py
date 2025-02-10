@@ -27,7 +27,7 @@ import re
 import hydra
 import torch
 # Local
-from rnn_base_model.data.time_dataset import load_dataset, \
+from time_series_data.time_dataset import load_dataset, \
     concatenate_dataset_features, add_dataset_feature_init
 from rnn_base_model.train.training import train_model
 from rnn_base_model.predict.prediction import predict

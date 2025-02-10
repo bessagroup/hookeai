@@ -10,7 +10,7 @@ if root_dir not in sys.path:
 # Third-party
 import torch
 # Local
-from rnn_base_model.data.time_dataset import get_time_series_data_loader, \
+from time_series_data.time_dataset import get_time_series_data_loader, \
     load_dataset, concatenate_dataset_features, sum_dataset_features
 from rc_base_model.model.recurrent_model import RecurrentConstitutiveModel
 from hybrid_base_model.model.hybridized_layers import BatchedElasticModel

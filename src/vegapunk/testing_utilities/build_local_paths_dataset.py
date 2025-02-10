@@ -13,7 +13,7 @@ import shutil
 # Third-party
 import torch
 # Local
-from rnn_base_model.data.time_dataset import TimeSeriesDatasetInMemory, \
+from time_series_data.time_dataset import TimeSeriesDatasetInMemory, \
     save_dataset
 from projects.darpa_metals.material_finder.user_scripts.gen_specimen_data \
     import gen_specimen_dataset, get_specimen_history_paths, \

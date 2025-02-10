@@ -18,7 +18,7 @@ import torch
 import numpy as np
 import matplotlib.pyplot as plt
 # Local
-from rnn_base_model.data.time_dataset import save_dataset, load_dataset, \
+from time_series_data.time_dataset import save_dataset, load_dataset, \
     split_dataset, get_parent_dataset_indices, TimeSeriesDatasetInMemory
 from projects.darpa_metals.rnn_material_model.user_scripts.train_model import \
     perform_model_standard_training

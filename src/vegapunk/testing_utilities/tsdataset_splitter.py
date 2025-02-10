@@ -10,7 +10,7 @@ if root_dir not in sys.path:
 import os
 import re
 # Local
-from rnn_base_model.data.time_dataset import load_dataset, split_dataset
+from time_series_data.time_dataset import load_dataset, split_dataset
 # =============================================================================
 # Summary: Split time series data set into non-overlapping subsets
 # =============================================================================

@@ -18,7 +18,7 @@ import tqdm
 import sklearn.preprocessing
 # Local
 from hybrid_base_model.model.hybridization import HybridizationModel
-from rnn_base_model.data.time_dataset import get_time_series_data_loader
+from time_series_data.time_dataset import get_time_series_data_loader
 from utilities.data_scalers import TorchMinMaxScaler, TorchStandardScaler
 from utilities.fit_data_scalers import fit_data_scaler_from_dataset
 #

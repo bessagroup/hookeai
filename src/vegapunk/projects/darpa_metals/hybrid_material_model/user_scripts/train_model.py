@@ -29,7 +29,7 @@ import copy
 import torch
 import numpy as np
 # Local
-from rnn_base_model.data.time_dataset import load_dataset, \
+from time_series_data.time_dataset import load_dataset, \
     concatenate_dataset_features, sum_dataset_features
 from rnn_base_model.model.gru_model import GRURNNModel
 from hybrid_base_model.model.hybridized_layers import BatchedElasticModel, \

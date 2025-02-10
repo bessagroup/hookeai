@@ -28,7 +28,7 @@ import re
 import torch
 import numpy as np
 # Local
-from rnn_base_model.data.time_dataset import load_dataset, \
+from time_series_data.time_dataset import load_dataset, \
     concatenate_dataset_features
 from hybrid_base_model.predict.prediction import predict
 from rnn_base_model.predict.prediction_plots import plot_time_series_prediction

@@ -24,7 +24,7 @@ import os
 import torch
 # Local
 from material_model_finder.model.material_discovery import MaterialModelFinder
-from rnn_base_model.data.time_dataset import load_dataset
+from time_series_data.time_dataset import load_dataset
 from projects.darpa_metals.rnn_material_model.user_scripts. \
     gen_response_dataset import generate_dataset_plots
 from ioput.iostandard import make_directory, find_unique_file_with_regex

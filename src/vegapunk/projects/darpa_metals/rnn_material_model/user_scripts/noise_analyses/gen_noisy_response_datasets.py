@@ -28,7 +28,7 @@ import torch
 import numpy as np
 import tqdm
 # Local
-from rnn_base_model.data.time_dataset import TimeSeriesDatasetInMemory, \
+from time_series_data.time_dataset import TimeSeriesDatasetInMemory, \
     save_dataset, load_dataset
 from projects.darpa_metals.rnn_material_model.strain_paths.random_path import \
     RandomStrainPathGenerator

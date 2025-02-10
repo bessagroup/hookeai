@@ -27,7 +27,7 @@ from rnn_base_model.model.gru_model import GRURNNModel
 from hybrid_base_model.model.transfer_learning import BatchedElasticModel, \
     PolynomialLinearRegressor
 from hybrid_base_model.model.hybridization import HybridizationModel
-from rnn_base_model.data.time_dataset import get_time_series_data_loader
+from time_series_data.time_dataset import get_time_series_data_loader
 from utilities.data_scalers import TorchStandardScaler
 #
 #                                                          Authorship & Credits

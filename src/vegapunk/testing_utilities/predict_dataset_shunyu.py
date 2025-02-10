@@ -15,10 +15,8 @@ import shutil
 import torch
 import numpy as np
 # Local
-from rnn_base_model.data.time_dataset import TimeSeriesDatasetInMemory
-from rnn_base_model.data.time_dataset import save_dataset
-from projects.darpa_metals.rnn_material_model.user_scripts \
-    .uncertainty_quantification import perform_model_uq, gen_model_uq_plots
+from time_series_data.time_dataset import TimeSeriesDatasetInMemory, \
+    save_dataset
 from projects.darpa_metals.rnn_material_model.rnn_model_tools. \
     convergence_plots import plot_prediction_loss_convergence_uq
 from ioput.iostandard import make_directory, find_unique_file_with_regex

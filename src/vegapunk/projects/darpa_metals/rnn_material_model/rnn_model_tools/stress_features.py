@@ -27,7 +27,7 @@ import itertools
 # Third-party
 import torch
 # Local
-from rnn_base_model.data.time_dataset import TimeSeriesDataset, load_dataset
+from time_series_data.time_dataset import TimeSeriesDataset, load_dataset
 #
 #                                                          Authorship & Credits
 # =============================================================================

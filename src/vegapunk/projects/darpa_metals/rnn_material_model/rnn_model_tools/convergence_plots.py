@@ -26,7 +26,7 @@ import pickle
 import numpy as np
 import matplotlib.pyplot as plt
 # Local
-from rnn_base_model.data.time_dataset import load_dataset
+from time_series_data.time_dataset import load_dataset
 from rnn_base_model.predict.prediction_plots import plot_time_series_prediction
 from rc_base_model.train.training import read_best_parameters_from_file
 from projects.darpa_metals.rnn_material_model.rnn_model_tools. \

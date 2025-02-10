@@ -11,7 +11,7 @@ import os
 # Third-party
 import torch
 # Local
-from rnn_base_model.data.time_dataset import TimeSeriesDatasetInMemory, \
+from time_series_data.time_dataset import TimeSeriesDatasetInMemory, \
     TimeSeriesDataset, save_dataset, load_dataset
 # =============================================================================
 # Summary: Convert TimeSeriesDatasetInMemory to TimeSeriesDataset

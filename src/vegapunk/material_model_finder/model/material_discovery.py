@@ -28,7 +28,7 @@ from simulators.fetorch.math.matrixops import get_problem_type_parameters, \
 from simulators.fetorch.math.voigt_notation import vget_stress_vmf, \
     vget_strain_from_vmf
 from utilities.data_scalers import TorchMinMaxScaler
-from rnn_base_model.data.time_dataset import TimeSeriesDatasetInMemory, \
+from time_series_data.time_dataset import TimeSeriesDatasetInMemory, \
     save_dataset
 from ioput.iostandard import make_directory
 #

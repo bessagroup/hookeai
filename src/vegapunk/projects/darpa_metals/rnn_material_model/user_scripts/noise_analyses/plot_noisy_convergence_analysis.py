@@ -30,7 +30,7 @@ import matplotlib.ticker as ticker
 import cycler
 import sklearn.linear_model
 # Local
-from rnn_base_model.data.time_dataset import load_dataset
+from time_series_data.time_dataset import load_dataset
 from ioput.iostandard import make_directory
 from ioput.plots import save_figure, tex_str
 from ioput.iostandard import find_unique_file_with_regex

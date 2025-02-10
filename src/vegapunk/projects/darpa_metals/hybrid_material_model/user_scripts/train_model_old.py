@@ -28,7 +28,7 @@ import os
 import torch
 import numpy as np
 # Local
-from rnn_base_model.data.time_dataset import load_dataset, \
+from time_series_data.time_dataset import load_dataset, \
     concatenate_dataset_features
 from hybrid_base_model.model.hybrid_model_old import HybridMaterialModel
 from hybrid_base_model.train.training import train_model

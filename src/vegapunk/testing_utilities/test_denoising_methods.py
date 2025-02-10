@@ -12,7 +12,7 @@ import os
 import torch
 import matplotlib.pyplot as plt
 # Local
-from rnn_base_model.data.time_dataset import TimeSeriesDatasetInMemory, \
+from time_series_data.time_dataset import TimeSeriesDatasetInMemory, \
     load_dataset
 from utilities.data_denoisers import Denoiser
 from ioput.plots import plot_xy_data

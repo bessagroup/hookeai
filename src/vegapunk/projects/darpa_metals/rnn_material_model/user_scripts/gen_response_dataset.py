@@ -34,7 +34,7 @@ import pandas
 import tqdm
 import matplotlib.pyplot as plt
 # Local
-from rnn_base_model.data.time_dataset import TimeSeriesDatasetInMemory, \
+from time_series_data.time_dataset import TimeSeriesDatasetInMemory, \
     TimeSeriesDataset, get_time_series_data_loader, save_dataset
 from projects.darpa_metals.rnn_material_model.strain_paths.interface import \
     StrainPathGenerator

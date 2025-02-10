@@ -34,7 +34,7 @@ import pickle
 import torch
 import numpy as np
 # Local
-from rnn_base_model.data.time_dataset import get_time_series_data_loader
+from time_series_data.time_dataset import get_time_series_data_loader
 from rc_base_model.model.recurrent_model import RecurrentConstitutiveModel
 from rc_base_model.predict.prediction import predict
 from gnn_base_model.train.training import get_pytorch_optimizer, \

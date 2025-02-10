@@ -17,7 +17,7 @@ import torch
 import tqdm
 import sklearn.preprocessing
 # Local
-from rnn_base_model.data.time_dataset import get_time_series_data_loader
+from time_series_data.time_dataset import get_time_series_data_loader
 from utilities.data_scalers import TorchStandardScaler, TorchMinMaxScaler
 #
 #                                                          Authorship & Credits
