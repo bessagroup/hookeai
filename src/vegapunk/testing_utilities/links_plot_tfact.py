@@ -48,9 +48,28 @@ def plot_links_tfact_hist(links_input_file_path, is_stdout_display=False,
     links_input_file.seek(0)
     # Initialize search flags
     is_keyword_found = False
-    # Search for INCREMENTS keyword and collect element type
+    # Search for Number_of_Increments or INCREMENTS keyword
     for line in links_input_file:
-        if bool(re.search(r'INCREMENTS\b', line, re.IGNORECASE)):        
+        if bool(re.search(r'Number_of_Increments\b', line, re.IGNORECASE)): 
+            # Collect number of increments
+            n_inc = int(line.split()[1])
+            # Initialize incremental and total load factor history
+            dfact_hist = np.zeros((n_inc + 1, 2))
+            tfact_hist = np.zeros((n_inc + 1, 2))
+            # Set discrete time history
+            time_hist = \
+                np.linspace(0.0, 1.0, n_inc + 1, endpoint=True, dtype=float)
+            # Store discrete time history
+            dfact_hist[:, 0] = time_hist
+            tfact_hist[:, 0] = time_hist
+            # Compute incremental load factor history
+            dfact_hist[1:, 1] = (1.0/n_inc)*np.ones(n_inc)
+            for inc in range(1, n_inc + 1):
+                tfact_hist[inc, 1] = \
+                    tfact_hist[inc - 1, 1] + dfact_hist[inc, 1]
+            # Finished processing Number_of_Increments section
+            break
+        elif bool(re.search(r'INCREMENTS\b', line, re.IGNORECASE)):        
             # Start processing INCREMENTS section
             is_keyword_found = True
             # Collect number of increments
