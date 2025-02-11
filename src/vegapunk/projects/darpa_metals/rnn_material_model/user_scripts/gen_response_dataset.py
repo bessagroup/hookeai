@@ -27,6 +27,7 @@ import copy
 import time
 import datetime
 import re
+import math
 # Third-party
 import torch
 import numpy as np
@@ -1832,7 +1833,7 @@ if __name__ == '__main__':
                               'e_strain_mf': len(strain_comps_order)}
         elif model_name == 'drucker_prager':
             # Set frictional angle
-            friction_angle = np.deg2rad(10)
+            friction_angle = math.radians(5)
             # Set dilatancy angle
             dilatancy_angle = friction_angle
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -1840,11 +1841,14 @@ if __name__ == '__main__':
             # (matching with Mohr-Coulomb under uniaxial tension and
             # compression)
             # Set yield surface cohesion parameter
-            yield_cohesion_parameter = (2.0/np.sqrt(3))*np.cos(friction_angle)
+            yield_cohesion_parameter = \
+                (2.0/math.sqrt(3))*math.cos(friction_angle)
             # Set yield pressure parameter
-            yield_pressure_parameter = (3.0/np.sqrt(3))*np.sin(friction_angle)
+            yield_pressure_parameter = \
+                (3.0/math.sqrt(3))*math.sin(friction_angle)
             # Set plastic flow pressure parameter
-            flow_pressure_parameter = (3.0/np.sqrt(3))*np.sin(dilatancy_angle)
+            flow_pressure_parameter = \
+                (3.0/math.sqrt(3))*math.sin(dilatancy_angle)
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Set constitutive model parameters
             # (matching Von Mises yield surface for null pressure)
@@ -1852,10 +1856,10 @@ if __name__ == '__main__':
                 'elastic_symmetry': 'isotropic',
                 'E': 110e3, 'v': 0.33,
                 'euler_angles': (0.0, 0.0, 0.0),
-                'hardening_law': get_hardening_law('nadai_ludwik'),            # Fix: np.sqrt(3) matching factor!
+                'hardening_law': get_hardening_law('nadai_ludwik'),
                 'hardening_parameters':
-                    {'s0': 900/yield_cohesion_parameter,
-                    'a': 700/yield_cohesion_parameter,
+                    {'s0': 900/(math.sqrt(3)*yield_cohesion_parameter),
+                    'a': 700/(math.sqrt(3)*yield_cohesion_parameter),
                     'b': 0.5,
                     'ep0': 1e-5},
                 'yield_cohesion_parameter': yield_cohesion_parameter,
