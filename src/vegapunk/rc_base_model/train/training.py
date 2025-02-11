@@ -720,7 +720,8 @@ def read_best_parameters_from_file(parameters_file_path):
 # =============================================================================
 def check_model_parameters_convergence(model_parameters_history_steps,
                                        convergence_tolerance=0.01,
-                                       trigger_tolerance=5, is_verbose=False):
+                                       trigger_tolerance=5, min_hist_length=0,
+                                       is_verbose=False):
     """Check convergence of model parameters.
     
     Parameters
@@ -732,6 +733,8 @@ def check_model_parameters_convergence(model_parameters_history_steps,
     trigger_tolerance : int, default=5
         Number of consecutive steps without a significant relative change of
         all parameters to trigger convergence.
+    min_hist_length : int, default=0
+        Minimum history length required to trigger convergence criterion.
     is_verbose : bool, default=False
         If True, enable verbose output.
 
@@ -797,16 +800,24 @@ def check_model_parameters_convergence(model_parameters_history_steps,
             frmt_param_convergence = 'Unknown'
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         if is_verbose:
-            print(f'  > {param_name}: {frmt_param_value} | '
+            print(f'  > {param_name:<15s}: {frmt_param_value} | '
                   f'{frmt_change_type}: {frmt_param_change} | '
                   f'Converged? {frmt_param_convergence}')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Check convergence conditions
+    convergence_1 = all(parameters_convergence.values())
+    convergence_2 = len(param_hist) > min_hist_length
+    # Set convergence flag
+    if convergence_1 and convergence_2:
+        is_converged = True
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    if is_verbose:
+        print(f'\n> Model parameters convergence criterion: {is_converged}')
+        print(f'  > Parameters convergence: {convergence_1}')
+        print(f'  > Minimum history length: {convergence_2}')
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     if is_verbose:
         print()
-    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Check convergence
-    if all(parameters_convergence.values()):
-        is_converged = True
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     return is_converged
 # =============================================================================
