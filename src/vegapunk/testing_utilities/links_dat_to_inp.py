@@ -68,9 +68,9 @@ def links_dat_to_abaqus_inp(links_input_file_path):
     else:
         n_dim = 3
     # Set Links to ABAQUS element type conversion
-    elem_type_converter = {'TRI3_1': 'CPE3', 'QUAD4_4': 'CPE4',
-                           'TETRA4_4': 'C3D4', 'HEXA8_8': 'C3D8',
-                           'HEXA20_8': 'C3D20R'}
+    elem_type_converter = {'TRI_3_1': 'CPE3', 'QUAD_4_4': 'CPE4',
+                           'TETRA_4_4': 'C3D4', 'HEXA_8_8': 'C3D8',
+                           'HEXA_20_8': 'C3D20R'}
     # Get matching ABAQUS element type
     if f'{links_elem_type}_{n_gauss}' in elem_type_converter.keys():
         abaqus_elem_type = elem_type_converter[f'{links_elem_type}_{n_gauss}']
