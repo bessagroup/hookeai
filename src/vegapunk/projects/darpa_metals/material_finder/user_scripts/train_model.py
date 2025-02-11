@@ -76,7 +76,7 @@ def perform_model_standard_training(specimen_data_path,
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set model training options:
     # Set number of epochs
-    n_max_epochs = 300
+    n_max_epochs = 200
     # Set learning rate
     lr_init = 1.0e+01
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -270,7 +270,8 @@ def set_default_training_options():
     lr_scheduler_kwargs = None
     is_params_stopping = True
     params_stopping_kwargs = {'convergence_tolerance': 0.01,
-                              'trigger_tolerance': 10}
+                              'trigger_tolerance': 5,
+                              'min_hist_length': 50}
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     return opt_algorithm, lr_init, lr_scheduler_type, lr_scheduler_kwargs, \
         is_params_stopping, params_stopping_kwargs
