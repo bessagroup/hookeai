@@ -190,26 +190,26 @@ def perform_model_standard_training(train_dataset_file_path, model_directory,
              'b_hardening_parameters': {'s0': 0.05,
                                         'a': 0},
              'c_hardening_law': get_hardening_law('linear'),
-             'c_hardening_parameters': {'s0': 1.5,
+             'c_hardening_parameters': {'s0': 1.0,
                                         'a': 0},
              'd_hardening_law': get_hardening_law('linear'),
-             'd_hardening_parameters': {'s0': 0.75,
+             'd_hardening_parameters': {'s0': 0.25,
                                         'a': 0},
              'is_associative_hardening': True}
         # Set learnable parameters
         learnable_parameters = {}
         learnable_parameters['yield_a_s0'] = \
-            {'initial_value': random.uniform(0.5, 1.5),
-             'bounds': (0.5, 1.5)}
+            {'initial_value': random.uniform(0.8, 1.2),
+             'bounds': (0.8, 1.2)}
         learnable_parameters['yield_b_s0'] = \
             {'initial_value': random.uniform(0, 0.1),
              'bounds': (0, 0.1)}
         learnable_parameters['yield_c_s0'] = \
+            {'initial_value': random.uniform(-3.5, 2.5),
+             'bounds': (-3.5, 2.5)}
+        learnable_parameters['yield_d_s0'] = \
             {'initial_value': random.uniform(-1.5, 1.5),
              'bounds': (-1.5, 1.5)}
-        learnable_parameters['yield_d_s0'] = \
-            {'initial_value': random.uniform(-0.5, 0.5),
-             'bounds': (-0.5, 0.5)}
         # Set material constitutive state variables (prediction)
         state_features_out = {}
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -272,7 +272,7 @@ def perform_model_standard_training(train_dataset_file_path, model_directory,
     # Set number of epochs
     n_max_epochs = 200
     # Set batch size
-    batch_size = 4
+    batch_size = 8
     # Set learning rate
     lr_init = 1.0e+00
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
