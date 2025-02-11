@@ -70,8 +70,9 @@ def perform_model_standard_training(specimen_data_path,
                                                    device_type)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set default model training options
-    opt_algorithm, lr_init, lr_scheduler_type, lr_scheduler_kwargs = \
-        set_default_training_options()
+    opt_algorithm, lr_init, lr_scheduler_type, lr_scheduler_kwargs, \
+        is_params_stopping, params_stopping_kwargs = \
+            set_default_training_options()
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set model training options:
     # Set number of epochs
@@ -124,6 +125,8 @@ def perform_model_standard_training(specimen_data_path,
                               lr_scheduler_type=lr_scheduler_type,
                               lr_scheduler_kwargs=lr_scheduler_kwargs,
                               is_explicit_model_parameters=True,
+                              is_params_stopping=is_params_stopping,
+                              params_stopping_kwargs=params_stopping_kwargs,
                               loss_scaling_factor=loss_scaling_factor,
                               loss_time_weights=loss_time_weights,
                               save_every=None, device_type=device_type,
@@ -255,13 +258,22 @@ def set_default_training_options():
 
     lr_scheduler_kwargs : dict
         Arguments of torch.optim.lr_scheduler.LRScheduler initializer.
+    is_params_stopping : bool
+        If True, then training process is halted when parameters convergence
+        criterion is triggered.
+    params_stopping_kwargs : dict
+        Parameters convergence stopping criterion parameters.
     """
     opt_algorithm = 'adam'
     lr_init = 1.0e-04
     lr_scheduler_type = None
     lr_scheduler_kwargs = None
+    is_params_stopping = True
+    params_stopping_kwargs = {'convergence_tolerance': 0.01,
+                              'trigger_tolerance': 10}
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    return opt_algorithm, lr_init, lr_scheduler_type, lr_scheduler_kwargs
+    return opt_algorithm, lr_init, lr_scheduler_type, lr_scheduler_kwargs, \
+        is_params_stopping, params_stopping_kwargs
 # =============================================================================
 if __name__ == "__main__":
     # Set case study base directory

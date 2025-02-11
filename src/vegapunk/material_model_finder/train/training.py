@@ -29,6 +29,7 @@ import torch
 import numpy as np
 # Local
 from material_model_finder.model.material_discovery import MaterialModelFinder
+from rc_base_model.train.training import check_model_parameters_convergence
 from gnn_base_model.train.training import get_pytorch_optimizer, \
     get_learning_rate_scheduler, save_training_state, save_loss_history
 from gnn_base_model.model.model_summary import get_model_summary
@@ -45,7 +46,8 @@ __status__ = 'Planning'
 def train_model(n_max_epochs, specimen_data, specimen_material_state,
                 model_init_args, lr_init, opt_algorithm='adam',
                 lr_scheduler_type=None, lr_scheduler_kwargs={},
-                is_explicit_model_parameters=False, loss_scaling_factor=None,
+                is_explicit_model_parameters=False, is_params_stopping=True,
+                params_stopping_kwargs={}, loss_scaling_factor=None,
                 loss_time_weights=None, save_every=None, device_type='cpu',
                 seed=None, is_verbose=False):
     """Training of recurrent constitutive model.
@@ -85,6 +87,11 @@ def train_model(n_max_epochs, specimen_data, specimen_material_state,
         includes enforcing available bounds on the parameters during the
         training procedure and storing the model parameters history for
         post-processing.
+    is_params_stopping : bool, default=True
+        If True, then training process is halted when parameters convergence
+        criterion is triggered.
+    params_stopping_kwargs : dict, default={}
+        Parameters convergence stopping criterion parameters.
     loss_scaling_factor : torch.Tensor(0d), default=None
         Loss scaling factor. If provided, then loss is pre-multiplied by
         loss scaling factor.
@@ -190,6 +197,9 @@ def train_model(n_max_epochs, specimen_data, specimen_material_state,
     # Initialize number of training steps
     step = 0
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Initialize early stopping flag
+    is_stop_training = False
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     if is_verbose:
         print('\n\n> Starting training process...\n')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -277,9 +287,19 @@ def train_model(n_max_epochs, specimen_data, specimen_material_state,
             save_material_models_state(model=model, epoch=epoch,
                                        is_best_state=True)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Check model parameters convergence
+        if is_explicit_model_parameters and is_params_stopping:
+            is_stop_training = check_model_parameters_convergence(
+                model_parameters_history_epochs, is_verbose=is_verbose,
+                **params_stopping_kwargs)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Check training process flow
         if epoch >= n_max_epochs:
             # Completed maximum number of epochs
+            is_keep_training = False
+            break
+        elif is_params_stopping and is_stop_training:
+            # Parameters convergence criterion triggered
             is_keep_training = False
             break
         else:
