@@ -327,7 +327,7 @@ def elem_type_abaqus_to_fetorch(elem_abaqus_type):
     elif elem_abaqus_type in ('C3D20R',):
         elem_fetorch_type = FEHexa20(n_gauss=8)
     else:
-        raise RuntimeError(f'The ABAQUS element type {elem_fetorch_type} '
+        raise RuntimeError(f'The ABAQUS element type {elem_abaqus_type} '
                            f'is unknown or cannot be converted to a FETorch '
                            f'element type.')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
