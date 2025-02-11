@@ -95,7 +95,7 @@ def perform_model_standard_training(specimen_data_path,
     specimen_material_state.update_material_models_device(device_type)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set loss scaling flag
-    is_loss_scaling_factor = False
+    is_loss_scaling_factor = True
     # Set loss scaling factor
     if is_loss_scaling_factor:
         # Set characteristic Young modulus (MPa)
@@ -105,7 +105,7 @@ def perform_model_standard_training(specimen_data_path,
         # Set characteristic time (s)
         time_ref = 1.0
         # Set loss scaling factor
-        loss_scaling_factor = (young_ref**2)*(length_ref**4)*time_ref
+        loss_scaling_factor = 1.0/((young_ref**2)*(length_ref**4)*time_ref)
     else:
         # Set loss scaling factor
         loss_scaling_factor = None
