@@ -27,6 +27,7 @@ if root_dir not in sys.path:
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 import os
 import re
+import math
 import random
 # Third-party
 import torch
@@ -503,17 +504,32 @@ def set_material_model_parameters():
                      'a': 700,
                      'b': 0.5,
                      'ep0': 1e-5}}
+            # Set constitutive model parameters (Rowan data)
+            #model_parameters = {
+            #    'elastic_symmetry': 'isotropic',
+            #    'E': 118640, 'v': 0.334,
+            #    'euler_angles': (0.0, 0.0, 0.0),
+            #    'hardening_law': get_hardening_law('nadai_ludwik'),
+            #    'hardening_parameters':
+            #        {'s0': 855.89,
+            #         'a': 1246.9,
+            #         'b': 0.0795,
+            #         'ep0': 1e-5}}
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Set learnable parameters
             learnable_parameters = {}
-            learnable_parameters['E'] = {'initial_value': 110e3,
-                                         'bounds': (80e3, 120e3)}
-            learnable_parameters['v'] = {'initial_value': 0.33,
-                                         'bounds': (0.2, 0.4)}
-            learnable_parameters['s0'] = {'initial_value': 900,
-                                          'bounds': (500, 1500)}
-            learnable_parameters['a'] = {'initial_value': 700,
-                                         'bounds': (500, 1000)}
+            learnable_parameters['E'] = {
+                'initial_value': random.uniform(80e3, 140e3),
+                'bounds': (80e3, 140e3)}
+            learnable_parameters['v'] = {
+                'initial_value': random.uniform(0.2, 0.4),
+                'bounds': (0.2, 0.4)}
+            learnable_parameters['s0'] = {
+                'initial_value': random.uniform(500, 1500),
+                'bounds': (500, 1500)}
+            learnable_parameters['a'] = {
+                'initial_value': random.uniform(500, 1500),
+                'bounds': (500, 1500)}
             # Set material constitutive model name
             if model_name == 'rc_von_mises_vmap':
                 material_model_name = 'von_mises_vmap'
@@ -524,7 +540,7 @@ def set_material_model_parameters():
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         elif model_name in ('rc_drucker_prager', 'rc_drucker_prager_vmap'):            
             # Set frictional angle
-            friction_angle = np.deg2rad(10)
+            friction_angle = math.radians(5)
             # Set dilatancy angle
             dilatancy_angle = friction_angle
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -532,20 +548,26 @@ def set_material_model_parameters():
             # (matching with Mohr-Coulomb under uniaxial tension and
             # compression)
             # Set yield surface cohesion parameter
-            yield_cohesion_parameter = (2.0/np.sqrt(3))*np.cos(friction_angle)
+            yield_cohesion_parameter = \
+                (2.0/math.sqrt(3))*math.cos(friction_angle)
             # Set yield pressure parameter
-            yield_pressure_parameter = (3.0/np.sqrt(3))*np.sin(friction_angle)
+            yield_pressure_parameter = \
+                (3.0/math.sqrt(3))*math.sin(friction_angle)
             # Set plastic flow pressure parameter
-            flow_pressure_parameter = (3.0/np.sqrt(3))*np.sin(dilatancy_angle)
+            flow_pressure_parameter = \
+                (3.0/math.sqrt(3))*math.sin(dilatancy_angle)
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Set constitutive model parameters
             model_parameters = {
                 'elastic_symmetry': 'isotropic',
-                'E': 100.0, 'v': 0.3,
+                'E': 110000, 'v': 0.33,
                 'euler_angles': (0.0, 0.0, 0.0),
-                'hardening_law': get_hardening_law('linear'),
-                'hardening_parameters':{'s0': 2.0/yield_cohesion_parameter,    # Fix: np.sqrt(3) matching factor!
-                                        'a': 2.0/yield_cohesion_parameter,},
+                'hardening_law': get_hardening_law('nadai_ludwik'),
+                'hardening_parameters':
+                    {'s0': 900/(math.sqrt(3)*yield_cohesion_parameter),
+                     'a': 700/(math.sqrt(3)*yield_cohesion_parameter),
+                     'b': 0.5,
+                     'ep0': 1e-5},
                 'yield_cohesion_parameter': yield_cohesion_parameter,
                 'yield_pressure_parameter': yield_pressure_parameter,
                 'flow_pressure_parameter': flow_pressure_parameter,
@@ -553,23 +575,72 @@ def set_material_model_parameters():
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Set learnable parameters
             learnable_parameters = {}
-            learnable_parameters['E'] = {'initial_value': 80.0,
-                                         'bounds': (80.0, 120.0)}
-            learnable_parameters['v'] = {'initial_value': 0.25,
-                                         'bounds': (0.2, 0.4)}
-            learnable_parameters['s0'] = {'initial_value': 2.0,
-                                          'bounds': (0.5, 3.0)}
-            learnable_parameters['a'] = {'initial_value': 4.0,
-                                         'bounds': (0.0, 5.0)}
-            #learnable_parameters['friction_angle'] = \
-            #    {'initial_value': np.deg2rad(5.0, dtype=np.float32),
-            #     'bounds': (np.deg2rad(1.0, dtype=np.float32),
-            #                np.deg2rad(20.0, dtype=np.float32))}
+            #learnable_parameters['E'] = {
+            #    'initial_value': random.uniform(80e3, 140e3),
+            #    'bounds': (80e3, 140e3)}
+            #learnable_parameters['v'] = {
+            #    'initial_value': random.uniform(0.2, 0.4),
+            #    'bounds': (0.2, 0.4)}
+            #learnable_parameters['s0'] = {
+            #    'initial_value': random.uniform(500, 1500),
+            #    'bounds': (500, 1500)}
+            #learnable_parameters['a'] = {
+            #    'initial_value': random.uniform(500, 1500),
+            #    'bounds': (500, 1500)}
+            learnable_parameters['friction_angle'] = \
+                {'initial_value': math.radians(random.uniform(0.1, 10.0)),
+                 'bounds': (math.radians(1.0), math.radians(10.0))}
             # Set material constitutive model name
             if model_name == 'rc_drucker_prager_vmap':
                 material_model_name = 'drucker_prager_vmap'
             else:
                 material_model_name = 'drucker_prager'
+            # Set material constitutive state variables (prediction)
+            state_features_out = {}
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        elif model_name in ('rc_lou_zhang_yoon', 'rc_lou_zhang_yoon_vmap'):
+            # Set constitutive model parameters
+            model_parameters = {
+                'elastic_symmetry': 'isotropic',
+                'E': 110e3, 'v': 0.33,
+                'euler_angles': (0.0, 0.0, 0.0),
+                'hardening_law': get_hardening_law('nadai_ludwik'),
+                'hardening_parameters': {'s0': 900,
+                                         'a': 700,
+                                         'b': 0.5,
+                                         'ep0': 1e-5},
+                'a_hardening_law': get_hardening_law('linear'),
+                'a_hardening_parameters': {'s0': 1.0,
+                                           'a': 0},
+                'b_hardening_law': get_hardening_law('linear'),
+                'b_hardening_parameters': {'s0': 0.0,
+                                           'a': 0},
+                'c_hardening_law': get_hardening_law('linear'),
+                'c_hardening_parameters': {'s0': 0.0,
+                                           'a': 0},
+                'd_hardening_law': get_hardening_law('linear'),
+                'd_hardening_parameters': {'s0': 0.0,
+                                           'a': 0},
+                'is_associative_hardening': True}
+            # Set learnable parameters
+            learnable_parameters = {}
+            learnable_parameters['yield_a_s0'] = \
+                {'initial_value': random.uniform(1.0, 3.0),
+                 'bounds': (1.0, 3.0)}
+            learnable_parameters['yield_b_s0'] = \
+                {'initial_value': random.uniform(0, 0.1),
+                 'bounds': (0, 0.1)}
+            learnable_parameters['yield_c_s0'] = \
+                {'initial_value': random.uniform(-3.5, 2.5),
+                 'bounds': (-3.5, 2.5)}
+            learnable_parameters['yield_d_s0'] = \
+                {'initial_value': random.uniform(-1.5, 1.5),
+                 'bounds': (-1.5, 1.5)}
+            # Set material constitutive model name
+            if model_name == 'rc_lou_zhang_yoon_vmap':
+                material_model_name = 'lou_zhang_yoon_vmap'
+            else:
+                material_model_name = 'lou_zhang_yoon'
             # Set material constitutive state variables (prediction)
             state_features_out = {}
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
