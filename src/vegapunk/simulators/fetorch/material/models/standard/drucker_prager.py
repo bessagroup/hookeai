@@ -439,18 +439,27 @@ class DruckerPrager(ConstitutiveModel):
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Compute pressure
             pressure = trial_pressure - K*etaf*inc_p_mult
+            # Compute deviatoric trial stress second invariant factor
+            if torch.sqrt(j2_dev_trial_stress) > small:
+                dev_stress_factor = \
+                    (1.0 - ((G*inc_p_mult)/torch.sqrt(j2_dev_trial_stress)))
+            else:
+                dev_stress_factor = torch.zeros(1, device=self._device)
             # Compute deviatoric stress
-            dev_stress_mf = \
-                (1.0 - ((G*inc_p_mult)/torch.sqrt(j2_dev_trial_stress))) \
-                *dev_trial_stress_mf
+            dev_stress_mf = dev_stress_factor*dev_trial_stress_mf
             # Update stress
             stress_mf = pressure*soid_mf + dev_stress_mf
             # Update accumulated plastic strain
             acc_p_strain = acc_p_strain_old + inc_p_mult
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Check return-mapping validity
-            is_cone_surface = \
-                torch.sqrt(j2_dev_trial_stress) - G*inc_p_mult >= 0
+            if not is_su_fail:
+                is_cone_surface = \
+                    torch.sqrt(j2_dev_trial_stress) - G*inc_p_mult >= 0
+            else:
+                # If convergence of return-mapping to cone surface failed, then
+                # avoid return-mapping to cone apex
+                is_cone_surface = True
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Compute return-mapping to cone apex
             if not is_su_fail and not is_cone_surface:

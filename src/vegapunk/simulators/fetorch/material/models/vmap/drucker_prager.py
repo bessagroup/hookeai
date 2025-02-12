@@ -296,7 +296,7 @@ class DruckerPragerVMAP(ConstitutiveModel):
         # Set state update convergence tolerance
         su_conv_tol = 1e-6
         # Set state update maximum number of iterations
-        su_max_n_iterations = 20
+        su_max_n_iterations = 10
         # Set minimum threshold to handle values close or equal to zero
         small = 1e-8
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -632,6 +632,9 @@ class DruckerPragerVMAP(ConstitutiveModel):
         plastic_step_output : torch.Tensor(1d)
             Plastic step concatenated output data.
         """
+        # Set minimum threshold to handle values close or equal to zero
+        small = 1e-8
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Set plastic step flag
         is_plast = torch.tensor([True], device=e_trial_strain_mf.device)
         # Set incremental plastic multiplier initial iterative guess
@@ -658,6 +661,12 @@ class DruckerPragerVMAP(ConstitutiveModel):
                                          inc_p_mult, residual, G, K, etaf,
                                          etay, xi, H))
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set return-mapping to apex flag
+        is_apex_return = torch.where(
+            is_converged,
+            (torch.sqrt(j2_dev_trial_stress) - G*inc_p_mult) < 0,
+            is_converged)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Set incremental plastic multiplier to NaN if state update fails
         inc_p_mult = torch.where(is_converged,
                                  inc_p_mult,
@@ -665,10 +674,15 @@ class DruckerPragerVMAP(ConstitutiveModel):
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Compute pressure
         pressure = trial_pressure - K*etaf*inc_p_mult
+        # Compute deviatoric trial stress second invariant factor
+        safe_sqrt = torch.sqrt(torch.clamp(j2_dev_trial_stress, min=small))
+        dev_stress_factor = (1.0 - ((G*inc_p_mult)/safe_sqrt))
+        dev_stress_factor = torch.where(
+            torch.isfinite(dev_stress_factor),
+            dev_stress_factor,
+            torch.zeros(1, device=e_trial_strain_mf.device))
         # Compute deviatoric stress
-        dev_stress_mf = \
-            (1.0 - ((G*inc_p_mult)/torch.sqrt(j2_dev_trial_stress))) \
-            *dev_trial_stress_mf
+        dev_stress_mf = dev_stress_factor*dev_trial_stress_mf
         # Update stress
         stress_mf = pressure*soid_mf + dev_stress_mf
         # Update accumulated plastic strain
@@ -683,9 +697,6 @@ class DruckerPragerVMAP(ConstitutiveModel):
                        inc_p_mult.view(-1),
                        is_converged.view(-1)])
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        # Set return-mapping to apex flag
-        is_apex_return = (torch.sqrt(j2_dev_trial_stress) - G*inc_p_mult) < 0
-        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Perform plastic step (cone apex)
         is_elastic_step = torch.logical_or(
             is_elastic_step, torch.logical_not(is_apex_return))
@@ -696,8 +707,8 @@ class DruckerPragerVMAP(ConstitutiveModel):
             su_max_n_iterations)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Set return-mapping validity
-        cone_surface_cond = (torch.sqrt(j2_dev_trial_stress) - G*inc_p_mult) \
-            *torch.ones_like(plastic_step_cone_output) >= 0
+        cone_surface_cond = torch.logical_not(is_apex_return).expand(
+            plastic_step_cone_output.shape)
         # Pick surface or apex plastic step according with condition
         plastic_step_output = torch.where(cone_surface_cond,
                                           plastic_step_cone_output,
