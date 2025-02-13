@@ -76,16 +76,25 @@ def perform_model_standard_training(specimen_data_path,
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set model training options:
     # Set number of epochs
-    n_max_epochs = 200
+    n_max_epochs = 300
     # Set learning rate
     lr_init = 1.0e+01
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Compute exponential decay (learning rate scheduler)
-    lr_end = 1.0e-1
-    gamma = (lr_end/lr_init)**(1/n_max_epochs)
+    lr_end = 1.0e-01
     # Set learning rate scheduler
-    lr_scheduler_type = 'explr'
-    lr_scheduler_kwargs = {'gamma': gamma}
+    lr_scheduler_type = ('explr', 'linlr')[1]
+    # Set learning rate scheduler parameters
+    if lr_scheduler_type == 'explr':
+        gamma = (lr_end/lr_init)**(1/n_max_epochs)
+        lr_scheduler_kwargs = {'gamma': gamma}
+    elif lr_scheduler_type == 'linlr':
+        end_factor = (lr_end/lr_init)
+        lr_scheduler_kwargs = {'start_factor': 1.0,
+                               'end_factor': end_factor,
+                               'total_iters': n_max_epochs}
+    else:
+        raise RuntimeError('Unknown learning rate scheduler.')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Load specimen numerical data
     specimen_data = torch.load(specimen_data_path)
