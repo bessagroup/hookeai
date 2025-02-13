@@ -677,21 +677,6 @@ class RecurrentConstitutiveModel(torch.nn.Module):
                         yield_pressure_parameter
                     material_parameters['flow_pressure_parameter'] = \
                         flow_pressure_parameter
-                    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~      
-                    # Enforce match with Von Mises yield surface for deviatoric
-                    # plane
-                    for h_param, h_value in hardening_parameters.items():
-                        # Compute yield surface cohesion ratio
-                        yield_surface_ratio = (yield_cohesion_parameter_old
-                                               /yield_cohesion_parameter)
-                        # Loop over scaled hardening parameters
-                        if h_param in ('s0', 'a'):
-                            # Detach old computation graph
-                            if isinstance(h_value, torch.Tensor):
-                                h_value = h_value.detach()
-                            # Update scaled hardening parameter
-                            hardening_parameters[h_param] = \
-                                h_value*yield_surface_ratio
                 else:
                     material_parameters[param] = sync_val
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
