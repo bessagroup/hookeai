@@ -42,6 +42,8 @@ from simulators.fetorch.material.models.standard.hardening import \
 from projects.gnn_material_patch.material_patch.patch_generator import \
     FiniteElementPatchGenerator
 from testing_utilities.links_plot_tfact import plot_links_tfact_hist
+from testing_utilities.links_dat_to_inp import links_dat_to_abaqus_inp
+from testing_utilities.links_nodedata_to_csv import links_node_output_to_csv
 from ioput.iostandard import make_directory
 #
 #                                                          Authorship & Credits
@@ -71,6 +73,15 @@ def generate_random_patches(base_dir, patch_name='material_patch', n_patch=1,
         If True, then load material patch file from material patch directory.
     is_verbose : bool, default=False
         If True, enable verbose output.
+        
+    Returns
+    -------
+    links_file_paths : dict
+        Links input data file path (item, str) for each material patch
+        (key, str[int]).
+    links_output_dirs : dict
+        Links simulation output directory (item, str) for each material patch
+        (key, str[int]).
     """
     start_time_sec = time.time()
     if is_verbose:
@@ -82,6 +93,10 @@ def generate_random_patches(base_dir, patch_name='material_patch', n_patch=1,
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set number of spatial dimensions
     n_dim = 3
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Initialize simulations files and directories
+    links_file_paths = {}
+    links_output_dirs = {}
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Loop over material patches
     for i in range(n_patch):
@@ -177,7 +192,12 @@ def generate_random_patches(base_dir, patch_name='material_patch', n_patch=1,
             print('\n  > Performing material patch FEM simulation...')
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Perform Links simulation
-        perform_links_simulation(simulations_dir, patch, patch_material_params)
+        links_file_path, links_output_directory = perform_links_simulation(
+            simulations_dir, patch, patch_material_params)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Store Links input data file and simulation directory
+        links_file_paths[str(i)] = links_file_path
+        links_output_dirs[str(i)] = links_output_directory
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Compute total time
     total_time_sec = time.time() - start_time_sec
@@ -186,6 +206,8 @@ def generate_random_patches(base_dir, patch_name='material_patch', n_patch=1,
         print(f'\n> Total time: '
             f'{str(datetime.timedelta(seconds=int(total_time_sec)))}')
         print()
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    return links_file_paths, links_output_dirs
 # =============================================================================
 def set_material_patch_dir(dir_name, parent_dir, is_overwrite_data=True):
     """Setup material patch directory.
@@ -428,7 +450,7 @@ def set_patch_mesh_params(n_dim):
         # Set finite element type
         elem_type = 'SHEXA8'
         # Set number of finite elements per dimension
-        n_elems_per_dim = (1, 1, 1)
+        n_elems_per_dim = (5, 5, 5)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     else:
         raise RuntimeError('Invalid number of spatial dimensions.')
@@ -508,6 +530,13 @@ def perform_links_simulation(simulations_dir, patch, patch_material_params):
         Finite element patch.
     patch_material_params : dict
         Material patch material parameters.
+        
+    Returns
+    -------
+    links_file_path : str
+        Links input data file path.
+    links_output_directory : str
+        Links simulation output directory.
     """
     # Set Links binary absolute path
     links_bin_path = ('/home/bernardoferreira/Documents/repositories/external/'
@@ -531,7 +560,7 @@ def perform_links_simulation(simulations_dir, patch, patch_material_params):
                                      analysis_type)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set configuration
-    configuration = 'solid'
+    configuration = 'voids_lattice'
     # Get number of finite elements per dimension
     n_elems_per_dim = patch.get_n_elems_per_dim()
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -587,22 +616,25 @@ def perform_links_simulation(simulations_dir, patch, patch_material_params):
     plot_links_tfact_hist(links_file_path, is_save_fig=True)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Perform Links simulation
-    is_success, _ = \
+    is_success, links_output_directory = \
         links_simulator.run_links_simulation(links_file_path)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Check simulation status
     if not is_success:
         raise RuntimeError('Links simulation was not successful.')
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    return links_file_path, links_output_directory
 # =============================================================================
 if __name__ == "__main__":
     # Set base directory
     base_dir = ('/home/bernardoferreira/Documents/brown/projects/'
-                'test_patches/base_directory')
+                'darpa_project/11_global_learning_lou/'
+                'random_specimen_rc_von_mises_vmap/0_links_simulation')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set material patch name
     patch_name = 'random_specimen'
     # Set number of material patches
-    n_patch = 2
+    n_patch = 1
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set material patch storage flag
     is_save_material_patch = True
@@ -622,8 +654,16 @@ if __name__ == "__main__":
         make_directory(material_patches_dir, is_overwrite=True)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Generate material patches
-    generate_random_patches(material_patches_dir, patch_name=patch_name,
-                            n_patch=n_patch,
-                            is_save_material_patch=is_save_material_patch,
-                            is_load_material_patch=is_load_material_patch,
-                            is_verbose=True)
+    links_file_paths, links_output_dirs = \
+        generate_random_patches(material_patches_dir, patch_name=patch_name,
+                                n_patch=n_patch,
+                                is_save_material_patch=is_save_material_patch,
+                                is_load_material_patch=is_load_material_patch,
+                                is_verbose=True)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Loop over material patches
+    for patch_key in links_file_paths.keys():
+        # Convert Links input data file to Abaqus data input data file
+        links_dat_to_abaqus_inp(links_file_paths[patch_key])
+        # Convert Links '.nodedata' output files to '.csv' files
+        links_node_output_to_csv(links_output_dirs[patch_key])
