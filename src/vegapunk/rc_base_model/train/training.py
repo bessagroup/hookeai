@@ -19,8 +19,6 @@ read_best_parameters_from_file
     Read best performance state model parameters from file.
 check_model_parameters_convergence
     Check convergence of model parameters.
-enforce_parameters_constraints
-    Enforce material model-dependent parameters constraints.
 """
 #
 #                                                                       Modules
@@ -213,6 +211,11 @@ def train_model(n_max_epochs, dataset, model_init_args, lr_init,
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Get model parameters
     model_parameters = model.parameters(recurse=True)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ VALIDATE THIS
+    # Enforce bounds on model parameters
+    model.enforce_parameters_bounds()
+    # Enforce model-dependent constraints on model parameters
+    model.enforce_parameters_constraints()
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~  
     # Move model to device
     model.to(device=device)
@@ -381,22 +384,10 @@ def train_model(n_max_epochs, dataset, model_init_args, lr_init,
             # attribute of model parameters
             optimizer.step()
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            # Get model parameters
-            model_parameters = model.get_model_parameters()
             # Enforce bounds on model parameters
-            for param, value in model_parameters.items():
-                # Get parameter bounds
-                if model.is_normalized_parameters:
-                    lower_bound, upper_bound = \
-                        model.get_model_parameters_norm_bounds()[param]
-                else:
-                    lower_bound, upper_bound = \
-                        model.get_model_parameters_bounds()[param]
-                # Enforce bounds
-                value.data.clamp_(lower_bound, upper_bound)
-            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            # Enforce material model-dependent parameters constraints
-            enforce_parameters_constraints(model)
+            model.enforce_parameters_bounds()
+            # Enforce model-dependent constraints on model parameters
+            model.enforce_parameters_constraints()
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             if is_verbose:
                 total_time_sec = time.time() - start_time_sec
@@ -820,50 +811,6 @@ def check_model_parameters_convergence(model_parameters_history_steps,
         print()
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     return is_converged
-# =============================================================================
-def enforce_parameters_constraints(model):
-    """Enforce material model-dependent parameters constraints.
-    
-    Constraints are enforced by means of in-place parameters updates.
-    
-    Parameters
-    ----------
-    model : RecurrentConstitutiveModel
-        Recurrent constitutive model.
-    """
-    # Get material model name
-    material_model_name = model.get_material_model_name()
-    # Get model parameters
-    model_parameters = model.get_model_parameters()
-    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Enforce model-dependent parameters constraints
-    if 'lou_zhang_yoon' in material_model_name:
-        # Get Lou-Zhang-Yoon model convexity-related yielding parameters
-        yield_c_s0 = model_parameters['yield_c_s0'].detach().clone()
-        yield_d_s0 = model_parameters['yield_d_s0'].detach().clone()
-        # Denormalize yielding parameters
-        if model.is_normalized_parameters:
-            yield_c_s0 = model.transform_parameter(
-                'yield_c_s0', yield_c_s0, mode='denormalize')
-            yield_d_s0 = model.transform_parameter(
-                'yield_d_s0', yield_d_s0, mode='denormalize')
-        # Perform convexity return-mapping
-        is_convex, yield_c_s0, yield_d_s0 = \
-            LouZhangYoon.convexity_return_mapping(yield_c_s0, yield_d_s0)
-        # Update yielding parameters
-        if not is_convex:
-            # Normalize yielding parameters
-            if model.is_normalized_parameters:
-                yield_c_s0 = model.transform_parameter(
-                    'yield_c_s0', yield_c_s0, mode='normalize')
-                yield_d_s0 = model.transform_parameter(
-                    'yield_d_s0', yield_d_s0, mode='normalize')
-            # Update yielding parameters (enforcing convexity)
-            with torch.no_grad():
-                model.get_model_parameters()['yield_c_s0'].copy_(
-                    yield_c_s0)
-                model.get_model_parameters()['yield_d_s0'].copy_(
-                    yield_d_s0)
 # =============================================================================
 class EarlyStopper:
     """Early stopping procedure (implicit regularizaton).

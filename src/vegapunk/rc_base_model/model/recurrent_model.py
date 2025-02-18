@@ -148,6 +148,10 @@ class RecurrentConstitutiveModel(torch.nn.Module):
         Get model parameters bounds.
     get_model_parameters_norm_bounds(self)
         Get model parameters normalized bounds.
+    enforce_parameters_bounds(self)
+        Enforce bounds in model parameters.
+    enforce_parameters_constraints(self)
+        Enforce material model-dependent parameters constraints.
     get_detached_model_parameters(self, is_normalized_out=False)
         Get model parameters detached of gradients.
     get_material_model_parameters(self)
@@ -818,6 +822,66 @@ class RecurrentConstitutiveModel(torch.nn.Module):
             tuple(lower_bound, upper_bound) (item, tuple).
         """
         return copy.deepcopy(self._model_parameters_norm_bounds)
+    # -------------------------------------------------------------------------
+    def enforce_parameters_bounds(self):
+        """Enforce bounds in model parameters.
+        
+        Bounds are enforced by means of in-place parameters updates.
+
+        """
+        # Get model parameters
+        model_parameters = self.get_model_parameters()
+        # Enforce bounds on model parameters
+        for param, value in model_parameters.items():
+            # Get parameter bounds
+            if self.is_normalized_parameters:
+                lower_bound, upper_bound = \
+                    self.get_model_parameters_norm_bounds()[param]
+            else:
+                lower_bound, upper_bound = \
+                    self.get_model_parameters_bounds()[param]
+            # Enforce bounds
+            value.data.clamp_(lower_bound, upper_bound)
+    # -------------------------------------------------------------------------
+    def enforce_parameters_constraints(self):
+        """Enforce material model-dependent parameters constraints.
+        
+        Constraints are enforced by means of in-place parameters updates.
+
+        """
+        # Get material model name
+        material_model_name = self.get_material_model_name()
+        # Get model parameters
+        model_parameters = self.get_model_parameters()
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Enforce model-dependent parameters constraints
+        if 'lou_zhang_yoon' in material_model_name:
+            # Get Lou-Zhang-Yoon model convexity-related yielding parameters
+            yield_c_s0 = model_parameters['yield_c_s0'].detach().clone()
+            yield_d_s0 = model_parameters['yield_d_s0'].detach().clone()
+            # Denormalize yielding parameters
+            if self.is_normalized_parameters:
+                yield_c_s0 = self.transform_parameter(
+                    'yield_c_s0', yield_c_s0, mode='denormalize')
+                yield_d_s0 = self.transform_parameter(
+                    'yield_d_s0', yield_d_s0, mode='denormalize')
+            # Perform convexity return-mapping
+            is_convex, yield_c_s0, yield_d_s0 = \
+                LouZhangYoon.convexity_return_mapping(yield_c_s0, yield_d_s0)
+            # Update yielding parameters
+            if not is_convex:
+                # Normalize yielding parameters
+                if self.is_normalized_parameters:
+                    yield_c_s0 = self.transform_parameter(
+                        'yield_c_s0', yield_c_s0, mode='normalize')
+                    yield_d_s0 = self.transform_parameter(
+                        'yield_d_s0', yield_d_s0, mode='normalize')
+                # Update yielding parameters (enforcing convexity)
+                with torch.no_grad():
+                    self.get_model_parameters()['yield_c_s0'].copy_(
+                        yield_c_s0)
+                    self.get_model_parameters()['yield_d_s0'].copy_(
+                        yield_d_s0)
     # -------------------------------------------------------------------------
     def get_detached_model_parameters(self, is_normalized_out=False):
         """Get model parameters detached of gradients.
