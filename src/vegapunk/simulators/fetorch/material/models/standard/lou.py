@@ -499,7 +499,8 @@ class LouZhangYoon(ConstitutiveModel):
                 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                 # Check Newton-Raphson iterative procedure convergence
                 is_converged = (conv_norm_residual < su_conv_tol
-                                and diter_norm < su_conv_tol)
+                                and diter_norm < su_conv_tol
+                                and nr_iter > 0)
                 # Control Newton-Raphson iteration loop flow
                 if is_converged:
                     # Display convergence status

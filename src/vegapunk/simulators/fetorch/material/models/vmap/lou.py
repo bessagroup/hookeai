@@ -307,7 +307,7 @@ class LouZhangYoonVMAP(ConstitutiveModel):
         # Set state update convergence tolerance
         su_conv_tol = 1e-4
         # Set state update maximum number of iterations
-        su_max_n_iterations = 20
+        su_max_n_iterations = 10
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Build incremental strain tensor matricial form
         inc_strain_mf = vget_tensor_mf(inc_strain, self._n_dim,
@@ -764,7 +764,7 @@ class LouZhangYoonVMAP(ConstitutiveModel):
         diter_norm = torch.tensor(0.0, device=device)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Newton-Raphson iterative loop
-        for _ in range(su_max_n_iterations):
+        for nr_iter in range(su_max_n_iterations):
             # Compute current stress
             stress = ddot42_1(e_consistent_tangent, e_strain)
             # Compute current yield stress and hardening modulus
@@ -813,14 +813,16 @@ class LouZhangYoonVMAP(ConstitutiveModel):
                 torch.stack((conv_norm_res_1, conv_norm_res_2,
                              conv_norm_res_3)))
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            # Compute converge norms condition
-            conv_norm_cond = torch.all(
+            # Compute converge condition
+            conv_cond = torch.all(
                 torch.stack((conv_norm_residual < su_conv_tol,
-                             diter_norm < su_conv_tol)))
+                             diter_norm < su_conv_tol,
+                             torch.tensor(nr_iter > 0, dtype=torch.bool,
+                                          device=device))))
             # Check Newton-Raphson iterative procedure convergence
             is_converged = torch.where(is_elastic_step,
                                        is_elastic_step,
-                                       conv_norm_cond)
+                                       conv_cond)
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Compute iterative solution
             d_iter = torch.where(
