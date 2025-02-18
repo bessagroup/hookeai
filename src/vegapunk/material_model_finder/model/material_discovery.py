@@ -114,6 +114,8 @@ class MaterialModelFinder(torch.nn.Module):
         Get model parameters (material models) bounds.
     enforce_parameters_bounds(self)
         Enforce bounds in model parameters (material models).
+    enforce_parameters_constraints(self)
+        Enforce material model-dependent parameters constraints.
     set_device(self, device_type)
         Set device on which torch.Tensor is allocated.
     get_device(self)
@@ -557,6 +559,8 @@ class MaterialModelFinder(torch.nn.Module):
         Only enforces bounds in parameters from material models with explicit
         learnable parameters.
         
+        Bounds are enforced by means of in-place parameters updates.
+        
         """
         # Get material models
         material_models = self._specimen_material_state.get_material_models()
@@ -622,6 +626,49 @@ class MaterialModelFinder(torch.nn.Module):
                     value = param_dict[param]
                     # Enforce bounds
                     value.data.clamp_(lower_bound, upper_bound)
+    # -------------------------------------------------------------------------
+    def enforce_parameters_constraints(self):
+        """Enforce material model-dependent parameters constraints.
+        
+        Only enforces constraints in parameters from material models with
+        explicit learnable parameters.
+        
+        Constraints are enforced by means of in-place parameters updates.
+        
+        """
+        # Get material models
+        material_models = self._specimen_material_state.get_material_models()
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Loop over material models
+        for _, model in material_models.items():
+            # Enforce bounds in models explicit learnable parameters
+            if isinstance(model, HybridModel):
+                # Get hybridized material models
+                submodels = model.get_hybridized_models()
+                # Loop over material submodels
+                for submodel in submodels:
+                    # Check if submodel parameters are collected
+                    is_collect_params = \
+                        (hasattr(submodel, 'is_explicit_parameters')
+                         and submodel.is_explicit_parameters)
+                    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                    # Skip submodel parameters
+                    if not is_collect_params:
+                        continue
+                    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                    # Enforce material model-dependent parameters constraints
+                    submodel.enforce_parameters_constraints()
+            else:
+                # Check if model parameters are collected
+                is_collect_params = (hasattr(model, 'is_explicit_parameters')
+                                     and model.is_explicit_parameters)
+                # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                # Skip model parameters
+                if not is_collect_params:
+                    continue
+                # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                # Enforce material model-dependent parameters constraints
+                model.enforce_parameters_constraints()
     # -------------------------------------------------------------------------
     def set_device(self, device_type):
         """Set device on which torch.Tensor is allocated.
@@ -1661,6 +1708,16 @@ class MaterialModelFinder(torch.nn.Module):
                 elements_coords_hist, elements_disps_hist, strain_formulation,
                 problem_type, element_type, element_material, time_hist)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        for elem in range(elements_state_hist.shape[0]):
+            pass
+            
+            
+            if torch.isnan(elements_internal_forces_hist[elem, :, :]).any():
+                print(f'ERROR - ELEMENT {elem}')
+                
+        
+        
+        
         # Check elements internal forces history
         if torch.isnan(elements_internal_forces_hist).any():
             raise RuntimeError('NaNs were detected in the tensor storing the '
