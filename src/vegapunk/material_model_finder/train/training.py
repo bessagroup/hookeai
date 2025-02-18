@@ -144,13 +144,21 @@ def train_model(n_max_epochs, specimen_data, specimen_material_state,
                             loss_time_weights=loss_time_weights)
     # Set model device
     model.set_device(device_type)
-    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~  
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Move model to device
     model.to(device=device)
     # Set model in training mode
     model.train()
     # Get model parameters
     model_parameters = model.parameters(recurse=True)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Enforce bounds and constraints on model parameters
+    # (only explicit learnable parameters)
+    if is_explicit_model_parameters:
+        # Enforce bounds on model parameters
+        model.enforce_parameters_bounds()
+        # Enforce model-dependent constraints on model parameters
+        model.enforce_parameters_constraints()
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Initialize learning rate
     learning_rate = lr_init
@@ -220,10 +228,13 @@ def train_model(n_max_epochs, specimen_data, specimen_material_state,
         # attribute of model parameters
         optimizer.step()
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        # Enforce bounds on model parameters
+        # Enforce bounds and constraints on model parameters
         # (only explicit learnable parameters)
         if is_explicit_model_parameters:
+            # Enforce bounds on model parameters
             model.enforce_parameters_bounds()
+            # Enforce model-dependent constraints on model parameters
+            model.enforce_parameters_constraints()
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         if is_verbose:
             total_time_sec = time.time() - start_time_sec
