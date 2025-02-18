@@ -1236,7 +1236,8 @@ class LouZhangYoon(ConstitutiveModel):
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Set infinitesimal Lode angle
             if d_lode is None:
-                lode_small = torch.deg2rad(torch.tensor(0.001))
+                lode_small = torch.deg2rad(
+                    torch.tensor(0.001, device=lode_angle.device))
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Compute arc point A deviatoric stress
             lode_angle_a = lode_angle
@@ -1257,8 +1258,12 @@ class LouZhangYoon(ConstitutiveModel):
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             return convex_fun_val
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Get yield parameters device
+        device = yield_c.device
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Set discrete Lode angles
-        lode_angles = torch.deg2rad(torch.linspace(0, 360, steps=1000))
+        lode_angles = torch.deg2rad(
+            torch.linspace(0, 360, steps=1000, device=device))
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Set vectorized convexity function computation (batch along Lode
         # angles)
