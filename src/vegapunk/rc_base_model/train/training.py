@@ -211,7 +211,7 @@ def train_model(n_max_epochs, dataset, model_init_args, lr_init,
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Get model parameters
     model_parameters = model.parameters(recurse=True)
-    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ VALIDATE THIS
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Enforce bounds on model parameters
     model.enforce_parameters_bounds()
     # Enforce model-dependent constraints on model parameters
