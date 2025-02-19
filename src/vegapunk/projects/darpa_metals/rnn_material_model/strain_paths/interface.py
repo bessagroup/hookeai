@@ -129,10 +129,7 @@ class StrainPathGenerator(ABC):
             Strain tensor.
         """
         # Check strain tensor components
-        if not isinstance(strain_comps, np.ndarray):
-            raise RuntimeError('Strain tensor components must be provided as '
-                               'a np.ndarray(1d).')
-        elif len(strain_comps.shape) != 1:
+        if len(strain_comps.shape) != 1:
             raise RuntimeError('Strain tensor components must be provided as '
                                'a np.ndarray(1d).')
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -353,7 +350,7 @@ class StrainPathGenerator(ABC):
         if (is_plot_strain_norm or is_plot_strain_norm_hist):
             # Initialize strain norm data array
             strain_norm_data_xy = np.full((n_time_max, 2*n_path),
-                                            fill_value=np.nan)
+                                           fill_value=np.nan)
             # Loop over strain paths
             for k in range(n_path):     
                 # Loop over time steps
