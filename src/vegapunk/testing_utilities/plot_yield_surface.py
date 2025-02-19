@@ -365,7 +365,7 @@ def plot_yield_surface(models_names, models_parameters, models_sy,
     pi_max = pi_stress_factor*max_sy
     pi_range = pi_max - pi_min
     # Set bounding box padding
-    bbox_padding = 0.05*pi_range
+    bbox_padding = 0.0
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set number of points along each uniform grid dimension
     dimensions=(50, 50, 50)
