@@ -944,14 +944,15 @@ class LinksSimulator:
                 # Set initial proportional loading increments
                 increm_input_lines += \
                     [f'\nINCREMENTS {n_inc}'] \
-                    + n_inc_mon*[f'\n{dfact:>16.8e} {conv_tol} {max_n_iter}']
+                    + n_inc_mon\
+                        *[f'\n1.0 {dfact:>16.8e} {conv_tol} {max_n_iter}']
                 # Loop over loading reversals
                 for _ in range(n_reverse):
                     # Switch loading direction
                     dfact = -dfact
                     # Append proportional loading increments
                     increm_input_lines += dfact_switch*n_inc_mon*[
-                        f'\n{dfact:>16.8e} {conv_tol} {max_n_iter}']
+                        f'\n1.0 {dfact:>16.8e} {conv_tol} {max_n_iter}']
                 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                 # Set null increments until prescribed number of increments
                 # is met

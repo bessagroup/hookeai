@@ -91,7 +91,14 @@ def plot_links_tfact_hist(links_input_file_path, is_stdout_display=False,
             break
         elif is_keyword_found:
             # Get incremental load factor
-            dfact = float(line.split()[1])
+            if len(line.split()) == 3:
+                dfact = float(line.split()[0])
+            elif len(line.split()) == 4:
+                dfact = float(line.split()[1])
+            else:
+                raise RuntimeError(f'Expecting 3 or 4 parameters for each '
+                                   f'increment loading data, but found '
+                                   f'{len(line.split())}.')
             # Store incremental load factor
             dfact_hist[inc, 1] = dfact
             # Store total load factor
