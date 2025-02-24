@@ -15,7 +15,7 @@ import torch
 from simulators.fetorch.material.models.standard.lou import LouZhangYoon
 from ioput.iostandard import make_directory
 # =============================================================================
-# Summary: Pruning procedure of time series data set 
+# Summary: Plot Lou-Zhang-Yoon model convexity boundary
 # =============================================================================
 if __name__ == '__main__':
     # Compute convexity domain boundary
@@ -42,7 +42,7 @@ if __name__ == '__main__':
     # Set model parameters history record file path
     parameters_record_path = ('/home/bernardoferreira/Documents/brown/'
                               'projects/darpa_project/9_local_lou_rc_training/'
-                              '0_standard_training/n20/3_model/'
+                              '1_convexity_return_mapping/n20/3_model/'
                               'parameters_history_record.pkl')
     # Load model parameters history record
     with open(parameters_record_path, 'rb') as parameters_record_file:
@@ -60,12 +60,12 @@ if __name__ == '__main__':
     parameters_paths['optimization'] = parameters_path
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set rectangular search domain boundary
-    rect_search_domain = ((-1.5, 1.5), (-0.5, 0.5))
+    rect_search_domain = ((-3.5, 2.5), (-1.5, 1.5))
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set plots directory
     plots_dir = ('/home/bernardoferreira/Documents/brown/projects/'
-                 'darpa_project/9_local_lou_rc_training/0_standard_training/'
-                 'plots')
+                 'darpa_project/9_local_lou_rc_training/'
+                 '1_convexity_return_mapping/plots')
     # Create plots directory
     if not os.path.isdir(plots_dir):
         make_directory(plots_dir)
