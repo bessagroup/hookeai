@@ -253,13 +253,18 @@ class VonMisesMixedVMAP(ConstitutiveModel):
             torch.zeros((self._n_dim, self._n_dim), device=self._device),
                         self._n_dim, self._comp_order_sym)
         # Initialize state flags
-        state_variables_init['is_plast'] = False
-        state_variables_init['is_su_fail'] = False
+        state_variables_init['is_plast'] = \
+            torch.tensor(False, device=self._device)
+        state_variables_init['is_su_fail'] = \
+            torch.tensor(False, device=self._device)
         # Set additional out-of-plane strain and stress components
         if self._problem_type == 1:
-            state_variables_init['e_strain_33'] = 0.0
-            state_variables_init['stress_33'] = 0.0
-            state_variables_init['back_stress_33'] = 0.0
+            state_variables_init['e_strain_33'] = \
+                torch.tensor(0.0, device=self._device)
+            state_variables_init['stress_33'] = \
+                torch.tensor(0.0, device=self._device)
+            state_variables_init['back_stress_33'] = \
+                torch.tensor(0.0, device=self._device)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Return
         return state_variables_init
@@ -322,9 +327,9 @@ class VonMisesMixedVMAP(ConstitutiveModel):
             back_stress_33_old = state_variables_old['back_stress_33']
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Initialize state update failure flag
-        is_su_fail = False
+        is_su_fail = torch.tensor(False, device=self._device)
         # Initialize plastic step flag
-        is_plast = False
+        is_plast = torch.tensor(False, device=self._device)
         #
         #                                                    2D > 3D conversion
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

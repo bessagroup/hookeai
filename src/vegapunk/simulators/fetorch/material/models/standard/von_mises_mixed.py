@@ -215,13 +215,18 @@ class VonMisesMixed(ConstitutiveModel):
             torch.zeros((self._n_dim, self._n_dim), device=self._device),
                         self._n_dim, self._comp_order_sym)
         # Initialize state flags
-        state_variables_init['is_plast'] = False
-        state_variables_init['is_su_fail'] = False
+        state_variables_init['is_plast'] = \
+            torch.tensor(False, device=self._device)
+        state_variables_init['is_su_fail'] = \
+            torch.tensor(False, device=self._device)
         # Set additional out-of-plane strain and stress components
         if self._problem_type == 1:
-            state_variables_init['e_strain_33'] = 0.0
-            state_variables_init['stress_33'] = 0.0
-            state_variables_init['back_stress_33'] = 0.0
+            state_variables_init['e_strain_33'] = \
+                torch.tensor(0.0, device=self._device)
+            state_variables_init['stress_33'] = \
+                torch.tensor(0.0, device=self._device)
+            state_variables_init['back_stress_33'] = \
+                torch.tensor(0.0, device=self._device)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Return
         return state_variables_init
@@ -284,9 +289,9 @@ class VonMisesMixed(ConstitutiveModel):
             back_stress_33_old = state_variables_old['back_stress_33']
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Initialize state update failure flag
-        is_su_fail = False
+        is_su_fail = torch.tensor(False, device=self._device)
         # Initialize plastic step flag
-        is_plast = False
+        is_plast = torch.tensor(False, device=self._device)
         #
         #                                                    2D > 3D conversion
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -371,7 +376,7 @@ class VonMisesMixed(ConstitutiveModel):
             back_stress_mf = back_stress_old_mf
         else:
             # Set plastic step flag
-            is_plast = True
+            is_plast = torch.tensor(True, device=self._device)
             # Set incremental plastic multiplier initial iterative guess
             inc_p_mult = 0
             # Initialize Newton-Raphson iteration counter
@@ -402,7 +407,7 @@ class VonMisesMixed(ConstitutiveModel):
                     break
                 elif nr_iter == su_max_n_iterations:
                     # Update state update failure flag
-                    is_su_fail = True
+                    is_su_fail = torch.tensor(True, device=self._device)
                     # Leave Newton-Raphson iterative loop (failed solution)
                     break
                 else:
