@@ -262,9 +262,12 @@ class DruckerPragerVMAP(ConstitutiveModel):
         state_variables_init['acc_p_strain'] = \
             torch.tensor(0.0, device=self._device)
         # Initialize state flags
-        state_variables_init['is_plast'] = False
-        state_variables_init['is_su_fail'] = False
-        state_variables_init['is_apex_return'] = False
+        state_variables_init['is_plast'] = \
+            torch.tensor(False, device=self._device)
+        state_variables_init['is_su_fail'] = \
+            torch.tensor(False, device=self._device)
+        state_variables_init['is_apex_return'] = \
+            torch.tensor(False, device=self._device)
         # Set additional out-of-plane strain and stress components
         if self._problem_type == 1:
             state_variables_init['e_strain_33'] = \
@@ -322,8 +325,8 @@ class DruckerPragerVMAP(ConstitutiveModel):
         lam = (E*v)/((1.0 + v)*(1.0 - 2.0*v))
         miu = E/(2.0*(1.0 + v))
         # Compute material parameters
-        alpha = xi/etay
-        beta = xi/etaf
+        alpha = xi/etaf
+        beta = xi/etay
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Get last increment converged state variables
         e_strain_old_mf = state_variables_old['e_strain_mf']
@@ -333,11 +336,11 @@ class DruckerPragerVMAP(ConstitutiveModel):
             e_strain_33_old = state_variables_old['e_strain_33']
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Initialize state update failure flag
-        is_su_fail = False
+        is_su_fail = torch.tensor(False, device=self._device)
         # Initialize plastic step flag
-        is_plast = False
+        is_plast = torch.tensor(False, device=self._device)
         # Initialize return-mapping to apex flag
-        is_apex_return = False
+        is_apex_return = torch.tensor(False, device=self._device)
         #
         #                                                    2D > 3D conversion
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -402,7 +405,7 @@ class DruckerPragerVMAP(ConstitutiveModel):
         yield_function = (torch.sqrt(j2_dev_trial_stress) + etay*trial_pressure
                           - xi*trial_cohesion)
         # Set plastic consistency condition
-        plastic_consistency_cond = yield_function/abs(trial_cohesion) \
+        plastic_consistency_cond = yield_function/torch.abs(trial_cohesion) \
             *torch.ones(2*n_comps + 5, device=self._device) \
                 <= su_conv_tol
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -421,7 +424,7 @@ class DruckerPragerVMAP(ConstitutiveModel):
             is_elastic_step, e_trial_strain_mf, trial_pressure,
             dev_trial_stress_mf, j2_dev_trial_stress, acc_p_strain_old, G, K,
             xi, etay, etaf, alpha, beta, hardening_law, hardening_parameters,
-            soid_mf, su_conv_tol, su_max_n_iterations)
+            soid_mf, su_conv_tol, su_max_n_iterations, small)
         # Pick elastic or plastic step according with plastic consistency
         # condition
         step_output = torch.where(plastic_consistency_cond,
@@ -580,7 +583,7 @@ class DruckerPragerVMAP(ConstitutiveModel):
                       trial_pressure, dev_trial_stress_mf, j2_dev_trial_stress,
                       acc_p_strain_old, G, K, xi, etay, etaf, alpha, beta,
                       hardening_law, hardening_parameters, soid_mf,
-                      su_conv_tol, su_max_n_iterations):
+                      su_conv_tol, su_max_n_iterations, small):
         """Perform plastic step.
         
         Parameters
@@ -626,6 +629,8 @@ class DruckerPragerVMAP(ConstitutiveModel):
             State update convergence tolerance.
         su_max_n_iterations : int
             State update maximum number of iterations.
+        small : float
+            Minimum threshold to handle values close or equal to zero.
 
         Returns
         -------
@@ -649,11 +654,15 @@ class DruckerPragerVMAP(ConstitutiveModel):
             residual = (torch.sqrt(j2_dev_trial_stress) - G*inc_p_mult
                         + etay*(trial_pressure - K*etaf*inc_p_mult)
                         - xi*cohesion)
+            # Compute residual convergence norm
+            conv_norm_residual = \
+                torch.where(torch.abs(cohesion) < small,
+                            torch.abs(residual),
+                            torch.abs(residual/cohesion))
             # Check Newton-Raphson iterative procedure convergence
-            error = torch.abs(residual/torch.abs(cohesion))
             is_converged = torch.where(is_elastic_step,
                                        is_elastic_step,
-                                       error < su_conv_tol)
+                                       conv_norm_residual < su_conv_tol)
             # Compute iterative incremental plastic multiplier
             inc_p_mult = torch.where(is_converged,
                                      inc_p_mult,
@@ -704,7 +713,7 @@ class DruckerPragerVMAP(ConstitutiveModel):
             is_elastic_step, e_trial_strain_mf, trial_pressure,
             dev_trial_stress_mf, acc_p_strain_old, G, K, alpha, beta, H,
             hardening_law, hardening_parameters, soid_mf, su_conv_tol,
-            su_max_n_iterations)
+            su_max_n_iterations, small)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Set return-mapping validity
         cone_surface_cond = torch.logical_not(is_apex_return).expand(
@@ -765,7 +774,7 @@ class DruckerPragerVMAP(ConstitutiveModel):
                            trial_pressure, dev_trial_stress_mf,
                            acc_p_strain_old, G, K, alpha, beta, H,
                            hardening_law, hardening_parameters, soid_mf,
-                           su_conv_tol, su_max_n_iterations):
+                           su_conv_tol, su_max_n_iterations, small):
         """Perform plastic step (return-mapping to cone apex).
 
         Parameters
@@ -805,6 +814,8 @@ class DruckerPragerVMAP(ConstitutiveModel):
             State update convergence tolerance.
         su_max_n_iterations : int
             State update maximum number of iterations.
+        small : float
+            Minimum threshold to handle values close or equal to zero.
 
         Returns
         -------
@@ -824,11 +835,15 @@ class DruckerPragerVMAP(ConstitutiveModel):
                 acc_p_strain_old + alpha*inc_vol_p_strain)
             # Compute return-mapping residual (cone apex) 
             residual = cohesion*beta - (trial_pressure - K*inc_vol_p_strain)
+            # Compute residual convergence norm
+            conv_norm_residual = \
+                torch.where(torch.abs(cohesion) < small,
+                            torch.abs(residual),
+                            torch.abs(residual/cohesion))
             # Check Newton-Raphson iterative procedure convergence
-            error = torch.abs(residual/torch.abs(cohesion))
             is_converged = torch.where(is_elastic_step,
                                        is_elastic_step,
-                                       error < su_conv_tol)
+                                       conv_norm_residual < su_conv_tol)
             # Compute iterative incremental plastic volumetric strain
             inc_vol_p_strain = torch.where(is_converged,
                                            inc_vol_p_strain,

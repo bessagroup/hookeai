@@ -234,9 +234,12 @@ class DruckerPrager(ConstitutiveModel):
         state_variables_init['acc_p_strain'] = \
             torch.tensor(0.0, device=self._device)
         # Initialize state flags
-        state_variables_init['is_plast'] = False
-        state_variables_init['is_su_fail'] = False
-        state_variables_init['is_apex_return'] = False
+        state_variables_init['is_plast'] = \
+            torch.tensor(False, device=self._device)
+        state_variables_init['is_su_fail'] = \
+            torch.tensor(False, device=self._device)
+        state_variables_init['is_apex_return'] = \
+            torch.tensor(False, device=self._device)
         # Set additional out-of-plane strain and stress components
         if self._problem_type == 1:
             state_variables_init['e_strain_33'] = \
@@ -294,8 +297,8 @@ class DruckerPrager(ConstitutiveModel):
         lam = (E*v)/((1.0 + v)*(1.0 - 2.0*v))
         miu = E/(2.0*(1.0 + v))
         # Compute material parameters
-        alpha = xi/etay
-        beta = xi/etaf
+        alpha = xi/etaf
+        beta = xi/etay
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Get last increment converged state variables
         e_strain_old_mf = state_variables_old['e_strain_mf']
@@ -305,11 +308,11 @@ class DruckerPrager(ConstitutiveModel):
             e_strain_33_old = state_variables_old['e_strain_33']
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Initialize state update failure flag
-        is_su_fail = False
+        is_su_fail = torch.tensor(False, device=self._device)
         # Initialize plastic step flag
-        is_plast = False
+        is_plast = torch.tensor(False, device=self._device)
         # Initialize return-mapping to apex flag
-        is_apex_return = False
+        is_apex_return = torch.tensor(False, device=self._device)
         #
         #                                                    2D > 3D conversion
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -372,10 +375,10 @@ class DruckerPrager(ConstitutiveModel):
         yield_function = (torch.sqrt(j2_dev_trial_stress) + etay*trial_pressure
                           - xi*trial_cohesion)
         # Check plastic consistency
-        if torch.is_nonzero(torch.tensor([trial_cohesion])):
-            plastic_consistency = yield_function/abs(trial_cohesion)
-        else:
+        if torch.abs(trial_cohesion) < small:
             plastic_consistency = yield_function
+        else:
+            plastic_consistency = yield_function/torch.abs(trial_cohesion)
         # If the trial stress state lies inside the Druger-Prager yield
         # function, then the state update is purely elastic and coincident with
         # the elastic trial state. Otherwise, the state update is elastoplastic
@@ -390,7 +393,7 @@ class DruckerPrager(ConstitutiveModel):
             acc_p_strain = acc_p_strain_old
         else:
             # Set plastic step flag
-            is_plast = True
+            is_plast = torch.tensor(True, device=self._device)
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Set incremental plastic multiplier initial iterative guess
             inc_p_mult = torch.tensor(0.0, device=self._device)
@@ -418,19 +421,20 @@ class DruckerPrager(ConstitutiveModel):
                 residual = (torch.sqrt(j2_dev_trial_stress) - G*inc_p_mult
                             + etay*(trial_pressure - K*etaf*inc_p_mult)
                             - xi*cohesion)
-                # Check Newton-Raphson iterative procedure convergence
-                if torch.is_nonzero(torch.tensor([cohesion])):
-                    error = abs(residual/torch.abs(cohesion))
+                # Compute residual convergence norm
+                if torch.abs(cohesion) < small:
+                    conv_norm_res = torch.abs(residual)
                 else:
-                    error = abs(residual)
-                is_converged = error < su_conv_tol
+                    conv_norm_res = torch.abs(residual/cohesion)
+                # Check Newton-Raphson iterative procedure convergence
+                is_converged = conv_norm_res < su_conv_tol
                 # Control Newton-Raphson iteration loop flow
                 if is_converged:
                     # Leave Newton-Raphson iterative loop (converged solution)
                     break
                 elif nr_iter == su_max_n_iterations:
                     # Update state update failure flag
-                    is_su_fail = True
+                    is_su_fail = torch.tensor(True, device=self._device)
                     # Leave Newton-Raphson iterative loop (failed solution)
                     break
                 else:
@@ -459,12 +463,12 @@ class DruckerPrager(ConstitutiveModel):
             else:
                 # If convergence of return-mapping to cone surface failed, then
                 # avoid return-mapping to cone apex
-                is_cone_surface = True
+                is_cone_surface = torch.tensor(True, device=self._device)
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Compute return-mapping to cone apex
             if not is_su_fail and not is_cone_surface:
                 # Set return-mapping to apex flag
-                is_apex_return = True
+                is_apex_return = torch.tensor(True, device=self._device)
                 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                 # Set incremental plastic volumetric strain initial iterative
                 # guess
@@ -493,12 +497,13 @@ class DruckerPrager(ConstitutiveModel):
                     # Compute return-mapping residual (cone apex) 
                     residual = \
                         cohesion*beta - (trial_pressure - K*inc_vol_p_strain)
-                    # Check Newton-Raphson iterative procedure convergence
-                    if torch.is_nonzero(torch.tensor([cohesion])):
-                        error = abs(residual/torch.abs(cohesion))
+                    # Compute residual convergence norm
+                    if torch.abs(cohesion) < small:
+                        conv_norm_res = torch.abs(residual)
                     else:
-                        error = abs(residual)
-                    is_converged = error < su_conv_tol
+                        conv_norm_res = torch.abs(residual/cohesion)
+                    # Check Newton-Raphson iterative procedure convergence
+                    is_converged = conv_norm_res < su_conv_tol                    
                     # Control Newton-Raphson iteration loop flow
                     if is_converged:
                         # Leave Newton-Raphson iterative loop (converged
@@ -506,7 +511,7 @@ class DruckerPrager(ConstitutiveModel):
                         break
                     elif nr_iter == su_max_n_iterations:
                         # Update state update failure flag
-                        is_su_fail = True
+                        is_su_fail = torch.tensor(True, device=self._device)
                         # Leave Newton-Raphson iterative loop (failed solution)
                         break
                     else:
