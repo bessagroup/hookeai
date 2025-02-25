@@ -31,6 +31,9 @@ from simulators.fetorch.math.matrixops import get_problem_type_parameters, \
     vget_state_2Dmf_from_3Dmf
 from simulators.fetorch.math.tensorops import get_id_operators, dyad22_1, \
     ddot42_1, ddot24_1, ddot22_1, ddot44_1, fo_dinv_sym
+from utilities.type_conversion import convert_dict_to_tensor, \
+    convert_tensor_to_float64, convert_dict_to_float64, \
+    convert_dict_to_float32
 from ioput.plots import plot_xy_data, save_figure
 #
 #                                                          Authorship & Credits
@@ -107,7 +110,7 @@ class LouZhangYoonApex(ConstitutiveModel):
         Plot convexity domain boundary.
     """
     def __init__(self, strain_formulation, problem_type, model_parameters,
-                 device_type='cpu'):
+                 is_su_float64=True, device_type='cpu'):
         """Constitutive model constructor.
 
         Parameters
@@ -119,6 +122,10 @@ class LouZhangYoonApex(ConstitutiveModel):
             2D axisymmetric (3) and 3D (4).
         model_parameters : dict
             Material constitutive model parameters.
+        is_su_float64 : bool, default=True
+            If True, then state update is locally computed in floating-point
+            double precision. If False, then default floating-point precision
+            is assumed.
         device_type : {'cpu', 'cuda'}, default='cpu'
             Type of device on which torch.Tensor is allocated.
         """
@@ -130,7 +137,11 @@ class LouZhangYoonApex(ConstitutiveModel):
         # Set initialization parameters
         self._strain_formulation = strain_formulation
         self._problem_type = problem_type
-        self._model_parameters = model_parameters
+        self._model_parameters = convert_dict_to_tensor(model_parameters,
+                                                        is_inplace=True)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set state update floating-point precision
+        self._is_su_float64 = is_su_float64
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Set device
         self.set_device(device_type)
@@ -261,12 +272,16 @@ class LouZhangYoonApex(ConstitutiveModel):
         state_variables_init['acc_p_strain'] = \
             torch.tensor(0.0, device=self._device)
         # Initialize state flags
-        state_variables_init['is_plast'] = False
-        state_variables_init['is_su_fail'] = False
+        state_variables_init['is_plast'] = \
+            torch.tensor(False, device=self._device)
+        state_variables_init['is_su_fail'] = \
+            torch.tensor(False, device=self._device)
         # Set additional out-of-plane strain and stress components
         if self._problem_type == 1:
-            state_variables_init['e_strain_33'] = 0.0
-            state_variables_init['stress_33'] = 0.0
+            state_variables_init['e_strain_33'] = \
+                torch.tensor(0.0, device=self._device)
+            state_variables_init['stress_33'] = \
+                torch.tensor(0.0, device=self._device)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         return state_variables_init
     # -------------------------------------------------------------------------
@@ -291,10 +306,30 @@ class LouZhangYoonApex(ConstitutiveModel):
         # Set verbose flag
         is_verbose = False
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Get model parameters
+        model_parameters = self._model_parameters
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Initialize floating-point precision conversion flag
+        is_precision_conversion = False
+        # Handle state update floating-point precision
+        if torch.get_default_dtype() == torch.float32 and self._is_su_float64:
+            # Set floating-point precision conversion flag
+            is_precision_conversion = True
+            # Set default floating-point precision
+            torch.set_default_dtype(torch.float64)
+            # Perform floating-point precision conversion
+            model_parameters = convert_dict_to_float64(model_parameters,
+                                                       is_inplace=False)
+            inc_strain = convert_tensor_to_float64(inc_strain)
+            state_variables_old = convert_dict_to_float64(state_variables_old,
+                                                          is_inplace=False)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Set state update convergence tolerance
         su_conv_tol = 1e-6
         # Set state update maximum number of iterations
         su_max_n_iterations = 20
+        # Set minimum threshold to handle values close or equal to zero
+        small = 1e-8
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Build incremental strain tensor matricial form
         inc_strain_mf = vget_tensor_mf(inc_strain, self._n_dim,
@@ -302,27 +337,22 @@ class LouZhangYoonApex(ConstitutiveModel):
                                        device=self._device)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Get material properties
-        E = self._model_parameters['E']
-        v = self._model_parameters['v']
+        E = model_parameters['E']
+        v = model_parameters['v']
         # Get material isotropic strain hardening law
-        hardening_law = self._model_parameters['hardening_law']
-        hardening_parameters = self._model_parameters['hardening_parameters']
+        hardening_law = model_parameters['hardening_law']
+        hardening_parameters = model_parameters['hardening_parameters']
         # Get yield parameters hardening laws
-        a_hardening_law = self._model_parameters['a_hardening_law']
-        a_hardening_parameters = \
-            self._model_parameters['a_hardening_parameters']
-        b_hardening_law = self._model_parameters['b_hardening_law']
-        b_hardening_parameters = \
-            self._model_parameters['b_hardening_parameters']
-        c_hardening_law = self._model_parameters['c_hardening_law']
-        c_hardening_parameters = \
-            self._model_parameters['c_hardening_parameters']
-        d_hardening_law = self._model_parameters['d_hardening_law']
-        d_hardening_parameters = \
-            self._model_parameters['d_hardening_parameters']
+        a_hardening_law = model_parameters['a_hardening_law']
+        a_hardening_parameters = model_parameters['a_hardening_parameters']
+        b_hardening_law = model_parameters['b_hardening_law']
+        b_hardening_parameters = model_parameters['b_hardening_parameters']
+        c_hardening_law = model_parameters['c_hardening_law']
+        c_hardening_parameters = model_parameters['c_hardening_parameters']
+        d_hardening_law = model_parameters['d_hardening_law']
+        d_hardening_parameters = model_parameters['d_hardening_parameters']
         # Get hardening rule associativity
-        is_associative_hardening = \
-            self._model_parameters['is_associative_hardening']
+        is_associative_hardening = model_parameters['is_associative_hardening']
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Compute bulk and shear modulus
         K = E/(3.0*(1.0 - 2.0*v))
@@ -341,7 +371,8 @@ class LouZhangYoonApex(ConstitutiveModel):
         # Get Drucker-Prager pressure and cohesion equivalent parameters
         etay = 3.0*yield_a_init*yield_b_init
         xi = (2.0*math.sqrt(3)/3.0)*torch.sqrt(1.0 - (1.0/3.0)*etay**2)
-        # Compute additional material parameter
+        # Compute yield parameter equivalent to Drucker-Prager ratio between
+        # yield surface cohesion parameter and yield surface pressure parameter
         alpha = xi/etay
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Get last increment converged state variables
@@ -352,9 +383,9 @@ class LouZhangYoonApex(ConstitutiveModel):
             e_strain_33_old = state_variables_old['e_strain_33']
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Initialize state update failure flag
-        is_su_fail = False
+        is_su_fail = torch.tensor(False, device=self._device)
         # Initialize plastic step flag
-        is_plast = False
+        is_plast = torch.tensor(False, device=self._device)
         #
         #                                                    2D > 3D conversion
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -433,7 +464,7 @@ class LouZhangYoonApex(ConstitutiveModel):
             acc_p_strain = acc_p_strain_old
         else:
             # Set plastic step flag
-            is_plast = True
+            is_plast = torch.tensor(True, device=self._device)
             # Get elastic trial strain tensor
             e_trial_strain = vget_tensor_from_mf(e_trial_strain_mf, n_dim,
                                                  comp_order_sym,
@@ -471,7 +502,7 @@ class LouZhangYoonApex(ConstitutiveModel):
                 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                 # Initialize norm of iterative solution vector (convergence
                 # check)
-                diter_norm = 0.0
+                diter_norm = torch.tensor(0.0, device=self._device)
                 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                 if is_verbose:
                     print(f'\n\nPlastic Increment - Newton-Raphson')
@@ -498,10 +529,11 @@ class LouZhangYoonApex(ConstitutiveModel):
                         - (trial_pressure - K*inc_vol_p_strain)
                     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~  
                     # Compute residual convergence norm
-                    if torch.is_nonzero(torch.tensor([yield_stress])):
-                        conv_norm_res = abs(residual/torch.abs(yield_stress))
+                    if torch.abs(yield_stress) < small:
+                        conv_norm_res = torch.abs(residual)
                     else:
-                        conv_norm_res = abs(residual)
+                        conv_norm_res = \
+                            torch.abs(residual)/torch.abs(yield_stress)
                     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                     # Display iterative residuals
                     if is_verbose:
@@ -510,6 +542,7 @@ class LouZhangYoonApex(ConstitutiveModel):
                     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                     # Check Newton-Raphson iterative procedure convergence 
                     is_converged = (conv_norm_res < su_conv_tol
+                                    and diter_norm < su_conv_tol
                                     and nr_iter > 0)
                     # Control Newton-Raphson iteration loop flow
                     if is_converged:
@@ -524,7 +557,7 @@ class LouZhangYoonApex(ConstitutiveModel):
                         if is_verbose:
                             print(f'{"Solution convergence failure!":^74s}')
                         # Update state update failure flag
-                        is_su_fail = True
+                        is_su_fail = torch.tensor(True, device=self._device)
                         # Leave Newton-Raphson iterative loop (failed solution)
                         break
                     else:
@@ -553,18 +586,19 @@ class LouZhangYoonApex(ConstitutiveModel):
                 acc_p_strain = acc_p_strain_old + alpha*inc_vol_p_strain
             else:
                 # Compute initial yield stress
-                init_yield_stress, _ = \
-                    hardening_law(hardening_parameters, acc_p_strain=0.0)
+                init_yield_stress, _ = hardening_law(
+                    hardening_parameters,
+                    acc_p_strain=torch.tensor(0.0, device=self._device))
                 # Set unknowns initial iterative guess
                 e_strain = e_trial_strain
                 acc_p_strain = acc_p_strain_old
-                inc_p_mult = 0
+                inc_p_mult = torch.tensor(0.0, device=self._device)
                 # Initialize Newton-Raphson iteration counter
                 nr_iter = 0
                 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                 # Initialize norm of iterative solution vector (convergence
                 # check)
-                diter_norm = 0.0
+                diter_norm = torch.tensor(0.0, device=self._device)
                 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                 if is_verbose:
                     print(f'\n\nPlastic Increment - Newton-Raphson')
@@ -613,9 +647,12 @@ class LouZhangYoonApex(ConstitutiveModel):
                     residual = torch.cat((r1, r2, r3), dim=0)
                     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                     # Compute residuals convergence norm
-                    conv_norm_res_1 = (torch.linalg.norm(residual_1)/
-                                       torch.linalg.norm(e_trial_strain))
-                    if abs(acc_p_strain_old) < 1e-8:
+                    if torch.linalg.norm(e_trial_strain) < small:
+                        conv_norm_res_1 = torch.linalg.norm(residual_1)
+                    else:
+                        conv_norm_res_1 = (torch.linalg.norm(residual_1)/
+                                           torch.linalg.norm(e_trial_strain))
+                    if abs(acc_p_strain_old) < small:
                         conv_norm_res_2 = abs(residual_2)
                     else:
                         conv_norm_res_2 = abs(residual_2/acc_p_strain_old)
@@ -649,7 +686,7 @@ class LouZhangYoonApex(ConstitutiveModel):
                         if is_verbose:
                             print(f'{"Solution convergence failure!":^74s}')
                         # Update state update failure flag
-                        is_su_fail = True
+                        is_su_fail = torch.tensor(True, device=self._device)
                         # Leave Newton-Raphson iterative loop (failed solution)
                         break
                     else:
@@ -752,7 +789,14 @@ class LouZhangYoonApex(ConstitutiveModel):
         if self._problem_type == 1 and consistent_tangent_mf is not None:
             consistent_tangent_mf = vget_state_2Dmf_from_3Dmf(
                 consistent_tangent_mf, device=self._device)
-        #
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Restore floating-point precision
+        if is_precision_conversion:
+            # Reset default floating-point precision
+            torch.set_default_dtype(torch.float32)
+            # Perform floating-point precision conversion
+            state_variables = convert_dict_to_float32(state_variables,
+                                                      is_inplace=True)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         return state_variables, consistent_tangent_mf
     # -------------------------------------------------------------------------
