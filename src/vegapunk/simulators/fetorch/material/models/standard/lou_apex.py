@@ -94,6 +94,17 @@ class LouZhangYoonApex(ConstitutiveModel):
                  yield_c, c_hard_slope, yield_d, d_hard_slope, \
                  e_consistent_tangent, is_associative_hardening=False)
         Compute state update Jacobian matrix.
+    get_residual_and_jacobian(self, n_dim, comp_order_sym, e_strain, \
+                              e_trial_strain, acc_p_strain, \
+                              acc_p_strain_old, inc_p_mult, \
+                              e_consistent_tangent, init_yield_stress, \
+                              hardening_law, hardening_parameters, \
+                              a_hardening_law, a_hardening_parameters, \
+                              b_hardening_law, b_hardening_parameters, \
+                              c_hardening_law, c_hardening_parameters, \
+                              d_hardening_law, d_hardening_parameters, \
+                              is_associative_hardening=False)
+        Compute state update residuals and Jacobian matrix.
     convexity_return_mapping(cls, yield_c, yield_d)
         Perform convexity return-mapping.
     compute_convex_boundary(cls, n_theta=360)
@@ -1195,6 +1206,268 @@ class LouZhangYoonApex(ConstitutiveModel):
                               torch.cat((j31, j32, j33), dim=1)), dim=0)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         return jacobian
+    # -------------------------------------------------------------------------
+    def get_residual_and_jacobian(self, n_dim, comp_order_sym, e_strain,
+                                  e_trial_strain, acc_p_strain,
+                                  acc_p_strain_old, inc_p_mult,
+                                  e_consistent_tangent, init_yield_stress,
+                                  hardening_law, hardening_parameters,
+                                  a_hardening_law, a_hardening_parameters,
+                                  b_hardening_law, b_hardening_parameters,
+                                  c_hardening_law, c_hardening_parameters,
+                                  d_hardening_law, d_hardening_parameters,
+                                  is_associative_hardening=False):
+        """Compute state update residuals and Jacobian matrix.
+        
+        Parameters
+        ----------
+        n_dim : int
+            Problem number of spatial dimensions.
+        comp_order_sym : list
+            Strain/Stress components symmetric order.
+        e_strain : torch.Tensor(2d)
+            Elastic strain.
+        e_trial_strain : torch.Tensor(2d)
+            Elastic trial strain.
+        acc_p_strain : torch.Tensor(0d)
+            Accumulated plastic strain.
+        acc_p_strain_old : torch.Tensor(0d)
+            Last converged accumulated plastic strain.
+        inc_p_mult : torch.Tensor(0d)
+            Incremental plastic multiplier.
+        e_consistent_tangent : torch.Tensor(4d)
+            Elastic consistent tangent modulus.
+        init_yield_stress : torch.Tensor(0d)
+            Initial yield stress.
+        hardening_law : function
+            Hardening law.
+        hardening_parameters : dict
+            Hardening law parameters.
+        a_hardening_law : function
+            Yield parameter hardening law.
+        a_hardening_parameters : function
+            Yield parameter hardening law parameters.
+        b_hardening_law : function
+            Yield parameter hardening law.
+        b_hardening_parameters : function
+            Yield parameter hardening law parameters.
+        c_hardening_law : function
+            Yield parameter hardening law.
+        c_hardening_parameters : function
+            Yield parameter hardening law parameters.
+        d_hardening_law : function
+            Yield parameter hardening law.
+        d_hardening_parameters : function
+            Yield parameter hardening law parameters.
+        is_associative_hardening : bool, default=False
+            If True, then adopt associative hardening rule.
+
+        Returns
+        -------
+        residual_1 : torch.Tensor(2d)
+            First residual.
+        residual_2 : torch.Tensor(2d)
+            Second residual.
+        residual_3 : torch.Tensor(2d)
+            Third residual.
+        jacobian : torch.Tensor(2d)
+            Jacobian matrix.
+        """
+        # Set required fourth-order tensors
+        soid, _, _, fosym, _, _, fodevprojsym = \
+            get_id_operators(n_dim, device=self._device)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Compute stress
+        stress = ddot42_1(e_consistent_tangent, e_strain)
+        # Compute current yield stress and hardening modulus
+        yield_stress, hard_slope = \
+            hardening_law(hardening_parameters, acc_p_strain)
+        # Compute current yield parameters and hardening moduli
+        yield_a, a_hard_slope = \
+            a_hardening_law(a_hardening_parameters, acc_p_strain)
+        yield_b, b_hard_slope = \
+            b_hardening_law(b_hardening_parameters, acc_p_strain)
+        yield_c, c_hard_slope = \
+            c_hardening_law(c_hardening_parameters, acc_p_strain)
+        yield_d, d_hard_slope = \
+            d_hardening_law(d_hardening_parameters, acc_p_strain)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Compute deviatoric stress tensor
+        dev_stress = ddot42_1(fodevprojsym, stress)
+        # Compute determinant of deviatoric stress tensor
+        dev_stress_det = torch.det(dev_stress)
+        # Compute inverse of deviatoric stress tensor
+        dev_stress_inv = torch.inverse(dev_stress)
+        # Compute derivative of inverse of deviatoric strss tensor w.r.t itself
+        ddsinv_ddsinv = fo_dinv_sym(dev_stress_inv)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Compute auxiliary term
+        w6 = ddot24_1(dev_stress_inv, fodevprojsym)
+        # Compute auxiliary term derivative
+        dw6_dstress = \
+            (ddsinv_ddsinv - (1/3)*ddot44_1(
+                dyad22_1(soid, ddot24_1(soid, ddsinv_ddsinv)), fodevprojsym))
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Compute stress invariants
+        i1, _, _, _, j2, j3 = self.get_stress_invariants(stress)
+        # Compute derivatives w.r.t. stress
+        di1_dstress = soid
+        dj2_dstress = dev_stress
+        dj3_dstress = dev_stress_det*w6
+        # Compute second-order derivatives w.r.t. stress
+        d2j2_dstress2 = fodevprojsym
+        d2j3_dstress2 = dyad22_1(w6, dj3_dstress) + dev_stress_det*dw6_dstress
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Compute auxiliary terms
+        w1 = yield_b*i1
+        w2 = yield_c*(j3**2)
+        w3 = yield_d*j3
+        w4 = j2**3 - w2
+        w5 = w4**(1/2) - w3
+        # Compute auxiliary terms derivatives w.r.t. stress
+        dw1_dstress = yield_b*di1_dstress
+        dw2_dstress = 2*yield_c*j3*dj3_dstress
+        dw3_dstress = yield_d*dj3_dstress
+        dw4_dstress = 3*(j2**2)*dj2_dstress - dw2_dstress
+        dw5_dstress = (1/2)*(w4**(-1/2))*dw4_dstress - dw3_dstress
+        # Compute auxiliary terms second-order derivatives w.r.t. stress
+        d2w2_dstress2 = 2*yield_c*(dyad22_1(dj3_dstress, dj3_dstress)
+                                   + j3*d2j3_dstress2)
+        d2w3_dstress2 = yield_d*d2j3_dstress2
+        d2w4_dstress2 = (6*j2*dyad22_1(dj2_dstress, dj2_dstress)
+                         + 3*(j2**2)*d2j2_dstress2 - d2w2_dstress2)
+        d2w5_dstress2 = (-(1/4)*(w4**(-3/2))*dyad22_1(dw4_dstress, dw4_dstress)
+                         + (1/2)*(w4**(-1/2))*d2w4_dstress2 - d2w3_dstress2)
+        # Compute auxiliary terms derivatives w.r.t. accumulated plastic strain
+        dw1_daccpstr = i1*b_hard_slope
+        dw2_daccpstr = (j3**2)*c_hard_slope
+        dw3_daccpstr = j3*d_hard_slope
+        dw4_daccpstr = -dw2_daccpstr
+        dw5_daccpstr = (1/2)*(w4**(-1/2))*dw4_daccpstr - dw3_daccpstr
+        # Compute auxiliary terms cross derivatives w.r.t. stress and
+        # accumulated plastic strain
+        d2w1_daccpstrdstress = b_hard_slope*soid
+        d2w2_daccpstrdstress = 2*j3*c_hard_slope*dj3_dstress
+        d2w3_daccpstrdstress = d_hard_slope*dj3_dstress
+        d2w4_daccpstrdstress = -d2w2_daccpstrdstress
+        d2w5_daccpstrdstress = (-(1/4)*(w4**(-3/2))*dw4_daccpstr*dw4_dstress
+                                + (1/2)*(w4**(-1/2))*d2w4_daccpstrdstress
+                                - d2w3_daccpstrdstress)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Compute effective stress
+        effective_stress = yield_a*(w1 + (w5**(1/3)))
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Compute flow vector
+        flow_vector = yield_a*(dw1_dstress + (1/3)*(w5**(-2/3))*dw5_dstress)
+        # Compute flow vector norm
+        norm_flow_vector = torch.linalg.norm(flow_vector)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Compute first residual
+        residual_1 = e_strain - e_trial_strain + inc_p_mult*flow_vector
+        # Compute second residual
+        if is_associative_hardening:
+            residual_2 = acc_p_strain - acc_p_strain_old - inc_p_mult
+        else:
+            residual_2 = (acc_p_strain - acc_p_strain_old
+                          - inc_p_mult*(math.sqrt(2/3))*norm_flow_vector)
+        # Compute third residual
+        residual_3 = (effective_stress - yield_stress)/init_yield_stress
+        
+        
+        
+        
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Compute derivative of flow vector w.r.t. stress
+        dflow_dstress = (1/3)*yield_a*(
+            -(2/3)*(w5**(-5/3))*dyad22_1(dw5_dstress, dw5_dstress)
+            + (w5**(-2/3))*d2w5_dstress2)
+        # Compute derivative of flow vector w.r.t. elastic strain
+        dflow_destrain = ddot44_1(dflow_dstress, e_consistent_tangent)
+        # Compute derivative of flow vector w.r.t. accumulated plastic strain
+        dflow_daccpstr = (
+            a_hard_slope*(dw1_dstress + (1/3)*(w5**(-2/3))*dw5_dstress)
+            + yield_a*(d2w1_daccpstrdstress
+                       - (2/9)*(w5**(-5/3))*dw5_daccpstr*dw5_dstress
+                       + (1/3)*(w5**(-2/3))*d2w5_daccpstrdstress))
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Compute derivative of effective stress w.r.t. elastic strain
+        deff_destrain = ddot24_1(flow_vector, e_consistent_tangent)
+        # Compute derivative of effective stress w.r.t. accumulated plastic
+        # strain
+        deff_daccpstr = (
+            a_hard_slope*(w1 + w5**(-1/3))
+            + yield_a*(dw1_daccpstr + (1/3)*w5**(-2/3)*dw5_daccpstr))
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Compute derivative of first residual w.r.t. to elastic strain
+        dr1_destrain = fosym + inc_p_mult*dflow_destrain
+        # Compute derivative of first residual w.r.t. to accumulated plastic
+        # strain
+        dr1_daccpstr = inc_p_mult*dflow_daccpstr
+        # Compute derivative of first residual w.r.t. to incremental plastic
+        # multiplier
+        dr1_dincpm = flow_vector
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Compute derivatives of second residual
+        if is_associative_hardening:
+            # Compute derivative of second residual w.r.t. to elastic strain
+            dr2_destrain = torch.zeros_like(flow_vector, device=self._device)
+            # Compute derivative of second residual w.r.t. to accumulated
+            # plastic strain
+            dr2_daccpstr = torch.tensor(1.0, device=self._device)
+            # Compute derivative of second residual w.r.t. to incremental
+            # plastic multiplier
+            dr2_dincpm = torch.tensor(-1.0, device=self._device)
+        else:
+            # Compute derivative of second residual w.r.t. to elastic strain
+            dr2_destrain = \
+                -inc_p_mult*math.sqrt(2/3)*(1/norm_flow_vector)*ddot24_1(
+                    flow_vector, dflow_destrain)
+            # Compute derivative of second residual w.r.t. to accumulated
+            # plastic strain
+            dr2_daccpstr = \
+                1.0 - inc_p_mult*math.sqrt(2/3)*(1/norm_flow_vector)*ddot22_1(
+                    flow_vector, dflow_daccpstr)
+            # Compute derivative of second residual w.r.t. to incremental
+            # plastic multiplier
+            dr2_dincpm = -math.sqrt(2/3)*norm_flow_vector
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Compute derivative of third residual w.r.t. to elastic strain
+        dr3_destrain = (1/init_yield_stress)*deff_destrain
+        # Compute derivative of third residual w.r.t. to accumulated plastic
+        # strain
+        dr3_daccpstr = (1/init_yield_stress)*(deff_daccpstr - hard_slope)
+        # Compute derivative of third residual w.r.t. to incremental plastic
+        # multiplier
+        dr3_dincpm = torch.tensor(0.0, device=self._device)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Build first residual derivatives matrices
+        j11 = vget_tensor_mf(dr1_destrain, n_dim, comp_order_sym,
+                             is_kelvin_notation=True, device=self._device)
+        j12 = vget_tensor_mf(dr1_daccpstr, n_dim, comp_order_sym,
+                             is_kelvin_notation=True,
+                             device=self._device).reshape(-1, 1)
+        j13 = vget_tensor_mf(dr1_dincpm, n_dim, comp_order_sym,
+                             is_kelvin_notation=True,
+                             device=self._device).reshape(-1, 1)
+        # Build second residual derivatives matrices
+        j21 = vget_tensor_mf(dr2_destrain, n_dim, comp_order_sym,
+                             is_kelvin_notation=True,
+                             device=self._device).reshape(1, -1)
+        j22 = dr2_daccpstr.reshape(1, 1)
+        j23 = dr2_dincpm.reshape(1, 1)
+        # Build third residual derivatives matrices
+        j31 = vget_tensor_mf(dr3_destrain, n_dim, comp_order_sym,
+                             is_kelvin_notation=True,
+                             device=self._device).reshape(1, -1)
+        j32 = dr3_daccpstr.reshape(1, 1)
+        j33 = dr3_dincpm.reshape(1, 1)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Build Jacobian matrix
+        jacobian = torch.cat((torch.cat((j11, j12, j13), dim=1),
+                              torch.cat((j21, j22, j23), dim=1),
+                              torch.cat((j31, j32, j33), dim=1)), dim=0)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        return residual_1, residual_2, residual_3, jacobian
     # -------------------------------------------------------------------------
     @classmethod
     def convexity_return_mapping(cls, yield_c, yield_d):
