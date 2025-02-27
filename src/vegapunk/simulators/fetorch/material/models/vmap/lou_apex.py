@@ -64,7 +64,7 @@ __status__ = 'Planning'
 # =============================================================================
 #
 # =============================================================================
-class LouZhangYoonApexVMAP(ConstitutiveModel):
+class LouZhangYoonVMAP(ConstitutiveModel):
     """Lou-Zhang-Yoon model with general differentiable yield function.
 
     Compatible with vectorized mapping.

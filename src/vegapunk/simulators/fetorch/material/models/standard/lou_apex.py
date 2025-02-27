@@ -44,7 +44,7 @@ __status__ = 'Stable'
 # =============================================================================
 #
 # =============================================================================
-class LouZhangYoonApex(ConstitutiveModel):
+class LouZhangYoon(ConstitutiveModel):
     """Lou-Zhang-Yoon model with general differentiable yield function.
 
     Attributes
