@@ -619,35 +619,19 @@ class LouZhangYoonApex(ConstitutiveModel):
                 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                 # Start Newton-Raphson iterative loop
                 while True:
-                    # Compute current stress
-                    stress = ddot42_1(e_consistent_tangent, e_strain)
-                    # Compute current yield stress and hardening modulus
-                    yield_stress, hard_slope = \
-                        hardening_law(hardening_parameters, acc_p_strain)
-                    # Compute current yield parameters and hardening moduli
-                    yield_a, a_hard_slope = \
-                        a_hardening_law(a_hardening_parameters, acc_p_strain)
-                    yield_b, b_hard_slope = \
-                        b_hardening_law(b_hardening_parameters, acc_p_strain)
-                    yield_c, c_hard_slope = \
-                        c_hardening_law(c_hardening_parameters, acc_p_strain)
-                    yield_d, d_hard_slope = \
-                        d_hardening_law(d_hardening_parameters, acc_p_strain)
-                    # Compute effective stress
-                    effective_stress = self.get_effective_stress(
-                        stress, yield_a, yield_b, yield_c, yield_d)
-                    # Compute current flow vector and norm
-                    flow_vector = self.get_flow_vector(
-                        stress, yield_a, yield_b, yield_c, yield_d)
-                    norm_flow_vector = torch.linalg.norm(flow_vector)
+                    # Compute return-mapping residuals and Jacobian
+                    residual_1, residual_2, residual_3, jacobian = \
+                        self.get_residual_and_jacobian(
+                            n_dim, comp_order_sym, e_strain, e_trial_strain,
+                            acc_p_strain, acc_p_strain_old, inc_p_mult,
+                            e_consistent_tangent, init_yield_stress,
+                            hardening_law, hardening_parameters,
+                            a_hardening_law, a_hardening_parameters,
+                            b_hardening_law, b_hardening_parameters,
+                            c_hardening_law, c_hardening_parameters,
+                            d_hardening_law, d_hardening_parameters,
+                            is_associative_hardening=is_associative_hardening) 
                     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-                    # Compute residuals
-                    residual_1, residual_2, residual_3 = self.get_residual(
-                        e_strain, e_trial_strain, acc_p_strain,
-                        acc_p_strain_old, inc_p_mult, effective_stress,
-                        yield_stress, init_yield_stress, flow_vector,
-                        norm_flow_vector,
-                        is_associative_hardening=is_associative_hardening)
                     # Build residuals matrices
                     r1 = vget_tensor_mf(residual_1, n_dim, comp_order_sym,
                                         is_kelvin_notation=True,
@@ -704,14 +688,6 @@ class LouZhangYoonApex(ConstitutiveModel):
                         # Increment iteration counter
                         nr_iter = nr_iter + 1
                     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-                    # Compute return-mapping Jacobian
-                    jacobian = self.get_jacobian(
-                        n_dim, comp_order_sym, stress, inc_p_mult, flow_vector,
-                        norm_flow_vector, init_yield_stress, hard_slope,
-                        yield_a, a_hard_slope, yield_b, b_hard_slope, yield_c,
-                        c_hard_slope, yield_d, d_hard_slope,
-                        e_consistent_tangent,
-                        is_associative_hardening=is_associative_hardening)
                     # Solve return-mapping linearized equation
                     d_iter = torch.linalg.solve(jacobian, -residual)
                     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -869,19 +845,21 @@ class LouZhangYoonApex(ConstitutiveModel):
             
         Returns
         -------
-        effective_stress : torch.Tensor(2d)
+        effective_stress : torch.Tensor(0d)
             Effective stress.
         """
         # Compute stress invariants
         i1, _, _, _, j2, j3 = self.get_stress_invariants(stress)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Compute auxiliary terms
-        aux_1 = yield_b*i1
-        aux_2 = j2**3 - yield_c*(j3**2)
-        aux_3 = yield_d*j3
+        w1 = yield_b*i1
+        w2 = yield_c*(j3**2)
+        w3 = yield_d*j3
+        w4 = j2**3 - w2
+        w5 = w4**(1/2) - w3
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Compute effective stress
-        effective_stress = yield_a*(aux_1 + (aux_2**(1/2) - aux_3)**(1/3))
+        effective_stress = yield_a*(w1 + (w5**(1/3)))
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         return effective_stress
     # -------------------------------------------------------------------------
@@ -1372,10 +1350,6 @@ class LouZhangYoonApex(ConstitutiveModel):
                           - inc_p_mult*(math.sqrt(2/3))*norm_flow_vector)
         # Compute third residual
         residual_3 = (effective_stress - yield_stress)/init_yield_stress
-        
-        
-        
-        
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Compute derivative of flow vector w.r.t. stress
         dflow_dstress = (1/3)*yield_a*(
@@ -1395,8 +1369,8 @@ class LouZhangYoonApex(ConstitutiveModel):
         # Compute derivative of effective stress w.r.t. accumulated plastic
         # strain
         deff_daccpstr = (
-            a_hard_slope*(w1 + w5**(-1/3))
-            + yield_a*(dw1_daccpstr + (1/3)*w5**(-2/3)*dw5_daccpstr))
+            a_hard_slope*(w1 + w5**(1/3))
+            + yield_a*(dw1_daccpstr + (1/3)*(w5**(-2/3))*dw5_daccpstr))
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Compute derivative of first residual w.r.t. to elastic strain
         dr1_destrain = fosym + inc_p_mult*dflow_destrain
@@ -1432,10 +1406,10 @@ class LouZhangYoonApex(ConstitutiveModel):
             dr2_dincpm = -math.sqrt(2/3)*norm_flow_vector
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Compute derivative of third residual w.r.t. to elastic strain
-        dr3_destrain = (1/init_yield_stress)*deff_destrain
+        dr3_destrain = (1.0/init_yield_stress)*deff_destrain
         # Compute derivative of third residual w.r.t. to accumulated plastic
         # strain
-        dr3_daccpstr = (1/init_yield_stress)*(deff_daccpstr - hard_slope)
+        dr3_daccpstr = (1.0/init_yield_stress)*(deff_daccpstr - hard_slope)
         # Compute derivative of third residual w.r.t. to incremental plastic
         # multiplier
         dr3_dincpm = torch.tensor(0.0, device=self._device)
@@ -1468,6 +1442,180 @@ class LouZhangYoonApex(ConstitutiveModel):
                               torch.cat((j31, j32, j33), dim=1)), dim=0)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         return residual_1, residual_2, residual_3, jacobian
+    # -------------------------------------------------------------------------
+    def get_numerical_jacobian(self, n_dim, comp_order_sym, e_strain,
+                               e_trial_strain, acc_p_strain,
+                               acc_p_strain_old, inc_p_mult,
+                               e_consistent_tangent, init_yield_stress,
+                               hardening_law, hardening_parameters,
+                               a_hardening_law, a_hardening_parameters,
+                               b_hardening_law, b_hardening_parameters,
+                               c_hardening_law, c_hardening_parameters,
+                               d_hardening_law, d_hardening_parameters,
+                               is_associative_hardening=False,
+                               is_verbose=False):
+        """Compute state update Jacobian matrix with finite differences.
+        
+        Parameters
+        ----------
+        n_dim : int
+            Problem number of spatial dimensions.
+        comp_order_sym : list
+            Strain/Stress components symmetric order.
+        e_strain : torch.Tensor(2d)
+            Elastic strain.
+        e_trial_strain : torch.Tensor(2d)
+            Elastic trial strain.
+        acc_p_strain : torch.Tensor(0d)
+            Accumulated plastic strain.
+        acc_p_strain_old : torch.Tensor(0d)
+            Last converged accumulated plastic strain.
+        inc_p_mult : torch.Tensor(0d)
+            Incremental plastic multiplier.
+        e_consistent_tangent : torch.Tensor(4d)
+            Elastic consistent tangent modulus.
+        init_yield_stress : torch.Tensor(0d)
+            Initial yield stress.
+        hardening_law : function
+            Hardening law.
+        hardening_parameters : dict
+            Hardening law parameters.
+        a_hardening_law : function
+            Yield parameter hardening law.
+        a_hardening_parameters : function
+            Yield parameter hardening law parameters.
+        b_hardening_law : function
+            Yield parameter hardening law.
+        b_hardening_parameters : function
+            Yield parameter hardening law parameters.
+        c_hardening_law : function
+            Yield parameter hardening law.
+        c_hardening_parameters : function
+            Yield parameter hardening law parameters.
+        d_hardening_law : function
+            Yield parameter hardening law.
+        d_hardening_parameters : function
+            Yield parameter hardening law parameters.
+        is_associative_hardening : bool, default=False
+            If True, then adopt associative hardening rule.
+        is_verbose : bool, default=False
+            If True, enable verbose output.
+
+        Returns
+        -------
+        num_jacobian : torch.Tensor(2d)
+            Jacobian matrix.
+        """
+        # Get number of components
+        n_comp = len(comp_order_sym)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set base elastic strain (matricial form)
+        base_e_strain_mf = \
+            vget_tensor_mf(e_strain, n_dim, comp_order_sym,
+                           is_kelvin_notation=True, device=self._device)
+        # Set base accumulated plastic strain
+        base_acc_p_strain = acc_p_strain
+        # Set base incremental plastic multiplier
+        base_inc_p_mult = inc_p_mult
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Compute base residuals
+        base_residual_1, base_residual_2, base_residual_3, jacobian = \
+            self.get_residual_and_jacobian(
+                n_dim, comp_order_sym, e_strain, e_trial_strain,
+                acc_p_strain, acc_p_strain_old, inc_p_mult,
+                e_consistent_tangent, init_yield_stress,
+                hardening_law, hardening_parameters,
+                a_hardening_law, a_hardening_parameters,
+                b_hardening_law, b_hardening_parameters,
+                c_hardening_law, c_hardening_parameters,
+                d_hardening_law, d_hardening_parameters,
+                is_associative_hardening=is_associative_hardening)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Build base residuals (matricial form)
+        base_r1_mf = vget_tensor_mf(base_residual_1, n_dim, comp_order_sym,
+                                    is_kelvin_notation=True,
+                                    device=self._device)
+        base_r2 = base_residual_2.reshape(-1)
+        base_r3 = base_residual_3.reshape(-1)
+        # Build base residual vector (matricial form)
+        base_residual_mf = torch.cat((base_r1_mf, base_r2, base_r3), dim=0)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set perturbation
+        delta = torch.tensor(1e-6)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Initialize numerical Jacobian
+        num_jacobian = torch.zeros_like(jacobian)
+        # Loop over components
+        for i in range(n_comp + 2):
+            # Initialize perturbed elastic strain (matricial form)
+            pert_e_strain_mf = base_e_strain_mf.clone()
+            # Initialize perturbed accumulated plastic strain
+            pert_acc_p_strain = base_acc_p_strain.clone()
+            # Initialize perturbed incremental plastic multiplier
+            pert_inc_p_mult = base_inc_p_mult.clone()
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Add perturbation
+            if i == n_comp + 1:
+                # Set pertubation
+                pert = delta*torch.max(torch.abs(pert_inc_p_mult),
+                                                 torch.tensor(1e-6))
+                # Set perturbed incremental plastic multiplier
+                pert_inc_p_mult += pert
+            elif i == n_comp:
+                # Set pertubation
+                pert = delta*torch.max(torch.abs(pert_acc_p_strain),
+                                                 torch.tensor(1e-6))
+                # Set perturbed accumulated plastic strain
+                pert_acc_p_strain += pert
+            else:
+                # Set pertubation
+                pert = delta*torch.max(torch.abs(pert_e_strain_mf[i]),
+                                                 torch.tensor(1e-6))
+                # Set perturbed elastic strain (matricial form)
+                pert_e_strain_mf[i] += pert
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Get perturbed elastic strain
+            pert_e_strain = vget_tensor_from_mf(
+                pert_e_strain_mf, n_dim, comp_order_sym,
+                is_kelvin_notation=True, device=self._device)
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Compute perturbed residuals
+            pert_residual_1, pert_residual_2, pert_residual_3, _ = \
+                self.get_residual_and_jacobian(
+                    n_dim, comp_order_sym, pert_e_strain, e_trial_strain,
+                    pert_acc_p_strain, acc_p_strain_old, pert_inc_p_mult,
+                    e_consistent_tangent, init_yield_stress,
+                    hardening_law, hardening_parameters,
+                    a_hardening_law, a_hardening_parameters,
+                    b_hardening_law, b_hardening_parameters,
+                    c_hardening_law, c_hardening_parameters,
+                    d_hardening_law, d_hardening_parameters,
+                    is_associative_hardening=is_associative_hardening)
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Build perturbed residuals (matricial form)
+            pert_r1_mf = vget_tensor_mf(pert_residual_1, n_dim, comp_order_sym,
+                                        is_kelvin_notation=True,
+                                        device=self._device)
+            pert_r2 = pert_residual_2.reshape(-1)
+            pert_r3 = pert_residual_3.reshape(-1)
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Build perturbed residual vector (matricial form)
+            pert_residual_mf = torch.cat((pert_r1_mf, pert_r2, pert_r3), dim=0)
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Compute and assemble numerical derivative
+            num_jacobian[:, i] = (pert_residual_mf - base_residual_mf)/pert
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Display Jacobian comparison
+        if is_verbose:
+            torch.set_printoptions(linewidth=1000)
+            print('\nJacobian comparison:')
+            print('\nAnalytical:')
+            print(jacobian)
+            print('\nNumerical:')
+            print(num_jacobian)
+            print()
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        return num_jacobian
     # -------------------------------------------------------------------------
     @classmethod
     def convexity_return_mapping(cls, yield_c, yield_d):
