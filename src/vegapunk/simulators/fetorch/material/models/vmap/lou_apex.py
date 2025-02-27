@@ -101,10 +101,10 @@ class LouZhangYoonApexVMAP(ConstitutiveModel):
         Perform material constitutive model state update.
     get_stress_invariants(cls, stress)
         Compute invariants of stress and deviatoric stress.
+    get_stress_invariants_and_derivatives(cls, n_dim, stress)
+        Compute stress invariants and derivatives w.r.t. stress.
     get_effective_stress(cls, stress, yield_a, yield_b, yield_c, yield_d)
         Compute effective stress.
-    get_flow_vector(cls, stress, yield_a, yield_b, yield_c, yield_d)
-        Compute flow vector.
     _elastic_step(cls, e_trial_strain_mf, trial_stress_mf, acc_p_strain_old)
         Perform elastic step.
     _plastic_step(cls, is_elastic_step, e_trial_strain_mf, \
@@ -116,17 +116,37 @@ class LouZhangYoonApexVMAP(ConstitutiveModel):
                   d_hardening_parameters, is_associative_hardening, \
                   su_conv_tol, su_max_n_iterations)
         Perform plastic step.
-    get_residual(cls, e_strain, e_trial_strain, acc_p_strain, \
-                 acc_p_strain_old, inc_p_mult, effective_stress, \
-                 yield_stress, init_yield_stress, flow_vector, \
-                 norm_flow_vector, is_associative_hardening=False)
-        Compute state update residuals.
-    _nr_iteration(cls, residual, n_dim, comp_order_sym, stress, inc_p_mult, \
-                  flow_vector, norm_flow_vector, init_yield_stress, \
-                  hard_slope, yield_a, a_hard_slope, yield_b, b_hard_slope, \
-                  yield_c, c_hard_slope, yield_d, d_hard_slope, \
-                  e_consistent_tangent, is_associative_hardening)
-        Newton-Raphson iteration (return-mapping).
+    _plastic_step_cone(cls, is_elastic_step, e_trial_strain_mf, \
+                       e_trial_strain, e_consistent_tangent, \
+                       acc_p_strain_old, hardening_law, \
+                       hardening_parameters, a_hardening_law, \
+                       a_hardening_parameters, b_hardening_law, \
+                       b_hardening_parameters, c_hardening_law, \
+                       c_hardening_parameters, d_hardening_law, \
+                       d_hardening_parameters, is_associative_hardening, \
+                       su_conv_tol, su_max_n_iterations, small)
+        Perform plastic step (return-mapping to cone surface).
+    _get_residual_and_jacobian(cls, n_dim, comp_order_sym, e_strain, \
+                               e_trial_strain, acc_p_strain, \
+                               acc_p_strain_old, inc_p_mult, \
+                               e_consistent_tangent, init_yield_stress, \
+                               hardening_law, hardening_parameters, \
+                               a_hardening_law, a_hardening_parameters, \
+                               b_hardening_law, b_hardening_parameters, \
+                               c_hardening_law, c_hardening_parameters, \
+                               d_hardening_law, d_hardening_parameters, \
+                               is_associative_hardening=False)
+    _nr_iteration(cls, residual, jacobian)
+        Newton-Raphson iteration (return-mapping to cone surface).
+    _plastic_step_apex(cls, is_elastic_step, e_trial_strain_mf, \
+                       trial_pressure, acc_p_strain_old, K, alpha, \
+                       hardening_law, hardening_parameters, \
+                       a_hardening_law, a_hardening_parameters, \
+                       b_hardening_law, b_hardening_parameters, \
+                       su_conv_tol, su_max_n_iterations, small)
+        Perform plastic step (return-mapping to cone apex).
+    _nr_iteration_apex(cls, residual, jacobian)
+        Newton-Raphson iteration (return-mapping to cone apex).
     """
     def __init__(self, strain_formulation, problem_type, model_parameters,
                  is_su_float64=True, device_type='cpu'):
@@ -156,7 +176,8 @@ class LouZhangYoonApexVMAP(ConstitutiveModel):
         # Set initialization parameters
         self._strain_formulation = strain_formulation
         self._problem_type = problem_type
-        self._model_parameters = model_parameters
+        self._model_parameters = convert_dict_to_tensor(model_parameters,
+                                                        is_inplace=True)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Set state update floating-point precision
         self._is_su_float64 = is_su_float64
@@ -609,6 +630,82 @@ class LouZhangYoonApexVMAP(ConstitutiveModel):
         return i1, i2, i3, j1, j2, j3
     # -------------------------------------------------------------------------
     @classmethod
+    def get_stress_invariants_and_derivatives(cls, n_dim, stress):
+        """Compute stress invariants and derivatives w.r.t. stress.
+
+        Parameters
+        ----------
+        n_dim : int
+            Problem number of spatial dimensions.
+        stress : torch.Tensor(2d)
+            Stress.
+
+        Returns
+        -------
+        i1 : torch.Tensor(0d)
+            First (principal) invariant of stress tensor.
+        i2 : torch.Tensor(0d)
+            Second (principal) invariant of stress tensor.
+        i3 : torch.Tensor(0d)
+            Third (principal) invariant of stress tensor.
+        j1 : torch.Tensor(0d)
+            First invariant of deviatoric stress tensor.
+        j2 : torch.Tensor(0d)
+            Second invariant of deviatoric stress tensor.
+        j3 : torch.Tensor(0d)
+            Third invariant of deviatoric stress tensor.
+        di1_dstress : torch.Tensor(1d)
+            First-order derivative of first invariant of stress tensor
+            w.r.t. stress.
+        dj2_dstress : torch.Tensor(1d)
+            First-order derivative of second invariant of deviatoric stress
+            tensor w.r.t. stress.
+        dj3_dstress : torch.Tensor(1d)
+            First-order derivative of third invariant of deviatoric stress
+            tensor w.r.t. stress.
+        d2j2_dstress2 : torch.Tensor(1d)
+            Second-order derivative of second invariant of deviatoric stress
+            tensor w.r.t. stress.
+        d2j3_dstress2 : torch.Tensor(1d)
+            Second-order derivative of third invariant of deviatoric stress
+            tensor w.r.t. stress.
+        """
+        # Get device from stress
+        device = stress.device
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set required fourth-order tensors
+        soid, _, _, _, _, _, fodevprojsym = \
+            get_id_operators(n_dim, device=device)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Compute deviatoric stress tensor
+        dev_stress = ddot42_1(fodevprojsym, stress)
+        # Compute determinant of deviatoric stress tensor
+        dev_stress_det = torch.det(dev_stress)
+        # Compute inverse of deviatoric stress tensor
+        dev_stress_inv = torch.inverse(dev_stress)
+        # Compute derivative of inverse of deviatoric strss tensor w.r.t itself
+        ddsinv_ddsinv = fo_dinv_sym(dev_stress_inv)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Compute auxiliary term
+        w6 = ddot24_1(dev_stress_inv, fodevprojsym)
+        # Compute auxiliary term derivative
+        dw6_dstress = ddot44_1(ddot44_1(fodevprojsym, ddsinv_ddsinv),
+                               fodevprojsym)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Compute stress invariants
+        i1, i2, i3, j1, j2, j3 = cls.get_stress_invariants(stress)
+        # Compute derivatives w.r.t. stress
+        di1_dstress = soid
+        dj2_dstress = dev_stress
+        dj3_dstress = dev_stress_det*w6
+        # Compute second-order derivatives w.r.t. stress
+        d2j2_dstress2 = fodevprojsym
+        d2j3_dstress2 = dyad22_1(w6, dj3_dstress) + dev_stress_det*dw6_dstress
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        return i1, i2, i3, j1, j2, j3, di1_dstress, dj2_dstress, dj3_dstress, \
+            d2j2_dstress2, d2j3_dstress2
+    # -------------------------------------------------------------------------
+    @classmethod
     def get_effective_stress(cls, stress, yield_a, yield_b, yield_c, yield_d):
         """Compute effective stress.
         
@@ -642,66 +739,6 @@ class LouZhangYoonApexVMAP(ConstitutiveModel):
         effective_stress = yield_a*(aux_1 + (aux_2**(1/2) - aux_3)**(1/3))
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         return effective_stress
-    # -------------------------------------------------------------------------
-    @classmethod
-    def get_flow_vector(cls, stress, yield_a, yield_b, yield_c, yield_d):
-        """Compute flow vector.
-        
-        Parameters
-        ----------
-        stress : torch.Tensor(2d)
-            Stress.
-        yield_a : torch.Tensor(0d)
-            Yield parameter.
-        yield_b : torch.Tensor(0d)
-            Yield parameter.
-        yield_c : torch.Tensor(0d)
-            Yield parameter.
-        yield_d : torch.Tensor(0d)
-            Yield parameter.
-            
-        Returns
-        -------
-        flow_vector : torch.Tensor(2d)
-            Flow vector.
-        """
-        # Set number of spatial dimensions
-        n_dim = 3
-        # Get device from stress
-        device = stress.device
-        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        # Set required fourth-order tensors
-        soid, _, _, _, _, _, fodevprojsym = \
-            get_id_operators(n_dim, device=device)
-        # Compute deviatoric stress tensor
-        dev_stress = ddot42_1(fodevprojsym, stress)
-        # Compute inverse of deviatoric stress tensor
-        dev_stress_inv = torch.inverse(dev_stress)
-        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        # Compute stress invariants
-        _, _, _, _, j2, j3 = cls.get_stress_invariants(stress)
-        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        # Get first stress invariant derivative w.r.t. stress
-        di1_dstress = soid
-        # Get second stress invariant derivative w.r.t. stress
-        dj2_dstress = dev_stress
-        # Get third stress invariant derivative w.r.t. stress
-        dj3_dstress = \
-            torch.det(dev_stress)*ddot24_1(dev_stress_inv, fodevprojsym)
-        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        # Compute auxiliary terms
-        aux_1 = j2**3 - yield_c*(j3**2)
-        aux_2 = 3*(j2**2)*dj2_dstress - yield_c*2*j3*dj3_dstress
-        aux_3 = yield_d*j3
-        aux_4 = yield_d*dj3_dstress
-        term_1 = yield_a*yield_b*di1_dstress
-        term_2 = yield_a*(1/3)*((aux_1**(1/2) - aux_3)**(-2/3))
-        term_3 = (1/2)*(aux_1**(-1/2))*aux_2 - aux_4
-        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        # Compute flow vector
-        flow_vector = term_1 + term_2*term_3
-        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        return flow_vector
     # -------------------------------------------------------------------------
     @classmethod
     def _elastic_step(cls, e_trial_strain_mf, trial_stress_mf,
@@ -857,7 +894,7 @@ class LouZhangYoonApexVMAP(ConstitutiveModel):
         # Perform plastic step (return-mapping to cone surface)
         plastic_step_cone_output = cls._plastic_step_cone(
             is_elastic_step, e_trial_strain_mf, e_trial_strain,
-            e_consistent_tangent, acc_p_strain_old, E, hardening_law,
+            e_consistent_tangent, acc_p_strain_old, hardening_law,
             hardening_parameters, a_hardening_law, a_hardening_parameters,
             b_hardening_law, b_hardening_parameters, c_hardening_law,
             c_hardening_parameters, d_hardening_law, d_hardening_parameters,
@@ -888,7 +925,7 @@ class LouZhangYoonApexVMAP(ConstitutiveModel):
     @classmethod
     def _plastic_step_cone(cls, is_elastic_step, e_trial_strain_mf,
                            e_trial_strain, e_consistent_tangent,
-                           acc_p_strain_old, E, hardening_law,
+                           acc_p_strain_old, hardening_law,
                            hardening_parameters, a_hardening_law,
                            a_hardening_parameters, b_hardening_law,
                            b_hardening_parameters, c_hardening_law,
@@ -969,39 +1006,24 @@ class LouZhangYoonApexVMAP(ConstitutiveModel):
         # Set null iterative solution vector
         d_iter_null = torch.zeros(len(comp_order_sym)+2, device=device)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        # Initialize norm of iterative solution vector (convergence check)
-        diter_norm = torch.tensor(0.0, device=device)
+        # Initialize convergence norm of iterative solution vector
+        conv_diter_norm = torch.tensor(0.0, device=device)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Newton-Raphson iterative loop
         for nr_iter in range(su_max_n_iterations):
-            # Compute current stress
-            stress = ddot42_1(e_consistent_tangent, e_strain)
-            # Compute current yield stress and hardening modulus
-            yield_stress, hard_slope = \
-                hardening_law(hardening_parameters, acc_p_strain)
-            # Compute current yield parameters and hardening moduli
-            yield_a, a_hard_slope = \
-                a_hardening_law(a_hardening_parameters, acc_p_strain)
-            yield_b, b_hard_slope = \
-                b_hardening_law(b_hardening_parameters, acc_p_strain)
-            yield_c, c_hard_slope = \
-                c_hardening_law(c_hardening_parameters, acc_p_strain)
-            yield_d, d_hard_slope = \
-                d_hardening_law(d_hardening_parameters, acc_p_strain)
-            # Compute effective stress
-            effective_stress = cls.get_effective_stress(
-                stress, yield_a, yield_b, yield_c, yield_d)
-            # Compute current flow vector and norm
-            flow_vector = cls.get_flow_vector(
-                stress, yield_a, yield_b, yield_c, yield_d)
-            norm_flow_vector = torch.linalg.norm(flow_vector)
+            # Compute return-mapping residuals and Jacobian
+            residual_1, residual_2, residual_3, jacobian = \
+                cls._get_residual_and_jacobian(
+                    n_dim, comp_order_sym, e_strain, e_trial_strain,
+                    acc_p_strain, acc_p_strain_old, inc_p_mult,
+                    e_consistent_tangent, init_yield_stress,
+                    hardening_law, hardening_parameters,
+                    a_hardening_law, a_hardening_parameters,
+                    b_hardening_law, b_hardening_parameters,
+                    c_hardening_law, c_hardening_parameters,
+                    d_hardening_law, d_hardening_parameters,
+                    is_associative_hardening=is_associative_hardening)
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            # Compute residuals
-            residual_1, residual_2, residual_3 = cls.get_residual(
-                e_strain, e_trial_strain, acc_p_strain, acc_p_strain_old,
-                inc_p_mult, effective_stress, yield_stress, init_yield_stress,
-                flow_vector, norm_flow_vector,
-                is_associative_hardening=is_associative_hardening)
             # Build residuals matrices
             r1 = vget_tensor_mf(residual_1, n_dim, comp_order_sym,
                                 is_kelvin_notation=True, device=device)
@@ -1020,7 +1042,7 @@ class LouZhangYoonApexVMAP(ConstitutiveModel):
                 torch.abs(acc_p_strain_old) < small,
                 torch.abs(residual_2),
                 torch.abs(residual_2/acc_p_strain_old))
-            conv_norm_res_3 = torch.abs(residual_3)*(init_yield_stress/E)
+            conv_norm_res_3 = torch.abs(residual_3)
             # Compute residual vector convergence norm
             conv_norm_residual = torch.mean(
                 torch.stack((conv_norm_res_1, conv_norm_res_2,
@@ -1029,7 +1051,7 @@ class LouZhangYoonApexVMAP(ConstitutiveModel):
             # Compute converge condition
             conv_cond = torch.all(
                 torch.stack((conv_norm_residual < su_conv_tol,
-                             diter_norm < su_conv_tol,
+                             conv_diter_norm < su_conv_tol,
                              torch.tensor(nr_iter > 0, dtype=torch.bool,
                                           device=device))))
             # Check Newton-Raphson iterative procedure convergence
@@ -1042,15 +1064,17 @@ class LouZhangYoonApexVMAP(ConstitutiveModel):
                 is_converged*torch.ones(len(comp_order_sym) + 2,
                                         dtype=bool, device=device),
                 d_iter_null,
-                cls._nr_iteration(
-                    residual, n_dim, comp_order_sym, stress, inc_p_mult,
-                    flow_vector, norm_flow_vector, init_yield_stress,
-                    hard_slope, yield_a, a_hard_slope, yield_b, b_hard_slope,
-                    yield_c, c_hard_slope, yield_d, d_hard_slope,
-                    e_consistent_tangent, is_associative_hardening))
+                cls._nr_iteration(residual, jacobian))
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            # Compute norm of iterative solution vector (convergence check)
-            diter_norm = torch.linalg.norm(d_iter)
+            # Compute convergence norm of iterative solution vector
+            conv_diter = d_iter.detach().clone()
+            norm_factors = torch.cat(
+                (torch.linalg.norm(e_trial_strain).expand(len(comp_order_sym)),
+                 acc_p_strain_old.expand(2)))
+            conv_diter = torch.where(norm_factors > small,
+                                     conv_diter/norm_factors,
+                                     conv_diter)
+            conv_diter_norm = torch.linalg.norm(conv_diter)
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Extract iterative solution
             e_strain_iter = vget_tensor_from_mf(
@@ -1099,14 +1123,24 @@ class LouZhangYoonApexVMAP(ConstitutiveModel):
         return plastic_step_output
     # -------------------------------------------------------------------------
     @classmethod
-    def get_residual(cls, e_strain, e_trial_strain, acc_p_strain,
-                     acc_p_strain_old, inc_p_mult, effective_stress,
-                     yield_stress, init_yield_stress, flow_vector,
-                     norm_flow_vector, is_associative_hardening=False):
-        """Compute state update residuals.
+    def _get_residual_and_jacobian(cls, n_dim, comp_order_sym, e_strain,
+                                   e_trial_strain, acc_p_strain,
+                                   acc_p_strain_old, inc_p_mult,
+                                   e_consistent_tangent, init_yield_stress,
+                                   hardening_law, hardening_parameters,
+                                   a_hardening_law, a_hardening_parameters,
+                                   b_hardening_law, b_hardening_parameters,
+                                   c_hardening_law, c_hardening_parameters,
+                                   d_hardening_law, d_hardening_parameters,
+                                   is_associative_hardening=False):
+        """Compute state update residuals and Jacobian matrix.
         
         Parameters
         ----------
+        n_dim : int
+            Problem number of spatial dimensions.
+        comp_order_sym : list
+            Strain/Stress components symmetric order.
         e_strain : torch.Tensor(2d)
             Elastic strain.
         e_trial_strain : torch.Tensor(2d)
@@ -1117,16 +1151,30 @@ class LouZhangYoonApexVMAP(ConstitutiveModel):
             Last converged accumulated plastic strain.
         inc_p_mult : torch.Tensor(0d)
             Incremental plastic multiplier.
-        effective_stress : torch.Tensor(0d)
-            Effective stress.
-        yield_stress : torch.Tensor(0d)
-            Yield stress.
+        e_consistent_tangent : torch.Tensor(4d)
+            Elastic consistent tangent modulus.
         init_yield_stress : torch.Tensor(0d)
             Initial yield stress.
-        flow_vector : torch.Tensor(2d)
-            Flow vector.
-        norm_flow_vector : torch.Tensor(0d)
-            Flow vector norm.
+        hardening_law : function
+            Hardening law.
+        hardening_parameters : dict
+            Hardening law parameters.
+        a_hardening_law : function
+            Yield parameter hardening law.
+        a_hardening_parameters : function
+            Yield parameter hardening law parameters.
+        b_hardening_law : function
+            Yield parameter hardening law.
+        b_hardening_parameters : function
+            Yield parameter hardening law parameters.
+        c_hardening_law : function
+            Yield parameter hardening law.
+        c_hardening_parameters : function
+            Yield parameter hardening law parameters.
+        d_hardening_law : function
+            Yield parameter hardening law.
+        d_hardening_parameters : function
+            Yield parameter hardening law parameters.
         is_associative_hardening : bool, default=False
             If True, then adopt associative hardening rule.
 
@@ -1138,7 +1186,80 @@ class LouZhangYoonApexVMAP(ConstitutiveModel):
             Second residual.
         residual_3 : torch.Tensor(2d)
             Third residual.
+        jacobian : torch.Tensor(2d)
+            Jacobian matrix.
         """
+        # Get device from elastic trial strain
+        device = e_trial_strain.device
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set required fourth-order tensors
+        soid, _, _, fosym, _, _, fodevprojsym = \
+            get_id_operators(n_dim, device=device)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Compute stress
+        stress = ddot42_1(e_consistent_tangent, e_strain)
+        # Compute current yield stress and hardening modulus
+        yield_stress, hard_slope = \
+            hardening_law(hardening_parameters, acc_p_strain)
+        # Compute current yield parameters and hardening moduli
+        yield_a, a_hard_slope = \
+            a_hardening_law(a_hardening_parameters, acc_p_strain)
+        yield_b, b_hard_slope = \
+            b_hardening_law(b_hardening_parameters, acc_p_strain)
+        yield_c, c_hard_slope = \
+            c_hardening_law(c_hardening_parameters, acc_p_strain)
+        yield_d, d_hard_slope = \
+            d_hardening_law(d_hardening_parameters, acc_p_strain)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Compute stress invariants and derivatives w.r.t. stress
+        i1, _, _, _, j2, j3, di1_dstress, dj2_dstress, dj3_dstress, \
+            d2j2_dstress2, d2j3_dstress2 = \
+                cls.get_stress_invariants_and_derivatives(n_dim, stress)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Compute auxiliary terms
+        w1 = yield_b*i1
+        w2 = yield_c*(j3**2)
+        w3 = yield_d*j3
+        w4 = j2**3 - w2
+        w5 = w4**(1/2) - w3
+        # Compute auxiliary terms derivatives w.r.t. stress
+        dw1_dstress = yield_b*di1_dstress
+        dw2_dstress = 2*yield_c*j3*dj3_dstress
+        dw3_dstress = yield_d*dj3_dstress
+        dw4_dstress = 3*(j2**2)*dj2_dstress - dw2_dstress
+        dw5_dstress = (1/2)*(w4**(-1/2))*dw4_dstress - dw3_dstress
+        # Compute auxiliary terms second-order derivatives w.r.t. stress
+        d2w2_dstress2 = 2*yield_c*(dyad22_1(dj3_dstress, dj3_dstress)
+                                   + j3*d2j3_dstress2)
+        d2w3_dstress2 = yield_d*d2j3_dstress2
+        d2w4_dstress2 = (6*j2*dyad22_1(dj2_dstress, dj2_dstress)
+                         + 3*(j2**2)*d2j2_dstress2 - d2w2_dstress2)
+        d2w5_dstress2 = (-(1/4)*(w4**(-3/2))*dyad22_1(dw4_dstress, dw4_dstress)
+                         + (1/2)*(w4**(-1/2))*d2w4_dstress2 - d2w3_dstress2)
+        # Compute auxiliary terms derivatives w.r.t. accumulated plastic strain
+        dw1_daccpstr = i1*b_hard_slope
+        dw2_daccpstr = (j3**2)*c_hard_slope
+        dw3_daccpstr = j3*d_hard_slope
+        dw4_daccpstr = -dw2_daccpstr
+        dw5_daccpstr = (1/2)*(w4**(-1/2))*dw4_daccpstr - dw3_daccpstr
+        # Compute auxiliary terms cross derivatives w.r.t. stress and
+        # accumulated plastic strain
+        d2w1_daccpstrdstress = b_hard_slope*soid
+        d2w2_daccpstrdstress = 2*j3*c_hard_slope*dj3_dstress
+        d2w3_daccpstrdstress = d_hard_slope*dj3_dstress
+        d2w4_daccpstrdstress = -d2w2_daccpstrdstress
+        d2w5_daccpstrdstress = (-(1/4)*(w4**(-3/2))*dw4_daccpstr*dw4_dstress
+                                + (1/2)*(w4**(-1/2))*d2w4_daccpstrdstress
+                                - d2w3_daccpstrdstress)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Compute effective stress
+        effective_stress = yield_a*(w1 + (w5**(1/3)))
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Compute flow vector
+        flow_vector = yield_a*(dw1_dstress + (1/3)*(w5**(-2/3))*dw5_dstress)
+        # Compute flow vector norm
+        norm_flow_vector = torch.linalg.norm(flow_vector)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Compute first residual
         residual_1 = e_strain - e_trial_strain + inc_p_mult*flow_vector
         # Compute second residual
@@ -1150,153 +1271,26 @@ class LouZhangYoonApexVMAP(ConstitutiveModel):
         # Compute third residual
         residual_3 = (effective_stress - yield_stress)/init_yield_stress
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        return residual_1, residual_2, residual_3
-    # -------------------------------------------------------------------------
-    @classmethod
-    def _nr_iteration(cls, residual, n_dim, comp_order_sym, stress, inc_p_mult,
-                      flow_vector, norm_flow_vector, init_yield_stress,
-                      hard_slope, yield_a, a_hard_slope, yield_b, b_hard_slope,
-                      yield_c, c_hard_slope, yield_d, d_hard_slope,
-                      e_consistent_tangent, is_associative_hardening):
-        """Newton-Raphson iteration (return-mapping).
-        
-        Parameters
-        ----------
-        residual : torch.Tensor(1d)
-            Residual.
-        n_dim : int
-            Problem number of spatial dimensions.
-        comp_order_sym : list
-            Strain/Stress components symmetric order.
-        stress : torch.Tensor(2d)
-            Stress.
-        inc_p_mult : torch.Tensor(0d)
-            Incremental plastic multiplier.
-        flow_vector : torch.Tensor(2d)
-            Flow vector.
-        norm_flow_vector : torch.Tensor(0d)
-            Flow vector norm.
-        init_yield_stress : torch.Tensor(0d)
-            Initial yield stress.
-        hard_slope : torch.Tensor(0d)
-            Hardening modulus.
-        yield_a : torch.Tensor(0d)
-            Yield parameter.
-        a_hard_slope : torch.Tensor(0d)
-            Yield parameter hardening modulus.
-        yield_b : torch.Tensor(0d)
-            Yield parameter.
-        b_hard_slope : torch.Tensor(0d)
-            Yield parameter hardening modulus.
-        yield_c : torch.Tensor(0d)
-            Yield parameter.
-        c_hard_slope : torch.Tensor(0d)
-            Yield parameter hardening modulus.
-        yield_d : torch.Tensor(0d)
-            Yield parameter.
-        d_hard_slope : torch.Tensor(0d)
-            Yield parameter hardening modulus.
-        e_consistent_tangent : torch.Tensor(4d)
-            Elastic consistent tangent modulus.
-        is_associative_hardening : bool
-            If True, then adopt associative hardening rule.
-            
-        Return
-        ------
-        d_iter : torch.Tensor(1d)
-            Iterative solution vector.
-        """
-        # Set number of spatial dimensions
-        n_dim = 3
-        # Get device from elastic trial strain
-        device = residual.device
-        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        # Set required fourth-order tensors
-        soid, _, _, fosym, _, _, fodevprojsym = \
-            get_id_operators(n_dim, device=device)
-        # Compute deviatoric stress tensor
-        dev_stress = ddot42_1(fodevprojsym, stress)
-        # Compute inverse of deviatoric stress tensor
-        dev_stress_inv = torch.inverse(dev_stress)
-        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        # Compute stress invariants
-        i1, _, _, _, j2, j3 = cls.get_stress_invariants(stress)
-        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        # Get first stress invariant derivative w.r.t. stress
-        di1_dstress = soid
-        # Get second deviatoric stress invariant derivative w.r.t. stress
-        dj2_dstress = dev_stress
-        # Get third deviatoric stress invariant derivative w.r.t. stress
-        dj3_dstress = \
-            torch.det(dev_stress)*ddot24_1(dev_stress_inv, fodevprojsym)
-        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        # Compute derivative of inverse of deviatoric stress tensor w.r.t
-        # stress
-        ddevstressinv_dstress = \
-            ddot44_1(fo_dinv_sym(dev_stress_inv), fodevprojsym)
-        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        # Get second stress invariant second-order derivative w.r.t. stress
-        d2j2_dstress2 = fodevprojsym
-        # Get third stress invariant second-order derivative w.r.t. stress
-        d2j3_dstress2 = (
-            dyad22_1(ddot24_1(dev_stress_inv, fodevprojsym), dj3_dstress)
-            + torch.det(dev_stress)*(ddevstressinv_dstress
-            - (1/3)*dyad22_1(soid, ddot24_1(soid, ddevstressinv_dstress))))
-        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        # Compute auxiliar terms a, b and c
-        auxa = yield_b*i1
-        auxb = j2**3 - yield_c*(j3**2)
-        auxc = yield_d*j3
-        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        # Compute auxiliar term b derivatives
-        dauxb_dstress = 3*(j2**2)*dj2_dstress - yield_c*2*j3*dj3_dstress
-        dauxb_daccpstr = -c_hard_slope*(j3**2)
-        d2auxb_dstress2 = (3*(2*j2*dyad22_1(dj2_dstress, dj2_dstress)
-                              + (j2**2)*d2j2_dstress2)
-                           - yield_c*2*(dyad22_1(dj3_dstress, dj3_dstress)
-                                        + j3*d2j3_dstress2))
-        d2auxb_daccpstrdstress = -c_hard_slope*2*j3*dj3_dstress
-        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        # Compute auxiliar term
-        aux_1 = yield_a*(1/3)*((auxb**(1/2) - auxc)**(-2/3))
-        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Compute derivative of flow vector w.r.t. stress
-        dflow_dstress = \
-            (aux_1*((1/2)*(-(1/2)*(auxb**(-3/2))*dyad22_1(dauxb_dstress,
-                                                          dauxb_dstress)
-                           + (auxb**(-1/2))*d2auxb_dstress2)
-                    - yield_d*d2j3_dstress2)
-             + yield_a*(1/3)*dyad22_1(
-                (1/2)*(auxb**(-1/2))*dauxb_dstress - yield_d*dj3_dstress,
-                (-2/3)*((auxb**(1/2) - auxc)**(-5/3))*(
-                (1/2)*(auxb**(-1/2))*dauxb_dstress - yield_d*dj3_dstress)))
+        dflow_dstress = (1/3)*yield_a*(
+            -(2/3)*(w5**(-5/3))*dyad22_1(dw5_dstress, dw5_dstress)
+            + (w5**(-2/3))*d2w5_dstress2)
         # Compute derivative of flow vector w.r.t. elastic strain
         dflow_destrain = ddot44_1(dflow_dstress, e_consistent_tangent)
         # Compute derivative of flow vector w.r.t. accumulated plastic strain
-        dflow_daccpstr = \
-            ((a_hard_slope*yield_b + yield_a*b_hard_slope)*di1_dstress) \
-             + (aux_1*((1/2)*(
-                 (-1/2)*(auxb**(-3/2))*dauxb_daccpstr*dauxb_dstress
-                 + (auxb**(-1/2))*d2auxb_daccpstrdstress)
-                 - d_hard_slope*dj3_dstress)) \
-             + yield_a*(1/3)*((1/2)*(auxb**(-1/2))*dauxb_dstress
-                              - yield_d*dj3_dstress)*(
-            -(2/3)*((auxb**(1/2) - d_hard_slope*j3)**(-5/3))*(
-                (1/2)*(auxb**(-1/2)))*dauxb_daccpstr - d_hard_slope*j3)
+        dflow_daccpstr = (
+            a_hard_slope*(dw1_dstress + (1/3)*(w5**(-2/3))*dw5_dstress)
+            + yield_a*(d2w1_daccpstrdstress
+                       - (2/9)*(w5**(-5/3))*dw5_daccpstr*dw5_dstress
+                       + (1/3)*(w5**(-2/3))*d2w5_daccpstrdstress))
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        # Compute derivative of effective stress w.r.t. stress
-        deff_dstress = \
-            (yield_a*yield_b*di1_dstress
-             + aux_1*((1/2)*(auxb**(-1/2))*dauxb_dstress
-                      - yield_d*dj3_dstress))
         # Compute derivative of effective stress w.r.t. elastic strain
-        deff_destrain = ddot24_1(deff_dstress, e_consistent_tangent)
+        deff_destrain = ddot24_1(flow_vector, e_consistent_tangent)
         # Compute derivative of effective stress w.r.t. accumulated plastic
         # strain
-        deff_daccpstr = \
-            (a_hard_slope*(auxa + ((auxb**(1/2)) - auxc)**(1/3))
-             + yield_a*b_hard_slope*i1
-             + aux_1*((1/2)*(auxb**(-1/2))*dauxb_daccpstr - d_hard_slope*j3))
+        deff_daccpstr = (
+            a_hard_slope*(w1 + w5**(1/3))
+            + yield_a*(dw1_daccpstr + (1/3)*(w5**(-2/3))*dw5_daccpstr))
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Compute derivative of first residual w.r.t. to elastic strain
         dr1_destrain = fosym + inc_p_mult*dflow_destrain
@@ -1332,10 +1326,10 @@ class LouZhangYoonApexVMAP(ConstitutiveModel):
             dr2_dincpm = -math.sqrt(2/3)*norm_flow_vector
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Compute derivative of third residual w.r.t. to elastic strain
-        dr3_destrain = (1/init_yield_stress)*deff_destrain
+        dr3_destrain = (1.0/init_yield_stress)*deff_destrain
         # Compute derivative of third residual w.r.t. to accumulated plastic
         # strain
-        dr3_daccpstr = (1/init_yield_stress)*(deff_daccpstr - hard_slope)
+        dr3_daccpstr = (1.0/init_yield_stress)*(deff_daccpstr - hard_slope)
         # Compute derivative of third residual w.r.t. to incremental plastic
         # multiplier
         dr3_dincpm = torch.tensor(0.0, device=device)
@@ -1367,6 +1361,24 @@ class LouZhangYoonApexVMAP(ConstitutiveModel):
                               torch.cat((j21, j22, j23), dim=1),
                               torch.cat((j31, j32, j33), dim=1)), dim=0)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        return residual_1, residual_2, residual_3, jacobian
+    # -------------------------------------------------------------------------
+    @classmethod
+    def _nr_iteration(cls, residual, jacobian):
+        """Newton-Raphson iteration (return-mapping to cone surface).
+        
+        Parameters
+        ----------
+        residual : torch.Tensor(1d)
+            Residual.
+        jacobian : torch.Tensor(2d)
+            Jacobian matrix.
+            
+        Return
+        ------
+        d_iter : torch.Tensor(1d)
+            Iterative solution vector.
+        """
         # Solve return-mapping linearized equation
         d_iter = torch.linalg.solve(jacobian, -residual)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -1449,10 +1461,11 @@ class LouZhangYoonApexVMAP(ConstitutiveModel):
             acc_p_strain_old + alpha*inc_vol_p_strain)
         # Compute initial (iterative) material parameter
         beta = 1.0/(3.0*yield_a*yield_b)
+        # Set null iterative solution vector
+        d_iter_null = torch.zeros(1, device=device)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        # Initialize norm of iterative solution vector (convergence
-        # check)
-        diter_norm = torch.tensor(0.0, device=device)
+        # Initialize convergence norm of iterative solution vector
+        conv_diter_norm = torch.tensor(0.0, device=device)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Newton-Raphson iterative loop
         for nr_iter in range(su_max_n_iterations):
@@ -1472,17 +1485,19 @@ class LouZhangYoonApexVMAP(ConstitutiveModel):
             # Compute return-mapping residual (apex)
             residual = yield_stress*beta \
                 - (trial_pressure - K*inc_vol_p_strain)
+            # Compute return-mapping Jacobian (apex)
+            jacobian = alpha*beta*hard_slope + K
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Compute residual convergence norm
-            conv_norm_residual = \
-                torch.where(torch.abs(yield_stress) < small,
-                            torch.abs(residual),
-                            torch.abs(residual)/torch.abs(yield_stress))
+            conv_norm_residual = torch.where(
+                torch.abs(yield_stress) < small,
+                torch.abs(residual),
+                torch.abs(residual)/torch.abs(yield_stress)).squeeze()
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Compute converge condition
             conv_cond = torch.all(
                 torch.stack((conv_norm_residual < su_conv_tol,
-                             diter_norm < su_conv_tol,
+                             conv_diter_norm < su_conv_tol,
                              torch.tensor(nr_iter > 0, dtype=torch.bool,
                                           device=device))))
             # Check Newton-Raphson iterative procedure convergence 
@@ -1491,12 +1506,20 @@ class LouZhangYoonApexVMAP(ConstitutiveModel):
                             is_elastic_step,
                             conv_cond)
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            # Compute iterative incremental plastic volumetric strain
-            inc_vol_p_strain = torch.where(is_converged,
-                                           inc_vol_p_strain,
-                                           cls._nr_iteration_apex(
-                                               inc_vol_p_strain, residual,
-                                               alpha, beta, K, hard_slope))
+            # Compute iterative solution incremental plastic volumetric strain
+            d_iter = torch.where(is_converged,
+                                 d_iter_null,
+                                 cls._nr_iteration_apex(residual, jacobian))
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Compute convergence norm of iterative solution vector
+            conv_diter = d_iter.detach().clone()
+            conv_diter = torch.where(acc_p_strain_old > small,
+                                     conv_diter/acc_p_strain_old,
+                                     conv_diter)
+            conv_diter_norm = torch.linalg.norm(conv_diter)
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Update incremental plastic volumetric strain
+            inc_vol_p_strain = inc_vol_p_strain + d_iter
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Compute pressure
         pressure = trial_pressure - K*inc_vol_p_strain
@@ -1536,37 +1559,22 @@ class LouZhangYoonApexVMAP(ConstitutiveModel):
         return plastic_step_output
     # -------------------------------------------------------------------------
     @classmethod
-    def _nr_iteration_apex(cls, inc_vol_p_strain, residual, alpha, beta, K,
-                           hard_slope):
+    def _nr_iteration_apex(cls, residual, jacobian):
         """Newton-Raphson iteration (return-mapping to cone apex).
         
         Parameters
         ----------
-        inc_vol_p_strain : torch.Tensor(0d)
-            Incremental plastic volumetric strain.
         residual : torch.Tensor(0d)
             Residual.
-        alpha : torch.Tensor(0d)
-            Yield parameter equivalent to Drucker-Prager ratio between yield
-            surface cohesion parameter and yield surface pressure parameter.
-        beta : torch.Tensor(0d)
-            Ratio between yield surface cohesion parameter and plastic flow
-            rule pressure parameter.
-        K : torch.Tensor(0d)
-            Bulk modulus.
-        hard_slope : torch.Tensor(0d)
-            Hardening modulus.
+        jacobian : torch.Tensor(0d)
+            Jacobian matrix.
             
         Return
         ------
-        inc_vol_p_strain : torch.Tensor(0d)
-            Incremental plastic volumetric strain.
+        d_iter : torch.Tensor(0d)
+            Iterative solution vector.
         """
-        # Compute return-mapping Jacobian (scalar)
-        jacobian = alpha*beta*hard_slope + K
         # Solve return-mapping linearized equation
         d_iter = -residual/jacobian
-        # Update incremental plastic multiplier
-        inc_vol_p_strain = inc_vol_p_strain + d_iter
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        return inc_vol_p_strain
+        return d_iter
