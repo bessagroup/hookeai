@@ -392,23 +392,9 @@ class LouZhangYoonVMAP(ConstitutiveModel):
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Compute bulk and shear modulus
         K = E/(3.0*(1.0 - 2.0*v))
-        G = E/(2.0*(1.0 + v))
         # Compute Lamé parameters
         lam = (E*v)/((1.0 + v)*(1.0 - 2.0*v))
         miu = E/(2.0*(1.0 + v))
-        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        # Compute initial yield parameters
-        yield_a_init, _ = a_hardening_law(
-            a_hardening_parameters,
-            acc_p_strain=torch.tensor(0.0, device=self._device))
-        yield_b_init, _ = b_hardening_law(
-            b_hardening_parameters,
-            acc_p_strain=torch.tensor(0.0, device=self._device))
-        # Get Drucker-Prager pressure and cohesion equivalent parameters
-        etay = 3.0*yield_a_init*yield_b_init
-        xi = (2.0*math.sqrt(3)/3.0)*torch.sqrt(1.0 - (1.0/3.0)*etay**2)
-        # Compute additional material parameter
-        alpha = xi/etay
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Get last increment converged state variables
         e_strain_old_mf = state_variables_old['e_strain_mf']
@@ -503,7 +489,7 @@ class LouZhangYoonVMAP(ConstitutiveModel):
         is_elastic_step = (yield_function/yield_stress) <= su_conv_tol
         plastic_step_output = self._plastic_step(
             is_elastic_step, e_trial_strain_mf, trial_stress,
-            e_consistent_tangent, acc_p_strain_old, E, K, alpha, hardening_law,
+            e_consistent_tangent, acc_p_strain_old, K, hardening_law,
             hardening_parameters, a_hardening_law, a_hardening_parameters,
             b_hardening_law, b_hardening_parameters, c_hardening_law,
             c_hardening_parameters, d_hardening_law, d_hardening_parameters,
@@ -790,7 +776,7 @@ class LouZhangYoonVMAP(ConstitutiveModel):
     # -------------------------------------------------------------------------
     @classmethod
     def _plastic_step(cls, is_elastic_step, e_trial_strain_mf, trial_stress,
-                      e_consistent_tangent, acc_p_strain_old, E, K, alpha,
+                      e_consistent_tangent, acc_p_strain_old, K,
                       hardening_law, hardening_parameters, a_hardening_law,
                       a_hardening_parameters, b_hardening_law,
                       b_hardening_parameters, c_hardening_law,
@@ -814,13 +800,8 @@ class LouZhangYoonVMAP(ConstitutiveModel):
             Elastic consistent tangent modulus.
         acc_p_strain_old : torch.Tensor(0d)
             Last convergence accumulated plastic strain.
-        E : torch.Tensor(0d)
-            Young modulus.
         K : torch.Tensor(0d)
             Bulk modulus.
-        alpha : torch.Tensor(0d)
-            Ratio between yield surface cohesion parameter and yield surface
-            pressure parameter.
         hardening_law : function
             Hardening law.
         hardening_parameters : dict
@@ -882,7 +863,9 @@ class LouZhangYoonVMAP(ConstitutiveModel):
         # Compute trial pressure
         trial_pressure = (1.0/3.0)*torch.trace(trial_stress)
         # Compute current apex pressure
-        pressure_apex = (1.0/(3.0*yield_a*yield_b))*yield_stress
+        safe_yield_b = torch.max(
+            torch.abs(yield_b), torch.tensor(1e-6, device=device))
+        pressure_apex = (1.0/(3.0*yield_a*safe_yield_b))*yield_stress
         # Set return-mapping type
         is_apex_return = trial_pressure > pressure_apex
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -902,7 +885,7 @@ class LouZhangYoonVMAP(ConstitutiveModel):
         # Perform plastic step (return-mapping to cone apex)
         plastic_step_apex_output = cls._plastic_step_apex(
             is_elastic_step, e_trial_strain_mf, trial_pressure,
-            acc_p_strain_old, K, alpha, hardening_law, hardening_parameters,
+            acc_p_strain_old, K, hardening_law, hardening_parameters,
             a_hardening_law, a_hardening_parameters, b_hardening_law,
             b_hardening_parameters, su_conv_tol, su_max_n_iterations, small)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -1386,7 +1369,7 @@ class LouZhangYoonVMAP(ConstitutiveModel):
     # -------------------------------------------------------------------------
     @classmethod
     def _plastic_step_apex(cls, is_elastic_step, e_trial_strain_mf,
-                           trial_pressure, acc_p_strain_old, K, alpha,
+                           trial_pressure, acc_p_strain_old, K,
                            hardening_law, hardening_parameters,
                            a_hardening_law, a_hardening_parameters,
                            b_hardening_law, b_hardening_parameters,
@@ -1408,9 +1391,6 @@ class LouZhangYoonVMAP(ConstitutiveModel):
             Last convergence accumulated plastic strain.
         K : torch.Tensor(0d)
             Bulk modulus.
-        alpha : torch.Tensor(0d)
-            Yield parameter equivalent to Drucker-Prager ratio between yield
-            surface cohesion parameter and yield surface pressure parameter.
         hardening_law : function
             Hardening law.
         hardening_parameters : dict
@@ -1443,6 +1423,20 @@ class LouZhangYoonVMAP(ConstitutiveModel):
         # Set required second-order tensor
         soid, _, _, _, _, _, _ = get_id_operators(n_dim, device=device)
         soid_mf = vget_tensor_mf(soid, n_dim, comp_order_sym, device=device)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Compute initial yield parameters
+        yield_a_init, _ = a_hardening_law(
+            a_hardening_parameters,
+            acc_p_strain=torch.tensor(0.0, device=device))
+        yield_b_init, _ = b_hardening_law(
+            b_hardening_parameters,
+            acc_p_strain=torch.tensor(0.0, device=device))
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Get Drucker-Prager pressure and cohesion equivalent parameters
+        etay = 3.0*yield_a_init*yield_b_init
+        xi = (2.0*math.sqrt(3)/3.0)*torch.sqrt(1.0 - (1.0/3.0)*etay**2)
+        # Compute additional material parameter
+        alpha = xi/etay
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Set incremental plastic multiplier
         inc_p_mult = torch.tensor(0.0, device=device)

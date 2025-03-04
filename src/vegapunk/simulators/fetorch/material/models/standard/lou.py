@@ -370,24 +370,9 @@ class LouZhangYoon(ConstitutiveModel):
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Compute bulk and shear modulus
         K = E/(3.0*(1.0 - 2.0*v))
-        G = E/(2.0*(1.0 + v))
         # Compute Lamé parameters
         lam = (E*v)/((1.0 + v)*(1.0 - 2.0*v))
         miu = E/(2.0*(1.0 + v))
-        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        # Compute initial yield parameters
-        yield_a_init, _ = a_hardening_law(
-            a_hardening_parameters,
-            acc_p_strain=torch.tensor(0.0, device=self._device))
-        yield_b_init, _ = b_hardening_law(
-            b_hardening_parameters,
-            acc_p_strain=torch.tensor(0.0, device=self._device))
-        # Get Drucker-Prager pressure and cohesion equivalent parameters
-        etay = 3.0*yield_a_init*yield_b_init
-        xi = (2.0*math.sqrt(3)/3.0)*torch.sqrt(1.0 - (1.0/3.0)*etay**2)
-        # Compute yield parameter equivalent to Drucker-Prager ratio between
-        # yield surface cohesion parameter and yield surface pressure parameter
-        alpha = xi/etay
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Get last increment converged state variables
         e_strain_old_mf = state_variables_old['e_strain_mf']
@@ -485,15 +470,34 @@ class LouZhangYoon(ConstitutiveModel):
                                                  is_kelvin_notation=True,
                                                  device=self._device)
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Compute initial yield parameters
+            yield_a_init, _ = a_hardening_law(
+                a_hardening_parameters,
+                acc_p_strain=torch.tensor(0.0, device=self._device))
+            yield_b_init, _ = b_hardening_law(
+                b_hardening_parameters,
+                acc_p_strain=torch.tensor(0.0, device=self._device))
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Compute trial pressure
             trial_pressure = (1.0/3.0)*torch.trace(trial_stress)
             # Compute current apex pressure
-            pressure_apex = (1.0/(3.0*yield_a*yield_b))*yield_stress
+            safe_yield_b = torch.max(
+                torch.abs(yield_b), torch.tensor(1e-6, device=self._device))
+            pressure_apex = (1.0/(3.0*yield_a*safe_yield_b))*yield_stress
             # Set return-mapping type
             is_apex_return = trial_pressure > pressure_apex
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Compute return-mapping to surface or apex
             if is_apex_return:
+                # Get Drucker-Prager pressure and cohesion equivalent
+                # parameters
+                etay = 3.0*yield_a_init*yield_b_init
+                xi = (2.0*math.sqrt(3)/3.0)*torch.sqrt(1.0 - (1.0/3.0)*etay**2)
+                # Compute yield parameter equivalent to Drucker-Prager ratio
+                # between yield surface cohesion parameter and yield surface
+                # pressure parameter
+                alpha = xi/etay
+                # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                 # Set incremental plastic volumetric strain initial iterative
                 # guess
                 inc_vol_p_strain = torch.tensor(0.0, device=self._device)
