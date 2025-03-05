@@ -40,6 +40,8 @@ from gnn_base_model.predict.prediction_plots import plot_truth_vs_prediction
 from ioput.iostandard import make_directory, find_unique_file_with_regex
 from projects.darpa_metals.rnn_material_model.rnn_model_tools.strain_features \
     import add_strain_features
+from testing_utilities.output_prediction_metrics import \
+    compute_directory_prediction_metrics
 #
 #                                                          Authorship & Credits
 # =============================================================================
@@ -237,6 +239,13 @@ def perform_model_prediction(predict_directory, dataset_file_path,
                 dataset_file_path=dataset_file_path,
                 device_type=device_type, seed=None, is_verbose=is_verbose)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Set mean predictions metrics
+    mean_prediction_metrics = ['rmse', 'nrmse',]
+    # Compute mean prediction metrics
+    _, _ = compute_directory_prediction_metrics(
+        predict_subdir, mean_prediction_metrics, is_save_file=True,
+        is_display_results=False)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Generate plots of model predictions
     generate_prediction_plots(dataset_file_path, predict_subdir)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -401,7 +410,7 @@ if __name__ == "__main__":
     # Initialize case study directories
     case_study_dirs = []
     # Set case study directories
-    if True:
+    if False:
         # Set training data set sizes
         training_sizes = (10, 20, 40, 80, 160, 320, 640, 1280, 2560)
         # Set case study directories

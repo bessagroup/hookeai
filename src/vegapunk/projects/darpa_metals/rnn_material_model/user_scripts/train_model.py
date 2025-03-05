@@ -469,7 +469,7 @@ if __name__ == "__main__":
     # Initialize case study directories
     case_study_dirs = []
     # Set case study directories
-    if True:
+    if False:
         # Set training data set sizes
         training_sizes = (10, 20, 40, 80, 160, 320, 640, 1280, 2560)
         # Set case study directories
