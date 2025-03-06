@@ -876,7 +876,8 @@ class LouZhangYoonVMAP(ConstitutiveModel):
         #
         # Perform plastic step (return-mapping to cone surface)
         plastic_step_cone_output = cls._plastic_step_cone(
-            is_elastic_step, e_trial_strain_mf, e_trial_strain,
+            torch.logical_or(is_elastic_step, is_apex_return),
+            e_trial_strain_mf, e_trial_strain,
             e_consistent_tangent, acc_p_strain_old, hardening_law,
             hardening_parameters, a_hardening_law, a_hardening_parameters,
             b_hardening_law, b_hardening_parameters, c_hardening_law,
@@ -884,7 +885,9 @@ class LouZhangYoonVMAP(ConstitutiveModel):
             is_associative_hardening, su_conv_tol, su_max_n_iterations, small)
         # Perform plastic step (return-mapping to cone apex)
         plastic_step_apex_output = cls._plastic_step_apex(
-            is_elastic_step, e_trial_strain_mf, trial_pressure,
+            torch.logical_or(is_elastic_step,
+                             torch.logical_not(is_apex_return)),
+            e_trial_strain_mf, trial_pressure,
             acc_p_strain_old, K, hardening_law, hardening_parameters,
             a_hardening_law, a_hardening_parameters, b_hardening_law,
             b_hardening_parameters, su_conv_tol, su_max_n_iterations, small)
@@ -906,7 +909,7 @@ class LouZhangYoonVMAP(ConstitutiveModel):
         return plastic_step_output
     # -------------------------------------------------------------------------
     @classmethod
-    def _plastic_step_cone(cls, is_elastic_step, e_trial_strain_mf,
+    def _plastic_step_cone(cls, is_avoid_return_mapping, e_trial_strain_mf,
                            e_trial_strain, e_consistent_tangent,
                            acc_p_strain_old, hardening_law,
                            hardening_parameters, a_hardening_law,
@@ -919,11 +922,11 @@ class LouZhangYoonVMAP(ConstitutiveModel):
 
         Parameters
         ----------
-        is_elastic_step : torch.Tensor(0d)
-            If True, then avoid return mapping computations and compute elastic
-            response. This flag avoids non-admissible values stemming from
-            invalid return-mapping problem and consequent runtime errors when
-            computing gradients with autograd.
+        is_avoid_return_mapping : torch.Tensor(0d)
+            If True, then avoid return mapping computations. This flag avoids
+            non-admissible values stemming from invalid return-mapping problem
+            and consequent runtime errors when computing gradients with
+            autograd.
         e_trial_strain_mf : torch.Tensor(1d)
             Elastic trial strain (matricial form).
         e_trial_strain : torch.Tensor(2d)
@@ -1038,8 +1041,8 @@ class LouZhangYoonVMAP(ConstitutiveModel):
                              torch.tensor(nr_iter > 0, dtype=torch.bool,
                                           device=device))))
             # Check Newton-Raphson iterative procedure convergence
-            is_converged = torch.where(is_elastic_step,
-                                       is_elastic_step,
+            is_converged = torch.where(is_avoid_return_mapping,
+                                       is_avoid_return_mapping,
                                        conv_cond)
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Compute iterative solution
@@ -1368,7 +1371,7 @@ class LouZhangYoonVMAP(ConstitutiveModel):
         return d_iter
     # -------------------------------------------------------------------------
     @classmethod
-    def _plastic_step_apex(cls, is_elastic_step, e_trial_strain_mf,
+    def _plastic_step_apex(cls, is_avoid_return_mapping, e_trial_strain_mf,
                            trial_pressure, acc_p_strain_old, K,
                            hardening_law, hardening_parameters,
                            a_hardening_law, a_hardening_parameters,
@@ -1378,11 +1381,11 @@ class LouZhangYoonVMAP(ConstitutiveModel):
 
         Parameters
         ----------
-        is_elastic_step : torch.Tensor(0d)
-            If True, then avoid return mapping computations and compute elastic
-            response. This flag avoids non-admissible values stemming from
-            invalid return-mapping problem and consequent runtime errors when
-            computing gradients with autograd.
+        is_avoid_return_mapping : torch.Tensor(0d)
+            If True, then avoid return mapping computations. This flag avoids
+            non-admissible values stemming from invalid return-mapping problem
+            and consequent runtime errors when computing gradients with
+            autograd.
         e_trial_strain_mf : torch.Tensor(1d)
             Elastic trial strain (matricial form).
         trial_pressure : torch.Tensor(0d)
@@ -1496,8 +1499,8 @@ class LouZhangYoonVMAP(ConstitutiveModel):
                                           device=device))))
             # Check Newton-Raphson iterative procedure convergence 
             is_converged = \
-                torch.where(is_elastic_step,
-                            is_elastic_step,
+                torch.where(is_avoid_return_mapping,
+                            is_avoid_return_mapping,
                             conv_cond)
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Compute iterative solution incremental plastic volumetric strain
