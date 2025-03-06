@@ -878,13 +878,13 @@ class LinksSimulator:
         # Set incrementation mode
         incrementation_mode = available_incrementation_modes[1]
         # Set loading type
-        loading_type = available_loading_type[3]
+        loading_type = available_loading_type[0]
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Set number of loading reversal (effective for cyclic loadings only)
         n_reverse = 2
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Set number of increments
-        n_inc = 100
+        n_inc = 200
         # Set convergence tolerance
         conv_tol = '{:<16.8e}'.format(1e-6)
         # Set maximum number of iterations
@@ -973,7 +973,7 @@ class LinksSimulator:
                                 dtype=float)
                 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                 # Set number of control points sampling bounds
-                n_control_bounds = (4, 7)
+                n_control_bounds = (2, 5)
                 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                 # Sample number of polynomial control points
                 n_control = np.random.randint(n_control_bounds[0],
