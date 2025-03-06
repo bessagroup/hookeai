@@ -27,6 +27,8 @@ from ioput.plots import plot_xy_data
 from simulators.links.discretization.finite_element import FiniteElement
 from simulators.links.models.links_elastic import LinksElastic
 from simulators.links.models.links_von_mises import LinksVonMises
+from simulators.links.models.links_drucker_prager import LinksDruckerPrager
+from simulators.links.models.links_lou import LinksLou
 #
 #                                                          Authorship & Credits
 # =============================================================================
@@ -578,6 +580,10 @@ class LinksSimulator:
                 model = LinksElastic()
             elif name == 'VON_MISES':
                 model = LinksVonMises()
+            elif name == 'DRUCKER_PRAGER':
+                model = LinksDruckerPrager()
+            elif name == 'LOU':
+                model = LinksLou()
             else:
                 raise RuntimeError('Unknown Links constitutive model.')
             # Append constitutive model descriptors to input file data

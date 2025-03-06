@@ -510,6 +510,42 @@ def set_patch_material_params(n_elems_per_dim):
                                      'b': 0.5,
                                      'ep0': 1e-5}}
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    elif model_name == 'DRUCKER_PRAGER':
+        mat_phases_descriptors['1'] = {
+            'name': 'DRUCKER_PRAGER',
+            'density': 0.0,
+            'young': 110e3,
+            'poisson': 0.33,
+            'friction_angle_deg': 2,
+            'dilatancy_angle_deg': 2,
+            'n_hard_point': 200,
+            'hardening_law': get_hardening_law('nadai_ludwik'),
+            'hardening_parameters': {'s0': 900,
+                                     'a': 700,
+                                     'b': 0.5,
+                                     'ep0': 1e-5}}
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    elif model_name == 'LOU':
+        mat_phases_descriptors['1'] = {
+            'name': 'LOU',
+            'density': 0.0,
+            'young': 110e3,
+            'poisson': 0.33,
+            'yield_a_init': 1.0,
+            'a_hard_slope': 0.0,
+            'yield_b_init': 0.05,
+            'b_hard_slope': 0.0,
+            'yield_c_init': 1.0,
+            'c_hard_slope': 0.0,
+            'yield_d_init': 0.25,
+            'd_hard_slope': 0.0,
+            'n_hard_point': 200,
+            'hardening_law': get_hardening_law('nadai_ludwik'),
+            'hardening_parameters': {'s0': 900,
+                                     'a': 700,
+                                     'b': 0.5,
+                                     'ep0': 1e-5}}
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     else:
         raise RuntimeError('Unknown material constitutive model.')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -628,8 +664,8 @@ def perform_links_simulation(simulations_dir, patch, patch_material_params):
 if __name__ == "__main__":
     # Set base directory
     base_dir = ('/home/bernardoferreira/Documents/brown/projects/'
-                'darpa_project/11_global_learning_lou/'
-                'random_specimen_rc_von_mises_vmap/0_links_simulation')
+                'darpa_project/11_global_learning_lou/random_specimen/'
+                '0_links_simulation')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set material patch name
     patch_name = 'random_specimen'
@@ -647,11 +683,16 @@ if __name__ == "__main__":
                            + base_dir)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set material patches directory
-    material_patches_dir = os.path.join(os.path.normpath(base_dir),
-                                        'material_patches_generation')
-    # Create main material patch directory
-    if not is_load_material_patch:
-        make_directory(material_patches_dir, is_overwrite=True)
+    if n_patch > 1:
+        # Set (multiple) material patches directory
+        material_patches_dir = os.path.join(os.path.normpath(base_dir),
+                                            'material_patches_generation')
+        # Create main material patch directory
+        if not is_load_material_patch:
+            make_directory(material_patches_dir, is_overwrite=True)
+    else:
+        # Set (single) material patch directory
+        material_patches_dir = base_dir
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Generate material patches
     links_file_paths, links_output_dirs = \
