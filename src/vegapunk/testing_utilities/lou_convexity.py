@@ -24,8 +24,7 @@ if __name__ == '__main__':
     # Initialize parameters paths
     parameters_paths = {}
     # Set trial yield parameters
-    parameters_trials = ((-2.5, 1.0), (-3.0, -0.25), (2.5, -1.0), (1.5, 1.5),
-                         (1.0, 0.5), (-1.0, 0.0))
+    parameters_trials = ()
     # Loop over trial yield parameters
     for i, trial in enumerate(parameters_trials):
         # Set trial yield parameters
@@ -39,10 +38,17 @@ if __name__ == '__main__':
             torch.tensor(([[yield_c_trial, yield_d_trial],
                            [yield_c, yield_d]]))
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Set parameter name prefix
+    is_global_optimization = True
+    if is_global_optimization:
+        model_prefix = 'model_1_'
+    else:
+        model_prefix = ''
     # Set model parameters history record file path
     parameters_record_path = ('/home/bernardoferreira/Documents/brown/'
-                              'projects/darpa_project/9_local_lou_rc_training/'
-                              '1_convexity_return_mapping/n20/3_model/'
+                              'projects/darpa_project/11_global_learning_lou/'
+                              'random_specimen/1_discover_rc_lou/'
+                              'material_model_finder/3_model/'
                               'parameters_history_record.pkl')
     # Load model parameters history record
     with open(parameters_record_path, 'rb') as parameters_record_file:
@@ -54,8 +60,9 @@ if __name__ == '__main__':
     # Initialize parameters paths
     parameters_paths = {}
     # Build parameters path
-    parameters_path = torch.tensor([model_parameters_history['yield_c_s0'],
-                                    model_parameters_history['yield_d_s0']]).T
+    parameters_path = torch.tensor(
+        [model_parameters_history[f'{model_prefix}yield_c_s0'],
+         model_parameters_history[f'{model_prefix}yield_d_s0']]).T
     # Store parameters path
     parameters_paths['optimization'] = parameters_path
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -64,8 +71,7 @@ if __name__ == '__main__':
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set plots directory
     plots_dir = ('/home/bernardoferreira/Documents/brown/projects/'
-                 'darpa_project/9_local_lou_rc_training/'
-                 '1_convexity_return_mapping/plots')
+                 'darpa_project/11_global_learning_lou/random_specimen')
     # Create plots directory
     if not os.path.isdir(plots_dir):
         make_directory(plots_dir)
