@@ -623,7 +623,7 @@ class VonMisesMixedVMAP(ConstitutiveModel):
             kinematic_hardening_parameters, acc_p_strain_old)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Newton-Raphson iterative loop
-        for _ in range(su_max_n_iterations):
+        for _ in range(su_max_n_iterations + 1):
             # Compute current yield stress and hardening modulus
             yield_stress, H = hardening_law(hardening_parameters,
                                             acc_p_strain_old + inc_p_mult)

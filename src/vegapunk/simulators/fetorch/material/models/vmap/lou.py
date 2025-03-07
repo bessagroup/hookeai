@@ -364,6 +364,8 @@ class LouZhangYoonVMAP(ConstitutiveModel):
         su_conv_tol = 1e-6
         # Set state update maximum number of iterations
         su_max_n_iterations = 10
+        # Set apex-return mapping switch tolerance
+        apex_switch_tol = 0.005
         # Set minimum threshold to handle values close or equal to zero
         small = 1e-8
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -493,7 +495,8 @@ class LouZhangYoonVMAP(ConstitutiveModel):
             hardening_parameters, a_hardening_law, a_hardening_parameters,
             b_hardening_law, b_hardening_parameters, c_hardening_law,
             c_hardening_parameters, d_hardening_law, d_hardening_parameters,
-            is_associative_hardening, su_conv_tol, su_max_n_iterations, small)
+            is_associative_hardening, su_conv_tol, su_max_n_iterations,
+            apex_switch_tol, small)
         # Pick elastic or plastic step according with yielding condition
         step_output = torch.where(yield_function_cond,
                                   elastic_step_output,
@@ -782,7 +785,8 @@ class LouZhangYoonVMAP(ConstitutiveModel):
                       b_hardening_parameters, c_hardening_law,
                       c_hardening_parameters, d_hardening_law,
                       d_hardening_parameters, is_associative_hardening,
-                      su_conv_tol, su_max_n_iterations, small):
+                      su_conv_tol, su_max_n_iterations, apex_switch_tol,
+                      small):
         """Perform plastic step.
         
         Parameters
@@ -828,6 +832,10 @@ class LouZhangYoonVMAP(ConstitutiveModel):
             State update convergence tolerance.
         su_max_n_iterations : int
             State update maximum number of iterations.
+        apex_switch_tol : float
+            Tolerance of criterion to switch to apex return-mapping. Switch
+            is triggered when the trial pressure is greater than
+            (1.0 - apex_switch_tolerance) times the apex pressure.
         small : float
             Minimum threshold to handle values close or equal to zero.
 
@@ -867,7 +875,8 @@ class LouZhangYoonVMAP(ConstitutiveModel):
             torch.abs(yield_b), torch.tensor(1e-6, device=device))
         pressure_apex = (1.0/(3.0*yield_a*safe_yield_b))*yield_stress
         # Set return-mapping type
-        is_apex_return = trial_pressure > pressure_apex
+        is_apex_return = \
+            trial_pressure > (1.0 - apex_switch_tol)*pressure_apex
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # If the trial pressure is greater than the Lou-Zhang-Yoon apex
         # pressure, then solve return-mapping system of nonlinear equations to
@@ -996,7 +1005,7 @@ class LouZhangYoonVMAP(ConstitutiveModel):
         conv_diter_norm = torch.tensor(0.0, device=device)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Newton-Raphson iterative loop
-        for nr_iter in range(su_max_n_iterations):
+        for nr_iter in range(su_max_n_iterations + 1):
             # Compute return-mapping residuals and Jacobian
             residual_1, residual_2, residual_3, jacobian = \
                 cls._get_residual_and_jacobian(
@@ -1465,7 +1474,7 @@ class LouZhangYoonVMAP(ConstitutiveModel):
         conv_diter_norm = torch.tensor(0.0, device=device)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Newton-Raphson iterative loop
-        for nr_iter in range(su_max_n_iterations):
+        for nr_iter in range(su_max_n_iterations + 1):
             # Compute current yield stress and hardening modulus
             yield_stress, hard_slope = hardening_law(
                 hardening_parameters,

@@ -342,6 +342,8 @@ class LouZhangYoon(ConstitutiveModel):
         su_conv_tol = 1e-6
         # Set state update maximum number of iterations
         su_max_n_iterations = 20
+        # Set apex-return mapping switch tolerance
+        apex_switch_tol = 0.005
         # Set minimum threshold to handle values close or equal to zero
         small = 1e-8
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -485,7 +487,8 @@ class LouZhangYoon(ConstitutiveModel):
                 torch.abs(yield_b), torch.tensor(1e-6, device=self._device))
             pressure_apex = (1.0/(3.0*yield_a*safe_yield_b))*yield_stress
             # Set return-mapping type
-            is_apex_return = trial_pressure > pressure_apex
+            is_apex_return = \
+                trial_pressure > (1.0 - apex_switch_tol)*pressure_apex
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Compute return-mapping to surface or apex
             if is_apex_return:
@@ -709,7 +712,7 @@ class LouZhangYoon(ConstitutiveModel):
                         conv_diter[len(comp_order_sym)] = \
                             conv_diter[len(comp_order_sym)]/acc_p_strain_old
                         conv_diter[len(comp_order_sym)+1] = \
-                            conv_diter[len(comp_order_sym)]/acc_p_strain_old
+                            conv_diter[len(comp_order_sym)+1]/acc_p_strain_old
                     conv_diter_norm = torch.linalg.norm(conv_diter)
                     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                     # Extract iterative solution

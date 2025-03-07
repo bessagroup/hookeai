@@ -646,7 +646,7 @@ class DruckerPragerVMAP(ConstitutiveModel):
         inc_p_mult = torch.tensor(0.0, device=e_trial_strain_mf.device)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Newton-Raphson iterative loop
-        for _ in range(su_max_n_iterations):
+        for _ in range(su_max_n_iterations + 1):
             # Compute initial hardening modulus
             cohesion, H = hardening_law(hardening_parameters,
                                         acc_p_strain_old + inc_p_mult)
@@ -828,7 +828,7 @@ class DruckerPragerVMAP(ConstitutiveModel):
         inc_vol_p_strain = torch.tensor(0.0, device=e_trial_strain_mf.device)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Newton-Raphson iterative loop
-        for _ in range(su_max_n_iterations):
+        for _ in range(su_max_n_iterations + 1):
             # Compute current cohesion and hardening modulus
             cohesion, H = hardening_law(
                 hardening_parameters,
