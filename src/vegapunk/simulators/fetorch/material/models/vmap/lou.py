@@ -1448,7 +1448,9 @@ class LouZhangYoonVMAP(ConstitutiveModel):
         etay = 3.0*yield_a_init*yield_b_init
         xi = (2.0*math.sqrt(3)/3.0)*torch.sqrt(1.0 - (1.0/3.0)*etay**2)
         # Compute additional material parameter
-        alpha = xi/etay
+        safe_etay = torch.max(
+            torch.abs(etay), torch.tensor(1e-6, device=device))
+        alpha = xi/safe_etay
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Set incremental plastic multiplier
         inc_p_mult = torch.tensor(0.0, device=device)
@@ -1466,7 +1468,9 @@ class LouZhangYoonVMAP(ConstitutiveModel):
             b_hardening_parameters,
             acc_p_strain_old + alpha*inc_vol_p_strain)
         # Compute initial (iterative) material parameter
-        beta = 1.0/(3.0*yield_a*yield_b)
+        safe_yield_b = torch.max(
+            torch.abs(yield_b), torch.tensor(1e-6, device=device))
+        beta = 1.0/(3.0*yield_a*safe_yield_b)
         # Set null iterative solution vector
         d_iter_null = torch.zeros(1, device=device)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -1487,7 +1491,9 @@ class LouZhangYoonVMAP(ConstitutiveModel):
                 b_hardening_parameters,
                 acc_p_strain_old + alpha*inc_vol_p_strain)
             # Compute current material parameter
-            beta = 1.0/(3.0*yield_a*yield_b)
+            safe_yield_b = torch.max(
+                torch.abs(yield_b), torch.tensor(1e-6, device=device))
+            beta = 1.0/(3.0*yield_a*safe_yield_b)
             # Compute return-mapping residual (apex)
             residual = yield_stress*beta \
                 - (trial_pressure - K*inc_vol_p_strain)
