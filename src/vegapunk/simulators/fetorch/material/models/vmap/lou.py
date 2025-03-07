@@ -149,7 +149,7 @@ class LouZhangYoonVMAP(ConstitutiveModel):
         Newton-Raphson iteration (return-mapping to cone apex).
     """
     def __init__(self, strain_formulation, problem_type, model_parameters,
-                 is_su_float64=True, device_type='cpu'):
+                 is_apex_handling=True, is_su_float64=True, device_type='cpu'):
         """Constitutive model constructor.
 
         Parameters
@@ -161,6 +161,13 @@ class LouZhangYoonVMAP(ConstitutiveModel):
             2D axisymmetric (3) and 3D (4).
         model_parameters : dict
             Material constitutive model parameters.
+        is_apex_handling : bool, default=True
+            If True, then apex singularity is handled by means of a purely
+            volumetric return-mapping along the hydrostatic axis. If False,
+            then state update convergence is lost at the apex singularity.
+            Disabling apex handling improves performance (bypassing any apex
+            return-mapping computations), but is only viable if apex handling
+            is not required (e.g., low pressure dependency).
         is_su_float64 : bool, default=True
             If True, then state update is locally computed in floating-point
             double precision. If False, then default floating-point precision
@@ -179,6 +186,8 @@ class LouZhangYoonVMAP(ConstitutiveModel):
         self._model_parameters = convert_dict_to_tensor(model_parameters,
                                                         is_inplace=True)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set apex handling flag
+        self._is_apex_handling = is_apex_handling
         # Set state update floating-point precision
         self._is_su_float64 = is_su_float64
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -496,7 +505,7 @@ class LouZhangYoonVMAP(ConstitutiveModel):
             b_hardening_law, b_hardening_parameters, c_hardening_law,
             c_hardening_parameters, d_hardening_law, d_hardening_parameters,
             is_associative_hardening, su_conv_tol, su_max_n_iterations,
-            apex_switch_tol, small)
+            self._is_apex_handling, apex_switch_tol, small)
         # Pick elastic or plastic step according with yielding condition
         step_output = torch.where(yield_function_cond,
                                   elastic_step_output,
@@ -785,8 +794,8 @@ class LouZhangYoonVMAP(ConstitutiveModel):
                       b_hardening_parameters, c_hardening_law,
                       c_hardening_parameters, d_hardening_law,
                       d_hardening_parameters, is_associative_hardening,
-                      su_conv_tol, su_max_n_iterations, apex_switch_tol,
-                      small):
+                      su_conv_tol, su_max_n_iterations, is_apex_handling,
+                      apex_switch_tol, small):
         """Perform plastic step.
         
         Parameters
@@ -832,10 +841,20 @@ class LouZhangYoonVMAP(ConstitutiveModel):
             State update convergence tolerance.
         su_max_n_iterations : int
             State update maximum number of iterations.
+        is_apex_handling : bool
+            If True, then apex singularity is handled by means of a purely
+            volumetric return-mapping along the hydrostatic axis. If False,
+            then state update convergence is lost at the apex singularity.
+            Disabling apex handling improves performance (bypassing any apex
+            return-mapping computations), but is only viable if apex handling
+            is not required (e.g., low pressure dependency).
         apex_switch_tol : float
             Tolerance of criterion to switch to apex return-mapping. Switch
             is triggered when the trial pressure is greater than
-            (1.0 - apex_switch_tolerance) times the apex pressure.
+            (1.0 - apex_switch_tolerance) times the apex pressure. Increasing
+            the tolerance may prevent convergence issues in the surface
+            return-mapping near the apex (namely for large strain increments),
+            but leads to an early switch from surface to apex.
         small : float
             Minimum threshold to handle values close or equal to zero.
 
@@ -875,8 +894,11 @@ class LouZhangYoonVMAP(ConstitutiveModel):
             torch.abs(yield_b), torch.tensor(1e-6, device=device))
         pressure_apex = (1.0/(3.0*yield_a*safe_yield_b))*yield_stress
         # Set return-mapping type
-        is_apex_return = \
-            trial_pressure > (1.0 - apex_switch_tol)*pressure_apex
+        if is_apex_handling:
+            is_apex_return = \
+                trial_pressure > (1.0 - apex_switch_tol)*pressure_apex
+        else:
+            is_apex_return = torch.tensor(False, device=device)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # If the trial pressure is greater than the Lou-Zhang-Yoon apex
         # pressure, then solve return-mapping system of nonlinear equations to
@@ -893,21 +915,27 @@ class LouZhangYoonVMAP(ConstitutiveModel):
             c_hardening_parameters, d_hardening_law, d_hardening_parameters,
             is_associative_hardening, su_conv_tol, su_max_n_iterations, small)
         # Perform plastic step (return-mapping to cone apex)
-        plastic_step_apex_output = cls._plastic_step_apex(
-            torch.logical_or(is_elastic_step,
-                             torch.logical_not(is_apex_return)),
-            e_trial_strain_mf, trial_pressure,
-            acc_p_strain_old, K, hardening_law, hardening_parameters,
-            a_hardening_law, a_hardening_parameters, b_hardening_law,
-            b_hardening_parameters, su_conv_tol, su_max_n_iterations, small)
+        if is_apex_handling:
+            plastic_step_apex_output = cls._plastic_step_apex(
+                torch.logical_or(is_elastic_step,
+                                 torch.logical_not(is_apex_return)),
+                e_trial_strain_mf, trial_pressure,
+                acc_p_strain_old, K, hardening_law, hardening_parameters,
+                a_hardening_law, a_hardening_parameters, b_hardening_law,
+                b_hardening_parameters, su_conv_tol, su_max_n_iterations,
+                small)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        # Set return-mapping type condition
-        cone_surface_cond = torch.logical_not(is_apex_return).expand(
-            plastic_step_cone_output.shape)
-        # Pick surface or apex plastic step according with condition
-        plastic_step_output = torch.where(cone_surface_cond,
-                                          plastic_step_cone_output,
-                                          plastic_step_apex_output)
+        # Pick surface or apex plastic step
+        if is_apex_handling:
+            # Set return-mapping type condition
+            cone_surface_cond = torch.logical_not(is_apex_return).expand(
+                plastic_step_cone_output.shape)
+            # Pick surface or apex plastic step according with condition
+            plastic_step_output = torch.where(cone_surface_cond,
+                                              plastic_step_cone_output,
+                                              plastic_step_apex_output)
+        else:
+            plastic_step_output = plastic_step_cone_output
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Build concatenated plastic step output
         plastic_step_output = \
