@@ -469,7 +469,7 @@ def set_material_model_parameters():
     n_dim, comp_order_sym, _ = get_problem_type_parameters(problem_type)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set constitutive model name
-    model_name = 'rc_von_mises_vmap'
+    model_name = 'rc_lou_zhang_yoon_vmap'
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set constitutive model name parameters
     if bool(re.search(r'^rc_.*$', model_name)):
@@ -613,20 +613,20 @@ def set_material_model_parameters():
                 'a_hardening_parameters': {'s0': 1.0,
                                            'a': 0},
                 'b_hardening_law': get_hardening_law('linear'),
-                'b_hardening_parameters': {'s0': 0.0,
+                'b_hardening_parameters': {'s0': 0.05,
                                            'a': 0},
                 'c_hardening_law': get_hardening_law('linear'),
-                'c_hardening_parameters': {'s0': 0.0,
+                'c_hardening_parameters': {'s0': 1.0,
                                            'a': 0},
                 'd_hardening_law': get_hardening_law('linear'),
-                'd_hardening_parameters': {'s0': 0.0,
+                'd_hardening_parameters': {'s0': 0.25,
                                            'a': 0},
                 'is_associative_hardening': True}
             # Set learnable parameters
             learnable_parameters = {}
             learnable_parameters['yield_a_s0'] = \
-                {'initial_value': random.uniform(1.0, 3.0),
-                 'bounds': (1.0, 3.0)}
+                {'initial_value': random.uniform(0.5, 1.5),
+                 'bounds': (0.5, 1.5)}
             learnable_parameters['yield_b_s0'] = \
                 {'initial_value': random.uniform(0, 0.1),
                  'bounds': (0, 0.1)}
