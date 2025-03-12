@@ -853,35 +853,64 @@ class RecurrentConstitutiveModel(torch.nn.Module):
         material_model_name = self.get_material_model_name()
         # Get model parameters
         model_parameters = self.get_model_parameters()
+        # Get model material parameters
+        material_model_parameters = self.get_material_model_parameters()
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Enforce model-dependent parameters constraints
         if 'lou_zhang_yoon' in material_model_name:
             # Get Lou-Zhang-Yoon model convexity-related yielding parameters
-            yield_c_s0 = model_parameters['yield_c_s0'].detach().clone()
-            yield_d_s0 = model_parameters['yield_d_s0'].detach().clone()
-            # Denormalize yielding parameters
-            if self.is_normalized_parameters:
-                yield_c_s0 = self.transform_parameter(
-                    'yield_c_s0', yield_c_s0, mode='denormalize')
-                yield_d_s0 = self.transform_parameter(
-                    'yield_d_s0', yield_d_s0, mode='denormalize')
-            # Perform convexity return-mapping
-            is_convex, yield_c_s0, yield_d_s0 = \
-                LouZhangYoon.convexity_return_mapping(yield_c_s0, yield_d_s0)
-            # Update yielding parameters
-            if not is_convex:
-                # Normalize yielding parameters
+            yield_c_s0 = \
+                material_model_parameters['c_hardening_parameters']['s0']
+            yield_d_s0 = \
+                material_model_parameters['d_hardening_parameters']['s0']
+            # Initialize learning parameters flags
+            is_learnable_yield_c = False
+            is_learnable_yield_d = False
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Get Lou-Zhang-Yoon model convexity-related yielding parameters
+            if 'yield_c_s0' in model_parameters.keys():
+                # Set learning parameter flag
+                is_learnable_yield_c = True
+                # Get learning parameter
+                yield_c_s0 = model_parameters['yield_c_s0'].detach().clone()
+            if 'yield_d_s0' in model_parameters.keys():
+                # Set learning parameter flag
+                is_learnable_yield_d = True
+                # Get learning parameter
+                yield_d_s0 = model_parameters['yield_d_s0'].detach().clone()
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Enforce constraints if learnable parameters
+            if is_learnable_yield_c or is_learnable_yield_d:
+                # Denormalize yielding parameters
                 if self.is_normalized_parameters:
-                    yield_c_s0 = self.transform_parameter(
-                        'yield_c_s0', yield_c_s0, mode='normalize')
-                    yield_d_s0 = self.transform_parameter(
-                        'yield_d_s0', yield_d_s0, mode='normalize')
-                # Update yielding parameters (enforcing convexity)
-                with torch.no_grad():
-                    self.get_model_parameters()['yield_c_s0'].copy_(
-                        yield_c_s0)
-                    self.get_model_parameters()['yield_d_s0'].copy_(
-                        yield_d_s0)
+                    if is_learnable_yield_c:
+                        yield_c_s0 = self.transform_parameter(
+                            'yield_c_s0', yield_c_s0, mode='denormalize')
+                    if is_learnable_yield_d:
+                        yield_d_s0 = self.transform_parameter(
+                            'yield_d_s0', yield_d_s0, mode='denormalize')
+                # Perform convexity return-mapping
+                is_convex, yield_c_s0, yield_d_s0 = \
+                    LouZhangYoon.convexity_return_mapping(yield_c_s0,
+                                                          yield_d_s0)
+                # Update yielding parameters
+                if not is_convex:
+                    # Normalize yielding parameters
+                    if self.is_normalized_parameters:
+                        if is_learnable_yield_c:
+                            yield_c_s0 = self.transform_parameter(
+                                'yield_c_s0', yield_c_s0, mode='normalize')
+                        if is_learnable_yield_d:
+                            yield_d_s0 = self.transform_parameter(
+                                'yield_d_s0', yield_d_s0, mode='normalize')
+                    # Update yielding parameters (enforcing convexity)
+                    with torch.no_grad():
+                        if is_learnable_yield_c:
+                            self.get_model_parameters()['yield_c_s0'].copy_(
+                                yield_c_s0)
+                        if is_learnable_yield_d:
+                            self.get_model_parameters()['yield_d_s0'].copy_(
+                                yield_d_s0)
     # -------------------------------------------------------------------------
     def get_detached_model_parameters(self, is_normalized_out=False):
         """Get model parameters detached of gradients.
