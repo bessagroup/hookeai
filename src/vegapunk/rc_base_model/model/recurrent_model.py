@@ -196,6 +196,8 @@ class RecurrentConstitutiveModel(torch.nn.Module):
         Delete existent model best state files.
     _init_data_scalers(self)
         Initialize model data scalers.
+    check_data_scaler(self, features_type)
+        Check if model data scaler has been fitted.
     set_data_scalers(self, scaler_features_in, scaler_features_out)
         Set fitted model data scalers.
     set_fitted_data_scalers(self, scaling_type, scaling_parameters)
@@ -2026,6 +2028,34 @@ class RecurrentConstitutiveModel(torch.nn.Module):
         self._data_scalers = {}
         self._data_scalers['features_in'] = None
         self._data_scalers['features_out'] = None
+    # -------------------------------------------------------------------------
+    def check_data_scaler(self, features_type):
+        """Check if model data scaler has been fitted.
+        
+        Parameters
+        ----------
+        features_type : str
+            Features for which data scaler is required:
+            
+            'features_in'  : Input features
+
+            'features_out' : Output features
+           
+        Returns
+        -------
+        is_data_scaler : bool
+            True if data scaler is fitted, False otherwise.
+        """
+        # Check fitted data scaler
+        if features_type not in self._data_scalers.keys():
+            raise RuntimeError(f'Unknown data scaler for {features_type}.')
+        else:
+            if self._data_scalers[features_type] is None:
+                is_data_scaler = False
+            else:
+                is_data_scaler = True
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        return is_data_scaler
     # -------------------------------------------------------------------------
     def set_data_scalers(self, scaler_features_in, scaler_features_out):
         """Set fitted model data scalers.

@@ -93,10 +93,18 @@ def perform_model_standard_training(train_dataset_file_path, model_directory,
                                       'ep0': 1e-5}}
         # Set learnable parameters
         learnable_parameters = {}
-        learnable_parameters['E'] = \
-            {'initial_value': random.uniform(100e3, 120e3),
-             'bounds': (100e3, 120e3)}
-        
+        #learnable_parameters['E'] = \
+        #    {'initial_value': random.uniform(100e3, 120e3),
+        #     'bounds': (80e3, 120e3)}
+        #learnable_parameters['v'] = \
+        #    {'initial_value': random.uniform(0.25, 0.40),
+        #     'bounds': (0.25, 0.40)}
+        learnable_parameters['s0'] = \
+            {'initial_value': random.uniform(500, 1000),
+             'bounds': (500, 1000)}
+        learnable_parameters['a'] = \
+            {'initial_value': random.uniform(500, 1000),
+             'bounds': (500, 1000)}
         # Set material constitutive state variables (prediction)
         state_features_out = {}
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -239,8 +247,9 @@ def perform_model_standard_training(train_dataset_file_path, model_directory,
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set default model training options
     opt_algorithm, lr_init, lr_scheduler_type, lr_scheduler_kwargs, \
-        loss_nature, loss_type, loss_kwargs, is_sampler_shuffle, \
-            is_early_stopping, early_stopping_kwargs = \
+        loss_nature, loss_type, loss_kwargs, is_normalized_loss, \
+        is_sampler_shuffle, is_early_stopping, early_stopping_kwargs, \
+            is_params_stopping, params_stopping_kwargs = \
                 set_default_training_options()
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set data features for training
@@ -272,16 +281,29 @@ def perform_model_standard_training(train_dataset_file_path, model_directory,
     # Set number of epochs
     n_max_epochs = 200
     # Set batch size
-    batch_size = 8
-    # Set learning rate
-    lr_init = 1.0e+00
+    batch_size = 10
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Compute exponential decay (learning rate scheduler)
-    lr_end = 1.0e-3
-    gamma = (lr_end/lr_init)**(1/n_max_epochs)
+    # Set initial and final learning rate according to loss normalization
+    if is_normalized_loss:
+        lr_init = 1.0e+00
+        lr_end = 1.0e-03
+    else:
+        lr_init = 1.0e+01
+        lr_end = 1.0e-01
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set learning rate scheduler
-    lr_scheduler_type = 'explr'
-    lr_scheduler_kwargs = {'gamma': gamma}
+    lr_scheduler_type = ('explr', 'linlr')[0]
+    # Set learning rate scheduler parameters
+    if lr_scheduler_type == 'explr':
+        gamma = (lr_end/lr_init)**(1/n_max_epochs)
+        lr_scheduler_kwargs = {'gamma': gamma}
+    elif lr_scheduler_type == 'linlr':
+        end_factor = (lr_end/lr_init)
+        lr_scheduler_kwargs = {'start_factor': 1.0,
+                               'end_factor': end_factor,
+                               'total_iters': n_max_epochs}
+    else:
+        raise RuntimeError('Unknown learning rate scheduler.')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set early stopping
     is_early_stopping = False
@@ -338,10 +360,13 @@ def perform_model_standard_training(train_dataset_file_path, model_directory,
                               lr_scheduler_kwargs=lr_scheduler_kwargs,
                               loss_nature=loss_nature, loss_type=loss_type,
                               loss_kwargs=loss_kwargs,
+                              is_normalized_loss=is_normalized_loss,
                               batch_size=batch_size,
                               is_sampler_shuffle=is_sampler_shuffle,
                               is_early_stopping=is_early_stopping,
                               early_stopping_kwargs=early_stopping_kwargs,
+                              is_params_stopping=is_params_stopping,
+                              params_stopping_kwargs=params_stopping_kwargs,
                               load_model_state=load_model_state,
                               save_every=None,
                               dataset_file_path=train_dataset_file_path,
@@ -552,6 +577,11 @@ def set_default_training_options():
         
     loss_kwargs : dict
         Arguments of torch.nn._Loss initializer.
+    is_normalized_loss : bool
+        If True, then training loss is computed from normalized output data,
+        False otherwise. Normalization of output data requires that model data
+        scalers are available. Ignored if model training is already performed
+        on normalized output features.
     is_sampler_shuffle : bool
         If True, shuffles data set samples at every epoch.
     is_early_stopping : bool
@@ -559,6 +589,11 @@ def set_default_training_options():
         is triggered.
     early_stopping_kwargs : dict
         Early stopping criterion parameters (key, str, item, value).
+    is_params_stopping : bool
+        If True, then training process is halted when parameters convergence
+        criterion is triggered.
+    params_stopping_kwargs : dict
+        Parameters convergence stopping criterion parameters.
     """
     opt_algorithm = 'adam'
     lr_init = 1.0e-04
@@ -567,16 +602,22 @@ def set_default_training_options():
     loss_nature = 'features_out'
     loss_type = 'mse'
     loss_kwargs = {}
+    is_normalized_loss = True
     is_sampler_shuffle = False
     is_early_stopping = True
     early_stopping_kwargs = {'validation_dataset': None,
                              'validation_frequency': 1,
                              'trigger_tolerance': 20,
                              'improvement_tolerance': 1e-2}
+    is_params_stopping = True
+    params_stopping_kwargs = {'convergence_tolerance': 0.001,
+                              'trigger_tolerance': 5,
+                              'min_hist_length': 5}
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     return opt_algorithm, lr_init, lr_scheduler_type, lr_scheduler_kwargs, \
-        loss_nature, loss_type, loss_kwargs, is_sampler_shuffle, \
-        is_early_stopping, early_stopping_kwargs
+        loss_nature, loss_type, loss_kwargs, is_normalized_loss, \
+        is_sampler_shuffle, is_early_stopping, early_stopping_kwargs, \
+        is_params_stopping, params_stopping_kwargs
 # =============================================================================
 if __name__ == "__main__":
     # Set computation processes

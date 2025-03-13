@@ -54,12 +54,12 @@ __status__ = 'Planning'
 def train_model(n_max_epochs, dataset, model_init_args, lr_init,
                 opt_algorithm='adam', lr_scheduler_type=None,
                 lr_scheduler_kwargs={}, loss_nature='features_out',
-                loss_type='mse', loss_kwargs={}, batch_size=1,
-                is_sampler_shuffle=False, is_early_stopping=False,
-                early_stopping_kwargs={}, is_params_stopping=True,
-                params_stopping_kwargs={}, load_model_state=None,
-                save_every=None, dataset_file_path=None, device_type='cpu',
-                seed=None, is_verbose=False):
+                loss_type='mse', loss_kwargs={}, is_normalized_loss=False,
+                batch_size=1, is_sampler_shuffle=False,
+                is_early_stopping=False, early_stopping_kwargs={},
+                is_params_stopping=True, params_stopping_kwargs={},
+                load_model_state=None, save_every=None, dataset_file_path=None,
+                device_type='cpu', seed=None, is_verbose=False):
     """Training of recurrent constitutive model.
     
     Parameters
@@ -104,6 +104,11 @@ def train_model(n_max_epochs, dataset, model_init_args, lr_init,
         
     loss_kwargs : dict, default={}
         Arguments of torch.nn._Loss initializer.
+    is_normalized_loss : bool, default=False
+        If True, then training loss is computed from normalized output data,
+        False otherwise. Normalization of output data requires that model data
+        scalers are available. Ignored if model training is already performed
+        on normalized output features.
     batch_size : int, default=1
         Number of samples loaded per batch.
     is_sampler_shuffle : bool, default=False
@@ -207,6 +212,20 @@ def train_model(n_max_epochs, dataset, model_init_args, lr_init,
         # Fit model data scalers  
         if is_model_in_normalized or is_model_out_normalized:
             model.fit_data_scalers(dataset)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Set training loss normalization
+    if is_normalized_loss:
+        # Check model data scalers
+        if is_model_out_normalized:
+            # Deactivate training loss normalization
+            is_normalized_loss = False
+        else:
+            # Fit model data scalers 
+            if not model.check_data_scaler(features_type='features_out'):
+                model.fit_data_scalers(dataset) 
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Save model initial state
+    model.save_model_init_state()
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Get model parameters
     model_parameters = model.parameters(recurse=True)
@@ -327,7 +346,7 @@ def train_model(n_max_epochs, dataset, model_init_args, lr_init,
                 features_in = batch['features_in']
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Get output features ground-truth
-            if is_model_out_normalized:
+            if is_model_out_normalized or is_normalized_loss:
                 # Normalize features ground-truth
                 targets = \
                     model.data_scaler_transform(tensor=batch['features_out'],
@@ -358,6 +377,12 @@ def train_model(n_max_epochs, dataset, model_init_args, lr_init,
                         f'include:\n\n'
                         f'> State update convergence failure for one or '
                         f'multiple paths in the batch')
+                # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                # Normalize output features
+                if is_normalized_loss:
+                    features_out = model.data_scaler_transform(
+                        tensor=features_out, features_type='features_out',
+                        mode='normalize')
                 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~                
                 # Compute loss
                 loss = loss_function(features_out, targets)
@@ -383,10 +408,24 @@ def train_model(n_max_epochs, dataset, model_init_args, lr_init,
             # attribute of model parameters
             optimizer.step()
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            
+            
+            #print('\nEpoch parameters (before bounds and constraints):')
+            #for key, val in model.get_detached_model_parameters().items():
+            #    print(f'  > {key} = {val}')
+            
+            
+            
             # Enforce bounds on model parameters
             model.enforce_parameters_bounds()
             # Enforce model-dependent constraints on model parameters
             model.enforce_parameters_constraints()
+            
+            
+            #print('\nEpoch parameters (after bounds and constraints):')
+            #for key, val in model.get_detached_model_parameters().items():
+            #    print(f'  > {key} = {val}')
+
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             if is_verbose:
                 total_time_sec = time.time() - start_time_sec
@@ -450,6 +489,7 @@ def train_model(n_max_epochs, dataset, model_init_args, lr_init,
                 is_stop_training = early_stopper.evaluate_criterion(
                     model, optimizer, epoch, loss_nature=loss_nature,
                     loss_type=loss_type, loss_kwargs=loss_kwargs,
+                    is_normalized_loss=is_normalized_loss,
                     batch_size=batch_size, device_type=device_type)
             # If early stopping is triggered, save model and optimizer best
             # performance corresponding to early stopping criterion
@@ -522,7 +562,7 @@ def train_model(n_max_epochs, dataset, model_init_args, lr_init,
     best_training_epoch = loss_history_epochs.index(best_loss)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     if is_verbose:
-        if is_model_out_normalized:
+        if is_model_out_normalized or is_normalized_loss:
             min_loss_str = 'Minimum training loss (normalized)'
         else:
             min_loss_str = 'Minimum training loss'
@@ -935,7 +975,8 @@ class EarlyStopper:
     # -------------------------------------------------------------------------
     def evaluate_criterion(self, model, optimizer, epoch,
                            loss_nature='features_out', loss_type='mse',
-                           loss_kwargs={}, batch_size=1, device_type='cpu'):
+                           loss_kwargs={}, is_normalized_loss=False,
+                           batch_size=1, device_type='cpu'):
         """Evaluate early stopping criterion.
         
         Parameters
@@ -958,6 +999,10 @@ class EarlyStopper:
             
         loss_kwargs : dict, default={}
             Arguments of torch.nn._Loss initializer.
+        is_normalized_loss : bool, default=False
+            If True, then samples prediction loss are computed from normalized
+            output data, False otherwise. Normalization of output data requires
+            that model data scalers are available.
         batch_size : int, default=1
             Number of samples loaded per batch.
         device_type : {'cpu', 'cuda'}, default='cpu'
@@ -976,7 +1021,8 @@ class EarlyStopper:
         avg_valid_loss_sample = self._validate_model(
             model, optimizer, epoch, loss_nature=loss_nature,
             loss_type=loss_type, loss_kwargs=loss_kwargs,
-            batch_size=batch_size, device_type=device_type)
+            is_normalized_loss=is_normalized_loss, batch_size=batch_size,
+            device_type=device_type)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Update minimum validation loss and performance counter
         if avg_valid_loss_sample < self._min_validation_loss:
@@ -1016,7 +1062,8 @@ class EarlyStopper:
     # -------------------------------------------------------------------------
     def _validate_model(self, model, optimizer, epoch,
                         loss_nature='features_out', loss_type='mse',
-                        loss_kwargs={}, batch_size=1, device_type='cpu'):
+                        loss_kwargs={}, is_normalized_loss=False,
+                        batch_size=1, device_type='cpu'):
         """Perform model validation.
         
         Parameters
@@ -1039,6 +1086,10 @@ class EarlyStopper:
             
         loss_kwargs : dict, default={}
             Arguments of torch.nn._Loss initializer.
+        is_normalized_loss : bool, default=False
+            If True, then samples prediction loss are computed from normalized
+            output data, False otherwise. Normalization of output data requires
+            that model data scalers are available.
         batch_size : int, default=1
             Number of samples loaded per batch.
         device_type : {'cpu', 'cuda'}, default='cpu'
@@ -1069,13 +1120,19 @@ class EarlyStopper:
             # Save state files
             save_training_state(model=model, optimizer=optimizer, epoch=epoch)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set prediction loss normalization
+        if is_normalized_loss or model.is_model_out_normalized:
+            is_pred_normalized_loss = True
+        else:
+            is_pred_normalized_loss = False
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Prediction with model
         _, avg_valid_loss_sample = predict(
             self._validation_dataset, model.model_directory,
             model=model, predict_directory=None, load_model_state=epoch,
             loss_nature=loss_nature, loss_type=loss_type,
             loss_kwargs=loss_kwargs,
-            is_normalized_loss=model.is_model_out_normalized,
+            is_normalized_loss=is_pred_normalized_loss,
             batch_size=batch_size,
             device_type=device_type, seed=None, is_verbose=False)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
