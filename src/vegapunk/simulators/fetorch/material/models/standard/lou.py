@@ -343,7 +343,7 @@ class LouZhangYoon(ConstitutiveModel):
         # Set state update maximum number of iterations
         su_max_n_iterations = 20
         # Set apex return-mapping switch tolerance
-        apex_switch_tol = 0.045
+        apex_switch_tol = 0.05
         # Set minimum threshold to handle values close or equal to zero
         small = 1e-8
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
