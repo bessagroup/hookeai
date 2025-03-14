@@ -357,7 +357,7 @@ def plot_yield_surface(models_names, models_parameters, models_sy,
         otherwise.
     """
     # Set pi-stress range factor (bounding box)
-    pi_stress_factor = 2.0
+    pi_stress_factor = 3.0
     # Get maximum yield stress among all models
     max_sy = max(models_sy.values())
     # Set pi-stress range
@@ -487,15 +487,15 @@ def plot_yield_surface(models_names, models_parameters, models_sy,
                            face='o', font_family='arial')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set axes titles
-    xtitle = 'Pi-Stress 1'
-    ytitle = 'Pi-Stress 2'
-    ztitle = 'Pi-Stress 3'
+    xtitle = 'Pi-Stress 1 (MPa)'
+    ytitle = 'Pi-Stress 2 (MPa)'
+    ztitle = 'Pi-Stress 3 (MPa)'
     # Set axes labels
     show_xlabels = True
     show_ylabels = True
     show_zlabels = True
     # Set axes tick labels
-    is_show_tick_labels = False
+    is_show_tick_labels = True
     if is_show_tick_labels:
         fmt = None
     else:
@@ -597,8 +597,8 @@ def plot_yield_surface_pi_plane(models_names, models_phi_pi_plane,
             data_labels.append(models_labels[model_name])
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set axes labels
-    x_label = 'Pi-Stress 1'
-    y_label = 'Pi-Stress 2'
+    x_label = 'Pi-Stress 1 (MPa)'
+    y_label = 'Pi-Stress 2 (MPa)'
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Plot constitutive material models yield surface in pi-plane
     figure, axes = plot_xy_data(
@@ -620,33 +620,68 @@ def plot_yield_surface_pi_plane(models_names, models_phi_pi_plane,
     plt.close('all')
 # =============================================================================
 if __name__ == '__main__':
-    # Set models names
-    models_names = ('von_mises', 'drucker_prager', 'lou_zhang_yoon')
-    models_names = ('lou_zhang_yoon',)
-    # Set models parameters
-    models_parameters = {}
-    models_parameters['von_mises'] = {}
-    models_parameters['drucker_prager'] = {'friction_angle': np.deg2rad(10)}
-    models_parameters['lou_zhang_yoon'] = {'yield_a': 1.5838,
-                                           'yield_b': 0.05,
-                                           'yield_c': -0.2669,
-                                           'yield_d': 0.8161}
-    models_parameters['lou_zhang_yoon'] = {'yield_a': 1.5838,
-                                           'yield_b': 0.05,
-                                           'yield_c': -1,
-                                           'yield_d': 0.25*np.sqrt(3)}
-
-    # Set models yield stress
-    models_sy = {'von_mises': 1.0,
-                 'drucker_prager': 1.0,
-                 'lou_zhang_yoon': 1.0}
-    # Set models labels
-    models_labels = {'von_mises': 'Von Mises',
-                     'drucker_prager': 'Drucker-Prager',
-                     'lou_zhang_yoon': 'Lou-Zhang-Yoon'}
-
+    # Set processes
+    is_parametric = False
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Set models data
+    if is_parametric:
+        # Set number of parametric models
+        n_model = 4
+        # Set default model parameters
+        default_parameters = {'yield_a': 1.0,
+                              'yield_b': 0.05,
+                              'yield_c': 1.0,
+                              'yield_d': 0.5}
+        # Set parametric values and labels
+        parametric_name = 'yield_d'
+        parametric_label = 'd'
+        parametric_values = {'yield_a': (0.5, 0.8, 1.2, 1.5),
+                            'yield_b': (0.0, 0.03, 0.07, 0.1),
+                            'yield_c': (-3.0, -1.0, 1.0, 2.0),
+                            'yield_d': (-1.0, -0.5, 0.5, 1.0)}
+        parametric_labels = [f'${parametric_label} = {x}$'
+                            for x in parametric_values[parametric_name]]
+        # Initialize models data
+        models_names = []
+        models_parameters = {}
+        models_sy = {}
+        models_labels = {}
+        # Loop over models
+        for i in range(n_model):
+            # Set model name
+            model_name = f'lou_zhang_yoon_{i + 1}'
+            models_names.append(model_name)
+            # Initialize model parameters (default)
+            models_parameters[model_name] = default_parameters.copy()
+            # Set model parameters
+            models_parameters[model_name][parametric_name] = \
+                parametric_values[parametric_name][i]
+            # Set model label
+            models_labels[model_name] = parametric_labels[i]
+            # Set model initial yield stress
+            models_sy[model_name] = 900
+    else:
+        # Set models names
+        models_names = ('von_mises', 'drucker_prager', 'lou_zhang_yoon')
+        # Set models parameters
+        models_parameters = {}
+        models_parameters['von_mises'] = {}
+        models_parameters['drucker_prager'] = {'friction_angle': np.deg2rad(5)}
+        models_parameters['lou_zhang_yoon'] = {'yield_a': 1.0,
+                                               'yield_b': 0.05,
+                                               'yield_c': 1.0,
+                                               'yield_d': 0.5}
+        # Set models yield stress
+        models_sy = {'von_mises': 1.0,
+                     'drucker_prager': 1.0,
+                     'lou_zhang_yoon': 900}
+        # Set models labels
+        models_labels = {'von_mises': 'Von Mises',
+                        'drucker_prager': 'Drucker-Prager',
+                        'lou_zhang_yoon': 'Lou-Zhang_Yoon'}
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Plot constitutive material models yield surface
     plot_yield_surface(models_names, models_parameters, models_sy,
                        models_labels, is_null_planes=False,
-                       is_pi_plane_only=False, is_stdout_display=True)
+                       is_pi_plane_only=False, save_dir=None,
+                       is_save_fig=False, is_stdout_display=True)
