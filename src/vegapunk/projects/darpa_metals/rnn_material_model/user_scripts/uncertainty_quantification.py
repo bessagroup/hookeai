@@ -520,11 +520,6 @@ if __name__ == "__main__":
         if not os.path.isdir(case_study_dir):
             raise RuntimeError('The case study directory has not been found:'
                                '\n\n' + case_study_dir)
-        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        # Check case study directory
-        if not os.path.isdir(case_study_dir):
-            raise RuntimeError('The case study directory has not been found:'
-                               '\n\n' + case_study_dir)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~       
         # Set training data set directory
         training_dataset_dir = os.path.join(os.path.normpath(case_study_dir),
