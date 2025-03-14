@@ -373,8 +373,8 @@ class LouZhangYoonVMAP(ConstitutiveModel):
         su_conv_tol = 1e-6
         # Set state update maximum number of iterations
         su_max_n_iterations = 10
-        # Set apex-return mapping switch tolerance
-        apex_switch_tol = 0.005
+        # Set apex return-mapping switch tolerance
+        apex_switch_tol = 0.045
         # Set minimum threshold to handle values close or equal to zero
         small = 1e-8
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -1215,8 +1215,11 @@ class LouZhangYoonVMAP(ConstitutiveModel):
         # Get device from elastic trial strain
         device = e_trial_strain.device
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set associative hardening factor
+        associative_hardening_factor = torch.tensor(1.0, device=device)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Set required fourth-order tensors
-        soid, _, _, fosym, _, _, fodevprojsym = \
+        soid, _, _, fosym, _, _, _ = \
             get_id_operators(n_dim, device=device)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Compute stress
@@ -1287,7 +1290,8 @@ class LouZhangYoonVMAP(ConstitutiveModel):
         residual_1 = e_strain - e_trial_strain + inc_p_mult*flow_vector
         # Compute second residual
         if is_associative_hardening:
-            residual_2 = acc_p_strain - acc_p_strain_old - inc_p_mult
+            residual_2 = (acc_p_strain - acc_p_strain_old
+                          - associative_hardening_factor*inc_p_mult)
         else:
             residual_2 = (acc_p_strain - acc_p_strain_old
                           - inc_p_mult*(math.sqrt(2/3))*norm_flow_vector)
@@ -1333,7 +1337,8 @@ class LouZhangYoonVMAP(ConstitutiveModel):
             dr2_daccpstr = torch.tensor(1.0, device=device)
             # Compute derivative of second residual w.r.t. to incremental
             # plastic multiplier
-            dr2_dincpm = torch.tensor(-1.0, device=device)
+            dr2_dincpm = (torch.tensor(-1.0, device=device)
+                          *associative_hardening_factor)
         else:
             # Compute derivative of second residual w.r.t. to elastic strain
             dr2_destrain = \
