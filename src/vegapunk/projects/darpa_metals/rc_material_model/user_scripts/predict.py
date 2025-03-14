@@ -36,6 +36,8 @@ from projects.darpa_metals.rnn_material_model.rnn_model_tools. \
         build_time_series_predictions_data
 from gnn_base_model.predict.prediction_plots import plot_truth_vs_prediction
 from ioput.iostandard import make_directory, find_unique_file_with_regex
+from testing_utilities.output_prediction_metrics import \
+    compute_directory_prediction_metrics
 #
 #                                                          Authorship & Credits
 # =============================================================================
@@ -46,8 +48,9 @@ __status__ = 'Planning'
 #
 # =============================================================================
 def perform_model_prediction(predict_directory, dataset_file_path,
-                             model_directory, device_type='cpu',
-                             is_verbose=False):
+                             model_directory,
+                             is_remove_sample_prediction=False,
+                             device_type='cpu', is_verbose=False):
     """Perform prediction with recurrent constitutive model.
     
     Parameters
@@ -58,6 +61,8 @@ def perform_model_prediction(predict_directory, dataset_file_path,
         Testing data set file path.
     model_directory : str
         Directory where model is stored.
+    is_remove_sample_prediction : bool, default=False
+        If True, then remove sample prediction files after plots are generated.
     device_type : {'cpu', 'cuda'}, default='cpu'
         Type of device on which torch.Tensor is allocated.
     is_verbose : bool, default=False
@@ -119,11 +124,16 @@ def perform_model_prediction(predict_directory, dataset_file_path,
                 dataset_file_path=dataset_file_path,
                 device_type=device_type, seed=None, is_verbose=is_verbose)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Set mean predictions metrics
+    mean_prediction_metrics = ['rmse', 'nrmse',]
+    # Compute mean prediction metrics
+    _, _ = compute_directory_prediction_metrics(
+        predict_subdir, mean_prediction_metrics, is_save_file=True,
+        is_display_results=False)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Generate plots of model predictions
     generate_prediction_plots(dataset_file_path, predict_subdir)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Set remove sample prediction files flag
-    is_remove_sample_prediction = False
     # Remove sample prediction files
     if is_remove_sample_prediction:
         # Set sample prediction file regex
@@ -345,5 +355,6 @@ if __name__ == "__main__":
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Perform prediction with model
         perform_model_prediction(prediction_subdir, dataset_file_path,
-                                 model_directory, device_type=device_type,
-                                 is_verbose=True)
+                                 model_directory,
+                                 is_remove_sample_prediction=True,
+                                 device_type=device_type, is_verbose=True)
