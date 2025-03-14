@@ -201,14 +201,14 @@ def perform_model_standard_training(train_dataset_file_path, model_directory,
              'c_hardening_parameters': {'s0': 1.0,
                                         'a': 0},
              'd_hardening_law': get_hardening_law('linear'),
-             'd_hardening_parameters': {'s0': 0.25,
+             'd_hardening_parameters': {'s0': 0.5,
                                         'a': 0},
              'is_associative_hardening': True}
         # Set learnable parameters
         learnable_parameters = {}
         learnable_parameters['yield_a_s0'] = \
-            {'initial_value': random.uniform(0.8, 1.2),
-             'bounds': (0.8, 1.2)}
+            {'initial_value': random.uniform(0.5, 1.5),
+             'bounds': (0.5, 1.5)}
         learnable_parameters['yield_b_s0'] = \
             {'initial_value': random.uniform(0, 0.1),
              'bounds': (0, 0.1)}
@@ -281,7 +281,7 @@ def perform_model_standard_training(train_dataset_file_path, model_directory,
     # Set number of epochs
     n_max_epochs = 200
     # Set batch size
-    batch_size = 10
+    batch_size = 4
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set initial and final learning rate according to loss normalization
     if is_normalized_loss:
