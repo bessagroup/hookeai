@@ -1803,7 +1803,7 @@ if __name__ == '__main__':
         time_end = 1.0
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Set strain components bounds
-        strain_bounds = {x: (-0.05, 0.05) for x in strain_comps_order}
+        strain_bounds = {x: (-0.02, 0.02) for x in strain_comps_order}
         # Set incremental strain norm
         inc_strain_norm = None
         # Set strain noise
@@ -1812,7 +1812,7 @@ if __name__ == '__main__':
         n_cycle = 0
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Set constitutive model
-        model_name = 'von_mises'
+        model_name = 'lou_zhang_yoon'
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Set constitutive model parameters:
         if model_name == 'von_mises':
@@ -1876,27 +1876,22 @@ if __name__ == '__main__':
                 'E': 110e3, 'v': 0.33,
                 'euler_angles': (0.0, 0.0, 0.0),
                 'hardening_law': get_hardening_law('nadai_ludwik'),
-                'hardening_parameters':
-                    {'s0': 900,
-                    'a': 700,
-                    'b': 0.5,
-                    'ep0': 1e-5},
+                'hardening_parameters': {'s0': 900,
+                                         'a': 700,
+                                         'b': 0.5,
+                                         'ep0': 1e-5},
                 'a_hardening_law': get_hardening_law('linear'),
-                'a_hardening_parameters':
-                    {'s0': 1.0,
-                    'a': 0},
+                'a_hardening_parameters': {'s0': 1.0,
+                                           'a': 0},
                 'b_hardening_law': get_hardening_law('linear'),
-                'b_hardening_parameters':
-                    {'s0': 0.02,
-                    'a': 0},
+                'b_hardening_parameters': {'s0': 0.05,
+                                           'a': 0},
                 'c_hardening_law': get_hardening_law('linear'),
-                'c_hardening_parameters':
-                    {'s0': 0.1,
-                    'a': 0},
+                'c_hardening_parameters': {'s0': 1.0,
+                                           'a': 0},
                 'd_hardening_law': get_hardening_law('linear'),
-                'd_hardening_parameters':
-                    {'s0': 0.1,
-                    'a': 0},
+                'd_hardening_parameters': {'s0': 0.5,
+                                           'a': 0},
                 'is_associative_hardening': True}
             # Set constitutive state variables to be additionally included in
             # the data set
