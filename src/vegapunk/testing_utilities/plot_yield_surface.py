@@ -432,7 +432,7 @@ def plot_yield_surface(models_names, models_parameters, models_sy,
         # Set mesh style
         mesh_style = ('surface', 'wireframe', 'points')[0]
         # Set mesh color
-        mesh_color = ('#4477AA', '#EE6677', '#CCBB44', '#228833', '#66CCEE',
+        mesh_color = ('#4477AA', '#EE6677', '#228833', '#CCBB44', '#66CCEE',
                       '#AA3377', '#BBBBBB', '#EE7733', '#009988', '#CC3311',
                       '#DDAA33', '#999933', '#DDCC77', '#882255')[i]
         # Set show edges and edges color
