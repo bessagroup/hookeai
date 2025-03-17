@@ -107,7 +107,7 @@ def generate_convergence_plots(models_base_dirs, training_dirs, testing_dirs,
     prediction_types = {}
     prediction_types['stress_comps'] = ('stress_11', 'stress_22', 'stress_33',
                                         'stress_12', 'stress_23', 'stress_13')
-    prediction_types['acc_p_strain'] = ('acc_p_strain',)
+    #prediction_types['acc_p_strain'] = ('acc_p_strain',)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Plot models time series predictions versus ground-truth
     if is_uncertainty_quantification:
@@ -140,7 +140,9 @@ def generate_convergence_plots(models_base_dirs, training_dirs, testing_dirs,
 # =============================================================================
 if __name__ == "__main__":
     # Set computation processes
-    is_uncertainty_quantification = False
+    is_uncertainty_quantification = True
+    # Set testing type
+    testing_type = ('in_distribution', 'out_distribution')[0]
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set convergence analysis base directory
     base_dir = ('/home/bernardoferreira/Documents/brown/projects/'
@@ -169,8 +171,12 @@ if __name__ == "__main__":
                                'found:\n\n' + training_dataset_dir)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Set testing data set directory
-        testing_dataset_dir = os.path.join(os.path.normpath(model_base_dir),
-                                           '5_testing_id_dataset')
+        if testing_type == 'in_distribution':
+            testing_dataset_dir = os.path.join(
+                os.path.normpath(model_base_dir), '5_testing_id_dataset')
+        elif testing_type == 'out_distribution':
+            testing_dataset_dir = os.path.join(
+                os.path.normpath(model_base_dir), '6_testing_od_dataset')
         # Store testing data set directory
         if os.path.isdir(testing_dataset_dir):
             testing_dirs.append(testing_dataset_dir)
@@ -179,11 +185,8 @@ if __name__ == "__main__":
                                'found:\n\n' + testing_dataset_dir)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Set prediction data set directory
-        #prediction_dir = os.path.join(os.path.normpath(model_base_dir),
-        #                              '7_prediction/in_distribution/'
-        #                              'prediction_set_0')
         prediction_dir = os.path.join(os.path.normpath(model_base_dir),
-                                      '7_prediction/training/'
+                                      f'7_prediction/{testing_type}/'
                                       'prediction_set_0')
         # Store prediction directory
         if os.path.isdir(prediction_dir) or is_uncertainty_quantification:
