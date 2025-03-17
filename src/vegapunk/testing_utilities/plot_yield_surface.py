@@ -704,5 +704,5 @@ if __name__ == '__main__':
     # Plot constitutive material models yield surface
     plot_yield_surface(models_names, models_parameters, models_sy,
                        models_labels, is_null_planes=False,
-                       is_pi_plane_only=False, save_dir='/home/bernardoferreira/Documents/brown/projects/darpa_paper_examples/local/standard_models/lou_yield_convexity_plots',
-                       is_save_fig=True, is_stdout_display=True)
+                       is_pi_plane_only=False, save_dir=None,
+                       is_save_fig=False, is_stdout_display=True)
