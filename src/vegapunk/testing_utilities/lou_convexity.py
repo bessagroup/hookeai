@@ -24,7 +24,7 @@ if __name__ == '__main__':
     # Initialize parameters paths
     parameters_paths = {}
     # Set trial yield parameters
-    parameters_trials = ()
+    parameters_trials = ((-3.0, 1.00), (2.0, -1.25), (-2.5, -1.25))
     # Loop over trial yield parameters
     for i, trial in enumerate(parameters_trials):
         # Set trial yield parameters
@@ -37,7 +37,18 @@ if __name__ == '__main__':
         parameters_paths[f'return-mapping-{i}'] = \
             torch.tensor(([[yield_c_trial, yield_d_trial],
                            [yield_c, yield_d]]))
+            
+        print(f'({yield_c_trial}, {yield_d_trial}) => ({yield_c}, {yield_d})')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Set rectangular search domain boundary
+    rect_search_domain = ((-3.5, 2.5), (-1.5, 1.5))
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Set plots directory
+    plots_dir = ('/home/bernardoferreira/Documents/brown/projects/'
+                 'darpa_paper_examples/local/standard_models/'
+                 'lou_yield_convexity_plots')
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    """
     # Set parameter name prefix
     is_global_optimization = True
     if is_global_optimization:
@@ -45,11 +56,12 @@ if __name__ == '__main__':
     else:
         model_prefix = ''
     # Set model parameters history record file path
-    parameters_record_path = ('/home/bernardoferreira/Documents/brown/'
-                              'projects/darpa_project/11_global_learning_lou/'
-                              'random_specimen/1_discover_rc_lou/'
-                              'material_model_finder/3_model/'
-                              'parameters_history_record.pkl')
+    parameters_record_path = \
+        ('/home/bernardoferreira/Documents/brown/projects/darpa_project/'
+         '11_global_learning_lou/'
+         'cambridge_specimen_plane_stress_notched_short_cyclic_plus/'
+         'HEXA8_N404_E240/1_discover_rc_lou/material_model_finder/3_model/'
+         'parameters_history_record.pkl')
     # Load model parameters history record
     with open(parameters_record_path, 'rb') as parameters_record_file:
         parameters_history_record = pickle.load(parameters_record_file)
@@ -71,10 +83,14 @@ if __name__ == '__main__':
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set plots directory
     plots_dir = ('/home/bernardoferreira/Documents/brown/projects/'
-                 'darpa_project/11_global_learning_lou/random_specimen')
+                 'darpa_project/11_global_learning_lou/'
+                 'cambridge_specimen_plane_stress_notched_short_cyclic_plus/'
+                 'HEXA8_N404_E240/1_discover_rc_lou/material_model_finder/'
+                 '3_model')
     # Create plots directory
     if not os.path.isdir(plots_dir):
         make_directory(plots_dir)
+    """
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Plot convexity domain boundary
     LouZhangYoon.plot_convexity_boundary(
