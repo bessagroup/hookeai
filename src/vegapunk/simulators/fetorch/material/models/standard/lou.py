@@ -1637,7 +1637,7 @@ class LouZhangYoon(ConstitutiveModel):
         return convex_boundary
     # -------------------------------------------------------------------------
     @classmethod
-    def directional_convex_boundary(cls, theta, r_lower=0.0, r_upper=4.0,
+    def directional_convex_boundary(cls, theta, r_lower=0.0, r_upper=5.0,
                                     search_tol=1e-6):
         """Compute convexity domain boundary along given angular direction.
         
@@ -1647,7 +1647,7 @@ class LouZhangYoon(ConstitutiveModel):
             Angular coordinate in yield parameters domain (radians).
         r_lower : float, default=0.0
             Initial searching radius lower bound.
-        r_upper : float, default=4.0
+        r_upper : float, default=5.0
             Initial searching radius upper bound.
         search_tol : float, default = 1e-6
             Searching window tolerance.
