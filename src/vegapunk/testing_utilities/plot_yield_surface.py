@@ -621,10 +621,10 @@ def plot_yield_surface_pi_plane(models_names, models_phi_pi_plane,
 # =============================================================================
 if __name__ == '__main__':
     # Set processes
-    is_parametric = False
+    process = ('default', 'parametric', 'convexity')[2]
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set models data
-    if is_parametric:
+    if process == 'parametric':
         # Set number of parametric models
         n_model = 4
         # Set default model parameters
@@ -660,6 +660,27 @@ if __name__ == '__main__':
             models_labels[model_name] = parametric_labels[i]
             # Set model initial yield stress
             models_sy[model_name] = 900
+    elif process == 'convexity':
+        # Set models names
+        models_names = ('lou_zhang_yoon_brm', 'lou_zhang_yoon_arm')
+        # Set models parameters
+        models_parameters = {}
+        models_parameters['lou_zhang_yoon_brm'] = \
+            {'yield_a': 1.0,
+             'yield_b': 0.05,
+             'yield_c': -2.5,
+             'yield_d': -1.25}
+        models_parameters['lou_zhang_yoon_arm'] = \
+            {'yield_a': 1.0,
+             'yield_b': 0.05,
+             'yield_c': -1.390837550163269,
+             'yield_d': -0.6954185962677002}
+        # Set models yield stress
+        models_sy = {'lou_zhang_yoon_brm': 900,
+                     'lou_zhang_yoon_arm': 900}
+        # Set models labels
+        models_labels = {'lou_zhang_yoon_brm': 'Before return-mapping',
+                         'lou_zhang_yoon_arm': 'After return-mapping'}
     else:
         # Set models names
         models_names = ('von_mises', 'drucker_prager', 'lou_zhang_yoon')
@@ -683,5 +704,5 @@ if __name__ == '__main__':
     # Plot constitutive material models yield surface
     plot_yield_surface(models_names, models_parameters, models_sy,
                        models_labels, is_null_planes=False,
-                       is_pi_plane_only=False, save_dir=None,
-                       is_save_fig=False, is_stdout_display=True)
+                       is_pi_plane_only=False, save_dir='/home/bernardoferreira/Documents/brown/projects/darpa_paper_examples/local/standard_models/lou_yield_convexity_plots',
+                       is_save_fig=True, is_stdout_display=True)
