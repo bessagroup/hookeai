@@ -410,9 +410,13 @@ def plot_yield_surface(models_names, models_parameters, models_sy,
         # Get model label
         if (isinstance(models_labels, dict)
                 and model_name in models_labels.keys()):
-            model_label = models_labels[model_name]
+            if (models_labels[model_name] is None
+                    or models_labels[model_name] == ''):
+                model_label = ''
+            else:
+                model_label = models_labels[model_name]
         else:
-            model_label = None
+            model_label = ''
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Compute model yield function
         phi_points = batched_yield_function(
@@ -594,7 +598,11 @@ def plot_yield_surface_pi_plane(models_names, models_phi_pi_plane,
         # Store model label
         if (isinstance(models_labels, dict)
                 and model_name in models_labels.keys()):
-            data_labels.append(models_labels[model_name])
+            if models_labels[model_name] == '':
+                model_label = None
+            else:
+                model_label = models_labels[model_name]
+            data_labels.append(model_label)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set axes labels
     x_label = 'Pi-Stress 1 (MPa)'
