@@ -39,6 +39,8 @@ from projects.darpa_metals.rnn_material_model.rnn_model_tools.strain_features \
     import add_strain_features
 from gnn_base_model.predict.prediction_plots import plot_truth_vs_prediction
 from ioput.iostandard import make_directory, find_unique_file_with_regex
+from testing_utilities.output_prediction_metrics import \
+    compute_directory_prediction_metrics
 #
 #                                                          Authorship & Credits
 # =============================================================================
@@ -49,8 +51,9 @@ __status__ = 'Planning'
 #
 # =============================================================================
 def perform_model_prediction(predict_directory, dataset_file_path,
-                             model_directory, device_type='cpu',
-                             is_verbose=False):
+                             model_directory,
+                             is_remove_sample_prediction=False,
+                             device_type='cpu', is_verbose=False):
     """Perform prediction with hybrid material model.
     
     Parameters
@@ -61,6 +64,8 @@ def perform_model_prediction(predict_directory, dataset_file_path,
         Testing data set file path.
     model_directory : str
         Directory where model is stored.
+    is_remove_sample_prediction : bool, default=False
+        If True, then remove sample prediction files after plots are generated.
     device_type : {'cpu', 'cuda'}, default='cpu'
         Type of device on which torch.Tensor is allocated.
     is_verbose : bool, default=False
@@ -70,6 +75,9 @@ def perform_model_prediction(predict_directory, dataset_file_path,
     -------
     predict_subdir : str
         Subdirectory where samples predictions results files are stored.
+    avg_predict_loss : float
+        Average prediction loss per sample. Defaults to None if ground-truth is
+        not available for all data set samples.
     """
     # Set default model prediction options
     loss_nature, loss_type, loss_kwargs = set_default_prediction_options()
@@ -154,8 +162,8 @@ def perform_model_prediction(predict_directory, dataset_file_path,
     # Set model state loading
     load_model_state = 'best'
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Prediction with RNN-based model
-    predict_subdir, _ = \
+    # Prediction with hybrid material model
+    predict_subdir, avg_predict_loss = \
         predict(dataset, model_directory, predict_directory=predict_directory,
                 load_model_state=load_model_state, loss_nature=loss_nature,
                 loss_type=loss_type, loss_kwargs=loss_kwargs,
@@ -163,11 +171,16 @@ def perform_model_prediction(predict_directory, dataset_file_path,
                 dataset_file_path=dataset_file_path,
                 device_type=device_type, seed=None, is_verbose=is_verbose)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Set mean predictions metrics
+    mean_prediction_metrics = ['rmse', 'nrmse',]
+    # Compute mean prediction metrics
+    _, _ = compute_directory_prediction_metrics(
+        predict_subdir, mean_prediction_metrics, is_save_file=True,
+        is_display_results=False)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Generate plots of model predictions
     generate_prediction_plots(dataset_file_path, predict_subdir)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Set remove sample prediction files flag
-    is_remove_sample_prediction = True
     # Remove sample prediction files
     if is_remove_sample_prediction:
         # Set sample prediction file regex
@@ -183,7 +196,7 @@ def perform_model_prediction(predict_directory, dataset_file_path,
                     # Remove sample prediction file
                     os.remove(sample_file_path)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    return predict_subdir
+    return predict_subdir, avg_predict_loss
 # =============================================================================
 def generate_prediction_plots(dataset_file_path, predict_subdir):
     """Generate plots of model predictions.
@@ -350,20 +363,22 @@ if __name__ == "__main__":
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set case studies base directory
     base_dir = ('/home/bernardoferreira/Documents/brown/projects/'
-                'darpa_project/7_local_hybrid_training/'
-                'case_learning_drucker_prager_pressure_dependency/'
-                'w_candidate_dp_model_1deg/'
-                '3_hybrid_model_convergence_analysis')
+                'darpa_paper_examples/local/hybrid_models/dp_plus_gru/n10')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Set training data set sizes
-    training_sizes = (10, 20, 40, 80, 160, 320, 640, 1280, 2560)
-    # Loop over training data set sizes
-    for n in training_sizes:
-        # Set case study directory
-        case_study_name = f'n{n}'
-        case_study_dir = os.path.join(os.path.normpath(base_dir),
-                                      f'{case_study_name}')
-        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Initialize case study directories
+    case_study_dirs = []
+    # Set case study directories
+    if False:
+        # Set training data set sizes
+        training_sizes = (10, 20, 40, 80, 160, 320, 640, 1280, 2560)
+        # Set case study directories
+        case_study_dirs += [os.path.join(os.path.normpath(base_dir), f'n{n}/')
+                            for n in training_sizes]
+    else:
+        case_study_dirs += [base_dir,]
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Loop over case study directories
+    for case_study_dir in case_study_dirs:
         # Check case study directory
         if not os.path.isdir(case_study_dir):
             raise RuntimeError('The case study directory has not been found:'
@@ -426,5 +441,6 @@ if __name__ == "__main__":
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Perform prediction with model
         perform_model_prediction(prediction_subdir, dataset_file_path,
-                                 model_directory, device_type=device_type,
-                                 is_verbose=True)
+                                 model_directory,
+                                 is_remove_sample_prediction=True,
+                                 device_type=device_type, is_verbose=True)

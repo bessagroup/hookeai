@@ -32,6 +32,7 @@ import numpy as np
 from time_series_data.time_dataset import load_dataset, \
     concatenate_dataset_features, sum_dataset_features
 from rnn_base_model.model.gru_model import GRURNNModel
+from rc_base_model.model.recurrent_model import RecurrentConstitutiveModel
 from hybrid_base_model.model.hybridized_layers import BatchedElasticModel, \
     VolDevCompositionModel
 from hybrid_base_model.model.hybridized_model import set_hybridized_model
@@ -44,7 +45,7 @@ from gnn_base_model.train.training_plots import plot_training_loss_history, \
     plot_training_loss_and_lr_history
 from simulators.fetorch.material.models.standard.hardening import \
     get_hardening_law
-from utilities.fit_data_scalers import get_fitted_data_scaler
+from utilities.fit_data_scalers import fit_data_scaler_from_dataset
 from projects.darpa_metals.rnn_material_model.rnn_model_tools.strain_features \
     import add_strain_features
 from projects.darpa_metals.rnn_material_model.rnn_model_tools.stress_features \
@@ -193,7 +194,7 @@ def perform_model_standard_training(train_dataset_file_path, model_directory,
     elif hybridization_scheme == 2:
         # Description:
         #
-        # HybridModel(e) = GRU(e) + VolDevComposition(s_vol, s_dev)
+        # HybridModel(e) = GRU(e) > VolDevComposition(s_vol, s_dev)
         #
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Set hybridized model name
@@ -226,7 +227,7 @@ def perform_model_standard_training(train_dataset_file_path, model_directory,
     elif hybridization_scheme == 3:
         # Description:
         #
-        # HybridModel(e) = GRU(e, e_i1, e_i2) + VolDevComposition(s_vol, s_dev)
+        # HybridModel(e) = GRU(e, e_i1, e_i2) > VolDevComposition(s_vol, s_dev)
         #
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Set hybridized model name
@@ -255,6 +256,38 @@ def perform_model_standard_training(train_dataset_file_path, model_directory,
         model_init_args['hyb_models_dict'] = hyb_models_dict
         # Set hybridization model type
         model_init_args['hybridization_type'] = 'identity'
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    elif hybridization_scheme == 3:
+        # Description:
+        #
+        # HybridModel(e) = RCM(e) + GRU(e)
+        #
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set hybridized model name
+        hyb_model_name = 'rcm_strain_to_stress'
+        # Set hybridized model indices
+        hyb_indices = (0, 0)
+        # Load scaling data set
+        scaling_dataset = load_dataset(train_dataset_file_path)
+        # Set hybridized model: RCM (strain to stress)
+        hyb_models_dict[hyb_model_name] = set_hybridized_rcm_model(
+            hyb_indices, 'drucker-prager', device_type=device_type)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set hybridized model name
+        hyb_model_name = 'gru_strain_to_stress'
+        # Set hybridized model indices
+        hyb_indices = (1, 0)
+        # Load scaling data set
+        scaling_dataset = load_dataset(train_dataset_file_path)
+        # Set hybridized model: GRU (strain to stress)
+        hyb_models_dict[hyb_model_name] = set_hybridized_gru_model(
+            hyb_indices, 'strain_to_stress', scaling_dataset,
+            device_type=device_type)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set hybridized models dictionary
+        model_init_args['hyb_models_dict'] = hyb_models_dict
+        # Set hybridization model type
+        model_init_args['hybridization_type'] = 'additive'
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     else:
         raise RuntimeError('Unknown hybridization scheme.')
@@ -434,9 +467,9 @@ def set_hybridized_gru_model(hyb_indices, features_option, scaling_dataset,
         model_init_file_path = ''
     else:
         # Set hidden layer size
-        hidden_layer_size = 500
+        hidden_layer_size = 444
         # Set number of recurrent layers (stacked RNN)
-        n_recurrent_layers = 2
+        n_recurrent_layers = 3
         # Set dropout probability
         dropout = 0
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -563,7 +596,7 @@ def set_hybridized_gru_model(hyb_indices, features_option, scaling_dataset,
                 is_remove_features=False)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Get fitted data scaler
-        scaler_features_in = get_fitted_data_scaler(
+        scaler_features_in = fit_data_scaler_from_dataset(
             fin_dataset, 'features_in', n_features_in,
             scaling_type='mean-std')
         # Store fitted data scaler
@@ -593,7 +626,7 @@ def set_hybridized_gru_model(hyb_indices, features_option, scaling_dataset,
                 is_remove_features=False)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Get fitted data scaler
-        scaler_features_out = get_fitted_data_scaler(
+        scaler_features_out = fit_data_scaler_from_dataset(
             fout_dataset, 'features_out', n_features_out,
             scaling_type='mean-std')
         # Store fitted data scaler
@@ -628,7 +661,7 @@ def set_hybridized_rcm_model(hyb_indices, material_model_name,
         Hybridized model data.
     """
     # Set hybridized model class
-    model_class = GRURNNModel
+    model_class = RecurrentConstitutiveModel
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set hybridized model initialization option
     is_model_init_file_path = True
@@ -644,9 +677,57 @@ def set_hybridized_rcm_model(hyb_indices, material_model_name,
         # Set material constitutive model parameters
         if material_model_name == 'elastic':
             # Set base parameters
-            material_model_parameters = {'elastic_symmetry': 'isotropic',
-                                         'E': 110e3, 'v': 0.33,
-                                         'euler_angles': (0.0, 0.0, 0.0)}
+            material_model_parameters = \
+                {'elastic_symmetry': 'isotropic',
+                 'E': 110e3, 'v': 0.33,
+                 'euler_angles': (0.0, 0.0, 0.0)}
+            # Set learnable parameters
+            learnable_parameters = {}
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        elif material_model_name == 'von_mises':
+            # Set constitutive model parameters
+            material_model_parameters = \
+                {'elastic_symmetry': 'isotropic',
+                 'E': 110e3, 'v': 0.33,
+                 'euler_angles': (0.0, 0.0, 0.0),
+                 'hardening_law': get_hardening_law('nadai_ludwik'),
+                 'hardening_parameters': {'s0': np.sqrt(3)*900,
+                                          'a': np.sqrt(3)*700,
+                                          'b': 0.5,
+                                          'ep0': 1e-5}}
+            # Set learnable parameters
+            learnable_parameters = {}
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        elif material_model_name == 'drucker_prager':
+            # Set frictional angle
+            friction_angle = 0.08671116054780224
+            # Set dilatancy angle
+            dilatancy_angle = friction_angle
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Compute angle-related material parameters
+            # (matching with Mohr-Coulomb under uniaxial tension and
+            # compression)
+            # Set yield surface cohesion parameter
+            yield_cohesion_parameter = (2.0/np.sqrt(3))*np.cos(friction_angle)
+            # Set yield pressure parameter
+            yield_pressure_parameter = (3.0/np.sqrt(3))*np.sin(friction_angle)
+            # Set plastic flow pressure parameter
+            flow_pressure_parameter = (3.0/np.sqrt(3))*np.sin(dilatancy_angle)
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Set material constitutive model parameters
+            material_model_parameters = \
+                {'elastic_symmetry': 'isotropic',
+                'E': 110e3, 'v': 0.33,
+                'euler_angles': (0.0, 0.0, 0.0),
+                'hardening_law': get_hardening_law('nadai_ludwik'),
+                'hardening_parameters': {'s0': 900/yield_cohesion_parameter,
+                                         'a': 700/yield_cohesion_parameter,
+                                         'b': 0.5,
+                                         'ep0': 1e-5},
+                'yield_cohesion_parameter': yield_cohesion_parameter,
+                'yield_pressure_parameter': yield_pressure_parameter,
+                'flow_pressure_parameter': flow_pressure_parameter,
+                'friction_angle': friction_angle}
             # Set learnable parameters
             learnable_parameters = {}
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -862,20 +943,22 @@ if __name__ == "__main__":
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set case studies base directory
     base_dir = ('/home/bernardoferreira/Documents/brown/projects/'
-                'darpa_project/7_local_hybrid_training/'
-                'case_learning_drucker_prager_pressure/2_vanilla_gru_model/'
-                'strain_to_stress/mean_relative_error/debug_hybrid')
+                'darpa_paper_examples/local/hybrid_models/dp_plus_gru/n10')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Set training data set sizes
-    training_sizes = (10, 20, 40, 80, 160, 320, 640, 1280, 2560)
-    training_sizes = (320,)
-    # Loop over training data set sizes
-    for n in training_sizes:
-        # Set case study directory
-        case_study_name = f'n{n}'
-        case_study_dir = os.path.join(os.path.normpath(base_dir),
-                                      f'{case_study_name}')
-        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Initialize case study directories
+    case_study_dirs = []
+    # Set case study directories
+    if False:
+        # Set training data set sizes
+        training_sizes = (10, 20, 40, 80, 160, 320, 640, 1280, 2560)
+        # Set case study directories
+        case_study_dirs += [os.path.join(os.path.normpath(base_dir), f'n{n}/')
+                            for n in training_sizes]
+    else:
+        case_study_dirs += [base_dir,]
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Loop over case study directories
+    for case_study_dir in case_study_dirs:
         # Check case study directory
         if not os.path.isdir(case_study_dir):
             raise RuntimeError('The case study directory has not been found:'
