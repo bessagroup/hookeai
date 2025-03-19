@@ -573,9 +573,6 @@ def set_hybridized_gru_model(hyb_indices, features_option, scaling_dataset,
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Fit input features data scaler
     if is_model_in_normalized:
-        # Load scaling data set
-        scaling_dataset = load_dataset(val_dataset_file_path)
-        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Compute new strain-based input features
         if strain_features_in_labels is not None:
             # Loop over strain-based features
@@ -604,9 +601,6 @@ def set_hybridized_gru_model(hyb_indices, features_option, scaling_dataset,
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Fit output features data scaler
     if is_model_out_normalized:
-        # Load scaling data set
-        scaling_dataset = load_dataset(val_dataset_file_path)
-        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Compute new stress-based output features
         if stress_features_out_labels is not None:
             # Loop over stress-based features
