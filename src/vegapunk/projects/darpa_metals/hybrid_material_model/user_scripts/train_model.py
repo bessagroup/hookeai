@@ -134,7 +134,7 @@ def perform_model_standard_training(train_dataset_file_path, model_directory,
     hyb_models_dict = {}
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set hybridization scheme
-    hybridization_scheme = 0
+    hybridization_scheme = 4
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set hybridized models dictionary and hybridization model type
     if hybridization_scheme == 0:
@@ -257,7 +257,7 @@ def perform_model_standard_training(train_dataset_file_path, model_directory,
         # Set hybridization model type
         model_init_args['hybridization_type'] = 'identity'
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    elif hybridization_scheme == 3:
+    elif hybridization_scheme == 4:
         # Description:
         #
         # HybridModel(e) = RCM(e) + GRU(e)
@@ -271,7 +271,7 @@ def perform_model_standard_training(train_dataset_file_path, model_directory,
         scaling_dataset = load_dataset(train_dataset_file_path)
         # Set hybridized model: RCM (strain to stress)
         hyb_models_dict[hyb_model_name] = set_hybridized_rcm_model(
-            hyb_indices, 'drucker-prager', device_type=device_type)
+            hyb_indices, 'drucker_prager', device_type=device_type)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Set hybridized model name
         hyb_model_name = 'gru_strain_to_stress'
@@ -658,7 +658,7 @@ def set_hybridized_rcm_model(hyb_indices, material_model_name,
     model_class = RecurrentConstitutiveModel
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set hybridized model initialization option
-    is_model_init_file_path = True
+    is_model_init_file_path = False
     # Initialize model initializations
     model_init_args = None
     model_init_file_path = None
