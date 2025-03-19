@@ -144,9 +144,8 @@ def yf_drucker_prager(s1, s2, s3, sy, model_parameters):
     # Set yield pressure parameter
     eta = (3.0/np.sqrt(3))*np.sin(friction_angle)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Enforce matching yield surface with von Mises model for pi-plane
-    # (assuming both models share the same yield stress)
-    cy = sy/(np.sqrt(3)*xi)
+    # Set cohesion
+    cy = sy/xi
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Compute effective stress
     effective_stress = np.sqrt(j2) + eta*p
@@ -357,7 +356,7 @@ def plot_yield_surface(models_names, models_parameters, models_sy,
         otherwise.
     """
     # Set pi-stress range factor (bounding box)
-    pi_stress_factor = 3.0
+    pi_stress_factor = 2.0
     # Get maximum yield stress among all models
     max_sy = max(models_sy.values())
     # Set pi-stress range
@@ -629,7 +628,8 @@ def plot_yield_surface_pi_plane(models_names, models_phi_pi_plane,
 # =============================================================================
 if __name__ == '__main__':
     # Set processes
-    process = ('default', 'parametric', 'convexity')[2]
+    process = ('default', 'parametric', 'convexity', 'equivalence', 'hybrid'
+               )[4]
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set models data
     if process == 'parametric':
@@ -689,20 +689,70 @@ if __name__ == '__main__':
         # Set models labels
         models_labels = {'lou_zhang_yoon_brm': 'Before return-mapping',
                          'lou_zhang_yoon_arm': 'After return-mapping'}
+    elif process == 'equivalence':
+        # Set models names
+        models_names = ('von_mises', 'drucker_prager', 'lou_zhang_yoon')
+        # Set models parameters
+        models_parameters = {}
+        models_parameters['von_mises'] = {}
+        models_parameters['drucker_prager'] = \
+            {'friction_angle': 0.08671116054780224}
+        models_parameters['lou_zhang_yoon'] = {'yield_a': 1.0,
+                                               'yield_b': 0.05,
+                                               'yield_c': 0.0,
+                                               'yield_d': 0.0}
+        # Set models yield stress
+        # Note: Must enforce cy = sy/xi on yf_drucker_prager!
+        models_sy = {'von_mises': np.sqrt(3)*900,
+                     'drucker_prager': 900,
+                     'lou_zhang_yoon': 900}
+        # Set models labels
+        models_labels = {'von_mises': 'Von Mises',
+                         'drucker_prager': 'Drucker-Prager',
+                         'lou_zhang_yoon': 'Lou-Zhang_Yoon'}
+    elif process == 'hybrid':
+        # Set models names
+        models_names = ('lou_zhang_yoon', 'drucker_prager_4d97',
+                        'drucker_prager_2d50', 'von_mises')
+        # Set models parameters
+        models_parameters = {}
+        models_parameters['lou_zhang_yoon'] = \
+            {'yield_a': 1.0,
+             'yield_b': 0.05,
+             'yield_c': 1.0,
+             'yield_d': 0.5}
+        models_parameters['drucker_prager_4d97'] = \
+            {'friction_angle': 0.08671116054780224}
+        models_parameters['drucker_prager_2d50'] = \
+            {'friction_angle': np.deg2rad(2.5)}
+        models_parameters['von_mises'] = {}
+        # Set models yield stress
+        # Note: Must enforce cy = sy/xi on yf_drucker_prager!
+        models_sy = {'lou_zhang_yoon': 900,
+                     'drucker_prager_4d97': 900,
+                     'drucker_prager_2d50': 900,
+                     'von_mises': np.sqrt(3)*900}
+        # Set models labels
+        models_labels = \
+            {'lou_zhang_yoon': 'Ground-truth (LZY)',
+             'drucker_prager_4d97': 'D-P ($\phi\\approx4.97^{\circ}$)',
+             'drucker_prager_2d50': 'D-P ($\phi=2.50^{\circ}$)',
+             'von_mises': 'VM'}
     else:
         # Set models names
         models_names = ('von_mises', 'drucker_prager', 'lou_zhang_yoon')
         # Set models parameters
         models_parameters = {}
         models_parameters['von_mises'] = {}
-        models_parameters['drucker_prager'] = {'friction_angle': np.deg2rad(5)}
+        models_parameters['drucker_prager'] = \
+            {'friction_angle': 0.08671116054780224}
         models_parameters['lou_zhang_yoon'] = {'yield_a': 1.0,
                                                'yield_b': 0.05,
-                                               'yield_c': 1.0,
-                                               'yield_d': 0.5}
+                                               'yield_c': 0.0,
+                                               'yield_d': 0.0}
         # Set models yield stress
-        models_sy = {'von_mises': 1.0,
-                     'drucker_prager': 1.0,
+        models_sy = {'von_mises': np.sqrt(3)*900,
+                     'drucker_prager': 900,
                      'lou_zhang_yoon': 900}
         # Set models labels
         models_labels = {'von_mises': 'Von Mises',
