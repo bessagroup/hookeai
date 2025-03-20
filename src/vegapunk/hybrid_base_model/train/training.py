@@ -162,12 +162,12 @@ def train_model(n_max_epochs, dataset, model_init_args, lr_init,
         print('\nHybrid model training'
               '\n---------------------')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Initialize recurrent neural network model state
+    # Initialize hybrid material model state
     if load_model_state is not None:
         if is_verbose:
             print('\n> Initializing model...')
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        # Initialize recurrent neural network model
+        # Initialize hybrid material model
         # (includes loading of data scalers)
         model = HybridModel.init_model_from_file(
             model_init_args['model_directory'])
@@ -181,7 +181,7 @@ def train_model(n_max_epochs, dataset, model_init_args, lr_init,
         if is_verbose:
             print('\n> Loading model state...')
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        # Load recurrent neural network model state
+        # Load hybrid material model state
         _ = model.load_model_state(load_model_state=load_model_state,
                                    is_remove_posterior=True)
     else:

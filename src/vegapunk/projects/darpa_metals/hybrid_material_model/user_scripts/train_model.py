@@ -267,8 +267,6 @@ def perform_model_standard_training(train_dataset_file_path, model_directory,
         hyb_model_name = 'rcm_strain_to_stress'
         # Set hybridized model indices
         hyb_indices = (0, 0)
-        # Load scaling data set
-        scaling_dataset = load_dataset(train_dataset_file_path)
         # Set hybridized model: RCM (strain to stress)
         hyb_models_dict[hyb_model_name] = set_hybridized_rcm_model(
             hyb_indices, 'drucker_prager', device_type=device_type)
@@ -373,7 +371,7 @@ def perform_model_standard_training(train_dataset_file_path, model_directory,
     # Set model state loading
     load_model_state = None
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~    
-    # Training of recurrent constitutive model
+    # Training of hybrid material model
     model, _, _ = train_model(n_max_epochs, train_dataset, model_init_args,
                               lr_init, opt_algorithm=opt_algorithm,
                               lr_scheduler_type=lr_scheduler_type,
