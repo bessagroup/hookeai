@@ -800,6 +800,7 @@ class HybridModel(torch.nn.Module):
         model_init_args['hyb_models_dict'] = self._hyb_models_dict
         model_init_args['model_directory'] = self.model_directory
         model_init_args['model_name'] = self.model_name
+        model_init_args['hybridization_type'] = self._hybridization_type
         model_init_args['is_model_in_normalized'] = \
             self.is_model_in_normalized
         model_init_args['is_model_out_normalized'] = \
