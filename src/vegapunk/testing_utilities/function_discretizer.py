@@ -12,7 +12,7 @@ import os
 import numpy as np
 import matplotlib.pyplot as plt
 # Local
-from ioput.plots import plot_xy_data
+from ioput.plots import plot_xy_data, save_figure
 # =============================================================================
 # Summary: Discretize scalar-valued scalar function
 # =============================================================================
@@ -25,6 +25,8 @@ n_point = 200
 is_stdout_display_data = False
 # Set display figure flag
 is_stdout_display_fig = True
+# Set save figure flag
+is_save_fig = True
 # Set save file flag
 is_save_file = True
 # Set save directory
@@ -73,6 +75,13 @@ if is_stdout_display_fig:
                                 x_label='x', y_label='y', is_latex=True)
     # Display figure
     plt.show()
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# Save figure
+if is_save_fig:
+    # Set figure name
+    filename = 'discretized_function'
+    # Save figure
+    save_figure(figure, filename, format='pdf', save_dir=save_dir)
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Save discretized function to file
 if is_save_file:
