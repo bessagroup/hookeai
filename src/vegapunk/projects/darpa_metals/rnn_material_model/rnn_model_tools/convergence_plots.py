@@ -34,7 +34,7 @@ from projects.darpa_metals.rnn_material_model.rnn_model_tools. \
         build_time_series_predictions_data
 from gnn_base_model.predict.prediction_plots import plot_truth_vs_prediction
 from ioput.plots import scatter_xy_data, plot_boxplots, save_figure
-from ioput.iostandard import find_unique_file_with_regex
+from ioput.iostandard import find_unique_file_with_regex, make_directory
 #
 #                                                          Authorship & Credits
 # =============================================================================
@@ -48,6 +48,7 @@ def plot_prediction_loss_convergence(models_base_dirs, training_dirs,
                                      predictions_dirs,
                                      filename='testing_loss_convergence',
                                      save_dir=None, is_save_fig=False,
+                                     is_save_plot_data=False,
                                      is_stdout_display=False, is_latex=True):
     """Plot average prediction loss versus training data set size.
     
@@ -67,6 +68,12 @@ def plot_prediction_loss_convergence(models_base_dirs, training_dirs,
         current working directory.
     is_save_fig : bool, default=False
         Save figure.
+    is_save_plot_data : bool, default=False
+        Save plot data. Plot data is stored in a file with a single dictionary
+        where each item corresponds to a relevant variable used to generate the
+        plot. If the figure directory is provided, then plot data is saved in
+        the same directory, otherwise is saved in the current working
+        directory.
     is_stdout_display : bool, default=False
         True if displaying figure to standard output device, False otherwise.
     is_latex : bool, default=False
@@ -145,6 +152,31 @@ def plot_prediction_loss_convergence(models_base_dirs, training_dirs,
     # Save figure
     if is_save_fig:
         save_figure(figure, filename, format='pdf', save_dir=save_dir)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Save plot data
+    if is_save_plot_data:
+        # Set current working directory to save plot data
+        if save_dir is None:
+            save_dir = os.getcwd()
+        # Set plot data subdirectory
+        plot_data_dir = os.path.join(os.path.normpath(save_dir), 'plot_data')
+        # Create plot data directory
+        if not os.path.isdir(plot_data_dir):
+            make_directory(plot_data_dir)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Build plot data
+        plot_data = {}
+        plot_data['data_xy'] = data_xy
+        plot_data['x_label'] = x_label
+        plot_data['y_label'] = y_label
+        plot_data['n_models'] = n_models
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set plot data file path
+        plot_data_file_path = os.path.join(
+            plot_data_dir, filename + '_data' + '.pkl')
+        # Save model samples best parameters data
+        with open(plot_data_file_path, 'wb') as data_file:
+            pickle.dump(plot_data, data_file)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Display figure
     if is_stdout_display:
@@ -448,6 +480,7 @@ def plot_prediction_loss_convergence_uq(models_base_dirs, training_dirs,
                                         predictions_dirs,
                                         filename='testing_loss_convergence_uq',
                                         save_dir=None, is_save_fig=False,
+                                        is_save_plot_data=False,
                                         is_stdout_display=False,
                                         is_latex=True):
     """Plot average prediction loss versus training data set size.
@@ -473,6 +506,12 @@ def plot_prediction_loss_convergence_uq(models_base_dirs, training_dirs,
         current working directory.
     is_save_fig : bool, default=False
         Save figure.
+    is_save_plot_data : bool, default=False
+        Save plot data. Plot data is stored in a file with a single dictionary
+        where each item corresponds to a relevant variable used to generate the
+        plot. If the figure directory is provided, then plot data is saved in
+        the same directory, otherwise is saved in the current working
+        directory.
     is_stdout_display : bool, default=False
         True if displaying figure to standard output device, False otherwise.
     is_latex : bool, default=False
@@ -585,12 +624,12 @@ def plot_prediction_loss_convergence_uq(models_base_dirs, training_dirs,
         data_xy[i, 1::2] = avg_predict_losses[i][:]
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set axes limits and scale
-    x_lims = (None, None)
-    y_lims = (None, None)
+    x_lims = (8e0, 3e3)
+    y_lims = (10e2, 1e6)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set axes labels
     x_label = 'Training data set size'
-    y_label = 'Avg. prediction loss'
+    y_label = 'Avg. prediction loss (MSE)'
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Plot data
     figure, _ = scatter_xy_data(
@@ -601,6 +640,32 @@ def plot_prediction_loss_convergence_uq(models_base_dirs, training_dirs,
     # Save figure
     if is_save_fig:
         save_figure(figure, filename, format='pdf', save_dir=save_dir)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Save plot data
+    if is_save_plot_data:
+        # Set current working directory to save plot data
+        if save_dir is None:
+            save_dir = os.getcwd()
+        # Set plot data subdirectory
+        plot_data_dir = os.path.join(os.path.normpath(save_dir), 'plot_data')
+        # Create plot data directory
+        if not os.path.isdir(plot_data_dir):
+            make_directory(plot_data_dir)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Build plot data
+        plot_data = {}
+        plot_data['data_xy'] = data_xy
+        plot_data['x_label'] = x_label
+        plot_data['y_label'] = y_label
+        plot_data['n_models'] = n_models
+        plot_data['n_model_sample'] = n_model_sample
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set plot data file path
+        plot_data_file_path = os.path.join(
+            plot_data_dir, filename + '_data' + '.pkl')
+        # Save model samples best parameters data
+        with open(plot_data_file_path, 'wb') as data_file:
+            pickle.dump(plot_data, data_file)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Display figure
     if is_stdout_display:
