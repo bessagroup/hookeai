@@ -570,3 +570,32 @@ if __name__ == "__main__":
         _, _ = compute_directory_prediction_metrics(
             predictions_dir, mean_prediction_metrics, is_save_file=True,
             is_display_results=True)
+# =============================================================================      
+"""Plot miscellaneous options:
+
+1. Add GRU reference to mean prediction metrics plots (paste in plot_xy_data())
+
+    Change the number of colors to number of labels!
+
+    # Set reference data file path
+    data_file_path = ('/home/bernardoferreira/Documents/brown/projects/'
+                      'darpa_paper_examples/local/hybrid_models/dp_plus_gru/'
+                      'dp_2d50_plus_gru/prediction_metrics_gru_reference_data/'
+                      'plot_data/mean_rmse_convergence_data.pkl')
+    # Load reference model data
+    with open(data_file_path, 'rb') as dataset_file:
+        model_data = pickle.load(dataset_file)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Get reference model loss convergence data
+    data_xy_ref = model_data['data_xy']
+    # Loop over data sets
+    for i in range(n_datasets):
+        # Plot reference data set
+        axes.plot(data_xy_ref[:, 2*i], data_xy_ref[:, 2*i + 1],
+                  label=None, linestyle='--',
+                  marker=None, markersize=markersize,
+                  markeredgecolor=markeredgecolor,
+                  markeredgewidth=markeredgewidth,
+                  alpha=0.8, zorder=1)
+
+"""
