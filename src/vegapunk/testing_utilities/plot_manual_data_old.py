@@ -33,7 +33,7 @@ def plot_avg_prediction_loss(save_dir, is_save_fig=False,
     training_sizes = (10, 20, 40, 80, 160, 320, 640, 1280, 2560)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set example
-    example = '9'
+    example = 'random_specimen_hexa8_solid_local_vanilla_gru'
     # Set example data
     if example == 'erroneous_von_mises_properties':
         # Set models labels
@@ -294,6 +294,7 @@ def plot_avg_prediction_loss(save_dir, is_save_fig=False,
         models_labels = tuple(models_avg_predict_loss.keys())
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Set axes limits
+        x_lims = (None, None)
         y_lims = (0, None)
         # Set axes scale
         x_scale = 'log'
@@ -358,6 +359,7 @@ def plot_avg_prediction_loss(save_dir, is_save_fig=False,
         models_labels = tuple(models_avg_predict_loss.keys())
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Set axes limits
+        x_lims = (None, None)
         y_lims = (0, None)
         # Set axes scale
         x_scale = 'log'
@@ -930,19 +932,98 @@ def plot_avg_prediction_loss(save_dir, is_save_fig=False,
         # Set axes scale
         x_scale = 'log'
         y_scale = 'linear'
-    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ 
-    # Get number of training data set sizes
-    n_training_sizes = len(training_sizes)
-    # Get number of models
-    n_models = len(models_labels)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Initialize data array
-    data_xy = np.full((n_training_sizes, 2*n_models), fill_value=None)
-    # Loop over models
-    for i, model_label in enumerate(models_labels):
-        # Assemble model training data set size and average prediction loss
-        data_xy[:, 2*i] = training_sizes
-        data_xy[:, 2*i+1] = models_avg_predict_loss[model_label]
+    elif example == 'random_specimen_hexa8_solid_local_vanilla_gru':
+        # Purpose
+        # -------
+        # Compare prediction performance of vanilla GRU model and hybrid GRU
+        # model (hybrid training) for different types of strain-stress training
+        # data sets
+        #
+        # Input features: Strain
+        # Output features: Stress
+        #
+        # Training is performed with MRE. 
+        #
+        # Observations
+        # ------------
+        # (1) ...
+        #
+        # Data directories
+        # ----------------
+        # '/home/bernardoferreira/Documents/brown/projects/darpa_project/'
+        # '8_global_random_specimen/von_mises/1_local_vanilla_GRU/'
+        # 'strain_to_stress'
+        #
+        # '/home/bernardoferreira/Documents/brown/projects/darpa_project/'
+        # '8_global_random_specimen/von_mises/2_random_specimen_hexa8/solid/'
+        # '1_local_vanilla_GRU_specimen_dataset/strain_to_stress'
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Initialize models training sizes and average prediction loss
+        models_training_sizes = {}
+        models_avg_predict_loss = {}
+        # Set prediction loss type
+        prediction_loss_type = 'mre'
+        # Set models training sizes and average prediction loss
+        models_training_sizes['GRU (local synthetic)'] = training_sizes
+        models_avg_predict_loss['GRU (local synthetic)'] = \
+            [0.493914068, 0.402175486, 0.299730837, 0.245692998, 0.151744574, 0.0920870528, 0.054329358, 0.0176518001, 0.00925108045]
+        #models_training_sizes['GRU (global solid)'] = [2800,]
+        #models_avg_predict_loss['GRU (global solid)'] = [2.14231342e-01,]
+        #models_training_sizes['GRU (global voids)'] = [2756,]
+        #models_avg_predict_loss['GRU (global voids)'] = [1.75197899e-01,]
+        #models_training_sizes['GRU (global voids corners)'] = [2644,]
+        #models_avg_predict_loss['GRU (global voids corners)'] = [2.73748994e-01,]
+        #models_training_sizes['GRU (global voids center and corners)'] = [2621,]
+        #models_avg_predict_loss['GRU (global voids center and corners)'] = [2.67008305e-01,]
+        models_training_sizes['GRU (global voids lattice)'] = [3377,]
+        models_avg_predict_loss['GRU (global voids lattice)'] = [1.48772508e-01,]
+        models_training_sizes['GRU (global voids lattice, pruned)'] = [2702, 2568, 2440, 2318, 2203, 2093, 1989, 1890, 1796, 1706, 1621, 1540, 1464, 1391, 1322, 1256, 1194, 1135, 1079, 1025, 974, 926, 880, 836, 795, 756, 718, 683, 649, 617, 587, 558, 531, 504, 480, 456, 434, 412, 392, 373, 355, 337, 320, 304, 289, 275, 261, 248, 236, 225, 214, 204, 194, 184, 176, 168, 160, 152, 145, 138, 132]
+        models_avg_predict_loss['GRU (global voids lattice, pruned)'] = [0.15569344, 0.15309986, 0.15894902, 0.16212913, 0.15871155, 0.16634634, 0.16359118, 0.16549568, 0.1505897, 0.15926442, 0.16587582, 0.1626568, 0.1588289, 0.16556591, 0.1690347, 0.16314954, 0.16255319, 0.16636813, 0.16953059, 0.1597414, 0.17211491, 0.17619824, 0.17782962, 0.17415804, 0.17990452, 0.17655021, 0.19210094, 0.20459571, 0.18403369, 0.20882633, 0.19023913, 0.20797744, 0.22031286, 0.2119479, 0.21754569, 0.21467093, 0.23006822, 0.2288973, 0.23731038, 0.23431665, 0.26943648, 0.25589567, 0.25132143, 0.24728134, 0.28764364, 0.26046637, 0.2603241, 0.24547884, 0.2584816, 0.30710998, 0.26348817, 0.24651077, 0.30036288, 0.2874391, 0.28020564, 0.29423434, 0.30034727, 0.29474247, 0.27420765, 0.28507668, 0.31587666]
+        
+        
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set models labels
+        models_labels = tuple(models_avg_predict_loss.keys())
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set axes limits
+        x_lims = (None, None)
+        y_lims = (0, None)
+        # Set axes scale
+        x_scale = 'log'
+        y_scale = 'linear'
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Build data array
+    if 'random_specimen' in example:
+        # Get number of training data set sizes
+        n_training_sizes = len(training_sizes)
+        
+        n_training_sizes = max([len(x) for x in models_training_sizes.values()])
+        # Get number of models
+        n_models = len(models_labels)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Initialize data array
+        data_xy = np.full((n_training_sizes, 2*n_models), fill_value=None)
+        # Loop over models
+        for i, model_label in enumerate(models_labels):
+            # Get number of training data set sizes
+            n_dataset = len(models_training_sizes[model_label])
+            # Assemble model training data set size and average prediction loss
+            data_xy[:n_dataset, 2*i] = models_training_sizes[model_label]
+            data_xy[:n_dataset, 2*i+1] = models_avg_predict_loss[model_label]
+    else:
+        # Get number of training data set sizes
+        n_training_sizes = len(training_sizes)
+        # Get number of models
+        n_models = len(models_labels)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Initialize data array
+        data_xy = np.full((n_training_sizes, 2*n_models), fill_value=None)
+        # Loop over models
+        for i, model_label in enumerate(models_labels):
+            # Assemble model training data set size and average prediction loss
+            data_xy[:, 2*i] = training_sizes
+            data_xy[:, 2*i+1] = models_avg_predict_loss[model_label]
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set data labels
     data_labels = [x for x in models_avg_predict_loss.keys()]
@@ -1061,10 +1142,10 @@ if __name__ == "__main__":
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set plots directory
     plots_dir = ('/home/bernardoferreira/Documents/brown/projects/'
-                 'darpa_project/7_local_hybrid_training/'
-                 'case_learning_drucker_prager_pressure/3_hybrid_model/'
-                 'strain_i1_i2_to_stressvd_to_stress/mean_relative_error/'
-                 'hybrid_training/plots')
+                 'darpa_project/8_global_random_specimen/von_mises/'
+                 '2_random_specimen_hexa8/plots')
+    
+    plots_dir = ('/home/bernardoferreira/Desktop/plots')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Plot average prediction loss
     if is_plot_avg_prediction_loss:
