@@ -9,6 +9,7 @@ if root_dir not in sys.path:
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 import os
 import re
+import pickle
 # Third-party
 import torch
 import numpy as np
@@ -364,8 +365,8 @@ def format_mean_metrics_results(n_sample, mean_metrics_results,
 # =============================================================================
 def plot_prediction_metrics_convergence(
         processes_results, mean_prediction_metrics,
-        metric_features_labels=None, save_dir=None, is_save_fig=False,
-        is_stdout_display=False, is_latex=False):
+        metric_features_labels=None, save_dir=None, is_save_plot_data=False,
+        is_save_fig=False, is_stdout_display=False, is_latex=False):
     """Plot mean prediction metrics convergence analysis.
     
     Only prediction processes named as 'nX', where X is a given training
@@ -385,6 +386,12 @@ def plot_prediction_metrics_convergence(
         Directory where data set plots are saved.
     is_save_fig : bool, default=False
         Save figure.
+    is_save_plot_data : bool, default=False
+        Save plot data. Plot data is stored in a file with a single dictionary
+        where each item corresponds to a relevant variable used to generate the
+        plot. If the figure directory is provided, then plot data is saved in
+        the same directory, otherwise is saved in the current working
+        directory.
     is_stdout_display : bool, default=False
         True if displaying figure to standard output device, False otherwise.
     is_latex : bool, default=False
@@ -465,6 +472,31 @@ def plot_prediction_metrics_convergence(
         if is_save_fig:
             save_figure(figure, filename, format='pdf', save_dir=save_dir)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Save plot data
+        if is_save_plot_data:
+            # Set current working directory to save plot data
+            if save_dir is None:
+                save_dir = os.getcwd()
+            # Set plot data subdirectory
+            plot_data_dir = \
+                os.path.join(os.path.normpath(save_dir), 'plot_data')
+            # Create plot data directory
+            if not os.path.isdir(plot_data_dir):
+                make_directory(plot_data_dir)
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Build plot data
+            plot_data = {}
+            plot_data['data_xy'] = data_xy
+            plot_data['x_label'] = x_label
+            plot_data['y_label'] = y_label
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Set plot data file path
+            plot_data_file_path = os.path.join(
+                plot_data_dir, filename + '_data' + '.pkl')
+            # Save model samples best parameters data
+            with open(plot_data_file_path, 'wb') as data_file:
+                pickle.dump(plot_data, data_file)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Display figure
         if is_stdout_display:
             plt.show()
@@ -527,7 +559,8 @@ if __name__ == "__main__":
         plot_prediction_metrics_convergence(
             processes_results, mean_prediction_metrics,
             metric_features_labels=metric_features_labels, save_dir=save_dir,
-            is_save_fig=True, is_stdout_display=True, is_latex=True)
+            is_save_fig=True, is_save_plot_data=True, is_stdout_display=True,
+            is_latex=True)
     else:
         # Set predictions directory
         predictions_dir = ('/home/bernardoferreira/Documents/brown/projects/'
