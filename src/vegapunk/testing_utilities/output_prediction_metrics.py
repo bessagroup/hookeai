@@ -463,7 +463,7 @@ def plot_prediction_metrics_convergence(
         # Plot data
         figure, _ = plot_xy_data(
             data_xy, data_labels=data_labels, x_label=x_label, y_label=y_label,
-            x_scale='log', y_scale='linear', marker='o', markersize=2,
+            x_scale='log', y_scale='linear', marker='o', markersize=3,
             is_latex=is_latex)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Set filename
