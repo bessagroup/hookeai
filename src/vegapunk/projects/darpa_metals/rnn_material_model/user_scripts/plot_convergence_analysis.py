@@ -74,6 +74,7 @@ def generate_convergence_plots(models_base_dirs, training_dirs, testing_dirs,
             models_base_dirs, training_dirs, predictions_dirs,
             filename='testing_loss_convergence_uq',
             save_dir=save_dir, is_save_fig=is_save_fig,
+            is_save_plot_data=is_save_fig,
             is_stdout_display=is_stdout_display,
             is_latex=is_latex)
     else:
@@ -82,6 +83,7 @@ def generate_convergence_plots(models_base_dirs, training_dirs, testing_dirs,
             models_base_dirs, training_dirs, predictions_dirs,
             filename='testing_loss_convergence',
             save_dir=save_dir, is_save_fig=is_save_fig,
+            is_save_plot_data=is_save_fig,
             is_stdout_display=is_stdout_display,
             is_latex=is_latex)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
