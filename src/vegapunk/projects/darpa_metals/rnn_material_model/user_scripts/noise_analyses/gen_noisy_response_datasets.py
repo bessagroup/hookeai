@@ -45,6 +45,7 @@ from simulators.fetorch.material.models.standard.von_mises_mixed import \
     VonMisesMixed
 from simulators.fetorch.material.models.standard.drucker_prager import \
     DruckerPrager
+from simulators.fetorch.material.models.standard.lou import LouZhangYoon
 from simulators.fetorch.material.models.standard.hardening import \
     get_hardening_law
 from utilities.data_scalers import TorchMinMaxScaler
@@ -932,15 +933,15 @@ if __name__ == '__main__':
     is_save_dataset_plots = True
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set noiseless generation only
-    is_only_noiseless = True
+    is_only_noiseless = False
     # Set reference noiseless directory
-    is_reference_noiseless = False
+    is_reference_noiseless = True
     # Set reference noiseless data set directory
     if is_reference_noiseless:
         reference_noiseless_dir = \
-            ('/home/bernardoferreira/Documents/brown/projects/darpa_project/'
-             '6_local_rnn_training_noisy/von_mises/'
-             'convergence_analyses_homoscedastic_gaussian/noiseless')
+            ('/home/bernardoferreira/Documents/brown/projects/'
+             'darpa_paper_examples/local/ml_models/polynomial/'
+             'convergence_analysis')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set data set sizes
     if dataset_type == 'training':
@@ -960,9 +961,9 @@ if __name__ == '__main__':
     for i, n_path in enumerate(n_paths):
         # Set data sets base directory
         datasets_base_dir = \
-            ('/home/bernardoferreira/Documents/brown/projects/darpa_project/'
-             '7_local_hybrid_training/case_learning_drucker_prager_pressure/'
-             '0_datasets/datasets_base')
+            ('/home/bernardoferreira/Documents/brown/projects/'
+             'darpa_paper_examples/local/ml_models/polynomial/'
+             'convergence_analysis_noise/datasets_base')
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Check data sets directory
         if not os.path.isdir(datasets_base_dir):
@@ -1011,13 +1012,13 @@ if __name__ == '__main__':
         time_end = 1.0
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Set strain components bounds
-        strain_bounds = {x: (-0.05, 0.05) for x in strain_comps_order}
+        strain_bounds = {x: (-0.02, 0.02) for x in strain_comps_order}
         # Set incremental strain norm
         inc_strain_norm = None
         # Set strain noise
         strain_noise_std = None
         # Set number of loading cycles
-        n_cycle = 4
+        n_cycle = 0
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Set constitutive model
         model_name = 'drucker_prager'
@@ -1088,7 +1089,7 @@ if __name__ == '__main__':
                 'elastic_symmetry': 'isotropic',
                 'E': 110e3, 'v': 0.33,
                 'euler_angles': (0.0, 0.0, 0.0),
-                'hardening_law': get_hardening_law('nadai_ludwik'),            # Fix: np.sqrt(3) matching factor!
+                'hardening_law': get_hardening_law('nadai_ludwik'),
                 'hardening_parameters':
                     {'s0': 900/yield_cohesion_parameter,
                      'a': 700/yield_cohesion_parameter,
@@ -1106,6 +1107,38 @@ if __name__ == '__main__':
             constitutive_model = DruckerPrager(strain_formulation,
                                                problem_type, model_parameters)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        elif model_name == 'lou_zhang_yoon':
+            # Set constitutive model parameters
+            model_parameters = \
+                {'elastic_symmetry': 'isotropic',
+                'E': 110e3, 'v': 0.33,
+                'euler_angles': (0.0, 0.0, 0.0),
+                'hardening_law': get_hardening_law('nadai_ludwik'),
+                'hardening_parameters': {'s0': 900,
+                                         'a': 700,
+                                         'b': 0.5,
+                                         'ep0': 1e-5},
+                'a_hardening_law': get_hardening_law('linear'),
+                'a_hardening_parameters': {'s0': 1.0,
+                                           'a': 0},
+                'b_hardening_law': get_hardening_law('linear'),
+                'b_hardening_parameters': {'s0': 0.05,
+                                           'a': 0},
+                'c_hardening_law': get_hardening_law('linear'),
+                'c_hardening_parameters': {'s0': 1.0,
+                                           'a': 0},
+                'd_hardening_law': get_hardening_law('linear'),
+                'd_hardening_parameters': {'s0': 0.5,
+                                           'a': 0},
+                'is_associative_hardening': True}
+            # Set constitutive state variables to be additionally included in
+            # the data set
+            state_features = {}
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Initialize constitutive model
+            constitutive_model = LouZhangYoon(strain_formulation,
+                                              problem_type, model_parameters)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         else:
             # Set constitutive model parameters
             model_parameters = {'elastic_symmetry': 'isotropic',
@@ -1119,7 +1152,7 @@ if __name__ == '__main__':
                                         model_parameters)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Set strain path type
-        strain_path_type = 'proportional'
+        strain_path_type = 'random'
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Set strain path generator parameters
         if strain_path_type == 'proportional':
@@ -1217,31 +1250,38 @@ if __name__ == '__main__':
         # Initialize noise generator
         noise_generator = NoiseGenerator()
         noise_generator.set_noise_distribution(noise_distribution)
+        # Set noise variability label
+        if noise_distribution == 'heteroscedastic':
+            noise_var_label = 'het'
+        else:
+            noise_var_label = 'hom'
         # Set noise distribution parameters
         if noise_distribution == 'uniform':
-            noise_parameters_cases = {'homuni_noise_4e-2': {'amp': 4e-2},
-                                      'homuni_noise_1e-1': {'amp': 1e-1},
-                                      'homuni_noise_2e-1': {'amp': 2e-1},
-                                      'homuni_noise_4e-1': {'amp': 4e-1}}
+            noise_parameters_cases = {
+                f'{noise_var_label}uni_noise_4e-2': {'amp': 4e-2},
+                f'{noise_var_label}uni_noise_1e-1': {'amp': 1e-1},
+                f'{noise_var_label}uni_noise_2e-1': {'amp': 2e-1},
+                f'{noise_var_label}uni_noise_4e-1': {'amp': 4e-1}}
         elif noise_distribution == 'gaussian':
-            noise_parameters_cases = {'homgau_noise_1e-2': {'std': 1e-2},
-                                      'homgau_noise_2d5e-2': {'std': 2.5e-2},
-                                      'homgau_noise_5e-2': {'std': 5e-2},
-                                      'homgau_noise_1e-1': {'std': 1e-1}}
+            noise_parameters_cases = {
+                f'{noise_var_label}gau_noise_1e-2': {'std': 1e-2},
+                f'{noise_var_label}gau_noise_2d5e-2': {'std': 2.5e-2},
+                f'{noise_var_label}gau_noise_5e-2': {'std': 5e-2},
+                f'{noise_var_label}gau_noise_1e-1': {'std': 1e-1}}
         elif noise_distribution == 'spiked_gaussian':
             spike_magnitude = 0.2
             p_spike = 0.05
             noise_parameters_cases = {
-                'homsgau_noise_1e-2': {
+                f'{noise_var_label}sgau_noise_1e-2': {
                     'std': 1e-2,
                     'spike': spike_magnitude, 'p_spike': p_spike},
-                'homsgau_noise_2d5e-2': {
+                f'{noise_var_label}sgau_noise_2d5e-2': {
                     'std': 2.5e-2,
                     'spike': spike_magnitude, 'p_spike': p_spike},
-                'homsgau_noise_5e-2': {
+                f'{noise_var_label}sgau_noise_5e-2': {
                     'std': 5e-2,
                     'spike': spike_magnitude, 'p_spike': p_spike},
-                'homsgau_noise_1e-1': {
+                f'{noise_var_label}sgau_noise_1e-1': {
                     'std': 1e-1,
                     'spike': spike_magnitude, 'p_spike': p_spike}}
         else:
