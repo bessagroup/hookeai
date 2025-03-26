@@ -1251,7 +1251,7 @@ if __name__ == '__main__':
         noise_generator = NoiseGenerator()
         noise_generator.set_noise_distribution(noise_distribution)
         # Set noise variability label
-        if noise_distribution == 'heteroscedastic':
+        if noise_variability == 'heteroscedastic':
             noise_var_label = 'het'
         else:
             noise_var_label = 'hom'
