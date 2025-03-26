@@ -1021,7 +1021,7 @@ if __name__ == '__main__':
         n_cycle = 0
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Set constitutive model
-        model_name = 'drucker_prager'
+        model_name = 'lou_zhang_yoon'
         # Set constitutive model parameters:
         if model_name == 'von_mises':
             # Set constitutive model parameters
