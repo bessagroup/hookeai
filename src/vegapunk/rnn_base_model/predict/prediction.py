@@ -228,11 +228,11 @@ def predict(dataset, model_directory, model=None, predict_directory=None,
                     sample_results = {}
                     # Build sample results (removing batch dimension)
                     sample_results['features_out'] = \
-                        features_out.detach().cpu()[:, j, :]
+                        features_out[:, j, :].detach().clone().cpu()
                     sample_results['targets'] = None
                     if targets is not None:
                         sample_results['targets'] = \
-                            targets.detach().cpu()[:, j, :]
+                            targets[:, j, :].detach().clone().cpu()
                     # Store sample results
                     samples_results.append(sample_results)
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -252,7 +252,7 @@ def predict(dataset, model_directory, model=None, predict_directory=None,
                 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                 # Assemble sample prediction loss if ground-truth is available
                 if loss is not None:
-                    loss_samples.append(loss.detach().cpu())
+                    loss_samples.append(loss.detach().clone().cpu())
                 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                 # Save sample predictions results
                 if predict_directory is not None:
