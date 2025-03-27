@@ -10,21 +10,25 @@ if root_dir not in sys.path:
 import os
 import re
 import shutil
+import pickle
+# Third-party
+import torch
 # =============================================================================
 # Summary: Process case study directories and perform some task
 # =============================================================================
 # Set available tasks
 available_tasks = {'1': 'remove_plots_dirs',
                    '2': 'remove_sample_prediction_files',
-                   '3': 'remove_model_dirs'}
+                   '3': 'remove_model_dirs',
+                   '4': 'redump_sample_prediction_files'}
 # Set task
-task = available_tasks['3']
+task = available_tasks['4']
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Set source directory
-src_dir = ('/home/bernardoferreira/Documents/brown/projects/darpa_project/'
-           '7_local_hybrid_training/case_learning_drucker_prager_pressure/'
-           '2_vanilla_gru_model/strain_i1_i2_to_stress/mean_relative_error/'
-           'training_proportional_2cycle')
+src_dir = ('/home/bernardoferreira/Documents/brown/projects/'
+           'darpa_paper_examples/local/ml_models/polynomial/'
+           'convergence_analysis_noise/'
+           'convergence_analyses_homoscedastic_gaussian/noiseless')
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Initialize case study directories
 case_study_dirs = []
@@ -39,6 +43,8 @@ if dirs_structure_type == 1:
                         for n in training_sizes]
 else:
     case_study_dirs += [src_dir,]
+# Set uncertainty quantification flag
+is_uncertainty_quantification = True
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 print('\nStarting task automatic procedures...')
 print(f'\n  > Task: \'{task}\'')
@@ -72,7 +78,10 @@ for case_study_dir in case_study_dirs:
         # Set sample prediction file regex
         sample_regex = re.compile(r'^prediction_sample_\d+\.pkl$')
         # Set prediction folder name
-        prediction_dirname = '7_prediction'
+        if is_uncertainty_quantification:
+            prediction_dirname = 'uncertainty_quantification'
+        else:
+            prediction_dirname = '7_prediction'
         # Set prediction directory
         prediction_dir = \
             os.path.join(os.path.normpath(case_study_dir), prediction_dirname)
@@ -99,6 +108,43 @@ for case_study_dir in case_study_dirs:
             # Remove model or prediction directory
             if l1_name in remove_dirnames:
                 shutil.rmtree(l1_paths[i])
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Task: Redump bloated sample prediction files
+    elif task == 'redump_sample_prediction_files':
+        # Set sample prediction file regex
+        sample_regex = re.compile(r'^prediction_sample_\d+\.pkl$')
+        # Set prediction folder name
+        if is_uncertainty_quantification:
+            prediction_dirname = 'uncertainty_quantification'
+        else:
+            prediction_dirname = '7_prediction'
+        # Set prediction directory
+        prediction_dir = \
+            os.path.join(os.path.normpath(case_study_dir), prediction_dirname)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Check prediction directory
+        if prediction_dir in l1_paths:
+            # Walk through prediction directory recursively
+            for root, dirs, files in os.walk(prediction_dir):
+                # Loop over directory files
+                for file in files:
+                    # Remove sample prediction file
+                    if sample_regex.match(file):
+                        # Set sample prediction file path
+                        sample_file_path = os.path.join(root, file)
+                        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                        # Open sample prediction file
+                        with open(sample_file_path, 'rb') as sample_file:
+                            # Load sample prediction data
+                            sample_results = pickle.load(sample_file)
+                        # Clean metadata from torch Tensors
+                        sample_results = {k: v.detach().clone().cpu()
+                                          if isinstance(v, torch.Tensor)
+                                          else v for k, v in
+                                          sample_results.items()}
+                        # Redump sample prediction data
+                        with open(sample_file_path, 'wb') as sample_file:
+                            pickle.dump(sample_results, sample_file)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     else:
         raise RuntimeError('Unknown task.')
