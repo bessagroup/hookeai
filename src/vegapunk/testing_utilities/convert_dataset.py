@@ -9,6 +9,7 @@ if root_dir not in sys.path:
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 import os
 import pickle
+import re
 # Local
 from time_series_data.time_dataset import TimeSeriesDatasetInMemory, \
     save_dataset
@@ -16,14 +17,26 @@ from time_series_data.time_dataset import TimeSeriesDatasetInMemory, \
 # Summary: Convert dataset file to given format
 # =============================================================================
 # Set conversion format
-conversion_format = ('list', 'TimeSeriesDatasetInMemory')[1]
+conversion_format = ('list', 'TimeSeriesDatasetInMemory')[0]
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-# Set source data set file paths
-src_dataset_file_paths = (
-    '/home/bernardoferreira/Documents/brown/projects/colaboration_shunyu/'
-    'deliverable_04_02_2025/deliverable_bernardo/'
-    '8_gru_train_shunyu_test_shunyu/5_testing_id_dataset/'
-    'ss_paths_dataset_n260.pkl',)
+# Initialize source data set file paths
+src_dataset_file_paths = []
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# Set source data sets base directories
+src_base_dirs = ('/home/bernardoferreira/Documents/brown/projects/'
+                 'colaboration_shunyu/deliverable_03_28_2025/3Dpath_2Dsim/'
+                 'n2560',)
+# Loop over base directories
+for src_base_dir in src_base_dirs:
+    # Set data set file regex
+    sample_regex = re.compile(r'^ss_paths_dataset_n\d+\.pkl$')
+    # Walk through directory recursively
+    for root, dirs, files in os.walk(src_base_dir):
+        # Loop over directory files
+        for file in files:
+            # Store data set file path
+            if sample_regex.match(file):
+                src_dataset_file_paths.append(os.path.join(root, file))
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Loop over source data set file paths
 for src_dataset_file_path in src_dataset_file_paths:
