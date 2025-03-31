@@ -177,7 +177,8 @@ def build_node_disps(value=None, dim=1):
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     return node_dbc_disps
 # =============================================================================
-def write_links_dirichlet_bc_file(dbc_file_dir, dbc_array):
+def write_links_dirichlet_bc_file(dbc_file_dir, dbc_array,
+                                  is_reaction_group=True):
     """Write Dirichlet boundary conditions file (Links format).
     
     Parameters
@@ -191,6 +192,9 @@ def write_links_dirichlet_bc_file(dbc_file_dir, dbc_array):
         node label, array[:, 1:4] is the Dirichlet boundary conditions
         prescription code, and array[:, 5:8] are the Dirichlet boundary
         conditions prescribed displacements.
+    is_reaction_group : bool, default=True
+        If True, then write reaction node group with prescribed non-null
+        Dirichlet boundary conditions.
     """
     # Check directory
     if not os.path.isdir(dbc_file_dir):
@@ -214,6 +218,25 @@ def write_links_dirichlet_bc_file(dbc_file_dir, dbc_array):
         # Append node to file data
         write_lines += \
             [f'  {node_label} {node_dbc_code} {node_dbc_disps}' + '\n']
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Set reaction node group associated with prescribed non-null Dirichlet
+    # boundary conditions
+    if is_reaction_group:
+        # Set minimum threshold to handle values close or equal to zero
+        small = 1e-8
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Initialize reaction node group
+        reaction_nodes = []
+        # Loop over Dirichlet boundary conditions nodes
+        for i in range(n_node_dbc):
+            # Collect node label if non-null Dirichlet boundary condition
+            if np.any(dbc_array[i, 4:7] > small):
+                reaction_nodes.append(int(dbc_array[i, 0]))
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Append reaction node group to file data
+        write_lines += ([f'\nNODE_GROUPS 1' + '\n',
+                         f'1 {len(reaction_nodes)}' + '\n']
+                        + ['{:d}'.format(x) + '\n' for x in reaction_nodes])
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set Dirichlet boundary conditions file path
     dbc_file_path = os.path.join(dbc_file_dir, 'specimen_dirichlet_bc.dat')
@@ -292,7 +315,7 @@ if __name__ == "__main__":
         # Set specimen top coordinate
         specimen_top_coord = 12.0
         # Set prescribed displacement
-        specimen_top_disp = 9999
+        specimen_top_disp = 1.0
     else:
         raise RuntimeError('Unknown specimen.')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -302,5 +325,5 @@ if __name__ == "__main__":
     dbc_array = build_specimen_dbc(specimen_label, specimen_top_coord,
                                    specimen_top_disp, nodes_coords_mesh)
     # Write Dirichlet boundary conditions file
-    write_links_dirichlet_bc_file(save_dir, dbc_array)
+    write_links_dirichlet_bc_file(save_dir, dbc_array, is_reaction_group=True)
     
