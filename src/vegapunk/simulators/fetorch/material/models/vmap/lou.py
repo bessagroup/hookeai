@@ -149,7 +149,8 @@ class LouZhangYoonVMAP(ConstitutiveModel):
         Newton-Raphson iteration (return-mapping to cone apex).
     """
     def __init__(self, strain_formulation, problem_type, model_parameters,
-                 is_apex_handling=True, is_su_float64=True, device_type='cpu'):
+                 is_apex_handling=True, is_fixed_yield_parameters=False,
+                 is_su_float64=True, device_type='cpu'):
         """Constitutive model constructor.
 
         Parameters
@@ -168,6 +169,11 @@ class LouZhangYoonVMAP(ConstitutiveModel):
             Disabling apex handling improves performance (bypassing any apex
             return-mapping computations), but is only viable if apex handling
             is not required (e.g., low pressure dependency).
+        is_fixed_yield_parameters : bool, default=False
+            If True, then yield surface parameters are assumed to be fixed
+            w.r.t. the accumulated plastic strain. Enabling this option
+            improves performance by avoiding the computation of several
+            derivatives w.r.t. the accumulated plastic strain.
         is_su_float64 : bool, default=True
             If True, then state update is locally computed in floating-point
             double precision. If False, then default floating-point precision
@@ -188,6 +194,8 @@ class LouZhangYoonVMAP(ConstitutiveModel):
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Set apex handling flag
         self._is_apex_handling = is_apex_handling
+        # Set fixed yield surface parameters flag
+        self._is_fixed_yield_parameters = is_fixed_yield_parameters
         # Set state update floating-point precision
         self._is_su_float64 = is_su_float64
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -505,7 +513,8 @@ class LouZhangYoonVMAP(ConstitutiveModel):
             b_hardening_law, b_hardening_parameters, c_hardening_law,
             c_hardening_parameters, d_hardening_law, d_hardening_parameters,
             is_associative_hardening, su_conv_tol, su_max_n_iterations,
-            self._is_apex_handling, apex_switch_tol, small)
+            self._is_apex_handling, apex_switch_tol,
+            self._is_fixed_yield_parameters, small)
         # Pick elastic or plastic step according with yielding condition
         step_output = torch.where(yield_function_cond,
                                   elastic_step_output,
@@ -795,7 +804,7 @@ class LouZhangYoonVMAP(ConstitutiveModel):
                       c_hardening_parameters, d_hardening_law,
                       d_hardening_parameters, is_associative_hardening,
                       su_conv_tol, su_max_n_iterations, is_apex_handling,
-                      apex_switch_tol, small):
+                      apex_switch_tol, is_fixed_yield_parameters, small):
         """Perform plastic step.
         
         Parameters
@@ -855,6 +864,11 @@ class LouZhangYoonVMAP(ConstitutiveModel):
             the tolerance may prevent convergence issues in the surface
             return-mapping near the apex (namely for large strain increments),
             but leads to an early switch from surface to apex.
+        is_fixed_yield_parameters : bool
+            If True, then yield surface parameters are assumed to be fixed
+            w.r.t. the accumulated plastic strain. Enabling this option
+            improves performance by avoiding the computation of several
+            derivatives w.r.t. the accumulated plastic strain.
         small : float
             Minimum threshold to handle values close or equal to zero.
 
@@ -913,7 +927,8 @@ class LouZhangYoonVMAP(ConstitutiveModel):
             hardening_parameters, a_hardening_law, a_hardening_parameters,
             b_hardening_law, b_hardening_parameters, c_hardening_law,
             c_hardening_parameters, d_hardening_law, d_hardening_parameters,
-            is_associative_hardening, su_conv_tol, su_max_n_iterations, small)
+            is_associative_hardening, is_fixed_yield_parameters, su_conv_tol,
+            su_max_n_iterations, small)
         # Perform plastic step (return-mapping to cone apex)
         if is_apex_handling:
             plastic_step_apex_output = cls._plastic_step_apex(
@@ -954,7 +969,8 @@ class LouZhangYoonVMAP(ConstitutiveModel):
                            b_hardening_parameters, c_hardening_law,
                            c_hardening_parameters, d_hardening_law,
                            d_hardening_parameters, is_associative_hardening,
-                           su_conv_tol, su_max_n_iterations, small):
+                           is_fixed_yield_parameters, su_conv_tol,
+                           su_max_n_iterations, small):
         """Perform plastic step (return-mapping to cone surface).
 
         Parameters
@@ -996,6 +1012,11 @@ class LouZhangYoonVMAP(ConstitutiveModel):
             Yield parameter hardening law parameters.
         is_associative_hardening : bool
             If True, then adopt associative hardening rule.
+        is_fixed_yield_parameters : bool
+            If True, then yield surface parameters are assumed to be fixed
+            w.r.t. the accumulated plastic strain. Enabling this option
+            improves performance by avoiding the computation of several
+            derivatives w.r.t. the accumulated plastic strain.
         su_conv_tol : float
             State update convergence tolerance.
         su_max_n_iterations : int
@@ -1045,7 +1066,7 @@ class LouZhangYoonVMAP(ConstitutiveModel):
                     b_hardening_law, b_hardening_parameters,
                     c_hardening_law, c_hardening_parameters,
                     d_hardening_law, d_hardening_parameters,
-                    is_associative_hardening=is_associative_hardening)
+                    is_associative_hardening, is_fixed_yield_parameters)
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Build residuals matrices
             r1 = vget_tensor_mf(residual_1, n_dim, comp_order_sym,
@@ -1155,7 +1176,8 @@ class LouZhangYoonVMAP(ConstitutiveModel):
                                    b_hardening_law, b_hardening_parameters,
                                    c_hardening_law, c_hardening_parameters,
                                    d_hardening_law, d_hardening_parameters,
-                                   is_associative_hardening=False):
+                                   is_associative_hardening,
+                                   is_fixed_yield_parameters):
         """Compute state update residuals and Jacobian matrix.
         
         Parameters
@@ -1198,8 +1220,13 @@ class LouZhangYoonVMAP(ConstitutiveModel):
             Yield parameter hardening law.
         d_hardening_parameters : function
             Yield parameter hardening law parameters.
-        is_associative_hardening : bool, default=False
+        is_associative_hardening : bool
             If True, then adopt associative hardening rule.
+        is_fixed_yield_parameters : bool
+            If True, then yield surface parameters are assumed to be fixed
+            w.r.t. the accumulated plastic strain. Enabling this option
+            improves performance by avoiding the computation of several
+            derivatives w.r.t. the accumulated plastic strain.
 
         Returns
         -------
@@ -1263,20 +1290,23 @@ class LouZhangYoonVMAP(ConstitutiveModel):
         d2w5_dstress2 = (-(1/4)*(w4**(-3/2))*dyad22_1(dw4_dstress, dw4_dstress)
                          + (1/2)*(w4**(-1/2))*d2w4_dstress2 - d2w3_dstress2)
         # Compute auxiliary terms derivatives w.r.t. accumulated plastic strain
-        dw1_daccpstr = i1*b_hard_slope
-        dw2_daccpstr = (j3**2)*c_hard_slope
-        dw3_daccpstr = j3*d_hard_slope
-        dw4_daccpstr = -dw2_daccpstr
-        dw5_daccpstr = (1/2)*(w4**(-1/2))*dw4_daccpstr - dw3_daccpstr
+        if not is_fixed_yield_parameters:
+            dw1_daccpstr = i1*b_hard_slope
+            dw2_daccpstr = (j3**2)*c_hard_slope
+            dw3_daccpstr = j3*d_hard_slope
+            dw4_daccpstr = -dw2_daccpstr
+            dw5_daccpstr = (1/2)*(w4**(-1/2))*dw4_daccpstr - dw3_daccpstr
         # Compute auxiliary terms cross derivatives w.r.t. stress and
         # accumulated plastic strain
-        d2w1_daccpstrdstress = b_hard_slope*soid
-        d2w2_daccpstrdstress = 2*j3*c_hard_slope*dj3_dstress
-        d2w3_daccpstrdstress = d_hard_slope*dj3_dstress
-        d2w4_daccpstrdstress = -d2w2_daccpstrdstress
-        d2w5_daccpstrdstress = (-(1/4)*(w4**(-3/2))*dw4_daccpstr*dw4_dstress
-                                + (1/2)*(w4**(-1/2))*d2w4_daccpstrdstress
-                                - d2w3_daccpstrdstress)
+        if not is_fixed_yield_parameters:
+            d2w1_daccpstrdstress = b_hard_slope*soid
+            d2w2_daccpstrdstress = 2*j3*c_hard_slope*dj3_dstress
+            d2w3_daccpstrdstress = d_hard_slope*dj3_dstress
+            d2w4_daccpstrdstress = -d2w2_daccpstrdstress
+            d2w5_daccpstrdstress = \
+                (-(1/4)*(w4**(-3/2))*dw4_daccpstr*dw4_dstress
+                 + (1/2)*(w4**(-1/2))*d2w4_daccpstrdstress
+                 - d2w3_daccpstrdstress)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Compute effective stress
         effective_stress = yield_a*(w1 + (w5**(1/3)))
@@ -1305,25 +1335,30 @@ class LouZhangYoonVMAP(ConstitutiveModel):
         # Compute derivative of flow vector w.r.t. elastic strain
         dflow_destrain = ddot44_1(dflow_dstress, e_consistent_tangent)
         # Compute derivative of flow vector w.r.t. accumulated plastic strain
-        dflow_daccpstr = (
-            a_hard_slope*(dw1_dstress + (1/3)*(w5**(-2/3))*dw5_dstress)
-            + yield_a*(d2w1_daccpstrdstress
-                       - (2/9)*(w5**(-5/3))*dw5_daccpstr*dw5_dstress
-                       + (1/3)*(w5**(-2/3))*d2w5_daccpstrdstress))
+        if not is_fixed_yield_parameters:
+            dflow_daccpstr = (
+                a_hard_slope*(dw1_dstress + (1/3)*(w5**(-2/3))*dw5_dstress)
+                + yield_a*(d2w1_daccpstrdstress
+                           - (2/9)*(w5**(-5/3))*dw5_daccpstr*dw5_dstress
+                           + (1/3)*(w5**(-2/3))*d2w5_daccpstrdstress))
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Compute derivative of effective stress w.r.t. elastic strain
         deff_destrain = ddot24_1(flow_vector, e_consistent_tangent)
         # Compute derivative of effective stress w.r.t. accumulated plastic
         # strain
-        deff_daccpstr = (
-            a_hard_slope*(w1 + w5**(1/3))
-            + yield_a*(dw1_daccpstr + (1/3)*(w5**(-2/3))*dw5_daccpstr))
+        if not is_fixed_yield_parameters:
+            deff_daccpstr = (
+                a_hard_slope*(w1 + w5**(1/3))
+                + yield_a*(dw1_daccpstr + (1/3)*(w5**(-2/3))*dw5_daccpstr))
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Compute derivative of first residual w.r.t. to elastic strain
         dr1_destrain = fosym + inc_p_mult*dflow_destrain
         # Compute derivative of first residual w.r.t. to accumulated plastic
         # strain
-        dr1_daccpstr = inc_p_mult*dflow_daccpstr
+        if not is_fixed_yield_parameters:
+            dr1_daccpstr = inc_p_mult*dflow_daccpstr
+        else:
+            dr1_daccpstr = torch.zeros_like(flow_vector, device=device)
         # Compute derivative of first residual w.r.t. to incremental plastic
         # multiplier
         dr1_dincpm = flow_vector
@@ -1346,9 +1381,12 @@ class LouZhangYoonVMAP(ConstitutiveModel):
                     flow_vector, dflow_destrain)
             # Compute derivative of second residual w.r.t. to accumulated
             # plastic strain
-            dr2_daccpstr = \
-                1.0 - inc_p_mult*math.sqrt(2/3)*(1/norm_flow_vector)*ddot22_1(
-                    flow_vector, dflow_daccpstr)
+            if not is_fixed_yield_parameters:
+                dr2_daccpstr = \
+                    (1.0 - inc_p_mult*math.sqrt(2/3)*(1/norm_flow_vector)
+                     *ddot22_1(flow_vector, dflow_daccpstr))
+            else:
+                dr2_daccpstr = torch.tensor(1.0, device=device)
             # Compute derivative of second residual w.r.t. to incremental
             # plastic multiplier
             dr2_dincpm = -math.sqrt(2/3)*norm_flow_vector
@@ -1357,7 +1395,10 @@ class LouZhangYoonVMAP(ConstitutiveModel):
         dr3_destrain = (1.0/init_yield_stress)*deff_destrain
         # Compute derivative of third residual w.r.t. to accumulated plastic
         # strain
-        dr3_daccpstr = (1.0/init_yield_stress)*(deff_daccpstr - hard_slope)
+        if not is_fixed_yield_parameters:
+            dr3_daccpstr = (1.0/init_yield_stress)*(deff_daccpstr - hard_slope)
+        else:
+            dr3_daccpstr = -hard_slope/init_yield_stress
         # Compute derivative of third residual w.r.t. to incremental plastic
         # multiplier
         dr3_dincpm = torch.tensor(0.0, device=device)
