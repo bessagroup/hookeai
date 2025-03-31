@@ -895,20 +895,31 @@ class NoiseGenerator:
                 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                 # Sample noise
                 if self._noise_distribution == 'uniform':
-                    # Set bounds
-                    low = -0.5*abs(self._noise_parameters['amp'])*weight
-                    high = -low
+                    # Set homoscedastic bounds
+                    hom_low = -0.5*abs(self._noise_parameters['amp'])
+                    hom_high = -hom_low
+                    # Set heteroscedastic bounds
+                    het_low = -0.5*abs(self._noise_parameters['amp'])*weight
+                    het_high = -het_low
                     # Sample noise
-                    noise = np.random.uniform(low, high,
-                                              size=noise_path_shape[1])
+                    noise = (np.random.uniform(hom_low, hom_high,
+                                               size=noise_path_shape[1])
+                             + np.random.uniform(het_low, het_high,
+                                                 size=noise_path_shape[1]))
+                    
                 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                 elif self._noise_distribution in ('gaussian',
                                                   'spiked_gaussian'):
-                    # Set standard deviation
-                    std = self._noise_parameters['std']*weight
+                    # Set homoscedastic standard deviation
+                    hom_std = self._noise_parameters['std']
+                    # Set heteroscedastic standard deviation
+                    het_std = self._noise_parameters['std']*weight
                     # Sample noise
-                    noise = np.random.normal(loc=0.0, scale=std,
-                                             size=noise_path_shape[1])
+                    noise = (np.random.normal(loc=0.0, scale=hom_std,
+                                              size=noise_path_shape[1])
+                             + np.random.normal(loc=0.0, scale=het_std,
+                                                size=noise_path_shape[1]))
+                    
                 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                 # Assemble noise
                 noise_path[t, :] = noise
