@@ -13,6 +13,7 @@ import re
 import numpy as np
 import matplotlib.pyplot as plt
 # Local
+from simulators.links.links import LinksSimulator
 from ioput.plots import save_figure, plot_xy_data
 # =============================================================================
 # Summary: Generate total load factor history plot from Links input data file
@@ -146,19 +147,80 @@ def plot_links_tfact_hist(links_input_file_path, is_stdout_display=False,
         save_figure(figure, filename, format='pdf',
                     save_dir=links_input_file_dir)
 # =============================================================================
-if __name__ == "__main__":
-    # Set Links simulation input data file
-    links_input_file_path = \
-        ('/home/bernardoferreira/Documents/brown/projects/'
-         'darpa_project/8_global_random_specimen/von_mises/'
-         '2_random_specimen_hexa8/solid/0_links_simulation/'
-         'random_specimen/simulations/random_specimen.dat')
+def gen_links_loading_incrementation_file(save_dir, is_stdout_display=False,
+                                          is_save_fig=False):
+    """Generate Links loading incrementation file.
+    
+    Loading incrementation parameters must be directly set in
+    LinksSimulator._get_links_loading_incrementation().
+    
+    Parameters
+    ----------
+    save_dir : str
+        Directory where loading incrementation file is saved.
+    is_stdout_display : bool, default=False
+        True if displaying figure to standard output device, False otherwise.
+    is_save_fig : bool, default=False
+        Save figure.
+    """
+    # Check saving directory
+    if not os.path.exists(save_dir):
+        raise RuntimeError('Saving directory has not been found:'
+                           '\n\n{save_dir}')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Set display and save plot flags
-    is_stdout_display = True
-    is_save_fig = True
+    # Initialize Links simulator
+    links_simulator = LinksSimulator(None, None, None)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Get loading incrementation
+    increm_lines = links_simulator._get_links_loading_incrementation()
+    # Append loading increment
+    write_lines = increm_lines
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Set loading incrementation data file path
+    increm_file_path = os.path.join(os.path.normpath(save_dir),
+                                    'loading_incrementation.dat')
+    # Open loading incrementation data file
+    increm_file = open(increm_file_path, 'w')
+    # Write loading incrementation data file
+    increm_file.writelines(write_lines)
+    # Close loading incrementation data file
+    increm_file.close()
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Plot Links total loading factor history
-    plot_links_tfact_hist(links_input_file_path, is_stdout_display=False,
-                          is_save_fig=True)
-
+    plot_links_tfact_hist(increm_file_path,
+                          is_stdout_display=is_stdout_display,
+                          is_save_fig=is_save_fig)
+# =============================================================================
+if __name__ == "__main__":
+    # Set computation processes
+    is_plot_links_tfact_hist = True
+    is_generate_links_tfact_hist = True
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Plot Links total loading factor history
+    if is_plot_links_tfact_hist:
+        # Set Links simulation input data file
+        links_input_file_path = \
+            ('/home/bernardoferreira/Documents/brown/projects/'
+             'darpa_paper_examples/global/specimens/tensile_double_notched/'
+             'meshes/hexa8_n760_e504/0_links_simulation/'
+             'tensile_double_notched.dat')
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set display and save plot flags
+        is_stdout_display = True
+        is_save_fig = True
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Plot Links total loading factor history
+        plot_links_tfact_hist(links_input_file_path, is_stdout_display=False,
+                              is_save_fig=True)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Generate Links loading incrementation file
+    if is_generate_links_tfact_hist:
+        # Set saving directory
+        save_dir = \
+            ('/home/bernardoferreira/Documents/brown/projects/'
+             'darpa_paper_examples/global/specimens/tensile_double_notched/'
+             'meshes/hexa8_n760_e504/0_links_simulation')
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Generate Links loading incrementation file.
+        gen_links_loading_incrementation_file(
+            save_dir, is_stdout_display=False, is_save_fig=True)
