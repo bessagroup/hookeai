@@ -92,7 +92,8 @@ def get_specimen_node_dbc(specimen_label, top_coord, top_disp, coords):
     small = 1e-8
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set available specimens
-    available_specimens = ('3d_tensile_double_notched',)
+    available_specimens = ('3d_tensile_double_notched',
+                           '3d_tensile_dogbone')
     # Check specimen
     if specimen_label not in available_specimens:
         raise RuntimeError('Unknown specimen.')
@@ -106,7 +107,7 @@ def get_specimen_node_dbc(specimen_label, top_coord, top_disp, coords):
     node_dbc_disps = build_node_disps()
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Build node Dirichlet boundary conditions
-    if specimen_label in ('3d_tensile_double_notched',):
+    if specimen_label in ('3d_tensile_double_notched', '3d_tensile_dogbone'):
         # Set loading dimension
         loading_dim = 1
         # Get node Dirichlet boundary conditions from coordinates:
@@ -300,22 +301,34 @@ def read_links_nodes_coords_mesh(links_input_file_path):
 # =============================================================================
 if __name__ == "__main__":
     # Set specimen label
-    specimen_label = '3d_tensile_double_notched'
+    specimen_label = '3d_tensile_dogbone'
     # Set storage directory
     save_dir = ('/home/bernardoferreira/Documents/brown/projects/'
-                'test_specimen_bc_auto')
+                'darpa_paper_examples/global/specimens/tensile_dogbone/'
+                'meshes/hexa8_n6493_e1200/0_links_simulation')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set specimen parameters
     if specimen_label == '3d_tensile_double_notched':
         # Set specimen Links input data file
         specimen_links_data_file = \
             ('/home/bernardoferreira/Documents/brown/projects/'
-             'test_specimen_bc_auto/'
-             'cambridge_specimen_plane_stress_notched_short.dat')
+             'darpa_paper_examples/global/specimens/tensile_double_notched/'
+             'meshes/hexa8_n760_e504/0_links_simulation/'
+             'tensile_double_notched.dat')
         # Set specimen top coordinate
         specimen_top_coord = 12.0
         # Set prescribed displacement
         specimen_top_disp = 1.0
+    elif specimen_label == '3d_tensile_dogbone':
+        # Set specimen Links input data file
+        specimen_links_data_file = \
+            ('/home/bernardoferreira/Documents/brown/projects/'
+             'darpa_paper_examples/global/specimens/tensile_dogbone/meshes/'
+             'hexa8_n6493_e1200/0_links_simulation/tensile_dogbone.dat')
+        # Set specimen top coordinate
+        specimen_top_coord = 40.0
+        # Set prescribed displacement
+        specimen_top_disp = 10.0
     else:
         raise RuntimeError('Unknown specimen.')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
