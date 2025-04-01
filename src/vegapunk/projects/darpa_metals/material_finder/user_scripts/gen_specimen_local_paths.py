@@ -92,8 +92,34 @@ def gen_specimen_local_dataset(specimen_data_path,
         is_store_local_paths=is_store_local_paths,
         local_paths_elements=local_paths_elements, device_type=device_type)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Set loss scaling flag
+    is_loss_scaling_factor = True
+    # Set loss scaling factor
+    if is_loss_scaling_factor:
+        # Set characteristic Young modulus (MPa)
+        young_ref = 110e3
+        # Set characteristic length (mm)
+        length_ref = 40.0
+        # Set characteristic time (s)
+        time_ref = 1.0
+        # Set loss scaling factor
+        loss_scaling_factor = 1.0/((young_ref**2)*(length_ref**4)*time_ref)
+    else:
+        # Set loss scaling factor
+        loss_scaling_factor = None
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Set loss time weights flag
+    is_loss_time_weights = True
+    # Set loss time weights
+    if is_loss_time_weights:
+        loss_time_weights = 201*[0.005,]
+    else:
+        loss_time_weights = None
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set specimen data and material state
-    material_finder.set_specimen_data(specimen_data, specimen_material_state)
+    material_finder.set_specimen_data(specimen_data, specimen_material_state,
+                                      loss_scaling_factor=loss_scaling_factor,
+                                      loss_time_weights=loss_time_weights)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Compute force equilibrium history loss
     force_equilibrium_hist_loss = \
