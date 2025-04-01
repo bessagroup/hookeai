@@ -4,6 +4,10 @@ Functions
 ---------
 train_model
     Training of recurrent constitutive model.
+save_material_models_init_state
+    Save material models initial states.
+save_material_models_state
+    Save material models states at given training epoch.
 save_parameters_history
     Save model learnable parameters history record.
 read_parameters_history_from_file
@@ -144,6 +148,12 @@ def train_model(n_max_epochs, specimen_data, specimen_material_state,
                             loss_time_weights=loss_time_weights)
     # Set model device
     model.set_device(device_type)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Save material models initial state
+    save_material_models_init_state(model=model)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Get model parameters
+    model_parameters = model.parameters(recurse=True)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Move model to device
     model.to(device=device)
@@ -376,6 +386,25 @@ def train_model(n_max_epochs, specimen_data, specimen_material_state,
         torchinfo_summary=str(model_statistics))
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     return model, best_loss, best_training_epoch
+# =============================================================================
+def save_material_models_init_state(model):
+    """Save material models initial states.
+    
+    Material model state file is stored in the corresponding model_directory
+    under the name < model_name >-init.pt.
+    
+    Parameters
+    ----------
+    model : torch.nn.Module
+        Model.
+    """
+    # Get material models
+    material_models = model.get_material_models()
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Loop over material models
+    for _, model in material_models.items():
+        # Save model state
+        model.save_model_init_state()
 # =============================================================================
 def save_material_models_state(model, epoch=None, is_best_state=None):
     """Save material models states at given training epoch.
