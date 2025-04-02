@@ -552,6 +552,9 @@ class DruckerPragerVMAP(ConstitutiveModel):
         elastic_step_output : torch.Tensor(1d)
             Elastic step concatenated output data.
         """
+        # Get device from elastic trial strain
+        device = e_trial_strain_mf.device
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Update elastic strain
         e_strain_mf = e_trial_strain_mf
         # Update stress
@@ -560,13 +563,13 @@ class DruckerPragerVMAP(ConstitutiveModel):
         acc_p_strain = acc_p_strain_old
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Set plastic step flag
-        is_plast = torch.tensor([False], device=e_trial_strain_mf.device)
+        is_plast = torch.tensor([False], device=device)
         # Set return-mapping to apex flag
-        is_apex_return = torch.tensor([False], device=e_trial_strain_mf.device)
+        is_apex_return = torch.tensor([False], device=device)
         # Set incremental plastic multiplier
-        inc_p_mult = torch.tensor(0.0, device=e_trial_strain_mf.device)
+        inc_p_mult = torch.tensor(0.0, device=device)
         # Set state update convergence flag
-        is_converged = torch.tensor([True], device=e_trial_strain_mf.device)
+        is_converged = torch.tensor([True], device=device)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Build concatenated elastic step output
         elastic_step_output = \
@@ -637,16 +640,19 @@ class DruckerPragerVMAP(ConstitutiveModel):
         plastic_step_output : torch.Tensor(1d)
             Plastic step concatenated output data.
         """
+        # Get device from elastic trial strain
+        device = e_trial_strain_mf.device
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Set minimum threshold to handle values close or equal to zero
         small = 1e-8
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Set plastic step flag
-        is_plast = torch.tensor([True], device=e_trial_strain_mf.device)
+        is_plast = torch.tensor([True], device=device)
         # Set incremental plastic multiplier initial iterative guess
-        inc_p_mult = torch.tensor(0.0, device=e_trial_strain_mf.device)
+        inc_p_mult = torch.tensor(0.0, device=device)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Newton-Raphson iterative loop
-        for _ in range(su_max_n_iterations + 1):
+        for nr_iter in range(su_max_n_iterations + 1):
             # Compute initial hardening modulus
             cohesion, H = hardening_law(hardening_parameters,
                                         acc_p_strain_old + inc_p_mult)
@@ -660,9 +666,12 @@ class DruckerPragerVMAP(ConstitutiveModel):
                             torch.abs(residual),
                             torch.abs(residual/cohesion))
             # Check Newton-Raphson iterative procedure convergence
-            is_converged = torch.where(is_elastic_step,
-                                       is_elastic_step,
-                                       conv_norm_residual < su_conv_tol)
+            is_converged = \
+                torch.where(is_elastic_step,
+                            is_elastic_step,
+                            (conv_norm_residual < su_conv_tol
+                             and torch.tensor(nr_iter > 0, dtype=torch.bool,
+                                              device=device)))
             # Compute iterative incremental plastic multiplier
             inc_p_mult = torch.where(is_converged,
                                      inc_p_mult,
@@ -689,7 +698,7 @@ class DruckerPragerVMAP(ConstitutiveModel):
         dev_stress_factor = torch.where(
             torch.isfinite(dev_stress_factor),
             dev_stress_factor,
-            torch.zeros(1, device=e_trial_strain_mf.device))
+            torch.zeros(1, device=device))
         # Compute deviatoric stress
         dev_stress_mf = dev_stress_factor*dev_trial_stress_mf
         # Update stress
@@ -822,13 +831,16 @@ class DruckerPragerVMAP(ConstitutiveModel):
         plastic_step_output : torch.Tensor(1d)
             Plastic step concatenated output data.
         """
+        # Get device from elastic trial strain
+        device = e_trial_strain_mf.device
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Set incremental plastic multiplier
-        inc_p_mult = torch.tensor(0.0, device=e_trial_strain_mf.device)
+        inc_p_mult = torch.tensor(0.0, device=device)
         # Set incremental plastic volumetric strain initial iterative guess
-        inc_vol_p_strain = torch.tensor(0.0, device=e_trial_strain_mf.device)
+        inc_vol_p_strain = torch.tensor(0.0, device=device)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Newton-Raphson iterative loop
-        for _ in range(su_max_n_iterations + 1):
+        for nr_iter in range(su_max_n_iterations + 1):
             # Compute current cohesion and hardening modulus
             cohesion, H = hardening_law(
                 hardening_parameters,
@@ -841,9 +853,12 @@ class DruckerPragerVMAP(ConstitutiveModel):
                             torch.abs(residual),
                             torch.abs(residual/cohesion))
             # Check Newton-Raphson iterative procedure convergence
-            is_converged = torch.where(is_elastic_step,
-                                       is_elastic_step,
-                                       conv_norm_residual < su_conv_tol)
+            is_converged = \
+                torch.where(is_elastic_step,
+                            is_elastic_step,
+                            (conv_norm_residual < su_conv_tol
+                             and torch.tensor(nr_iter > 0, dtype=torch.bool,
+                                              device=device)))
             # Compute iterative incremental plastic volumetric strain
             inc_vol_p_strain = torch.where(is_converged,
                                            inc_vol_p_strain,
@@ -861,7 +876,7 @@ class DruckerPragerVMAP(ConstitutiveModel):
         pressure = trial_pressure - K*inc_vol_p_strain
         # Compute deviatoric stress
         dev_stress_mf = torch.zeros_like(dev_trial_stress_mf,
-                                         device=e_trial_strain_mf.device)
+                                         device=device)
         # Update stress
         stress_mf = pressure*soid_mf
         # Update accumulated plastic strain

@@ -539,6 +539,9 @@ class VonMisesMixedVMAP(ConstitutiveModel):
         elastic_step_output : torch.Tensor(1d)
             Elastic step concatenated output data.
         """
+        # Get device from elastic trial strain
+        device = e_trial_strain_mf.device
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Update elastic strain
         e_strain_mf = e_trial_strain_mf
         # Update stress
@@ -549,11 +552,11 @@ class VonMisesMixedVMAP(ConstitutiveModel):
         back_stress_mf = back_stress_old_mf
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Set plastic step flag
-        is_plast = torch.tensor([False], device=e_trial_strain_mf.device)
+        is_plast = torch.tensor([False], device=device)
         # Set incremental plastic multiplier initial iterative guess
-        inc_p_mult = torch.tensor(0.0, device=e_trial_strain_mf.device)
+        inc_p_mult = torch.tensor(0.0, device=device)
         # Set state update convergence flag
-        is_converged = torch.tensor([True], device=e_trial_strain_mf.device)
+        is_converged = torch.tensor([True], device=device)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Build concatenated elastic step output
         elastic_step_output = \
@@ -613,17 +616,20 @@ class VonMisesMixedVMAP(ConstitutiveModel):
         plastic_step_output : torch.Tensor(1d)
             Plastic step concatenated output data.
         """
+        # Get device from elastic trial strain
+        device = e_trial_strain_mf.device
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Set plastic step flag
-        is_plast = torch.tensor([True], device=e_trial_strain_mf.device)
+        is_plast = torch.tensor([True], device=device)
         # Set incremental plastic multiplier initial iterative guess
-        inc_p_mult = torch.tensor(0.0, device=e_trial_strain_mf.device)
+        inc_p_mult = torch.tensor(0.0, device=device)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Compute last converged kinematic hardening stress
         kin_hard_stress_old, _ = kinematic_hardening_law(
             kinematic_hardening_parameters, acc_p_strain_old)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Newton-Raphson iterative loop
-        for _ in range(su_max_n_iterations + 1):
+        for nr_iter in range(su_max_n_iterations + 1):
             # Compute current yield stress and hardening modulus
             yield_stress, H = hardening_law(hardening_parameters,
                                             acc_p_strain_old + inc_p_mult)
@@ -636,9 +642,12 @@ class VonMisesMixedVMAP(ConstitutiveModel):
                 - kin_hard_stress + kin_hard_stress_old - yield_stress
             # Check Newton-Raphson iterative procedure convergence
             error = abs(residual/yield_stress)
-            is_converged = torch.where(is_elastic_step,
-                                       is_elastic_step,
-                                       error < su_conv_tol)
+            is_converged = \
+                torch.where(is_elastic_step,
+                            is_elastic_step,
+                            (error < su_conv_tol
+                             and torch.tensor(nr_iter > 0, dtype=torch.bool,
+                                              device=device)))
             # Compute iterative incremental plastic multiplier
             inc_p_mult = torch.where(is_converged,
                                      inc_p_mult,

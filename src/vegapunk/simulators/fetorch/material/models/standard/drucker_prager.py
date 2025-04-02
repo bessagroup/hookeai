@@ -427,7 +427,8 @@ class DruckerPrager(ConstitutiveModel):
                 else:
                     conv_norm_res = torch.abs(residual/cohesion)
                 # Check Newton-Raphson iterative procedure convergence
-                is_converged = conv_norm_res < su_conv_tol
+                is_converged = (conv_norm_res < su_conv_tol
+                                and nr_iter > 0)
                 # Control Newton-Raphson iteration loop flow
                 if is_converged:
                     # Leave Newton-Raphson iterative loop (converged solution)
@@ -503,7 +504,8 @@ class DruckerPrager(ConstitutiveModel):
                     else:
                         conv_norm_res = torch.abs(residual/cohesion)
                     # Check Newton-Raphson iterative procedure convergence
-                    is_converged = conv_norm_res < su_conv_tol                    
+                    is_converged = (conv_norm_res < su_conv_tol
+                                    and nr_iter > 0)
                     # Control Newton-Raphson iteration loop flow
                     if is_converged:
                         # Leave Newton-Raphson iterative loop (converged

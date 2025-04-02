@@ -400,7 +400,8 @@ class VonMisesMixed(ConstitutiveModel):
                     - kin_hard_stress + kin_hard_stress_old - yield_stress
                 # Check Newton-Raphson iterative procedure convergence
                 error = abs(residual/yield_stress)
-                is_converged = error < su_conv_tol
+                is_converged = (error < su_conv_tol
+                                and nr_iter > 0)
                 # Control Newton-Raphson iteration loop flow
                 if is_converged:
                     # Leave Newton-Raphson iterative loop (converged solution)
