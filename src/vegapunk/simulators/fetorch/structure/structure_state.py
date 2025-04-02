@@ -50,7 +50,7 @@ class StructureMaterialState(torch.nn.Module):
         Strain/Stress components nonsymmetric order.
     _n_mat_model : int
         Number of FETorch material constitutive models.
-    _material_models : dict
+    _material_models : torch.nn.ModuleDict
         FETorch material constitutive models (key, str[int], item,
         ConstitutiveModel). Models are labeled from 1 to n_mat_model.
     _elements_material : dict
@@ -294,6 +294,17 @@ class StructureMaterialState(torch.nn.Module):
         else:
             raise RuntimeError(f'Unknown material constitutive model '
                                f'\'{model_name}\'.')
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Check constitutive model class
+        if (isinstance(self._material_models, torch.nn.ModuleDict)
+                and not isinstance(constitutive_model, torch.nn.Module)):
+            raise RuntimeError(
+                'The structure material models are currently stored as a '
+                'torch.nn.ModuleDict. Attempting to initialize a '
+                'non-torch.nn.Module constitutive model '
+                f'({type(constitutive_model)}) will raise an error.'
+                '\n\nHotfix: Initialize self._material_models as standard '
+                'dictionary.')
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Update number of material constitutive models
         self._n_mat_model += 1
