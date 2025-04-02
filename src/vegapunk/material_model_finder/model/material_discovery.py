@@ -736,6 +736,13 @@ class MaterialModelFinder(torch.nn.Module):
         """
         # Compute force equilibrium history loss
         if sequential_mode == 'sequential_time':
+            # Check device support
+            if self._device_type == 'cuda':
+                raise RuntimeError(
+                    'FETorch standard sequential time computation does not '
+                    'currently support CUDA. Please set torch device as CPU '
+                    'to use \'sequential_time\' mode.')
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             force_equilibrium_hist_loss = self.forward_sequential_time()
         elif sequential_mode == 'sequential_element':
             force_equilibrium_hist_loss = self.forward_sequential_element()
