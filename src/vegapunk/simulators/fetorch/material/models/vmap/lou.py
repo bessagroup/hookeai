@@ -86,6 +86,10 @@ class LouZhangYoonVMAP(ConstitutiveModel):
         Strain/Stress components symmetric order.
     _comp_order_nsym : list
         Strain/Stress components nonsymmetric order.
+    _is_su_float64 : bool
+        If True, then state update is locally computed in floating-point
+        double precision. If False, then default floating-point precision
+        is assumed.
     _device_type : {'cpu', 'cuda'}
         Type of device on which torch.Tensor is allocated.
     _device : torch.device
