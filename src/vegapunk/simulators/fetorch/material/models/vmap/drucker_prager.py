@@ -711,13 +711,15 @@ class DruckerPragerVMAP(ConstitutiveModel):
                 torch.where(torch.abs(cohesion) < small,
                             torch.abs(residual),
                             torch.abs(residual/cohesion))
+            # Compute converge condition
+            conv_cond = torch.all(
+                torch.stack((conv_norm_residual < su_conv_tol,
+                             torch.tensor(nr_iter > 0, dtype=torch.bool,
+                                          device=device))))
             # Check Newton-Raphson iterative procedure convergence
-            is_converged = \
-                torch.where(is_elastic_step,
-                            is_elastic_step,
-                            (conv_norm_residual < su_conv_tol
-                             and torch.tensor(nr_iter > 0, dtype=torch.bool,
-                                              device=device)))
+            is_converged = torch.where(is_elastic_step,
+                                       is_elastic_step,
+                                       conv_cond)
             # Compute iterative incremental plastic multiplier
             inc_p_mult = torch.where(is_converged,
                                      inc_p_mult,
@@ -898,13 +900,15 @@ class DruckerPragerVMAP(ConstitutiveModel):
                 torch.where(torch.abs(cohesion) < small,
                             torch.abs(residual),
                             torch.abs(residual/cohesion))
+            # Compute converge condition
+            conv_cond = torch.all(
+                torch.stack((conv_norm_residual < su_conv_tol,
+                             torch.tensor(nr_iter > 0, dtype=torch.bool,
+                                          device=device))))  
             # Check Newton-Raphson iterative procedure convergence
-            is_converged = \
-                torch.where(is_elastic_step,
-                            is_elastic_step,
-                            (conv_norm_residual < su_conv_tol
-                             and torch.tensor(nr_iter > 0, dtype=torch.bool,
-                                              device=device)))
+            is_converged = torch.where(is_elastic_step,
+                                       is_elastic_step,
+                                       conv_cond)
             # Compute iterative incremental plastic volumetric strain
             inc_vol_p_strain = torch.where(is_converged,
                                            inc_vol_p_strain,

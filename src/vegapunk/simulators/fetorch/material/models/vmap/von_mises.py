@@ -646,14 +646,16 @@ class VonMisesVMAP(ConstitutiveModel):
                                             acc_p_strain_old + inc_p_mult)
             # Compute return-mapping residual (scalar)
             residual = vm_trial_stress - 3.0*G*inc_p_mult - yield_stress
-            # Check Newton-Raphson iterative procedure convergence
+            # Compute converge condition
             error = abs(residual/yield_stress)
-            is_converged = \
-                torch.where(is_elastic_step,
-                            is_elastic_step,
-                            (error < su_conv_tol
-                             and torch.tensor(nr_iter > 0, dtype=torch.bool,
-                                              device=device)))
+            conv_cond = torch.all(
+                torch.stack((error < su_conv_tol,
+                             torch.tensor(nr_iter > 0, dtype=torch.bool,
+                                          device=device))))
+            # Check Newton-Raphson iterative procedure convergence
+            is_converged = torch.where(is_elastic_step,
+                                       is_elastic_step,
+                                       conv_cond)
             # Compute iterative incremental plastic multiplier
             inc_p_mult = torch.where(is_converged,
                                      inc_p_mult,
