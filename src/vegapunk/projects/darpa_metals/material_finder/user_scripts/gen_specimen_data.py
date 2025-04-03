@@ -500,21 +500,10 @@ def set_material_model_parameters():
                 'euler_angles': (0.0, 0.0, 0.0),
                 'hardening_law': get_hardening_law('nadai_ludwik'),
                 'hardening_parameters':
-                    {'s0': 900,
-                     'a': 700,
+                    {'s0': math.sqrt(3)*900,
+                     'a': math.sqrt(3)*700,
                      'b': 0.5,
                      'ep0': 1e-5}}
-            # Set constitutive model parameters (Rowan data)
-            #model_parameters = {
-            #    'elastic_symmetry': 'isotropic',
-            #    'E': 118640, 'v': 0.334,
-            #    'euler_angles': (0.0, 0.0, 0.0),
-            #    'hardening_law': get_hardening_law('nadai_ludwik'),
-            #    'hardening_parameters':
-            #        {'s0': 855.89,
-            #         'a': 1246.9,
-            #         'b': 0.0795,
-            #         'ep0': 1e-5}}
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Set learnable parameters
             learnable_parameters = {}
@@ -525,11 +514,14 @@ def set_material_model_parameters():
                 'initial_value': random.uniform(0.2, 0.4),
                 'bounds': (0.2, 0.4)}
             learnable_parameters['s0'] = {
-                'initial_value': random.uniform(500, 1500),
-                'bounds': (500, 1500)}
+                'initial_value': random.uniform(500, 2000),
+                'bounds': (500, 2000)}
             learnable_parameters['a'] = {
-                'initial_value': random.uniform(500, 1500),
-                'bounds': (500, 1500)}
+                'initial_value': random.uniform(500, 2000),
+                'bounds': (500, 2000)}
+            learnable_parameters['b'] = {
+                'initial_value': random.uniform(0.2, 1.0),
+                'bounds': (0.2, 1.0)}
             # Set material constitutive model name
             if model_name == 'rc_von_mises_vmap':
                 material_model_name = 'von_mises_vmap'
