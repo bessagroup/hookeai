@@ -556,8 +556,8 @@ def set_material_model_parameters():
                 'euler_angles': (0.0, 0.0, 0.0),
                 'hardening_law': get_hardening_law('nadai_ludwik'),
                 'hardening_parameters':
-                    {'s0': 900/(math.sqrt(3)*yield_cohesion_parameter),
-                     'a': 700/(math.sqrt(3)*yield_cohesion_parameter),
+                    {'s0': 900/yield_cohesion_parameter,
+                     'a': 700/yield_cohesion_parameter,
                      'b': 0.5,
                      'ep0': 1e-5},
                 'yield_cohesion_parameter': yield_cohesion_parameter,
@@ -567,21 +567,24 @@ def set_material_model_parameters():
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Set learnable parameters
             learnable_parameters = {}
-            #learnable_parameters['E'] = {
-            #    'initial_value': random.uniform(80e3, 140e3),
-            #    'bounds': (80e3, 140e3)}
-            #learnable_parameters['v'] = {
-            #    'initial_value': random.uniform(0.2, 0.4),
-            #    'bounds': (0.2, 0.4)}
-            #learnable_parameters['s0'] = {
-            #    'initial_value': random.uniform(500, 1500),
-            #    'bounds': (500, 1500)}
-            #learnable_parameters['a'] = {
-            #    'initial_value': random.uniform(500, 1500),
-            #    'bounds': (500, 1500)}
+            learnable_parameters['E'] = {
+                'initial_value': random.uniform(80e3, 140e3),
+                'bounds': (80e3, 140e3)}
+            learnable_parameters['v'] = {
+                'initial_value': random.uniform(0.2, 0.4),
+                'bounds': (0.2, 0.4)}
+            learnable_parameters['s0'] = {
+                'initial_value': random.uniform(500, 2000),
+                'bounds': (500, 2000)}
+            learnable_parameters['a'] = {
+                'initial_value': random.uniform(500, 2000),
+                'bounds': (500, 2000)}
+            learnable_parameters['b'] = {
+                'initial_value': random.uniform(0.2, 1.0),
+                'bounds': (0.2, 1.0)}
             learnable_parameters['friction_angle'] = \
-                {'initial_value': math.radians(random.uniform(0.1, 10.0)),
-                 'bounds': (math.radians(1.0), math.radians(10.0))}
+                {'initial_value': math.radians(random.uniform(0.01, 10.0)),
+                 'bounds': (math.radians(0.01), math.radians(10.0))}
             # Set material constitutive model name
             if model_name == 'rc_drucker_prager_vmap':
                 material_model_name = 'drucker_prager_vmap'
