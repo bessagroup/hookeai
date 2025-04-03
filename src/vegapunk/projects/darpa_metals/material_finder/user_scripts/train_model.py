@@ -286,6 +286,13 @@ def set_default_training_options():
         is_params_stopping, params_stopping_kwargs
 # =============================================================================
 if __name__ == "__main__":
+    # Set float precision
+    is_double_precision = True
+    if is_double_precision:
+        torch.set_default_dtype(torch.float64)
+    else:
+        torch.set_default_dtype(torch.float32)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set case study base directory
     base_dir = ('/home/bernardoferreira/Documents/brown/projects/'
                 'darpa_project/5_global_specimens/'

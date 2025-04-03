@@ -726,6 +726,13 @@ def set_material_model_parameters():
         model_parameters, model_kwargs
 # =============================================================================
 if __name__ == "__main__":
+    # Set float precision
+    is_double_precision = True
+    if is_double_precision:
+        torch.set_default_dtype(torch.float64)
+    else:
+        torch.set_default_dtype(torch.float32)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set computation processes
     is_save_specimen_data = True
     is_save_specimen_material_state = True

@@ -217,6 +217,13 @@ def set_default_model_parameters(model_directory, device_type='cpu'):
     return model_init_args
 # =============================================================================
 if __name__ == "__main__":
+    # Set float precision
+    is_double_precision = True
+    if is_double_precision:
+        torch.set_default_dtype(torch.float64)
+    else:
+        torch.set_default_dtype(torch.float32)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set case study base directory
     base_dir = ('/home/bernardoferreira/Documents/brown/projects/'
                 'darpa_project/8_global_random_specimen/von_mises/'
