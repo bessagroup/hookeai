@@ -50,6 +50,9 @@ from simulators.fetorch.math.matrixops import get_problem_type_parameters, \
     vget_tensor_mf, vget_tensor_from_mf, vget_state_3Dmf_from_2Dmf, \
     vget_state_2Dmf_from_3Dmf
 from simulators.fetorch.math.tensorops import get_id_operators, dyad22_1
+from utilities.type_conversion import convert_dict_to_tensor, \
+    convert_tensor_to_float64, convert_dict_to_float64, \
+    convert_dict_to_float32, convert_tensor_to_float32
 #
 #                                                          Authorship & Credits
 # =============================================================================
@@ -81,6 +84,14 @@ class DruckerPragerVMAP(ConstitutiveModel):
         Strain/Stress components symmetric order.
     _comp_order_nsym : list
         Strain/Stress components nonsymmetric order.
+    _is_su_float64 : bool
+        If True, then state update is locally computed in floating-point
+        double precision. If False, then default floating-point precision
+        is assumed.
+    _device_type : {'cpu', 'cuda'}
+        Type of device on which torch.Tensor is allocated.
+    _device : torch.device
+        Device on which torch.Tensor is allocated.
 
     Methods
     -------
@@ -92,7 +103,7 @@ class DruckerPragerVMAP(ConstitutiveModel):
         Perform material constitutive model state update.
     """
     def __init__(self, strain_formulation, problem_type, model_parameters,
-                 device_type='cpu'):
+                 is_su_float64=True, device_type='cpu'):
         """Constitutive model constructor.
 
         Parameters
@@ -104,6 +115,10 @@ class DruckerPragerVMAP(ConstitutiveModel):
             2D axisymmetric (3) and 3D (4).
         model_parameters : dict
             Material constitutive model parameters.
+        is_su_float64 : bool, default=True
+            If True, then state update is locally computed in floating-point
+            double precision. If False, then default floating-point precision
+            is assumed.
         device_type : {'cpu', 'cuda'}, default='cpu'
             Type of device on which torch.Tensor is allocated.
         """
@@ -115,7 +130,11 @@ class DruckerPragerVMAP(ConstitutiveModel):
         # Set initialization parameters
         self._strain_formulation = strain_formulation
         self._problem_type = problem_type
-        self._model_parameters = model_parameters
+        self._model_parameters = convert_dict_to_tensor(model_parameters,
+                                                        is_inplace=True)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set state update floating-point precision
+        self._is_su_float64 = is_su_float64
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Set device
         self.set_device(device_type)
@@ -296,6 +315,24 @@ class DruckerPragerVMAP(ConstitutiveModel):
             Material constitutive model consistent tangent modulus stored in
             matricial form.
         """
+        # Get model parameters
+        model_parameters = self._model_parameters
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Initialize floating-point precision conversion flag
+        is_precision_conversion = False
+        # Handle state update floating-point precision
+        if torch.get_default_dtype() == torch.float32 and self._is_su_float64:
+            # Set floating-point precision conversion flag
+            is_precision_conversion = True
+            # Set default floating-point precision
+            torch.set_default_dtype(torch.float64)
+            # Perform floating-point precision conversion
+            model_parameters = convert_dict_to_float64(model_parameters,
+                                                       is_inplace=False)
+            inc_strain = convert_tensor_to_float64(inc_strain)
+            state_variables_old = convert_dict_to_float64(state_variables_old,
+                                                          is_inplace=False)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Set state update convergence tolerance
         su_conv_tol = 1e-6
         # Set state update maximum number of iterations
@@ -309,14 +346,14 @@ class DruckerPragerVMAP(ConstitutiveModel):
                                        device=self._device)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Get material properties
-        E = self._model_parameters['E']
-        v = self._model_parameters['v']
-        xi = self._model_parameters['yield_cohesion_parameter']
-        etay = self._model_parameters['yield_pressure_parameter']
-        etaf = self._model_parameters['flow_pressure_parameter']
+        E = model_parameters['E']
+        v = model_parameters['v']
+        xi = model_parameters['yield_cohesion_parameter']
+        etay = model_parameters['yield_pressure_parameter']
+        etaf = model_parameters['flow_pressure_parameter']
         # Get material isotropic strain hardening law
-        hardening_law = self._model_parameters['hardening_law']
-        hardening_parameters = self._model_parameters['hardening_parameters']
+        hardening_law = model_parameters['hardening_law']
+        hardening_parameters = model_parameters['hardening_parameters']
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Compute bulk and shear modulus
         K = E/(3.0*(1.0 - 2.0*v))
@@ -529,7 +566,16 @@ class DruckerPragerVMAP(ConstitutiveModel):
         if self._problem_type == 1:
             consistent_tangent_mf = vget_state_2Dmf_from_3Dmf(
                 consistent_tangent_mf, device=self._device)
-        #
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Restore floating-point precision
+        if is_precision_conversion:
+            # Reset default floating-point precision
+            torch.set_default_dtype(torch.float32)
+            # Perform floating-point precision conversion
+            state_variables = convert_dict_to_float32(state_variables,
+                                                      is_inplace=True)
+            consistent_tangent_mf = \
+                convert_tensor_to_float32(consistent_tangent_mf)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         return state_variables, consistent_tangent_mf
     # -------------------------------------------------------------------------
