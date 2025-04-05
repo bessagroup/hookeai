@@ -142,6 +142,8 @@ class RecurrentConstitutiveModel(torch.nn.Module):
         Get material constitutive model name.
     transform_parameter(self, name, value, mode='normalize')
         Transform model parameter by means of min-max scaling.
+    freeze_parameter(self, name)
+        Freeze model parameter (disable gradient computation).
     get_model_parameters(self)
         Get model parameters.
     get_model_parameters_bounds(self)
@@ -790,6 +792,22 @@ class RecurrentConstitutiveModel(torch.nn.Module):
         transformed_value = tmin + ((tmax - tmin)/(omax - omin))*(value - omin)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         return transformed_value
+    # -------------------------------------------------------------------------
+    def freeze_parameter(self, name):
+        """Freeze model parameter (disable gradient computation).
+        
+        Parameters
+        ----------
+        name : str
+            Parameter name.
+        """
+        # Check model parameter
+        if name in self._model_parameters.keys():
+            # Freeze model parameter
+            self._model_parameters[name].requires_grad = False
+        else:
+            # Unknown parameter
+            raise RuntimeError(f'Unknown model parameter \'{name}\'.')
     # -------------------------------------------------------------------------
     def get_model_parameters(self):
         """Get model parameters.
