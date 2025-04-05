@@ -229,16 +229,28 @@ def train_model(n_max_epochs, dataset, model_init_args, lr_init,
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Get model parameters
     model_parameters = model.parameters(recurse=True)
-    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Enforce bounds on model parameters
-    model.enforce_parameters_bounds()
-    # Enforce model-dependent constraints on model parameters
-    model.enforce_parameters_constraints()
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~  
     # Move model to device
     model.to(device=device)
     # Set model in training mode
     model.train()
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Display initial parameters
+    if is_verbose:
+        print('\n> Initial parameters:')
+        for key, val in model.get_detached_model_parameters().items():
+            print(f'  > {key} = {val}')
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Enforce bounds on model parameters
+    model.enforce_parameters_bounds()
+    # Enforce model-dependent constraints on model parameters
+    model.enforce_parameters_constraints()
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Display initial parameters (after bounds and constraints)
+    if is_verbose:
+        print('\n> Initial parameters (after bounds and constraints):')
+        for key, val in model.get_detached_model_parameters().items():
+            print(f'  > {key} = {val}')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Initialize learning rate
     learning_rate = lr_init
@@ -408,24 +420,24 @@ def train_model(n_max_epochs, dataset, model_init_args, lr_init,
             # attribute of model parameters
             optimizer.step()
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            
-            
-            #print('\nEpoch parameters (before bounds and constraints):')
-            #for key, val in model.get_detached_model_parameters().items():
-            #    print(f'  > {key} = {val}')
-            
-            
-            
+            # Display parameters
+            if is_verbose:
+                print('\n> Training step parameters:')
+                for key, val in model.get_detached_model_parameters().items():
+                    print(f'  > {key} = {val}')
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Enforce bounds on model parameters
             model.enforce_parameters_bounds()
             # Enforce model-dependent constraints on model parameters
             model.enforce_parameters_constraints()
-            
-            
-            #print('\nEpoch parameters (after bounds and constraints):')
-            #for key, val in model.get_detached_model_parameters().items():
-            #    print(f'  > {key} = {val}')
-
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Display parameters (after bounds and constraints)
+            if is_verbose:
+                print('\n> Training step parameters (after bounds and '
+                      'constraints):')
+                for key, val in model.get_detached_model_parameters().items():
+                    print(f'  > {key} = {val}')
+                print()
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             if is_verbose:
                 total_time_sec = time.time() - start_time_sec
@@ -506,9 +518,10 @@ def train_model(n_max_epochs, dataset, model_init_args, lr_init,
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Check model parameters convergence
         if is_params_stopping:
-            is_stop_training = check_model_parameters_convergence(
-                model_parameters_history_epochs, is_verbose=is_verbose,
-                **params_stopping_kwargs)
+            is_stop_training, parameters_status = \
+                check_model_parameters_convergence(
+                    model_parameters_history_epochs, is_verbose=is_verbose,
+                    **params_stopping_kwargs)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Check training process flow
         if epoch >= n_max_epochs:
@@ -772,6 +785,12 @@ def check_model_parameters_convergence(model_parameters_history_steps,
     -------
     is_converged: bool
         If True, then all model parameters have converged, False otherwise.
+    parameters_status : dict
+        Convergence status data (item, dict) of each parameter (key, str).
+        Convergence status data includes the current convergence status
+        ('is_converged'), the current absolute change ('absolute_change'), and
+        the current relative change ('relative_change'). Unknown change values
+        are set to None.
     """
     if is_verbose:
         print('\n\n> Model parameters:')
@@ -784,6 +803,8 @@ def check_model_parameters_convergence(model_parameters_history_steps,
     # Initialize model parameters convergence flag
     parameters_convergence = {param_name: False for param_name in
                               model_parameters_history_steps.keys()}
+    # Initialize model parameters convergence status data
+    parameters_status = {}
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Loop over model parameters
     for param_name, param_hist in model_parameters_history_steps.items():
@@ -829,6 +850,24 @@ def check_model_parameters_convergence(model_parameters_history_steps,
             # Set formatted model parameter convergence status
             frmt_param_convergence = 'Unknown'
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Initialize parameter convergence status data
+        parameters_status[param_name] = {}
+        # Store parameter convergence
+        if frmt_param_convergence == 'Unknown':
+            parameters_status[param_name]['is_converged'] = False
+        else:
+            parameters_status[param_name]['is_converged'] = is_param_converged
+        # Store Parameter current absolute and relative change
+        if frmt_param_change == 'Unknown':
+            parameters_status[param_name]['absolute_change'] = None
+            parameters_status[param_name]['relative_change'] = None
+        else:
+            parameters_status[param_name]['absolute_change'] = diff_hist[-1]
+            parameters_status[param_name]['relative_change'] = None
+            if frmt_change_type == 'Relative change':
+                parameters_status[param_name]['relative_change'] = \
+                    rdiff_hist[-1]
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         if is_verbose:
             print(f'  > {param_name:<15s}: {frmt_param_value} | '
                   f'{frmt_change_type}: {frmt_param_change} | '
@@ -849,7 +888,7 @@ def check_model_parameters_convergence(model_parameters_history_steps,
     if is_verbose:
         print()
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    return is_converged
+    return is_converged, parameters_status
 # =============================================================================
 class EarlyStopper:
     """Early stopping procedure (implicit regularizaton).
