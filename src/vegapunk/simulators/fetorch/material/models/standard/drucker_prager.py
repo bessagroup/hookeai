@@ -432,7 +432,7 @@ class DruckerPrager(ConstitutiveModel):
             inc_p_mult = torch.tensor(0.0, device=self._device)
             # Compute initial hardening modulus
             cohesion, H = hardening_law(hardening_parameters,
-                                        acc_p_strain_old + inc_p_mult)
+                                        acc_p_strain_old + xi*inc_p_mult)
             # Initialize Newton-Raphson iteration counter
             nr_iter = 0
             # Compute return-mapping residual (cone surface)
@@ -449,7 +449,7 @@ class DruckerPrager(ConstitutiveModel):
                 inc_p_mult = inc_p_mult + d_iter
                 # Compute current cohesion and hardening modulus
                 cohesion, H = hardening_law(hardening_parameters,
-                                            acc_p_strain_old + inc_p_mult)
+                                            acc_p_strain_old + xi*inc_p_mult)
                 # Compute return-mapping residual (cone surface)
                 residual = (torch.sqrt(j2_dev_trial_stress) - G*inc_p_mult
                             + etay*(trial_pressure - K*etaf*inc_p_mult)
@@ -488,7 +488,7 @@ class DruckerPrager(ConstitutiveModel):
             # Update stress
             stress_mf = pressure*soid_mf + dev_stress_mf
             # Update accumulated plastic strain
-            acc_p_strain = acc_p_strain_old + inc_p_mult
+            acc_p_strain = acc_p_strain_old + xi*inc_p_mult
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Check return-mapping validity
             if not is_su_fail:

@@ -701,7 +701,7 @@ class DruckerPragerVMAP(ConstitutiveModel):
         for nr_iter in range(su_max_n_iterations + 1):
             # Compute initial hardening modulus
             cohesion, H = hardening_law(hardening_parameters,
-                                        acc_p_strain_old + inc_p_mult)
+                                        acc_p_strain_old + xi*inc_p_mult)
             # Compute return-mapping residual (cone surface)
             residual = (torch.sqrt(j2_dev_trial_stress) - G*inc_p_mult
                         + etay*(trial_pressure - K*etaf*inc_p_mult)
@@ -752,7 +752,7 @@ class DruckerPragerVMAP(ConstitutiveModel):
         # Update stress
         stress_mf = pressure*soid_mf + dev_stress_mf
         # Update accumulated plastic strain
-        acc_p_strain = acc_p_strain_old + inc_p_mult
+        acc_p_strain = acc_p_strain_old + xi*inc_p_mult
         # Update elastic strain
         e_strain_mf = \
             (1.0/(3.0*K))*pressure*soid_mf + (1.0/(2.0*G))*dev_stress_mf
