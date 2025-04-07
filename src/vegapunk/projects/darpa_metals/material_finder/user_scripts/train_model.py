@@ -178,7 +178,7 @@ def generate_standard_training_plots(model_directory):
         make_directory(plot_dir)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Plot model training process loss history
-    plot_training_loss_history(loss_histories, loss_type.upper(),
+    plot_training_loss_history(loss_histories, loss_type=None,
                                loss_scale='log', save_dir=plot_dir,
                                is_save_fig=True, is_stdout_display=False,
                                is_latex=True)
