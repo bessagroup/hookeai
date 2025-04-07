@@ -614,7 +614,7 @@ def set_material_model_parameters():
                 'c_hardening_parameters': {'s0': 1.0,
                                            'a': 0},
                 'd_hardening_law': get_hardening_law('linear'),
-                'd_hardening_parameters': {'s0': 0.25,
+                'd_hardening_parameters': {'s0': 0.50,
                                            'a': 0},
                 'is_associative_hardening': True}
             # Set learnable parameters
