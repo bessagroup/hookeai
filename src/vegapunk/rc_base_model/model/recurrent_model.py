@@ -658,14 +658,6 @@ class RecurrentConstitutiveModel(torch.nn.Module):
                     # Set dilatancy angle
                     dilatancy_angle = friction_angle
                     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-                    # Store old yield surface cohesion parameter
-                    yield_cohesion_parameter_old = \
-                        material_parameters['yield_cohesion_parameter']
-                    # Detach old computation graph
-                    if isinstance(yield_cohesion_parameter_old, torch.Tensor):
-                        yield_cohesion_parameter_old = \
-                            yield_cohesion_parameter_old.detach()
-                    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                     # Compute angle-related material parameters (matching with
                     # Mohr-Coulomb under uniaxial tension and compression)
                     # Set yield surface cohesion parameter
