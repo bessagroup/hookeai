@@ -159,8 +159,12 @@ def train_model(n_max_epochs, specimen_data, specimen_material_state,
     model.to(device=device)
     # Set model in training mode
     model.train()
-    # Get model parameters
-    model_parameters = model.parameters(recurse=True)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Display initial parameters
+    if is_verbose:
+        print('\n> Initial parameters:')
+        for key, val in model.get_detached_model_parameters().items():
+            print(f'  > {key} = {val}')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Enforce bounds and constraints on model parameters
     # (only explicit learnable parameters)
@@ -169,6 +173,12 @@ def train_model(n_max_epochs, specimen_data, specimen_material_state,
         model.enforce_parameters_bounds()
         # Enforce model-dependent constraints on model parameters
         model.enforce_parameters_constraints()
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Display initial parameters (after bounds and constraints)
+    if is_verbose:
+        print('\n> Initial parameters (after bounds and constraints):')
+        for key, val in model.get_detached_model_parameters().items():
+            print(f'  > {key} = {val}')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Initialize learning rate
     learning_rate = lr_init
@@ -238,6 +248,12 @@ def train_model(n_max_epochs, specimen_data, specimen_material_state,
         # attribute of model parameters
         optimizer.step()
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Display parameters
+        if is_verbose:
+            print('\n> Epoch parameters:')
+            for key, val in model.get_detached_model_parameters().items():
+                print(f'  > {key} = {val}')
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Enforce bounds and constraints on model parameters
         # (only explicit learnable parameters)
         if is_explicit_model_parameters:
@@ -245,6 +261,13 @@ def train_model(n_max_epochs, specimen_data, specimen_material_state,
             model.enforce_parameters_bounds()
             # Enforce model-dependent constraints on model parameters
             model.enforce_parameters_constraints()
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Display parameters (after bounds and constraints)
+        if is_verbose:
+            print('\n> Epoch parameters (after bounds and constraints):')
+            for key, val in model.get_detached_model_parameters().items():
+                print(f'  > {key} = {val}')
+            print()
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         if is_verbose:
             total_time_sec = time.time() - start_time_sec
@@ -310,9 +333,10 @@ def train_model(n_max_epochs, specimen_data, specimen_material_state,
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Check model parameters convergence
         if is_explicit_model_parameters and is_params_stopping:
-            is_stop_training = check_model_parameters_convergence(
-                model_parameters_history_epochs, is_verbose=is_verbose,
-                **params_stopping_kwargs)
+            is_stop_training, parameters_status = \
+                check_model_parameters_convergence(
+                    model_parameters_history_epochs, is_verbose=is_verbose,
+                    **params_stopping_kwargs)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Check training process flow
         if epoch >= n_max_epochs:
