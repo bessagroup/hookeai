@@ -181,6 +181,11 @@ def perform_model_standard_training(train_dataset_file_path, model_directory,
         state_features_out = {}
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     elif material_model_name in ('lou_zhang_yoon', 'lou_zhang_yoon_vmap'):
+        # Unsolved memory leak
+        if material_model_name == 'lou_zhang_yoon':
+            raise RuntimeError('There is an unsolved memory leak problem '
+                               'when fitting using the standard '
+                               'implementation of the LZY model.')
         # Set constitutive model parameters
         material_model_parameters = \
             {'elastic_symmetry': 'isotropic',
