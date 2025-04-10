@@ -1716,11 +1716,15 @@ def generate_dataset_plots(strain_formulation, n_dim, dataset,
                 is_stdout_display=is_stdout_display, is_latex=True)
 # =============================================================================
 if __name__ == '__main__':
-    # Set default float precision
-    #torch.set_default_dtype(torch.float64)
+    # Set float precision
+    is_double_precision = False
+    if is_double_precision:
+        torch.set_default_dtype(torch.float64)
+    else:
+        torch.set_default_dtype(torch.float32)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set data set type
-    dataset_type = ('training', 'validation', 'testing_id', 'testing_od')[2]
+    dataset_type = ('training', 'validation', 'testing_id', 'testing_od')[0]
     # Set data set storage type
     is_in_memory_dataset = True
     # Set save dataset plots flags
