@@ -625,6 +625,13 @@ def set_default_training_options():
         is_params_stopping, params_stopping_kwargs
 # =============================================================================
 if __name__ == "__main__":
+    # Set float precision
+    is_double_precision = False
+    if is_double_precision:
+        torch.set_default_dtype(torch.float64)
+    else:
+        torch.set_default_dtype(torch.float32)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set computation processes
     is_standard_training = True
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
