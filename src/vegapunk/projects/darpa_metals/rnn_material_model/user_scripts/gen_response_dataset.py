@@ -1827,8 +1827,8 @@ if __name__ == '__main__':
                 'euler_angles': (0.0, 0.0, 0.0),
                 'hardening_law': get_hardening_law('nadai_ludwik'),
                 'hardening_parameters':
-                    {'s0': 900,
-                     'a': 700,
+                    {'s0': math.sqrt(3)*900,
+                     'a': math.sqrt(3)*700,
                      'b': 0.5,
                      'ep0': 1e-5}}
             # Set constitutive state variables to be additionally included in
