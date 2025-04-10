@@ -1862,8 +1862,8 @@ if __name__ == '__main__':
                 'euler_angles': (0.0, 0.0, 0.0),
                 'hardening_law': get_hardening_law('nadai_ludwik'),
                 'hardening_parameters':
-                    {'s0': 900/(math.sqrt(3)*yield_cohesion_parameter),
-                    'a': 700/(math.sqrt(3)*yield_cohesion_parameter),
+                    {'s0': 900/yield_cohesion_parameter,
+                    'a': 700/yield_cohesion_parameter,
                     'b': 0.5,
                     'ep0': 1e-5},
                 'yield_cohesion_parameter': yield_cohesion_parameter,
