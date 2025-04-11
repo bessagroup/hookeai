@@ -395,7 +395,7 @@ def set_patch_geometric_params(n_dim):
             {str(i): 3 for i in range(1, 25)}
         # Set range of polynomial deformation for each edge label
         edge_deformation_magnitude_ranges = \
-            {str(i): (-0.1, 0.1) for i in range(1, 25)}
+            {str(i): (-0.05, 0.05) for i in range(1, 25)}
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Set rigid body translation
         translation_range = {'1': (0.0, 0.0), '2': (0.0, 0.0), '3': (0.0, 0.0)}
