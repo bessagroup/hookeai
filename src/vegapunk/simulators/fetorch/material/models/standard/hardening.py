@@ -222,6 +222,9 @@ class PiecewiseLinearIHL(IsotropicHardeningLaw):
             raise RuntimeError(f'Expecting non-negative accumulated plastic '
                                f'strain but got {acc_p_strain}.')
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Enforce non-negative accumulate plastic strain
+        acc_p_strain = torch.relu(acc_p_strain)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # If the value of the accumulated plastic strain is either below or
         # above the provided hardening curve points, then simply assume the
         # yield stress associated with the first or last provided points,
@@ -304,6 +307,9 @@ class LinearIHL(IsotropicHardeningLaw):
             raise RuntimeError(f'Expecting non-negative accumulated plastic '
                                f'strain but got {acc_p_strain}.')
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Enforce non-negative accumulate plastic strain
+        acc_p_strain = torch.relu(acc_p_strain)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Compute yield stress
         yield_stress = yield_stress_init + hard_slope*acc_p_strain
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -347,6 +353,9 @@ class NadaiLudwikIHL(IsotropicHardeningLaw):
         if is_check_data and acc_p_strain < 0.0:
             raise RuntimeError(f'Expecting non-negative accumulated plastic '
                                f'strain but got {acc_p_strain}.')
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Enforce non-negative accumulate plastic strain
+        acc_p_strain = torch.relu(acc_p_strain) + ep0
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Compute yield stress
         yield_stress = yield_stress_init + a*((acc_p_strain + ep0)**b)

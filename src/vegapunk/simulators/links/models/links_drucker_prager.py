@@ -13,7 +13,7 @@ LinksDruckerPrager(LinksConstitutiveModel)
 #                                                                       Modules
 # =============================================================================
 # Third-party
-import numpy as np
+import torch
 # Local
 from simulators.links.models.interface import LinksConstitutiveModel
 #
@@ -113,7 +113,7 @@ class LinksDruckerPrager(LinksConstitutiveModel):
         descriptors_input_lines += \
             [spacing + '{:<4d}'.format(n_hard_point) + '\n']
         # Set accumulated plastic strain hardening points
-        acc_p_strains = np.linspace(0.0, 2.0, n_hard_point)
+        acc_p_strains = torch.linspace(0.0, 2.0, steps=n_hard_point))
         # Loop over hardening points
         for acc_p_strain in acc_p_strains:
             # Compute yield stress
