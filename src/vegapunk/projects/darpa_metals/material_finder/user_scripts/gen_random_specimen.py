@@ -33,6 +33,8 @@ import os
 import time
 import datetime
 import pickle
+import math
+import shutil
 # Third-party
 import numpy as np
 # Local
@@ -393,7 +395,7 @@ def set_patch_geometric_params(n_dim):
             {str(i): 3 for i in range(1, 25)}
         # Set range of polynomial deformation for each edge label
         edge_deformation_magnitude_ranges = \
-            {str(i): (-0.05, 0.05) for i in range(1, 25)}
+            {str(i): (-0.1, 0.1) for i in range(1, 25)}
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Set rigid body translation
         translation_range = {'1': (0.0, 0.0), '2': (0.0, 0.0), '3': (0.0, 0.0)}
@@ -444,13 +446,13 @@ def set_patch_mesh_params(n_dim):
         # Set finite element type
         elem_type = 'SQUAD4'
         # Set number of finite elements per dimension
-        n_elems_per_dim = (11, 11)
+        n_elems_per_dim = (5, 5)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     elif n_dim == 3:
         # Set finite element type
         elem_type = 'SHEXA8'
         # Set number of finite elements per dimension
-        n_elems_per_dim = (5, 5, 5)
+        n_elems_per_dim = (9, 9, 9)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     else:
         raise RuntimeError('Invalid number of spatial dimensions.')
@@ -503,10 +505,10 @@ def set_patch_material_params(n_elems_per_dim):
             'density': 0.0,
             'young': 110e3,
             'poisson': 0.33,
-            'n_hard_point': 200,
+            'n_hard_point': 10000,
             'hardening_law': get_hardening_law('nadai_ludwik'),
-            'hardening_parameters': {'s0': 900,
-                                     'a': 700,
+            'hardening_parameters': {'s0': math.sqrt(3)*900,
+                                     'a': math.sqrt(3)*700,
                                      'b': 0.5,
                                      'ep0': 1e-5}}
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -664,8 +666,8 @@ def perform_links_simulation(simulations_dir, patch, patch_material_params):
 if __name__ == "__main__":
     # Set base directory
     base_dir = ('/home/bernardoferreira/Documents/brown/projects/'
-                'darpa_project/11_global_learning_lou/random_specimen/'
-                '0_links_simulation')
+                'darpa_paper_examples/global/specimens/random_material_patch/'
+                'meshes')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set material patch name
     patch_name = 'random_specimen'
@@ -705,6 +707,33 @@ if __name__ == "__main__":
     # Loop over material patches
     for patch_key in links_file_paths.keys():
         # Convert Links input data file to Abaqus data input data file
-        links_dat_to_abaqus_inp(links_file_paths[patch_key])
+        abaqus_inp_file_path = \
+            links_dat_to_abaqus_inp(links_file_paths[patch_key])
         # Convert Links '.nodedata' output files to '.csv' files
-        links_node_output_to_csv(links_output_dirs[patch_key])
+        csv_output_dir = links_node_output_to_csv(links_output_dirs[patch_key])   
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Get material patch directory
+        material_patch_dir = \
+            os.path.dirname(os.path.dirname(abaqus_inp_file_path))
+        # Set material model finder directory
+        material_model_finder_dir = os.path.join(
+            os.path.normpath(material_patch_dir), 'material_model_finder')
+        # Create material model finder directory
+        make_directory(material_model_finder_dir, is_overwrite=True)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set simulation data directory
+        simulation_dir = os.path.join(
+            os.path.normpath(material_model_finder_dir), '0_simulation')
+        # Create simulation data directory
+        make_directory(simulation_dir, is_overwrite=True)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Copy Abaqus data input data file
+        shutil.copy(abaqus_inp_file_path,
+                    os.path.join(os.path.normpath(simulation_dir),
+                                 os.path.basename(abaqus_inp_file_path)))
+        # Copy node data directory
+        shutil.copytree(csv_output_dir,
+                        os.path.join(os.path.normpath(simulation_dir),
+                                     os.path.basename(csv_output_dir)))
+        
+    
