@@ -884,10 +884,10 @@ class LinksSimulator:
         # Set incrementation mode
         incrementation_mode = available_incrementation_modes[1]
         # Set loading type
-        loading_type = available_loading_type[0]
+        loading_type = available_loading_type[3]
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Set number of loading reversal (effective for cyclic loadings only)
-        n_reverse = 2
+        n_reverse = 1
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Set number of increments
         n_inc = 200
@@ -992,8 +992,11 @@ class LinksSimulator:
                     np.linspace(0.0, 1.0, n_control, endpoint=True,
                                 dtype=float)
                 # Sample control total load factor
+                l_tfact = -1.0
+                u_tfact = 1.0
                 control_tfact = \
-                    np.random.uniform(low=-1.0, high=1.0, size=n_control)
+                    np.random.uniform(low=l_tfact, high=u_tfact,
+                                      size=n_control)
                 # Enforce initial null total load factor
                 control_tfact[0] = 0.0
                 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -1007,6 +1010,33 @@ class LinksSimulator:
                 tfact_hist = np.array(
                     [polynomial_model(x) for x in time_hist])
                 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                # Set strict bound scaling
+                is_scrict_bound_scaling = True
+                # Scale total load factor history to strictly enforce bounds
+                if is_scrict_bound_scaling and np.max(np.abs(tfact_hist)) > 0:
+                    # Get minimum and maximum total load factor values
+                    min_tfact = np.min(tfact_hist)
+                    max_tfact = np.max(tfact_hist)
+                    # Check if bounds are satisfied
+                    if min_tfact < l_tfact or max_tfact > u_tfact:
+                        # Compute maximum deviation to lower bound
+                        if min_tfact < l_tfact:
+                            l_dist = np.abs(l_tfact - min_tfact)
+                        else:
+                            l_dist = 0
+                        # Compute maximum deviation to upper bound
+                        if max_tfact > u_tfact:
+                            u_dist = np.abs(u_tfact - max_tfact)
+                        else:
+                            u_dist = 0
+                        # Compute linear scale factor
+                        if l_dist > u_dist:
+                            scale_factor = np.abs(l_tfact/min_tfact)
+                        else:
+                            scale_factor = np.abs(u_tfact/max_tfact)
+                        # Scale total load factor history
+                        tfact_hist = scale_factor*tfact_hist
+                # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                 # Set loading increments header
                 increm_input_lines += [f'\nINCREMENTS {n_inc}']
                 # Loop over increments
@@ -1018,7 +1048,7 @@ class LinksSimulator:
                         f'\n1.0 {dfact:>16.8e} {conv_tol} {max_n_iter}']
                 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                 # Set plot flag
-                is_display_tfact_hist = False
+                is_display_tfact_hist = True
                 # Display total load factor history
                 if is_display_tfact_hist:
                     # Assemble total load factor history data
