@@ -325,6 +325,79 @@ def write_mean_metrics_results_file(save_dir, n_sample, mean_metrics_results,
     # Write file
     open(file_path, open_mode).writelines(file_content)
 # =============================================================================
+def read_mean_metrics_results_file(file_path, n_sample=None):
+    """Read mean prediction metrics from file.
+    
+    Parameters
+    ----------
+    file_path : str
+        Mean prediction metrics file path.
+    n_sample : int, default=None
+        Number of samples for which mean prediction metrics are read from file.
+        If None, then return the first mean prediction metrics found.
+        
+    Returns
+    -------
+    mean_metrics_results : dict
+        Samples mean value (item, torch.Tensor) of each prediction metric
+        (key, str).
+    """
+    # Check mean prediction metrics file path
+    if not os.path.isfile(file_path):
+        raise RuntimeError('Mean prediction metrics file has not been '
+                           'found:\n\n' + file_path)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Initialize mean prediction metrics
+    mean_metrics_results = {}
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Open mean prediction metrics file
+    _input_file = open(file_path, 'r')
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Reset file position
+    _input_file.seek(0)
+    # Initialize search flags
+    is_keyword_found = False
+    # Search for number of samples keyword and collect mean prediction metrics
+    for line in _input_file:
+        if bool(re.search(r'n_sample =', line, re.IGNORECASE)):
+            # Collect number of samples
+            n_sample_read = \
+                int(re.search(r'n_sample\s*=\s*(\d+)', line).group(1))
+            # Check number of samples
+            if n_sample is None or n_sample_read == n_sample:
+                # Start processing data
+                is_keyword_found = True
+        elif is_keyword_found and (bool(re.search(r'^' + r'[*][A-Z]+', line))
+                                   or line.strip() == ''):
+            # Finished processing data
+            break
+        elif is_keyword_found:
+            # Collect metric data (assumes values are formatted in scientific
+            # notation)
+            prefix_pattern = r'^\s*>\s*(\w+):\s*'
+            number_list_pattern = (r'\[\s*'
+                                   r'((?:-?\d*\.?\d*(?:e[-+]?\d+)'
+                                   r'?(?:\s*,\s*-?\d*\.?\d*(?:e[-+]?\d+)?)*))'
+                                   r'\s*\]')
+            metric_data = \
+                re.search(prefix_pattern + number_list_pattern, line)
+            # Extract metric name and values
+            metric = metric_data.group(1)
+            metric_results_str = metric_data.group(2)
+            metric_results = torch.tensor(
+                [float(val) for val in metric_results_str.split(',')
+                 if val.strip()])
+            # Store mean prediction results
+            mean_metrics_results[metric] = metric_results
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Check mean prediction metrics
+    if len(mean_metrics_results.keys()) == 0:
+        raise RuntimeError('The mean prediction metrics have not been '
+                           'successfully read from the following file:'
+                           f'\n\n{file_path}')
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    return mean_metrics_results 
+# =============================================================================
 def format_mean_metrics_results(n_sample, mean_metrics_results,
                                 process_label=''):
     """Format samples mean prediction metrics.
