@@ -26,6 +26,8 @@ from projects.darpa_metals.rnn_material_model.user_scripts.predict import \
     perform_model_prediction
 from ioput.plots import plot_xy_data, save_figure
 from ioput.iostandard import make_directory, find_unique_file_with_regex
+from testing_utilities.output_prediction_metrics import \
+    read_mean_metrics_results_file
 # =============================================================================
 # Summary: Pruning procedure of time series data set 
 # =============================================================================
@@ -161,6 +163,8 @@ def prune_time_series_dataset(pruning_dir, testing_types, pruning_params=None,
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Initialize pruning iteration model testing loss
         testing_types_loss = {}
+        # Initialize pruning iteration model average prediction metric
+        testing_types_avg_nrmse = {}
         # Loop over testing types
         for testing_type in testing_types:
             # Get testing type prediction directory
@@ -170,8 +174,11 @@ def prune_time_series_dataset(pruning_dir, testing_types, pruning_params=None,
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Perform pruning iteration model prediction
             if testing_type == 'unused_data' and len(unused_dataset) == 0:
-                # Set testing loss to None if testing data set is null
+                # Set testing loss if testing data set is null
                 avg_predict_loss = None
+                # Set average prediction metric to None if testing data set is
+                # null
+                avg_predict_nrmse = None
             else:
                 if is_verbose:
                     print(f'\n  > Performing pruning iteration model testing '
@@ -182,9 +189,31 @@ def prune_time_series_dataset(pruning_dir, testing_types, pruning_params=None,
                     prediction_subdir, test_dataset_file_path, model_directory,
                     is_remove_sample_prediction=True,
                     device_type=device_type, is_verbose=False)
+                # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                # Initialize average prediction metric
+                avg_predict_nrmse = None
+                # Set prediction metrics directory
+                prediction_metrics_dir = os.path.join(
+                    os.path.normpath(predict_subdir), 'prediction_metrics')
+                # Collect prediction metrics
+                if os.path.isdir(prediction_metrics_dir):
+                    # Set mean prediction metrics file
+                    mean_predictions_file_path = os.path.join(
+                        os.path.normpath(prediction_metrics_dir),
+                        'mean_prediction_metrics.dat')
+                    # Check mean prediction metrics file
+                    if os.path.isfile(mean_predictions_file_path):
+                        # Read mean prediction metrics
+                        mean_metrics_results = read_mean_metrics_results_file(
+                            mean_predictions_file_path)
+                        # Compute average prediction metric
+                        avg_predict_nrmse = \
+                            np.mean(mean_metrics_results['nrmse'].numpy())
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Store testing loss
             testing_types_loss[testing_type] = avg_predict_loss
+            # Store average prediction metric
+            testing_types_avg_nrmse[testing_type] = avg_predict_nrmse
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Remove pruning iteration model
         if is_remove_pruning_models:
@@ -197,7 +226,8 @@ def prune_time_series_dataset(pruning_dir, testing_types, pruning_params=None,
                      'n_train': len(train_dataset),
                      'n_valid': len(val_dataset),
                      'n_unused': len(unused_dataset),
-                     'testing_types_loss': testing_types_loss}     
+                     'testing_types_loss': testing_types_loss,
+                     'testing_types_avg_nrmse': testing_types_avg_nrmse}     
         # Add pruning iteration data to summary file
         write_summary_file(pruning_dir, pruning_params, mode='iter',
                            mode_data=iter_data)
