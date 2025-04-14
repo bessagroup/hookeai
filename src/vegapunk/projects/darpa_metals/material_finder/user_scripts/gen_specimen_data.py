@@ -697,9 +697,9 @@ def set_material_model_parameters():
         # Set number of output features
         n_features_out = 6
         # Set hidden layer size
-        hidden_layer_size = 200
+        hidden_layer_size = 444
         # Set number of recurrent layers (stacked RNN)
-        n_recurrent_layers = 2
+        n_recurrent_layers = 3
         # Set dropout probability
         dropout = 0
         # Set model input and output features normalization
