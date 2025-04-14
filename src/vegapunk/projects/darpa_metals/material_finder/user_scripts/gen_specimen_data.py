@@ -428,7 +428,7 @@ def get_specimen_numerical_data(specimen_history_paths, n_dim, n_node_mesh):
             raise RuntimeError(f'Expecting data frame to have 10 columns, but '
                                f'{df.shape[1]} were found. \n\n'
                                f'Expected columns: NODE | X1 X2 X3 | '
-                               f'U1 U2 U3 | U1 U2 U3 | RF1 RF2 RF3')
+                               f'U1 U2 U3 | RF1 RF2 RF3')
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Store time step data
         node_data[:, :, i] = torch.tensor(df.values)
