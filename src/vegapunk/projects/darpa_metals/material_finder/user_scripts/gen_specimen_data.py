@@ -705,6 +705,24 @@ def set_material_model_parameters():
         # Set model input and output features normalization
         is_model_in_normalized = True
         is_model_out_normalized = True
+        # Set data scaling type
+        scaling_type = 'mean-std'
+        # Set data scaling parameters (testing data set)
+        scaling_parameters = {}
+        scaling_parameters['features_in'] = \
+            {'mean': torch.tensor([-5.75018498e-04, -7.73680528e-05,
+                                   -9.02668260e-05,  2.19364518e-04,
+                                   -6.39204673e-04, 6.77340276e-05]),
+             'std': torch.tensor([1.23985704e-02, 1.27823620e-02,
+                                  1.28287382e-02, 1.22431086e-02,
+                                  1.24313367e-02, 1.26229510e-02])}
+        scaling_parameters['features_out'] = \
+            {'mean': torch.tensor([-7.57134320e+01, -7.55536062e+01,
+                                   -8.90032504e+01, 6.46513484e+00,
+                                   -4.87017372e+00, -1.07057845e+00]),
+             'std': torch.tensor([2.45050662e+03, 2.46619470e+03,
+                                  2.46052590e+03, 5.04265033e+02,
+                                  5.06194672e+02, 5.14648632e+02])}
         # Set GRU model source
         gru_model_source = 'custom'
         # Set device type
@@ -723,6 +741,8 @@ def set_material_model_parameters():
                         'model_name': model_name,
                         'is_model_in_normalized': is_model_in_normalized,
                         'is_model_out_normalized': is_model_out_normalized,
+                        'scaling_type': scaling_type,
+                        'scaling_parameters': scaling_parameters,
                         'gru_model_source': gru_model_source,
                         'device_type': device_type}
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

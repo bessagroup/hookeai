@@ -249,6 +249,15 @@ class StructureMaterialState(torch.nn.Module):
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Initialize constitutive model
             constitutive_model = RecurrentConstitutiveModel(**model_init_args)
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Get data scaling type
+            scaling_type = model_kwargs['scaling_type']
+            # Get data scaling parameters
+            scaling_parameters = model_kwargs['scaling_parameters']
+            # Set fitted model data scalers
+            constitutive_model.set_fitted_data_scalers(scaling_type,
+                                                       scaling_parameters)
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Set recurrency structure
             is_recurrent_model = True
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
