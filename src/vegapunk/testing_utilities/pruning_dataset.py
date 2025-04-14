@@ -1120,15 +1120,23 @@ def plot_pruning_iterative_data(
              iter, ratio_unused_pc)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Set data labels
-        data_labels = ('Development', 'Training', 'Validation', 'Unused')
+        data_labels = ('Training + Validation', 'Training', 'Validation',
+                       'Unused')
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Set axes labels
         x_label = 'Pruning iterations'
         y_label = '\% of full data set'
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set axes limits and scale
+        x_lims = (0, None)
+        y_lims = (0, 120)
+        x_scale = 'linear'
+        y_scale = 'linear'
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Plot data
         figure, _ = plot_xy_data(
-            data_xy, data_labels=data_labels, x_label=x_label, y_label=y_label,
+            data_xy, data_labels=data_labels, x_lims=x_lims, y_lims=y_lims,
+            x_label=x_label, y_label=y_label, x_scale=x_scale, y_scale=y_scale,
             marker='o', markersize=markersize, is_latex=True)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Set filename
@@ -1143,6 +1151,9 @@ def plot_pruning_iterative_data(
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Close plot
         plt.close('all')
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Set performance metric
+    performance_metric = ('testing_loss', 'testing_avg_nrmse')[1]
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Initialize data array
     data_xy_all = np.full((n_iter, 0), fill_value=None)
@@ -1159,22 +1170,42 @@ def plot_pruning_iterative_data(
             # Get iteration development data set size
             n_dev = iter_data['n_dev']
             ratio_dev_pc = (n_dev/n_full)*100
-            # Get iteration testing loss
-            avg_predict_loss = iter_data['testing_types_loss'][testing_type]
+            # Get iteration performance metric
+            if performance_metric == 'testing_avg_nrmse':
+                # Get iteration average prediction NRMSE
+                avg_predict_loss = \
+                    iter_data['testing_types_avg_nrmse'][testing_type]
+            else:
+                # Get iteration testing loss
+                avg_predict_loss = \
+                    iter_data['testing_types_loss'][testing_type]
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Assemble iteration data
             data_xy[iter, 0] = ratio_dev_pc
             data_xy[iter, 1] = avg_predict_loss
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        # Set axes labels
-        x_label = 'Development size (\% of full data set)'
-        y_label = 'Avg. prediction loss'
+        # Set x-axis label
+        x_label = '\% of full data set'
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set y-axis label, and axes limits and scale
+        if performance_metric == 'testing_avg_nrmse':
+            y_label = 'Avg. NRMSE'
+            x_lims = (0, None)
+            y_lims = (0, None)
+            x_scale = 'linear'
+            y_scale = 'linear'
+        else:
+            y_label = 'Avg. prediction loss (MSE)'
+            x_lims = (0, None)
+            y_lims = (1e1, 1e6)
+            x_scale = 'linear'
+            y_scale = 'log'
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Plot data
         figure, axes = plot_xy_data(
-            data_xy, x_label=x_label, y_label=y_label, x_scale='linear',
-            y_scale='linear', marker='o', markersize=markersize,
-            is_latex=is_latex)
+            data_xy, x_label=x_label, y_label=y_label, x_lims=x_lims,
+            y_lims=y_lims, x_scale=x_scale, y_scale=y_scale, marker='o',
+            markersize=markersize, is_latex=is_latex)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Plot performance degradation threshold
         if is_plot_performance_threshold and testing_type != 'unused_data':
@@ -1218,15 +1249,11 @@ def plot_pruning_iterative_data(
     # Set data labels
     data_labels = tuple([data_labels_map[x] for x in testing_types])
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Set axes labels
-    x_label = 'Development size (\% of full data set)'
-    y_label = 'Avg. prediction loss'
-    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Plot data
     figure, _ = plot_xy_data(
         data_xy_all, data_labels=data_labels, x_label=x_label, y_label=y_label,
-        x_scale='linear', y_scale='linear', marker='o', markersize=markersize,
-        is_latex=is_latex)
+        x_lims=x_lims, y_lims=y_lims, x_scale=x_scale, y_scale=y_scale,
+        marker='o', markersize=markersize, is_latex=is_latex)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set filename
     filename = f'pruning_testing_convergence'
