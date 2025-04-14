@@ -126,20 +126,22 @@ def perform_model_standard_training(specimen_data_path,
         loss_time_weights = None
     else:
         loss_time_weights = None
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Set explicit handling of model parameters
+    is_explicit_model_parameters = False
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~    
     # Discovery of material model
-    model, _, _ = train_model(n_max_epochs, specimen_data,
-                              specimen_material_state, model_init_args,
-                              lr_init, opt_algorithm=opt_algorithm,
-                              lr_scheduler_type=lr_scheduler_type,
-                              lr_scheduler_kwargs=lr_scheduler_kwargs,
-                              is_explicit_model_parameters=True,
-                              is_params_stopping=is_params_stopping,
-                              params_stopping_kwargs=params_stopping_kwargs,
-                              loss_scaling_factor=loss_scaling_factor,
-                              loss_time_weights=loss_time_weights,
-                              save_every=None, device_type=device_type,
-                              seed=None, is_verbose=is_verbose)
+    model, _, _ = train_model(
+        n_max_epochs, specimen_data, specimen_material_state, model_init_args,
+        lr_init, opt_algorithm=opt_algorithm,
+        lr_scheduler_type=lr_scheduler_type,
+        lr_scheduler_kwargs=lr_scheduler_kwargs,
+        is_explicit_model_parameters=is_explicit_model_parameters,
+        is_params_stopping=is_params_stopping,
+        params_stopping_kwargs=params_stopping_kwargs,
+        loss_scaling_factor=loss_scaling_factor,
+        loss_time_weights=loss_time_weights, save_every=None,
+        device_type=device_type, seed=None, is_verbose=is_verbose)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Generate plots of model training process
     generate_standard_training_plots(model_directory)
