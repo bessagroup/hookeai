@@ -161,7 +161,7 @@ def train_model(n_max_epochs, specimen_data, specimen_material_state,
     model.train()
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Display initial parameters
-    if is_verbose:
+    if is_explicit_model_parameters and is_verbose:
         print('\n> Initial parameters:')
         for key, val in model.get_detached_model_parameters().items():
             print(f'  > {key} = {val}')
@@ -175,7 +175,7 @@ def train_model(n_max_epochs, specimen_data, specimen_material_state,
         model.enforce_parameters_constraints()
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Display initial parameters (after bounds and constraints)
-    if is_verbose:
+    if is_explicit_model_parameters and is_verbose:
         print('\n> Initial parameters (after bounds and constraints):')
         for key, val in model.get_detached_model_parameters().items():
             print(f'  > {key} = {val}')
@@ -217,6 +217,9 @@ def train_model(n_max_epochs, specimen_data, specimen_material_state,
         # Initialize model parameters history (per training step)
         model_parameters_history_steps = \
             {key: [] for key, _ in model_init_parameters.items()}
+    else:
+        # Initialize best model parameters
+        best_model_parameters = None
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Initialize training flag
     is_keep_training = True
@@ -249,7 +252,7 @@ def train_model(n_max_epochs, specimen_data, specimen_material_state,
         optimizer.step()
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Display parameters
-        if is_verbose:
+        if is_explicit_model_parameters and is_verbose:
             print('\n> Epoch parameters:')
             for key, val in model.get_detached_model_parameters().items():
                 print(f'  > {key} = {val}')
@@ -263,7 +266,7 @@ def train_model(n_max_epochs, specimen_data, specimen_material_state,
             model.enforce_parameters_constraints()
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Display parameters (after bounds and constraints)
-        if is_verbose:
+        if is_explicit_model_parameters and is_verbose:
             print('\n> Epoch parameters (after bounds and constraints):')
             for key, val in model.get_detached_model_parameters().items():
                 print(f'  > {key} = {val}')
