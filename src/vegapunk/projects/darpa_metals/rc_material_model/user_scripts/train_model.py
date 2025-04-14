@@ -25,6 +25,7 @@ if root_dir not in sys.path:
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 import os
 import random
+import math
 # Third-party
 import torch
 import numpy as np
@@ -87,24 +88,27 @@ def perform_model_standard_training(train_dataset_file_path, model_directory,
              'E': 110e3, 'v': 0.33,
              'euler_angles': (0.0, 0.0, 0.0),
              'hardening_law': get_hardening_law('nadai_ludwik'),
-             'hardening_parameters': {'s0': 900,
-                                      'a': 700,
+             'hardening_parameters': {'s0': math.sqrt(3)*900,
+                                      'a': math.sqrt(3)*700,
                                       'b': 0.5,
                                       'ep0': 1e-5}}
         # Set learnable parameters
         learnable_parameters = {}
-        #learnable_parameters['E'] = \
-        #    {'initial_value': random.uniform(100e3, 120e3),
-        #     'bounds': (80e3, 120e3)}
-        #learnable_parameters['v'] = \
-        #    {'initial_value': random.uniform(0.25, 0.40),
-        #     'bounds': (0.25, 0.40)}
-        learnable_parameters['s0'] = \
-            {'initial_value': random.uniform(500, 1000),
-             'bounds': (500, 1000)}
-        learnable_parameters['a'] = \
-            {'initial_value': random.uniform(500, 1000),
-             'bounds': (500, 1000)}
+        learnable_parameters['E'] = {
+            'initial_value': random.uniform(80e3, 140e3),
+            'bounds': (80e3, 140e3)}
+        learnable_parameters['v'] = {
+            'initial_value': random.uniform(0.2, 0.4),
+            'bounds': (0.2, 0.4)}
+        learnable_parameters['s0'] = {
+            'initial_value': random.uniform(500, 2000),
+            'bounds': (500, 2000)}
+        learnable_parameters['a'] = {
+            'initial_value': random.uniform(500, 2000),
+            'bounds': (500, 2000)}
+        learnable_parameters['b'] = {
+            'initial_value': random.uniform(0.2, 1.0),
+            'bounds': (0.2, 1.0)}
         # Set material constitutive state variables (prediction)
         state_features_out = {}
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -129,7 +133,7 @@ def perform_model_standard_training(train_dataset_file_path, model_directory,
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     elif material_model_name in ('drucker_prager', 'drucker_prager_vmap'):
         # Set frictional angle
-        friction_angle = np.deg2rad(10)
+        friction_angle = np.deg2rad(5)
         # Set dilatancy angle
         dilatancy_angle = friction_angle
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -148,7 +152,7 @@ def perform_model_standard_training(train_dataset_file_path, model_directory,
              'E': 110e3, 'v': 0.33,
              'euler_angles': (0.0, 0.0, 0.0),
              'hardening_law': get_hardening_law('nadai_ludwik'),
-             'hardening_parameters': {'s0': 900/yield_cohesion_parameter,      # Fix: np.sqrt(3) matching factor!
+             'hardening_parameters': {'s0': 900/yield_cohesion_parameter,
                                       'a': 700/yield_cohesion_parameter,
                                       'b': 0.5,
                                       'ep0': 1e-5},
@@ -211,9 +215,18 @@ def perform_model_standard_training(train_dataset_file_path, model_directory,
              'is_associative_hardening': True}
         # Set learnable parameters
         learnable_parameters = {}
-        learnable_parameters['yield_a_s0'] = \
-            {'initial_value': random.uniform(0.5, 1.5),
-             'bounds': (0.5, 1.5)}
+        learnable_parameters['s0'] = {
+            'initial_value': random.uniform(500, 2000),
+            'bounds': (500, 2000)}
+        learnable_parameters['a'] = {
+            'initial_value': random.uniform(500, 2000),
+            'bounds': (500, 2000)}
+        learnable_parameters['b'] = {
+            'initial_value': random.uniform(0.2, 1.0),
+            'bounds': (0.2, 1.0)}
+        #learnable_parameters['yield_a_s0'] = \
+        #    {'initial_value': random.uniform(0.5, 1.5),
+        #     'bounds': (0.5, 1.5)}
         learnable_parameters['yield_b_s0'] = \
             {'initial_value': random.uniform(0, 0.1),
              'bounds': (0, 0.1)}
@@ -284,14 +297,14 @@ def perform_model_standard_training(train_dataset_file_path, model_directory,
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set model training options:
     # Set number of epochs
-    n_max_epochs = 200
+    n_max_epochs = 500
     # Set batch size
     batch_size = 4
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set initial and final learning rate according to loss normalization
     if is_normalized_loss:
-        lr_init = 1.0e+00
-        lr_end = 1.0e-03
+        lr_init = 1.0e+01
+        lr_end = 1.0e-01
     else:
         lr_init = 1.0e+01
         lr_end = 1.0e-01
@@ -615,7 +628,7 @@ def set_default_training_options():
                              'trigger_tolerance': 20,
                              'improvement_tolerance': 1e-2}
     is_params_stopping = True
-    params_stopping_kwargs = {'convergence_tolerance': 0.001,
+    params_stopping_kwargs = {'convergence_tolerance': 1e-4,
                               'trigger_tolerance': 5,
                               'min_hist_length': 5}
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
