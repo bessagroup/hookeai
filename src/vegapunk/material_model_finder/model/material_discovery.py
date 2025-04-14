@@ -210,6 +210,10 @@ class MaterialModelFinder(torch.nn.Module):
         Perform data scaling operation on features PyTorch tensor.
     set_material_models_fitted_data_scalers(self, models_scaling_type, \
                                             models_scaling_parameters)
+    check_model_in_normalized(cls, model)
+        Check if generic model expects normalized input features.
+    check_model_out_normalized(cls, model)
+        Check if generic model expects normalized output features.
     save_model_state(self, epoch=None, is_best_state=False, \
                      is_remove_posterior=True)
         Save model state to file.
@@ -1984,10 +1988,22 @@ class MaterialModelFinder(torch.nn.Module):
         # Build input features tensor
         features_in = torch.stack(features_in_data, dim=0)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Normalize input features tensor
+        if self.check_model_in_normalized(constitutive_model):
+            # Normalize input features
+            features_in = constitutive_model.data_scaler_transform(
+                features_in, 'features_in', mode='normalize')
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Compute output features
         features_out = constitutive_model(features_in)
         # Extract output features
         features_out = self.features_out_extractor(features_out)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Denormalize output features tensor
+        if self.check_model_out_normalized(constitutive_model):
+            # Denormalize output features
+            features_out = constitutive_model.data_scaler_transform(
+                features_out, 'features_out', mode='denormalize')
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Build state path history
         if strain_formulation == 'infinitesimal':
@@ -2536,6 +2552,58 @@ class MaterialModelFinder(torch.nn.Module):
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Set material model fitted data scalers
             model.set_fitted_data_scalers(scaling_type, scaling_parameters)
+    # -------------------------------------------------------------------------
+    @classmethod
+    def check_model_in_normalized(cls, model):
+        """Check if generic model expects normalized input features.
+        
+        A model expects normalized input features if it has an attribute
+        'is_model_in_normalized' set to True.
+        
+        Parameters
+        ----------
+        model : torch.nn.Module
+            Model.
+        
+        Returns
+        -------
+        is_model_in_normalized : bool
+            If True, then model expects normalized input features (normalized
+            input data has been seen during model training).
+        """
+        # Get model input features normalization
+        if hasattr(model, 'is_model_in_normalized'):
+            is_model_in_normalized = model.is_model_in_normalized
+        else:
+            is_model_in_normalized = False
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        return is_model_in_normalized
+    # -------------------------------------------------------------------------
+    @classmethod
+    def check_model_out_normalized(cls, model):
+        """Check if generic model expects normalized output features.
+        
+        A model expects normalized output features if it has an attribute
+        'is_model_out_normalized' set to True.
+        
+        Parameters
+        ----------
+        model : torch.nn.Module
+            Model.
+        
+        Returns
+        -------
+        is_model_out_normalized : bool
+            If True, then model expects normalized output features (normalized
+            output data has been seen during model training).
+        """
+        # Get model output features normalization
+        if hasattr(model, 'is_model_out_normalized'):
+            is_model_out_normalized = model.is_model_out_normalized
+        else:
+            is_model_out_normalized = False
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        return is_model_out_normalized
     # -------------------------------------------------------------------------
     def save_model_state(self, epoch=None, is_best_state=False,
                          is_remove_posterior=True):
