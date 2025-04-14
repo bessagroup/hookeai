@@ -567,12 +567,12 @@ def set_material_model_parameters():
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Set learnable parameters
             learnable_parameters = {}
-            learnable_parameters['E'] = {
-                'initial_value': random.uniform(80e3, 140e3),
-                'bounds': (80e3, 140e3)}
-            learnable_parameters['v'] = {
-                'initial_value': random.uniform(0.2, 0.4),
-                'bounds': (0.2, 0.4)}
+            #learnable_parameters['E'] = {
+            #    'initial_value': random.uniform(80e3, 140e3),
+            #    'bounds': (80e3, 140e3)}
+            #learnable_parameters['v'] = {
+            #    'initial_value': random.uniform(0.2, 0.4),
+            #    'bounds': (0.2, 0.4)}
             learnable_parameters['s0'] = {
                 'initial_value': random.uniform(500, 2000),
                 'bounds': (500, 2000)}
@@ -619,9 +619,18 @@ def set_material_model_parameters():
                 'is_associative_hardening': True}
             # Set learnable parameters
             learnable_parameters = {}
-            learnable_parameters['yield_a_s0'] = \
-                {'initial_value': random.uniform(0.5, 1.5),
-                 'bounds': (0.5, 1.5)}
+            learnable_parameters['s0'] = {
+                'initial_value': random.uniform(500, 2000),
+                'bounds': (500, 2000)}
+            learnable_parameters['a'] = {
+                'initial_value': random.uniform(500, 2000),
+                'bounds': (500, 2000)}
+            learnable_parameters['b'] = {
+                'initial_value': random.uniform(0.2, 1.0),
+                'bounds': (0.2, 1.0)}
+            #learnable_parameters['yield_a_s0'] = \
+            #    {'initial_value': random.uniform(0.5, 1.5),
+            #     'bounds': (0.5, 1.5)}
             learnable_parameters['yield_b_s0'] = \
                 {'initial_value': random.uniform(0, 0.1),
                  'bounds': (0, 0.1)}
