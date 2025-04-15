@@ -243,6 +243,35 @@ class RandomStrainPathGenerator(StrainPathGenerator):
                 strain_comp_hist = \
                     np.array([lbound + 0.5*(ubound - lbound)*(x + 1.0)
                             for x in strain_mean_normalized])
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Set strict bound scaling
+            is_scrict_bound_scaling = True
+            # Scale strain component history to strictly enforce bounds
+            if (is_scrict_bound_scaling
+                    and np.max(np.abs(strain_comp_hist)) > 0):
+                # Get minimum and maximum values
+                min_strain = np.min(strain_comp_hist)
+                max_strain = np.max(strain_comp_hist)
+                # Check if bounds are satisfied
+                if min_strain < lbound or max_strain > ubound:
+                    # Compute maximum deviation to lower bound
+                    if min_strain < lbound:
+                        l_dist = np.abs(lbound - min_strain)
+                    else:
+                        l_dist = 0
+                    # Compute maximum deviation to upper bound
+                    if max_strain > ubound:
+                        u_dist = np.abs(ubound - max_strain)
+                    else:
+                        u_dist = 0
+                    # Compute linear scale factor
+                    if l_dist > u_dist:
+                        scale_factor = np.abs(lbound/min_strain)
+                    else:
+                        scale_factor = np.abs(ubound/max_strain)
+                    # Scale strain component history
+                    strain_comp_hist = scale_factor*strain_comp_hist
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Assemble strain component path
             strain_path_trial[:, j] = strain_comp_hist
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
