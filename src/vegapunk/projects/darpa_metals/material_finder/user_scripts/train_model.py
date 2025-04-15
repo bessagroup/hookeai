@@ -146,7 +146,8 @@ def perform_model_standard_training(specimen_data_path,
     # Generate plots of model training process
     generate_standard_training_plots(model_directory)
     # Generate plots of model learnable parameters
-    generate_model_parameters_plots(model_directory)
+    if is_explicit_model_parameters:
+        generate_model_parameters_plots(model_directory)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Display summary of PyTorch model
     _ = get_model_summary(model, device_type=device_type,
