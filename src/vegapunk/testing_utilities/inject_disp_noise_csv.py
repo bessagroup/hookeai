@@ -71,6 +71,16 @@ def inject_displacements_noise(csv_data_dir, noise_parameters):
     # Get time history length
     n_time = len(data_file_paths)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Get initial time step file
+    data_file_path = data_file_paths[0]
+    # Load data
+    df = pandas.read_csv(data_file_path)
+    # Set noisy data '.csv' file path
+    csv_noisy_file_path = os.path.join(os.path.normpath(csv_noisy_data_dir),
+                                       os.path.basename(data_file_path))
+    # Store noisy data into '.csv' file format
+    df.to_csv(csv_noisy_file_path, encoding='utf-8', index=False)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Loop over discrete time
     for t in range(1, n_time):
         # Get current and previous time step data files
