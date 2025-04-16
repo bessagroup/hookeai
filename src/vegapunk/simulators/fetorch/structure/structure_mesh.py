@@ -235,7 +235,7 @@ class StructureMesh:
         try:
             connectivities_tensor = torch.stack(
                 [torch.tensor(self._connectivities[str(x)], dtype=torch.int)
-                 for x in sorted(self._connectivities.keys())], dim=0)
+                 for x in sorted(self._connectivities.keys(), key=int)], dim=0)
         except RuntimeError as error:
             print(f'Error: {error}')
             print('Stacking operation over elements requires that all finite '
