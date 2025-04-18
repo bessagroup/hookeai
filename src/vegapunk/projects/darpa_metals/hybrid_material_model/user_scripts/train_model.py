@@ -551,6 +551,9 @@ def set_hybridized_gru_model(hyb_indices, features_option, scaling_dataset,
         is_model_in_normalized = True
         is_model_out_normalized = True
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set GRU model source
+        gru_model_source = 'custom'
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Build model initialization parameters
         model_init_args = {'n_features_in': n_features_in,
                           'n_features_out': n_features_out,
@@ -561,6 +564,7 @@ def set_hybridized_gru_model(hyb_indices, features_option, scaling_dataset,
                           'model_name': None,
                           'is_model_in_normalized': is_model_in_normalized,
                           'is_model_out_normalized': is_model_out_normalized,
+                          'gru_model_source': gru_model_source,
                           'device_type': device_type}
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Set model state file path
