@@ -680,7 +680,7 @@ def set_hybridized_rcm_model(hyb_indices, material_model_name,
             # Set learnable parameters
             learnable_parameters = {}
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        elif material_model_name == 'von_mises':
+        elif material_model_name in ('von_mises', 'von_mises_vmap'):
             # Set constitutive model parameters
             material_model_parameters = \
                 {'elastic_symmetry': 'isotropic',
@@ -694,7 +694,7 @@ def set_hybridized_rcm_model(hyb_indices, material_model_name,
             # Set learnable parameters
             learnable_parameters = {}
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        elif material_model_name == 'drucker_prager':
+        elif material_model_name in ('drucker_prager', 'drucker_prager_vmap'):
             # Set frictional angle
             friction_angle = 0.08671116054780224
             # Set dilatancy angle
