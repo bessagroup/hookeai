@@ -23,6 +23,7 @@ from simulators.fetorch.material.models.standard.drucker_prager import \
     DruckerPrager
 from rc_base_model.model.recurrent_model import RecurrentConstitutiveModel
 from rnn_base_model.model.gru_model import GRURNNModel
+from hybrid_base_model.model.hybrid_model import HybridModel
 #
 #                                                          Authorship & Credits
 # =============================================================================
@@ -297,6 +298,40 @@ class StructureMaterialState(torch.nn.Module):
             # Set fitted model data scalers
             constitutive_model.set_fitted_data_scalers(scaling_type,
                                                        scaling_parameters)
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Set recurrency structure
+            is_recurrent_model = True
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        elif model_name == 'hybrid_material_model':
+            # Get number of input and output features
+            n_features_in = model_kwargs['n_features_in']
+            n_features_out = model_kwargs['n_features_out']
+            # Get hybridized models dictionary
+            hyb_models_dict = model_kwargs['hyb_models_dict']
+            # Get hybridization model type
+            hybridization_type = model_kwargs['hybridization_type']
+            # Get model directory
+            model_directory = model_kwargs['model_directory']
+            # Get model input and output features normalization
+            is_model_in_normalized = model_kwargs['is_model_in_normalized']
+            is_model_out_normalized = model_kwargs['is_model_out_normalized']
+            # Get device type
+            device_type = model_kwargs['device_type']
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Build model initialization parameters
+            model_init_args = {
+                'n_features_in': n_features_in,
+                'n_features_out': n_features_out,
+                'hyb_models_dict': hyb_models_dict,
+                'hybridization_type': hybridization_type,
+                'model_directory': model_directory,
+                'model_name': model_name,
+                'is_model_in_normalized': is_model_in_normalized,
+                'is_model_out_normalized': is_model_out_normalized,
+                'device_type': device_type}
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Initialize constitutive model
+            constitutive_model = HybridModel(**model_init_args)
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Set recurrency structure
             is_recurrent_model = True

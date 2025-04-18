@@ -44,6 +44,9 @@ from simulators.fetorch.math.matrixops import get_problem_type_parameters
 from simulators.fetorch.material.models.standard.hardening import \
     get_hardening_law
 from material_model_finder.data.specimen_data import SpecimenNumericalData
+from time_series_data.time_dataset import load_dataset
+from projects.darpa_metals.hybrid_material_model.user_scripts.train_model \
+    import set_hybridized_gru_model, set_hybridized_rcm_model
 from ioput.iostandard import make_directory
 #
 #                                                          Authorship & Credits
@@ -744,6 +747,72 @@ def set_material_model_parameters():
                         'scaling_type': scaling_type,
                         'scaling_parameters': scaling_parameters,
                         'gru_model_source': gru_model_source,
+                        'device_type': device_type}
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    elif model_name == 'hybrid_material_model':
+        # Set model parameters
+        model_parameters = {}
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set number of input features
+        n_features_in = 6
+        # Set number of output features
+        n_features_out = 6
+        # Set model input and output features normalization
+        is_model_in_normalized = False
+        is_model_out_normalized = False
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set device type
+        if torch.cuda.is_available():
+            device_type = 'cuda'
+        else:
+            device_type = 'cpu'
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Initialize hybridized models dictionary
+        hyb_models_dict = {}
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Description:
+        #
+        # HybridModel(e) = RCM(e) + GRU(e)
+        #
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set hybridized model name
+        hyb_model_name = 'rcm_strain_to_stress'
+        # Set hybridized model indices
+        hyb_indices = (0, 0)
+        # Set hybridized model: RCM (strain to stress)
+        hyb_models_dict[hyb_model_name] = set_hybridized_rcm_model(
+            hyb_indices, 'von_mises', device_type=device_type)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set hybridized model name
+        hyb_model_name = 'gru_strain_to_stress'
+        # Set hybridized model indices
+        hyb_indices = (1, 0)
+        # Set scaling data set file path
+        scaling_dataset_file_path = \
+            ('/home/bernardoferreira/Documents/brown/projects/'
+             'darpa_paper_examples/global/random_material_patch_von_mises/'
+             'deformation_bounds_0d1/local/polynomial/datasets/'
+             'single_precision/n2560/1_training_dataset/'
+             'ss_paths_dataset_n2560.pkl')
+        # Load scaling data set
+        scaling_dataset = load_dataset(scaling_dataset_file_path)
+        # Set hybridized model: GRU (strain to stress)
+        hyb_models_dict[hyb_model_name] = set_hybridized_gru_model(
+            hyb_indices, 'strain_to_stress', scaling_dataset,
+            device_type=device_type)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set hybridization model type
+        hybridization_type = 'additive'
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set other parameters required to initialize constitutive model
+        model_kwargs = {'n_features_in': n_features_in,
+                        'n_features_out': n_features_out,
+                        'model_directory': None,
+                        'model_name': model_name,
+                        'hyb_models_dict': hyb_models_dict,
+                        'hybridization_type': hybridization_type,
+                        'is_model_in_normalized': is_model_in_normalized,
+                        'is_model_out_normalized': is_model_out_normalized,
                         'device_type': device_type}
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     return strain_formulation, problem_type, n_dim, model_name, \
