@@ -781,7 +781,7 @@ def set_material_model_parameters():
         hyb_indices = (0, 0)
         # Set hybridized model: RCM (strain to stress)
         hyb_models_dict[hyb_model_name] = set_hybridized_rcm_model(
-            hyb_indices, 'von_mises', device_type=device_type)
+            hyb_indices, 'von_mises_vmap', device_type=device_type)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Set hybridized model name
         hyb_model_name = 'gru_strain_to_stress'
