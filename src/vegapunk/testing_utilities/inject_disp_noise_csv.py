@@ -135,7 +135,10 @@ if __name__ == "__main__":
     # Set measurement resolution
     measurement_resolution = 0.27e-3
     # Initialize noise cases
-    uniform_amp_values = [measurement_resolution,]
+    uniform_amp_values = [measurement_resolution,
+                          measurement_resolution/2.0,
+                          measurement_resolution/4.0,
+                          measurement_resolution/8.0,]
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Loop over noise cases
     for uniform_amp in uniform_amp_values:
