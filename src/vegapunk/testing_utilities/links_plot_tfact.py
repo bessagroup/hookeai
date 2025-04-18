@@ -191,6 +191,40 @@ def gen_links_loading_incrementation_file(save_dir, is_stdout_display=False,
                           is_stdout_display=is_stdout_display,
                           is_save_fig=is_save_fig)
 # =============================================================================
+def scale_tfact_hist(tfact_hist, scale_factor=1.0):
+    """Perform linear scaling of total load factor history.
+    
+    Parameters
+    ----------
+    tfact_hist : np.ndarray(2d)
+        Total load factor history stored as numpy.ndarray(2d) of shape
+        (n_time, 2), where the discrete time is stored in array[:, 0] and the
+        total load factor in array[:, 1].
+    scale_factor : float, default=1.0
+        Linear scaling factor.
+        
+    Returns
+    -------
+    tfact_hist_scaled : np.ndarray(2d)
+        Total load factor history stored as numpy.ndarray(2d) of shape
+        (n_time, 2), where the discrete time is stored in array[:, 0] and the
+        total load factor in array[:, 1].
+    """
+    # Check total load factor history
+    if not isinstance(tfact_hist, np.ndarray):
+        raise RuntimeError('Total load factor history is not provided as '
+                           'numpy.ndarray(2d)')
+    elif tfact_hist.shape[1] != 2:
+        raise RuntimeError('Total load factor history is not provided as '
+                           'numpy.ndarray(2d) of shape (n_time, 2).')
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Initialize scaled total load factor history
+    tfact_hist_scaled = tfact_hist.copy()
+    # Perform linear scaling of total load factor history
+    tfact_hist_scaled[:, 1] = scale_factor*tfact_hist[:, 1]
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    return tfact_hist_scaled
+# =============================================================================
 if __name__ == "__main__":
     # Set computation processes
     is_plot_links_tfact_hist = True
