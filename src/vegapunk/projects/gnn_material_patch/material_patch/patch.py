@@ -91,8 +91,10 @@ class FiniteElementPatch:
         Set number of patch edge nodes per dimension.
     get_boundary_nodes_labels(self)
         Get finite element mesh boundary nodes labels.
-    get_boundary_edges_nodes_labels(self):
+    get_boundary_edges_nodes_labels(self)
         Get finite element mesh boundary edges nodes labels.
+    get_patch_attributes(self)
+        Get finite element material patch attributes.
     plot_deformed_patch(self, is_hide_axes=False, is_show_fixed_dof=False,
                         is_hide_deformed_faces=True, is_show_plot=False,
                         is_save_plot=False, save_directory=None,
@@ -349,6 +351,30 @@ class FiniteElementPatch:
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         return boundary_edges_nodes_labels
     # -------------------------------------------------------------------------
+    def get_patch_attributes(self):
+        """Get finite element material patch attributes.
+        
+        Returns
+        -------
+        patch_attributes : dict
+            Material patch attributes.
+        """
+        # Initialize material patch attributes
+        patch_attributes = {}
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Assemble material patch attributes
+        patch_attributes['n_dim'] = self._n_dim
+        patch_attributes['patch_dims'] = self._patch_dims
+        patch_attributes['elem_type'] = self._elem_type
+        patch_attributes['n_elems_per_dim'] = self._n_elems_per_dim
+        patch_attributes['mesh_nodes_matrix'] = self._mesh_nodes_matrix
+        patch_attributes['mesh_nodes_coords_ref'] = self._mesh_nodes_coords_ref
+        patch_attributes['mesh_boundary_nodes_disps'] = \
+            self._mesh_boundary_nodes_disps
+        patch_attributes['n_edge_nodes_per_dim'] = self._n_edge_nodes_per_dim
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        return patch_attributes
+    # -------------------------------------------------------------------------
     def plot_deformed_patch(self, is_hide_axes=False, is_show_fixed_dof=False,
                             is_hide_deformed_faces=True, is_show_plot=False,
                             is_save_plot=False, save_directory=None,
@@ -421,6 +447,11 @@ class FiniteElementPatch:
         # Set reference and deformed configuration colors
         ref_color = '#a9a9a9'
         def_color = '#d62728'
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Default LaTeX Computer Modern Roman
+        plt.rc('text', usetex=True)
+        plt.rc('font', **{'family': 'serif',
+                          'serif': ['Computer Modern Roman']}) 
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         if self._n_dim == 2:
             # Generate plot

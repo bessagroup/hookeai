@@ -177,6 +177,15 @@ def generate_random_patches(base_dir, patch_name='material_patch', n_patch=1,
             # Save material patch data file
             with open(patch_file_path, 'wb') as patch_file:
                 pickle.dump(patch, patch_file)
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Set material patch attributes file path
+            patch_file_path = \
+                os.path.join(patch_data_dir, 'material_patch_attributes.pkl')
+            # Get material patch attributes
+            patch_attributes = patch.get_patch_attributes()
+            # Save material patch attributes file
+            with open(patch_file_path, 'wb') as patch_file:
+                pickle.dump(patch_attributes, patch_file)       
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Save plot of deformed material patch
         if is_save_plot_patch:
