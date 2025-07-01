@@ -81,7 +81,7 @@ def compare_hardening_laws(hardening_laws, save_dir=None, is_save_fig=False,
         data_array = comparison_data[:, col_indices]
         # Plot hardening laws
         figure, axes = plot_xy_data(
-            data_array, data_labels=data_labels,
+            data_array, data_labels=data_labels, is_reference_data=False,
             x_label='Accumulated plastic strain', y_label='Yield stress (MPa)',
             x_lims=(acc_p_strain_min, acc_p_strain_max),
             y_lims=(None, None), is_latex=True)
@@ -144,4 +144,5 @@ if __name__ == "__main__":
                             'hardening_parameters': hardening_parameters}
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Compare hardening laws
-    compare_hardening_laws(hardening_laws, is_stdout_display=True)
+    compare_hardening_laws(hardening_laws, is_stdout_display=True,
+                           save_dir=None, is_save_fig=False)
