@@ -588,129 +588,142 @@ def plot_time_series_uq(model_sample_dirs, testing_dirs, predictions_dirs,
 # =============================================================================
 if __name__ == "__main__":
     # Set number of model samples for uncertainty quantification
-    n_model_sample = 5
+    n_model_sample = 3
     # Set computation processes
     is_model_training = True
+    is_convergence_analysis = True
     # Set testing type
     testing_type = ('training', 'validation', 'in_distribution',
                     'out_distribution')[2]
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set case studies base directory
     base_dir = ('/home/bernardoferreira/Documents/brown/projects/'
-                'darpa_project/3_local_rc_training/von_mises/')
-    # Set case study directory
-    case_study_name = 'convergence_analyses/elastic_properties/n1'
-    case_study_dir = os.path.join(os.path.normpath(base_dir),
-                                  f'{case_study_name}')
+                'darpa_paper_examples/local/standard_models/lou/polynomial_with_s0_a_b')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Check case study directory
-    if not os.path.isdir(case_study_dir):
-        raise RuntimeError('The case study directory has not been found:\n\n'
-                           + case_study_dir)
-    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~        
-    # Set training data set directory
-    training_dataset_dir = os.path.join(os.path.normpath(case_study_dir),
-                                        '1_training_dataset')
-    # Get training data set file path
-    regex = (r'^ss_paths_dataset_n[0-9]+.pkl$',)
-    is_file_found, train_dataset_file_path = \
-        find_unique_file_with_regex(training_dataset_dir, regex)
-    # Check data set file
-    if not is_file_found:
-        raise RuntimeError(f'Training data set file has not been found  '
-                           f'in data set directory:\n\n'
-                           f'{training_dataset_dir}')
+    # Initialize case study directories
+    case_study_dirs = []
+    # Set case study directories
+    if is_convergence_analysis:
+        # Set training data set sizes
+        training_sizes = (1, 2, 4, 8, 16, 32, 64, 128)
+        # Set case study directories
+        case_study_dirs += [os.path.join(os.path.normpath(base_dir), f'n{n}/')
+                            for n in training_sizes]
+    else:
+        case_study_dirs += [base_dir,]
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Set model directory
-    model_directory = os.path.join(os.path.normpath(case_study_dir), '3_model')
-    # Create model directory (overwrite)
-    make_directory(model_directory, is_overwrite=True)
-    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Set validation data set directory
-    val_dataset_directory = os.path.join(os.path.normpath(case_study_dir),
-                                         '2_validation_dataset')
-    # Get validation data set file path
-    val_dataset_file_path = None
-    if os.path.isdir(val_dataset_directory):
+    # Loop over case study directories
+    for case_study_dir in case_study_dirs:
+        # Check case study directory
+        if not os.path.isdir(case_study_dir):
+            raise RuntimeError('The case study directory has not been found:'
+                               '\n\n' + case_study_dir)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~       
+        # Set training data set directory
+        training_dataset_dir = os.path.join(os.path.normpath(case_study_dir),
+                                            '1_training_dataset')
+        # Get training data set file path
         regex = (r'^ss_paths_dataset_n[0-9]+.pkl$',)
-        is_file_found, val_dataset_file_path = \
-            find_unique_file_with_regex(val_dataset_directory, regex)
+        is_file_found, train_dataset_file_path = \
+            find_unique_file_with_regex(training_dataset_dir, regex)
         # Check data set file
         if not is_file_found:
-            raise RuntimeError(f'Validation data set file has not been found  '
+            raise RuntimeError(f'Training data set file has not been found '
                             f'in data set directory:\n\n'
-                            f'{val_dataset_directory}')
-    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Set testing data set directory
-    if testing_type == 'training':
-        # Set testing data set directory (training data set)
-        testing_dataset_dir = os.path.join(os.path.normpath(case_study_dir),
-                                           '1_training_dataset')
-    elif testing_type == 'validation':
-        # Set testing data set directory (validation data set)
-        testing_dataset_dir = os.path.join(os.path.normpath(case_study_dir),
-                                           '2_validation_dataset')
-    elif testing_type == 'in_distribution':
-        # Set testing data set directory (in-distribution testing data set)
-        testing_dataset_dir = os.path.join(os.path.normpath(case_study_dir),
-                                           '5_testing_id_dataset')
-    elif testing_type == 'out_distribution':
-        # Set testing data set directory (out-of-distribution testing data set)
-        testing_dataset_dir = os.path.join(os.path.normpath(case_study_dir),
-                                           '6_testing_od_dataset')
-    else:
-        raise RuntimeError('Unknown testing type.')
-    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Get testing data set file path
-    regex = (r'^ss_paths_dataset_n[0-9]+.pkl$',)
-    is_file_found, test_dataset_file_path = \
-        find_unique_file_with_regex(testing_dataset_dir, regex)
-    # Check data set file
-    if not is_file_found:
-        raise RuntimeError(f'Testing data set file has not been found  '
-                           f'in data set directory:\n\n'
-                           f'{testing_dataset_dir}')
-    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Set model predictions directory
-    prediction_directory = os.path.join(os.path.normpath(case_study_dir),
-                                        '7_prediction')
-    # Create model predictions directory
-    if not os.path.isdir(prediction_directory):
-        make_directory(prediction_directory)
-    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Create model predictions subdirectory
-    prediction_subdir = os.path.join(
-        os.path.normpath(prediction_directory), testing_type)
-    # Create prediction subdirectory
-    if not os.path.isdir(prediction_subdir):
-        make_directory(prediction_subdir)
-    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Set uncertainty quantification directory
-    uq_directory = os.path.join(os.path.normpath(case_study_dir),
-                                'uncertainty_quantification')
-    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Set device type
-    if torch.cuda.is_available():
-        device_type = 'cuda'
-    else:
-        device_type = 'cpu'
-    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Perform model uncertainty quantification
-    perform_model_uq(uq_directory, n_model_sample, train_dataset_file_path,
-                     model_directory, prediction_subdir,
-                     test_dataset_file_path,
-                     is_model_training=is_model_training,
-                     val_dataset_file_path=val_dataset_file_path,
-                     device_type=device_type, is_verbose=True)
-    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Generate plots of model uncertainty quantification
-    gen_model_uq_plots(uq_directory, n_model_sample, testing_dataset_dir,
-                       testing_type, is_save_fig=True, is_stdout_display=False,
-                       is_latex=True)
-    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Remove model directory
-    if os.path.isdir(model_directory):
-        shutil.rmtree(model_directory)
-    # Remove model predictions directory
-    if os.path.isdir(prediction_directory):
-        shutil.rmtree(prediction_directory)
+                            f'{training_dataset_dir}')
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set model directory
+        model_directory = \
+            os.path.join(os.path.normpath(case_study_dir), '3_model')
+        # Create model directory (overwrite)
+        make_directory(model_directory, is_overwrite=True)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set validation data set directory
+        val_dataset_directory = os.path.join(os.path.normpath(case_study_dir),
+                                             '2_validation_dataset')
+        # Get validation data set file path
+        val_dataset_file_path = None
+        if os.path.isdir(val_dataset_directory):
+            regex = (r'^ss_paths_dataset_n[0-9]+.pkl$',)
+            is_file_found, val_dataset_file_path = \
+                find_unique_file_with_regex(val_dataset_directory, regex)
+            # Check data set file
+            if not is_file_found:
+                raise RuntimeError(f'Validation data set file has not been '
+                                   f'found in data set directory:\n\n'
+                                   f'{val_dataset_directory}')
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set testing data set directory
+        if testing_type == 'training':
+            # Set testing data set directory (training data set)
+            testing_dataset_dir = os.path.join(
+                os.path.normpath(case_study_dir), '1_training_dataset')
+        elif testing_type == 'validation':
+            # Set testing data set directory (validation data set)
+            testing_dataset_dir = os.path.join(
+                os.path.normpath(case_study_dir), '2_validation_dataset')
+        elif testing_type == 'in_distribution':
+            # Set testing data set directory (in-distribution testing data set)
+            testing_dataset_dir = os.path.join(
+                os.path.normpath(case_study_dir), '5_testing_id_dataset')
+        elif testing_type == 'out_distribution':
+            # Set testing data set directory (out-of-distribution testing data
+            # set)
+            testing_dataset_dir = os.path.join(
+                os.path.normpath(case_study_dir), '6_testing_od_dataset')
+        else:
+            raise RuntimeError('Unknown testing type.')
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Get testing data set file path
+        regex = (r'^ss_paths_dataset_n[0-9]+.pkl$',)
+        is_file_found, test_dataset_file_path = \
+            find_unique_file_with_regex(testing_dataset_dir, regex)
+        # Check data set file
+        if not is_file_found:
+            raise RuntimeError(f'Testing data set file has not been found '
+                               f'in data set directory:\n\n'
+                               f'{testing_dataset_dir}')
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set model predictions directory
+        prediction_directory = os.path.join(os.path.normpath(case_study_dir),
+                                            '7_prediction')
+        # Create model predictions directory
+        if not os.path.isdir(prediction_directory):
+            make_directory(prediction_directory)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Create model predictions subdirectory
+        prediction_subdir = os.path.join(
+            os.path.normpath(prediction_directory), testing_type)
+        # Create prediction subdirectory
+        if not os.path.isdir(prediction_subdir):
+            make_directory(prediction_subdir)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set uncertainty quantification directory
+        uq_directory = os.path.join(os.path.normpath(case_study_dir),
+                                    'uncertainty_quantification')
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set device type
+        if torch.cuda.is_available():
+            device_type = 'cuda'
+        else:
+            device_type = 'cpu'
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Perform model uncertainty quantification
+        perform_model_uq(uq_directory, n_model_sample, train_dataset_file_path,
+                        model_directory, prediction_subdir,
+                        test_dataset_file_path,
+                        is_model_training=is_model_training,
+                        val_dataset_file_path=val_dataset_file_path,
+                        device_type=device_type, is_verbose=True)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Generate plots of model uncertainty quantification
+        gen_model_uq_plots(uq_directory, n_model_sample, testing_dataset_dir,
+                        testing_type, is_save_fig=True,
+                        is_stdout_display=False, is_latex=True)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Remove model directory
+        if os.path.isdir(model_directory):
+            shutil.rmtree(model_directory)
+        # Remove model predictions directory
+        if os.path.isdir(prediction_directory):
+            shutil.rmtree(prediction_directory)
