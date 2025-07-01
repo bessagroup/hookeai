@@ -44,23 +44,20 @@ if __name__ == '__main__':
     rect_search_domain = ((-3.5, 2.5), (-1.5, 1.5))
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set plots directory
-    plots_dir = ('/home/bernardoferreira/Documents/brown/projects/'
-                 'darpa_paper_examples/local/standard_models/'
-                 'lou_yield_convexity_plots')
+    plots_dir = ('/home/bernardoferreira/Downloads/generate_plots/vm')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    """
+    
     # Set parameter name prefix
-    is_global_optimization = True
+    is_global_optimization = False
     if is_global_optimization:
         model_prefix = 'model_1_'
     else:
         model_prefix = ''
     # Set model parameters history record file path
     parameters_record_path = \
-        ('/home/bernardoferreira/Documents/brown/projects/darpa_project/'
-         '11_global_learning_lou/'
-         'cambridge_specimen_plane_stress_notched_short_cyclic_plus/'
-         'HEXA8_N404_E240/1_discover_rc_lou/material_model_finder/3_model/'
+        ('/home/bernardoferreira/Documents/brown/projects/'
+         'darpa_paper_examples/local/standard_models/lou/polynomial/n8/'
+         'uncertainty_quantification/model_0/3_model/'
          'parameters_history_record.pkl')
     # Load model parameters history record
     with open(parameters_record_path, 'rb') as parameters_record_file:
@@ -83,14 +80,12 @@ if __name__ == '__main__':
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set plots directory
     plots_dir = ('/home/bernardoferreira/Documents/brown/projects/'
-                 'darpa_project/11_global_learning_lou/'
-                 'cambridge_specimen_plane_stress_notched_short_cyclic_plus/'
-                 'HEXA8_N404_E240/1_discover_rc_lou/material_model_finder/'
-                 '3_model')
+                 'darpa_paper_examples/local/standard_models/lou/'
+                 'double_precision/polynomial_strain_bounds_4/s0_a_b_b_c_d/'
+                 'n8_lr_exp_10_0d1_sample_2/3_model/plots')
     # Create plots directory
     if not os.path.isdir(plots_dir):
         make_directory(plots_dir)
-    """
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Plot convexity domain boundary
     LouZhangYoon.plot_convexity_boundary(
