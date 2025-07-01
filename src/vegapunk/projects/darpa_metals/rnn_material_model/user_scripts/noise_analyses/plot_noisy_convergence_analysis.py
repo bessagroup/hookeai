@@ -245,12 +245,12 @@ def plot_prediction_loss_convergence_uq(n_noise_case, noise_case_labels,
     data_labels = noise_case_labels
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set axes limits and scale
-    x_lims = (10**0, 10**4)
-    y_lims = (10**2, 10**6)
+    x_lims = (8e0, 3e3)
+    y_lims = (10e2, 1e6)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set axes labels
     x_label = 'Training data set size'
-    y_label = 'Avg. prediction loss'
+    y_label = 'Avg. prediction loss (MSE)'
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Plot data
     figure, _ = scatter_xy_data_noise_cases(
@@ -527,16 +527,28 @@ if __name__ == "__main__":
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set convergence analyses base directory
     base_dir = ('/home/bernardoferreira/Documents/brown/projects/'
-                'darpa_project/6_local_rnn_training_noisy/von_mises/'
-                'convergence_analyses_homoscedastic_uniform/')
+                'darpa_paper_examples/local/ml_models/polynomial/'
+                'convergence_analysis_noise/'
+                'convergence_analyses_heteroscedastic_spiked_gaussian')
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Set noise variability
+    noise_variability = 'heteroscedastic'
+    # Set noise variability label
+    if noise_variability == 'heteroscedastic':
+        noise_var_label = 'het'
+    else:
+        noise_var_label = 'hom'
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set noise distribution type
-    noise_distribution = 'uniform'
+    noise_distribution = 'spiked_gaussian'
     # Set noise cases and labels
     if noise_distribution == 'uniform':
         # Set noise cases
-        noise_cases = ('noiseless', 'homuni_noise_4e-2', 'homuni_noise_1e-1',
-                       'homuni_noise_2e-1', 'homuni_noise_4e-1')
+        noise_cases = ('noiseless',
+                       f'{noise_var_label}uni_noise_4e-2',
+                       f'{noise_var_label}uni_noise_1e-1',
+                       f'{noise_var_label}uni_noise_2e-1',
+                       f'{noise_var_label}uni_noise_4e-1')
         # Set noise cases labels
         noise_cases_labels = ('$\\tilde{\epsilon}=0.0$',
                               '$\\tilde{\epsilon}=0.04$',
@@ -545,8 +557,11 @@ if __name__ == "__main__":
                               '$\\tilde{\epsilon}=0.4$')
     elif noise_distribution == 'gaussian':
         # Set noise cases
-        noise_cases = ('noiseless', 'homgau_noise_1e-2', 'homgau_noise_2d5e-2',
-                       'homgau_noise_5e-2', 'homgau_noise_1e-1')
+        noise_cases = ('noiseless',
+                       f'{noise_var_label}gau_noise_1e-2',
+                       f'{noise_var_label}gau_noise_2d5e-2',
+                       f'{noise_var_label}gau_noise_5e-2',
+                       f'{noise_var_label}gau_noise_1e-1')
         # Set noise cases labels
         noise_cases_labels = ('$\\tilde{\epsilon}=0.0$',
                               '$\\tilde{\epsilon}=0.01$',
@@ -555,9 +570,11 @@ if __name__ == "__main__":
                               '$\\tilde{\epsilon}=0.1$')
     elif noise_distribution == 'spiked_gaussian':
         # Set noise cases
-        noise_cases = ('noiseless', 'homsgau_noise_1e-2',
-                       'homsgau_noise_2d5e-2', 'homsgau_noise_5e-2',
-                       'homsgau_noise_1e-1')
+        noise_cases = ('noiseless',
+                       f'{noise_var_label}sgau_noise_1e-2',
+                       f'{noise_var_label}sgau_noise_2d5e-2',
+                       f'{noise_var_label}sgau_noise_5e-2',
+                       f'{noise_var_label}sgau_noise_1e-1')
         # Set noise cases labels
         noise_cases_labels = ('$\\tilde{\epsilon}_{s}=0.0$',
                               '$\\tilde{\epsilon}_{s}=0.01$',
