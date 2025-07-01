@@ -395,8 +395,8 @@ def plot_yield_surface(models_names, models_parameters, models_sy,
     plotter = pv.Plotter(lighting='light kit', polygon_smoothing=True)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set light
-    light = pv.Light(position=(pi_max, pi_max, pi_max), focal_point=(0, 0, 0),
-                     intensity=1.0)
+    light = pv.Light(position=(pi_max, 0.5*(pi_min + pi_max), pi_max),
+                     focal_point=(0, 0, 0), intensity=1.0)
     # Add light
     plotter.add_light(light)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
