@@ -321,7 +321,8 @@ class HybridModel(torch.nn.Module):
         # Loop over model data scalers and set device
         if model._data_scalers is not None:
             for _, data_scaler in model._data_scalers.items():
-                data_scaler.set_device(model._device_type)
+                if data_scaler is not None:
+                    data_scaler.set_device(model._device_type)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Check hybridized models data scalers
         model.check_hyb_models_data_scalers()
@@ -608,7 +609,10 @@ class HybridModel(torch.nn.Module):
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         return model_parameters_bounds
     # -------------------------------------------------------------------------
-    def forward(self, features_in):
+    def forward(self, features_in, is_store_rcm_output_training=False,
+                                   rcm_output_training=None,
+                                   is_store_rcm_output_validation=False,
+                                   rcm_output_validation=None):
         """Forward propagation.
         
         Parameters
