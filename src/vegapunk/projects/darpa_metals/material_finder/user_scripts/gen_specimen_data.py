@@ -472,7 +472,7 @@ def set_material_model_parameters():
     n_dim, comp_order_sym, _ = get_problem_type_parameters(problem_type)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set constitutive model name
-    model_name = 'rc_lou_zhang_yoon_vmap'
+    model_name = 'rc_drucker_prager_vmap'
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set constitutive model name parameters
     if bool(re.search(r'^rc_.*$', model_name)):
@@ -559,8 +559,8 @@ def set_material_model_parameters():
                 'euler_angles': (0.0, 0.0, 0.0),
                 'hardening_law': get_hardening_law('nadai_ludwik'),
                 'hardening_parameters':
-                    {'s0': 900/yield_cohesion_parameter,
-                     'a': 700/yield_cohesion_parameter,
+                    {'s0': 900/(math.sqrt(3)*yield_cohesion_parameter),
+                     'a': 700/(math.sqrt(3)*yield_cohesion_parameter),
                      'b': 0.5,
                      'ep0': 1e-5},
                 'yield_cohesion_parameter': yield_cohesion_parameter,
@@ -576,18 +576,18 @@ def set_material_model_parameters():
             #learnable_parameters['v'] = {
             #    'initial_value': random.uniform(0.2, 0.4),
             #    'bounds': (0.2, 0.4)}
-            learnable_parameters['s0'] = {
-                'initial_value': random.uniform(500, 2000),
-                'bounds': (500, 2000)}
-            learnable_parameters['a'] = {
-                'initial_value': random.uniform(500, 2000),
-                'bounds': (500, 2000)}
-            learnable_parameters['b'] = {
-                'initial_value': random.uniform(0.2, 1.0),
-                'bounds': (0.2, 1.0)}
-            learnable_parameters['friction_angle'] = \
-                {'initial_value': math.radians(random.uniform(0.01, 10.0)),
-                 'bounds': (math.radians(0.01), math.radians(10.0))}
+            #learnable_parameters['s0'] = {
+            #    'initial_value': random.uniform(500, 2000),
+            #    'bounds': (500, 2000)}
+            #learnable_parameters['a'] = {
+            #    'initial_value': random.uniform(500, 2000),
+            #    'bounds': (500, 2000)}
+            #learnable_parameters['b'] = {
+            #    'initial_value': random.uniform(0.2, 1.0),
+            #    'bounds': (0.2, 1.0)}
+            #learnable_parameters['friction_angle'] = \
+            #    {'initial_value': math.radians(random.uniform(0.01, 10.0)),
+            #     'bounds': (math.radians(0.01), math.radians(10.0))}
             # Set material constitutive model name
             if model_name == 'rc_drucker_prager_vmap':
                 material_model_name = 'drucker_prager_vmap'
@@ -787,13 +787,13 @@ def set_material_model_parameters():
         hyb_model_name = 'gru_strain_to_stress'
         # Set hybridized model indices
         hyb_indices = (1, 0)
-        # Set scaling data set file path
+        # Set scaling data set file path (testing data set)
         scaling_dataset_file_path = \
             ('/home/bernardoferreira/Documents/brown/projects/'
              'darpa_paper_examples/global/random_material_patch_von_mises/'
              'deformation_bounds_0d1/local/polynomial/datasets/'
-             'single_precision/n2560/1_training_dataset/'
-             'ss_paths_dataset_n2560.pkl')
+             'single_precision/n10/5_testing_id_dataset/'
+             'ss_paths_dataset_n512.pkl')
         # Load scaling data set
         scaling_dataset = load_dataset(scaling_dataset_file_path)
         # Set hybridized model: GRU (strain to stress)
@@ -820,7 +820,7 @@ def set_material_model_parameters():
 # =============================================================================
 if __name__ == "__main__":
     # Set float precision
-    is_double_precision = True
+    is_double_precision = False
     if is_double_precision:
         torch.set_default_dtype(torch.float64)
     else:
@@ -832,9 +832,8 @@ if __name__ == "__main__":
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set case study base directory
     base_dir = ('/home/bernardoferreira/Documents/brown/projects/'
-                'darpa_project/8_global_random_specimen/von_mises/'
-                '2_random_specimen_hexa8/solid/'
-                '4_discover_gru_material_model')
+                'darpa_project/5_global_specimens/rowan_specimen_ti6242_hip2/'
+                '1_preliminary_discovery_E')
     # Set case study directory
     case_study_name = 'material_model_finder'
     case_study_dir = os.path.join(os.path.normpath(base_dir),
