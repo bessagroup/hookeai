@@ -9,6 +9,7 @@ if root_dir not in sys.path:
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 import math
 # Third-party
+import torch
 import numpy as np
 import matplotlib.pyplot as plt
 # Local
@@ -188,13 +189,21 @@ def compare_material_model_response(strain_formulation, problem_type,
             is_stdout_display=is_stdout_display, is_latex=True)
 # =============================================================================
 if __name__ == "__main__":
+    # Set float precision
+    is_double_precision = True
+    if is_double_precision:
+        torch.set_default_dtype(torch.float64)
+    else:
+        torch.set_default_dtype(torch.float32)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set reference stress path flag
-    is_reference_stress_path = True
+    is_reference_stress_path = False
     # Set plots directory
     plots_dir = ('/home/bernardoferreira/Documents/brown/projects/'
-                 'darpa_project/11_global_learning_lou/'
-                 'random_specimen_rc_von_mises_vmap/loading_3/test_paths/'
-                 'plots')
+                 'darpa_paper_examples/global/tensile_dogbone_von_mises/'
+                 'hexa8_n6493_e1200/1_discover_rc_von_mises/s0_a_b/'
+                 'noisy_displacements/micro_resolution/'
+                 'noisy_uniform_amp_0d00027/sample_3_comparison_noiseless')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set strain formulation
     strain_formulation = 'infinitesimal'
@@ -209,19 +218,13 @@ if __name__ == "__main__":
     if strain_path_source == 'dataset':
         # Set data set file path
         dataset_file_path = \
-            ('/home/bernardoferreira/Documents/brown/projects/darpa_project/'
-             '11_global_learning_lou/random_specimen_rc_von_mises_vmap/'
-             'loading_3/3_discover_rc_lou/material_model_finder/'
-             '0_simulation/local_response_dataset/ss_paths_dataset_n936.pkl')
+            ('/home/bernardoferreira/Documents/brown/projects/'
+             'darpa_paper_examples/global/tensile_dogbone_von_mises/'
+             'hexa8_n6493_e1200/1_discover_rc_von_mises/E_v_s0_a_b/'
+             'noisy_displacements/noiseless/material_model_finder/'
+             '0_simulation/local_response_dataset/ss_paths_dataset_n8.pkl')
         # Set sample index:
-        # Loading 2
-        sample_idx = 44 # Element 6 - Failed local path index
-        sample_idx = 275 # Element 35 - Failed local path index
-        sample_idx = 650 # Element 82 - Failed local path index
-        sample_idx = 834 # Element 105 - Failed local path index
-        # Loading 3
-        sample_idx = 2 # Element 1 - Failed local path index (GP #3)
-        sample_idx = 12 # Element 2 - Failed local path index (GP #1, #3, #4, #5)
+        sample_idx = 0
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Load data set
         dataset = load_dataset(dataset_file_path)
@@ -280,20 +283,20 @@ if __name__ == "__main__":
     #constitutive_models[model_label] = constitutive_model
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set constitutive model label
-    model_label = 'von_mises_2'
+    model_label = 'von_mises'
     # Set constitutive model parameters
     model_parameters = {
         'elastic_symmetry': 'isotropic',
         'E': 110e3, 'v': 0.33,
         'euler_angles': (0.0, 0.0, 0.0),
         'hardening_law': get_hardening_law('nadai_ludwik'),
-        'hardening_parameters': {'s0': 900,
-                                 'a': 700,
+        'hardening_parameters': {'s0': np.sqrt(3)*900,
+                                 'a': np.sqrt(3)*700,
                                  'b': 0.5,
                                  'ep0': 1e-5}}
     # Initialize constitutive model
     constitutive_model = VonMises(strain_formulation, problem_type,
-                                  model_parameters)
+                                      model_parameters)
     # Store constitutive model
     #constitutive_models[model_label] = constitutive_model
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -334,9 +337,9 @@ if __name__ == "__main__":
     #constitutive_models[model_label] = constitutive_model
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set constitutive model label
-    model_label = 'drucker_prager_found'
+    model_label = 'drucker_prager'
     # Set frictional angle
-    friction_angle = 0.08712586238835966
+    friction_angle = 0.08671116054780224
     # Set dilatancy angle
     dilatancy_angle = friction_angle
     # Compute angle-related material parameters
@@ -351,12 +354,12 @@ if __name__ == "__main__":
     # (matching Von Mises yield surface for null pressure)
     model_parameters = {
         'elastic_symmetry': 'isotropic',
-        'E': 96371.53685092926, 'v': 0.33,
+        'E': 110e3, 'v': 0.33,
         'euler_angles': (0.0, 0.0, 0.0),
         'hardening_law': get_hardening_law('nadai_ludwik'),
         'hardening_parameters':
-            {'s0': 385.3058099746704,
-             'a': 448.69024008512497,
+            {'s0': 900/yield_cohesion_parameter,
+             'a': 700/yield_cohesion_parameter,
              'b': 0.5,
              'ep0': 1e-5},
         'yield_cohesion_parameter': yield_cohesion_parameter,
@@ -364,8 +367,8 @@ if __name__ == "__main__":
         'flow_pressure_parameter': flow_pressure_parameter,
         'friction_angle': friction_angle}
     # Initialize constitutive model
-    constitutive_model = DruckerPrager(strain_formulation, problem_type,
-                                       model_parameters)
+    constitutive_model = DruckerPragerVMAP(strain_formulation, problem_type,
+                                           model_parameters)
     # Store constitutive model
     #constitutive_models[model_label] = constitutive_model
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -382,21 +385,27 @@ if __name__ == "__main__":
                                   'b': 0.5,
                                   'ep0': 1e-5},
         'a_hardening_law': get_hardening_law('linear'),
-        'a_hardening_parameters': {'s0': math.sqrt(3),
+        'a_hardening_parameters': {'s0': 1.0,
                                    'a': 0},
         'b_hardening_law': get_hardening_law('linear'),
-        'b_hardening_parameters': {'s0': 0.03072711378335953,
+        'b_hardening_parameters': {'s0': 0.05,
                                    'a': 0},
         'c_hardening_law': get_hardening_law('linear'),
-        'c_hardening_parameters': {'s0': -2.148874580860138,
+        'c_hardening_parameters': {'s0': 1.0,
                                    'a': 0},
         'd_hardening_law': get_hardening_law('linear'),
-        'd_hardening_parameters': {'s0': 0.11660067737102509,
+        'd_hardening_parameters': {'s0': 0.25,
                                    'a': 0},
         'is_associative_hardening': True}
-        
-        
-        
+    # Initialize constitutive model
+    constitutive_model = LouZhangYoon(strain_formulation, problem_type,
+                                      model_parameters)
+    # Store constitutive model
+    #constitutive_models[model_label] = constitutive_model
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Set constitutive model label
+    model_label = 'lou_zhang_yoon'
+    # Set constitutive model parameters
     model_parameters = \
         {'elastic_symmetry': 'isotropic',
          'E': 110e3, 'v': 0.33,
@@ -407,29 +416,163 @@ if __name__ == "__main__":
                                   'b': 0.5,
                                   'ep0': 1e-5},
         'a_hardening_law': get_hardening_law('linear'),
-        'a_hardening_parameters': {'s0': 2.0,
+        'a_hardening_parameters': {'s0': 1.0,
                                    'a': 0},
         'b_hardening_law': get_hardening_law('linear'),
         'b_hardening_parameters': {'s0': 0.05,
                                    'a': 0},
         'c_hardening_law': get_hardening_law('linear'),
-        'c_hardening_parameters': {'s0': 0.5,
+        'c_hardening_parameters': {'s0': 0.0,
                                    'a': 0},
         'd_hardening_law': get_hardening_law('linear'),
-        'd_hardening_parameters': {'s0': 0.5,
+        'd_hardening_parameters': {'s0': 0.0,
                                    'a': 0},
         'is_associative_hardening': True}
-
     # Initialize constitutive model
-    constitutive_model = LouZhangYoon(strain_formulation, problem_type,
+    constitutive_model = LouZhangYoonVMAP(strain_formulation, problem_type,
+                                          model_parameters)
+    # Store constitutive model
+    #constitutive_models[model_label] = constitutive_model
+    
+    
+    
+    
+    
+    
+    # Set constitutive model label
+    model_label = 'von_mises'
+    # Set constitutive model parameters
+    model_parameters = {
+        'elastic_symmetry': 'isotropic',
+        'E': 110e3, 'v': 0.33,
+        'euler_angles': (0.0, 0.0, 0.0),
+        'hardening_law': get_hardening_law('nadai_ludwik'),
+        'hardening_parameters': {'s0': np.sqrt(3)*900,
+                                 'a': np.sqrt(3)*700,
+                                 'b': 0.5,
+                                 'ep0': 1e-5}}
+    # Initialize constitutive model
+    constitutive_model = VonMisesVMAP(strain_formulation, problem_type,
                                       model_parameters)
     # Store constitutive model
-    constitutive_models[model_label] = constitutive_model
+    #constitutive_models[model_label] = constitutive_model
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set constitutive model label
-    model_label = 'lou_zhang_yoon_vmap'
+    model_label = 'drucker_prager_1'
+    # Set frictional angle
+    friction_angle = 0.08671116054780224
+    # Set dilatancy angle
+    dilatancy_angle = friction_angle
+    # Compute angle-related material parameters
+    # (matching with Mohr-Coulomb under uniaxial tension and compression)
+    # Set yield surface cohesion parameter
+    yield_cohesion_parameter = (2.0/np.sqrt(3))*np.cos(friction_angle)
+    # Set yield pressure parameter
+    yield_pressure_parameter = (3.0/np.sqrt(3))*np.sin(friction_angle)
+    # Set plastic flow pressure parameter
+    flow_pressure_parameter = (3.0/np.sqrt(3))*np.sin(dilatancy_angle)
     # Set constitutive model parameters
-    model_parameters2 = \
+    # (matching Von Mises yield surface for null pressure)
+    model_parameters = {
+        'elastic_symmetry': 'isotropic',
+        'E': 110e3, 'v': 0.33,
+        'euler_angles': (0.0, 0.0, 0.0),
+        'hardening_law': get_hardening_law('nadai_ludwik'),
+        'hardening_parameters':
+            {'s0': 900/yield_cohesion_parameter,
+             'a': 700/yield_cohesion_parameter,
+             'b': 0.5,
+             'ep0': 1e-5},
+        'yield_cohesion_parameter': yield_cohesion_parameter,
+        'yield_pressure_parameter': yield_pressure_parameter,
+        'flow_pressure_parameter': flow_pressure_parameter,
+        'friction_angle': friction_angle}
+    # Initialize constitutive model
+    constitutive_model = DruckerPragerVMAP(strain_formulation, problem_type,
+                                           model_parameters)
+    # Store constitutive model
+    #constitutive_models[model_label] = constitutive_model
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Set constitutive model label
+    model_label = 'drucker_prager_2'
+    # Set frictional angle
+    friction_angle = np.deg2rad(2.5)
+    # Set dilatancy angle
+    dilatancy_angle = friction_angle
+    # Compute angle-related material parameters
+    # (matching with Mohr-Coulomb under uniaxial tension and compression)
+    # Set yield surface cohesion parameter
+    yield_cohesion_parameter = (2.0/np.sqrt(3))*np.cos(friction_angle)
+    # Set yield pressure parameter
+    yield_pressure_parameter = (3.0/np.sqrt(3))*np.sin(friction_angle)
+    # Set plastic flow pressure parameter
+    flow_pressure_parameter = (3.0/np.sqrt(3))*np.sin(dilatancy_angle)
+    # Set constitutive model parameters
+    # (matching Von Mises yield surface for null pressure)
+    model_parameters = {
+        'elastic_symmetry': 'isotropic',
+        'E': 110e3, 'v': 0.33,
+        'euler_angles': (0.0, 0.0, 0.0),
+        'hardening_law': get_hardening_law('nadai_ludwik'),
+        'hardening_parameters':
+            {'s0': 900/yield_cohesion_parameter,
+             'a': 700/yield_cohesion_parameter,
+             'b': 0.5,
+             'ep0': 1e-5},
+        'yield_cohesion_parameter': yield_cohesion_parameter,
+        'yield_pressure_parameter': yield_pressure_parameter,
+        'flow_pressure_parameter': flow_pressure_parameter,
+        'friction_angle': friction_angle}
+    # Initialize constitutive model
+    constitutive_model = DruckerPragerVMAP(strain_formulation, problem_type,
+                                           model_parameters)
+    # Store constitutive model
+    #constitutive_models[model_label] = constitutive_model
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Set constitutive model label
+    model_label = 'drucker_prager_3'
+    # Set frictional angle
+    friction_angle = np.deg2rad(0.01)
+    # Set dilatancy angle
+    dilatancy_angle = friction_angle
+    # Compute angle-related material parameters
+    # (matching with Mohr-Coulomb under uniaxial tension and compression)
+    # Set yield surface cohesion parameter
+    yield_cohesion_parameter = (2.0/np.sqrt(3))*np.cos(friction_angle)
+    # Set yield pressure parameter
+    yield_pressure_parameter = (3.0/np.sqrt(3))*np.sin(friction_angle)
+    # Set plastic flow pressure parameter
+    flow_pressure_parameter = (3.0/np.sqrt(3))*np.sin(dilatancy_angle)
+    # Set constitutive model parameters
+    # (matching Von Mises yield surface for null pressure)
+    model_parameters = {
+        'elastic_symmetry': 'isotropic',
+        'E': 110e3, 'v': 0.33,
+        'euler_angles': (0.0, 0.0, 0.0),
+        'hardening_law': get_hardening_law('nadai_ludwik'),
+        'hardening_parameters':
+            {'s0': 900/yield_cohesion_parameter,
+             'a': 700/yield_cohesion_parameter,
+             'b': 0.5,
+             'ep0': 1e-5},
+        'yield_cohesion_parameter': yield_cohesion_parameter,
+        'yield_pressure_parameter': yield_pressure_parameter,
+        'flow_pressure_parameter': flow_pressure_parameter,
+        'friction_angle': friction_angle}
+    # Initialize constitutive model
+    constitutive_model = DruckerPragerVMAP(strain_formulation, problem_type,
+                                           model_parameters)
+    # Store constitutive model
+    #constitutive_models[model_label] = constitutive_model
+
+
+
+
+
+    # Set constitutive model label
+    model_label = 'lou_zhang_yoon_gt'
+    # Set constitutive model parameters
+    model_parameters = \
         {'elastic_symmetry': 'isotropic',
          'E': 110e3, 'v': 0.33,
          'euler_angles': (0.0, 0.0, 0.0),
@@ -439,31 +582,173 @@ if __name__ == "__main__":
                                   'b': 0.5,
                                   'ep0': 1e-5},
         'a_hardening_law': get_hardening_law('linear'),
-        'a_hardening_parameters': {'s0': 2.416022926568985,
+        'a_hardening_parameters': {'s0': 1.0,
                                    'a': 0},
         'b_hardening_law': get_hardening_law('linear'),
-        'b_hardening_parameters': {'s0': 0.03072711378335953,
+        'b_hardening_parameters': {'s0': 0.05,
                                    'a': 0},
         'c_hardening_law': get_hardening_law('linear'),
-        'c_hardening_parameters': {'s0': -2.148874580860138,
+        'c_hardening_parameters': {'s0': 1.0,
                                    'a': 0},
         'd_hardening_law': get_hardening_law('linear'),
-        'd_hardening_parameters': {'s0': 0.11660067737102509,
+        'd_hardening_parameters': {'s0': 0.50,
                                    'a': 0},
         'is_associative_hardening': True}
-
-    #2.416022926568985
-    #0.03072711378335953
-    #-2.148874580860138
-    #0.11660067737102509
-
-    
-        
     # Initialize constitutive model
-    constitutive_model = LouZhangYoonVMAP(strain_formulation, problem_type,
-                                          model_parameters)
+    constitutive_model = LouZhangYoon(strain_formulation, problem_type,
+                                      model_parameters)
+    # Store constitutive model
+    #constitutive_models[model_label] = constitutive_model
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Set constitutive model label
+    model_label = 'lou_zhang_yoon'
+    # Set constitutive model parameters
+    model_parameters = \
+        {'elastic_symmetry': 'isotropic',
+         'E': 110e3, 'v': 0.33,
+         'euler_angles': (0.0, 0.0, 0.0),
+         'hardening_law': get_hardening_law('nadai_ludwik'),
+         'hardening_parameters': {'s0': 900,
+                                  'a': 700,
+                                  'b': 0.5,
+                                  'ep0': 1e-5},
+        'a_hardening_law': get_hardening_law('linear'),
+        'a_hardening_parameters': {'s0': 1.0,
+                                   'a': 0},
+        'b_hardening_law': get_hardening_law('linear'),
+        'b_hardening_parameters': {'s0': 0.05,
+                                   'a': 0},
+        'c_hardening_law': get_hardening_law('linear'),
+        'c_hardening_parameters': {'s0': 1.0,
+                                   'a': 0},
+        'd_hardening_law': get_hardening_law('linear'),
+        'd_hardening_parameters': {'s0': 0.5,
+                                   'a': 0},
+        'is_associative_hardening': True}  
+    # Set fixed yield surface parameters flag
+    is_fixed_yield_parameters = True
+    # Initialize constitutive model
+    constitutive_model = LouZhangYoonVMAP(
+        strain_formulation, problem_type, model_parameters,
+        is_fixed_yield_parameters=is_fixed_yield_parameters)
+    # Store constitutive model
+    #constitutive_models[model_label] = constitutive_model
+
+
+
+    # Set constitutive model label
+    model_label = 'lou_zhang_yoon_gt'
+    # Set constitutive model parameters
+    model_parameters = \
+        {'elastic_symmetry': 'isotropic',
+         'E': 110e3, 'v': 0.33,
+         'euler_angles': (0.0, 0.0, 0.0),
+         'hardening_law': get_hardening_law('nadai_ludwik'),
+         'hardening_parameters': {'s0': 900,
+                                  'a': 700,
+                                  'b': 1.0,
+                                  'ep0': 1e-5},
+        'a_hardening_law': get_hardening_law('linear'),
+        'a_hardening_parameters': {'s0': 1.0,
+                                   'a': 0},
+        'b_hardening_law': get_hardening_law('linear'),
+        'b_hardening_parameters': {'s0': 0.05,
+                                   'a': 0},
+        'c_hardening_law': get_hardening_law('linear'),
+        'c_hardening_parameters': {'s0': 1.0,
+                                   'a': 0},
+        'd_hardening_law': get_hardening_law('linear'),
+        'd_hardening_parameters': {'s0': 0.5,
+                                   'a': 0},
+        'is_associative_hardening': True}  
+    # Set fixed yield surface parameters flag
+    is_fixed_yield_parameters = True
+    # Initialize constitutive model
+    constitutive_model = LouZhangYoonVMAP(
+        strain_formulation, problem_type, model_parameters,
+        is_fixed_yield_parameters=is_fixed_yield_parameters)
+    # Store constitutive model
+    #constitutive_models[model_label] = constitutive_model
+
+
+    # Set constitutive model label
+    model_label = 'lou_zhang_yoon_found'
+    # Set constitutive model parameters
+    model_parameters = \
+        {'elastic_symmetry': 'isotropic',
+         'E': 110e3, 'v': 0.33,
+         'euler_angles': (0.0, 0.0, 0.0),
+         'hardening_law': get_hardening_law('nadai_ludwik'),
+         'hardening_parameters': {'s0': 923,
+                                  'a': 1910,
+                                  'b': 0.82,
+                                  'ep0': 1e-5},
+        'a_hardening_law': get_hardening_law('linear'),
+        'a_hardening_parameters': {'s0': 1.0,
+                                   'a': 0},
+        'b_hardening_law': get_hardening_law('linear'),
+        'b_hardening_parameters': {'s0': 0.05,
+                                   'a': 0},
+        'c_hardening_law': get_hardening_law('linear'),
+        'c_hardening_parameters': {'s0': 1.0,
+                                   'a': 0},
+        'd_hardening_law': get_hardening_law('linear'),
+        'd_hardening_parameters': {'s0': 0.5,
+                                   'a': 0},
+        'is_associative_hardening': True}  
+    # Set fixed yield surface parameters flag
+    is_fixed_yield_parameters = True
+    # Initialize constitutive model
+    constitutive_model = LouZhangYoonVMAP(
+        strain_formulation, problem_type, model_parameters,
+        is_fixed_yield_parameters=is_fixed_yield_parameters)
+    # Store constitutive model
+    #constitutive_models[model_label] = constitutive_model
+    
+
+
+
+
+
+
+    # Set constitutive model label
+    model_label = 'Ground-truth'
+    # Set constitutive model parameters
+    model_parameters = {
+        'elastic_symmetry': 'isotropic',
+        'E': 110e3, 'v': 0.33,
+        'euler_angles': (0.0, 0.0, 0.0),
+        'hardening_law': get_hardening_law('nadai_ludwik'),
+        'hardening_parameters': {'s0': np.sqrt(3)*900,
+                                 'a': np.sqrt(3)*700,
+                                 'b': 0.5,
+                                 'ep0': 1e-5}}
+    # Initialize constitutive model
+    constitutive_model = VonMisesVMAP(strain_formulation, problem_type,
+                                      model_parameters)
     # Store constitutive model
     constitutive_models[model_label] = constitutive_model
+    
+    
+    # Set constitutive model label
+    model_label = 'Noisy parameters'
+    # Set constitutive model parameters
+    model_parameters = {
+        'elastic_symmetry': 'isotropic',
+        'E': 110e3, 'v': 0.33,
+        'euler_angles': (0.0, 0.0, 0.0),
+        'hardening_law': get_hardening_law('nadai_ludwik'),
+        'hardening_parameters': {'s0': 1248.777630625908,
+                                 'a': 1214.9990441338346,
+                                 'b': 0.488406063437965,
+                                 'ep0': 1e-5}}
+    # Initialize constitutive model
+    constitutive_model = VonMisesVMAP(strain_formulation, problem_type,
+                                      model_parameters)
+    # Store constitutive model
+    constitutive_models[model_label] = constitutive_model
+
+
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set reference stress path
     if is_reference_stress_path:
