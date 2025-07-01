@@ -30,10 +30,10 @@ is_save_fig = True
 # Set save file flag
 is_save_file = True
 # Set save directory
-save_dir = '/home/bernardoferreira/Desktop/test_gid'
+save_dir = '/home/bernardoferreira/Downloads'
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Set function option
-fun_option = ('custom', 'linear_hardening', 'nadai_ludwik_hardening')[2]
+fun_option = ('custom', 'linear_hardening', 'nadai_ludwik_hardening')[0]
 # Set function
 if fun_option == 'linear_hardening':
     pass
@@ -47,7 +47,29 @@ elif fun_option == 'nadai_ludwik_hardening':
     def fun(x):
         return s0 + a*((x + ep0)**b)
 else:
-    pass
+    # Set frictional angle
+    friction_angle = np.deg2rad(5)
+    # Set dilatancy angle
+    dilatancy_angle = friction_angle
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Compute angle-related material parameters
+    # (matching with Mohr-Coulomb under uniaxial tension and
+    # compression)
+    # Set yield surface cohesion parameter
+    yield_cohesion_parameter = (2.0/np.sqrt(3))*np.cos(friction_angle)
+    # Set yield pressure parameter
+    yield_pressure_parameter = (3.0/np.sqrt(3))*np.sin(friction_angle)
+    # Set plastic flow pressure parameter
+    flow_pressure_parameter = (3.0/np.sqrt(3))*np.sin(dilatancy_angle)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Set parameters
+    s0 = 900/yield_cohesion_parameter
+    a = 700/yield_cohesion_parameter
+    b = 0.5
+    ep0 = 1e-5
+    # Set function
+    def fun(x):
+        return s0 + a*((x + ep0)**b)
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Initialize discretized data array
 data_array = np.zeros((n_point, 2))
@@ -71,8 +93,11 @@ if is_stdout_display_data:
 # Plot discretized function data
 if is_stdout_display_fig:
     # Plot discretized function
-    figure, axes = plot_xy_data(data_array, title=f'{fun_option}',
-                                x_label='x', y_label='y', is_latex=True)
+    figure, axes = plot_xy_data(data_array,
+                                x_label='Accumulated plastic strain',
+                                y_label='Yield stress (MPa)',
+                                x_lims=(0, 2.0), y_lims=(800, 2000),
+                                is_latex=True)
     # Display figure
     plt.show()
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
