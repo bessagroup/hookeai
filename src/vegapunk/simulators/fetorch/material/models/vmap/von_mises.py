@@ -331,7 +331,7 @@ class VonMisesVMAP(ConstitutiveModel):
         # Set state update convergence tolerance
         su_conv_tol = 1e-6
         # Set state update maximum number of iterations
-        su_max_n_iterations = 20
+        su_max_n_iterations = 10
         # Set minimum threshold to handle values close or equal to zero
         small = 1e-8
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
