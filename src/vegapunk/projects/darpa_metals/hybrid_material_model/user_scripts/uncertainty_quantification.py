@@ -488,6 +488,13 @@ def plot_time_series_uq(model_sample_dirs, testing_dirs, predictions_dirs,
     plt.close('all')
 # =============================================================================
 if __name__ == "__main__":
+    # Set float precision
+    is_double_precision = False
+    if is_double_precision:
+        torch.set_default_dtype(torch.float64)
+    else:
+        torch.set_default_dtype(torch.float32)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set number of model samples for uncertainty quantification
     n_model_sample = 3
     # Set computation processes
