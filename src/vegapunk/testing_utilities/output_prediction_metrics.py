@@ -580,6 +580,9 @@ def plot_prediction_metrics_convergence(
 if __name__ == "__main__":
     # Set computation processes
     is_multiple_processes = False
+    # Set uncertainty quantification and model realization
+    is_uncertainty_quantification = False
+    uq_model = 2
     # Set mean predictions metrics to be plotted
     mean_prediction_metrics = ['rmse', 'nrmse',]
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -604,9 +607,17 @@ if __name__ == "__main__":
                                           f'n{training_size}')
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Set prediction data set directory
-            prediction_dir = os.path.join(os.path.normpath(model_base_dir),
-                                          f'7_prediction/{testing_type}/'
-                                          f'prediction_set_0')
+            if is_uncertainty_quantification:
+                prediction_dir = os.path.join(
+                    os.path.normpath(model_base_dir),
+                    f'uncertainty_quantification/model_{uq_model}/'
+                    f'7_prediction/{testing_type}/')
+            else:
+                prediction_dir = os.path.join(
+                    os.path.normpath(model_base_dir),
+                    f'7_prediction/{testing_type}/'
+                    f'prediction_set_0')
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Store prediction directory
             if os.path.isdir(prediction_dir):
                 predictions_dirs[f'n{training_size}'] = prediction_dir
@@ -632,7 +643,7 @@ if __name__ == "__main__":
         plot_prediction_metrics_convergence(
             processes_results, mean_prediction_metrics,
             metric_features_labels=metric_features_labels, save_dir=save_dir,
-            is_save_fig=True, is_save_plot_data=True, is_stdout_display=True,
+            is_save_fig=True, is_save_plot_data=True, is_stdout_display=False,
             is_latex=True)
     else:
         # Set predictions directory
