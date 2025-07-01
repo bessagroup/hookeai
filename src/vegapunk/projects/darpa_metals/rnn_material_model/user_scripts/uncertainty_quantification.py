@@ -489,18 +489,26 @@ def plot_time_series_uq(model_sample_dirs, testing_dirs, predictions_dirs,
     plt.close('all')
 # =============================================================================
 if __name__ == "__main__":
+    # Set float precision
+    is_double_precision = False
+    if is_double_precision:
+        torch.set_default_dtype(torch.float64)
+    else:
+        torch.set_default_dtype(torch.float32)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set number of model samples for uncertainty quantification
-    n_model_sample = 3
+    n_model_sample = 1
     # Set computation processes
-    is_model_training = True
+    is_model_training = False
     is_convergence_analysis = False
     # Set testing type
     testing_type = ('training', 'validation', 'in_distribution',
-                    'out_distribution')[2]
+                    'out_distribution')[3]
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set case studies base directory
     base_dir = ('/home/bernardoferreira/Documents/brown/projects/'
-                'colaboration_shunyu/0_base_random_datasets_mre')
+                'darpa_paper_examples/local/ml_models/polynomial/'
+                'convergence_analysis')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Initialize case study directories
     case_study_dirs = []
