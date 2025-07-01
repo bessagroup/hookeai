@@ -153,7 +153,7 @@ class LouZhangYoonVMAP(ConstitutiveModel):
         Newton-Raphson iteration (return-mapping to cone apex).
     """
     def __init__(self, strain_formulation, problem_type, model_parameters,
-                 is_apex_handling=True, is_fixed_yield_parameters=False,
+                 is_apex_handling=True, is_fixed_yield_parameters=True,
                  is_su_float64=True, device_type='cpu'):
         """Constitutive model constructor.
 
@@ -173,7 +173,7 @@ class LouZhangYoonVMAP(ConstitutiveModel):
             Disabling apex handling improves performance (bypassing any apex
             return-mapping computations), but is only viable if apex handling
             is not required (e.g., low pressure dependency).
-        is_fixed_yield_parameters : bool, default=False
+        is_fixed_yield_parameters : bool, default=True
             If True, then yield surface parameters are assumed to be fixed
             w.r.t. the accumulated plastic strain. Enabling this option
             improves performance by avoiding the computation of several
