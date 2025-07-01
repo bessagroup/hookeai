@@ -20,6 +20,7 @@ if root_dir not in sys.path:
     sys.path.insert(0, root_dir)
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 import os
+import math
 import copy
 import time
 import datetime
@@ -473,7 +474,7 @@ class NoisyMaterialResponseDatasetGenerator:
             # Build material response path
             response_path = self.build_response_path(
                 strain_comps_order, strain_path, stress_comps_order,
-                noiseless_stress_path, time_hist, state_path=state_path,
+                stress_path, time_hist, state_path=state_path,
                 strain_noise_path=strain_noise_path,
                 stress_noise_path=stress_noise_path)
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -946,7 +947,7 @@ if __name__ == '__main__':
     # Set noiseless generation only
     is_only_noiseless = False
     # Set reference noiseless directory
-    is_reference_noiseless = True
+    is_reference_noiseless = False
     # Set reference noiseless data set directory
     if is_reference_noiseless:
         reference_noiseless_dir = \
@@ -1032,7 +1033,7 @@ if __name__ == '__main__':
         n_cycle = 0
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Set constitutive model
-        model_name = 'lou_zhang_yoon'
+        model_name = 'von_mises'
         # Set constitutive model parameters:
         if model_name == 'von_mises':
             # Set constitutive model parameters
@@ -1042,8 +1043,8 @@ if __name__ == '__main__':
                  'euler_angles': (0.0, 0.0, 0.0),
                  'hardening_law': get_hardening_law('nadai_ludwik'),
                  'hardening_parameters':
-                     {'s0': 900,
-                      'a': 700,
+                     {'s0': math.sqrt(3)*900,
+                      'a': math.sqrt(3)*700,
                       'b': 0.5,
                       'ep0': 1e-5}}
             # Set constitutive state variables to be additionally included in
@@ -1254,7 +1255,7 @@ if __name__ == '__main__':
         # Set noise variability
         noise_variability = 'homoscedastic'
         # Set noise distribution type
-        noise_distribution = 'gaussian'
+        noise_distribution = 'uniform'
         # Set strain path denoising
         is_denoise_strain_path = False
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -1319,6 +1320,8 @@ if __name__ == '__main__':
                         np.max(noiseless_strain_norm_path)
         else:
             heteroscedastic_normalizer = None
+            
+        heteroscedastic_normalizer = 0.02
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Loop over noise cases
         for noise_label, noise_parameters in noise_parameters_cases.items():
