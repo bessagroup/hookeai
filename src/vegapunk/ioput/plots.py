@@ -1392,12 +1392,14 @@ def scatter_xny_data(
                 axes.errorbar(x, y_mean, yerr=y_err, fmt='o', markersize=3,
                               markeredgecolor='k', markeredgewidth=0.5,
                               elinewidth=1.0, capsize=2, linestyle='-',
-                              label=tex_str(data_labels[i], is_latex))
+                              label=tex_str(data_labels[i], is_latex),
+                              zorder=10-i)
             elif error_bar_option == 2:
                 axes.errorbar(x, y_mean, yerr=y_err, fmt='o', markersize=3,
                               markeredgecolor='k', markeredgewidth=0.5,
                               elinewidth=0.0, capsize=0, linestyle='-',
-                              label=tex_str(data_labels[i], is_latex))
+                              label=tex_str(data_labels[i], is_latex),
+                              zorder=10-i)
             else:
                 axes.errorbar(x, y_mean, yerr=y_err, fmt='o', markersize=3,
                               markeredgecolor='k', markeredgewidth=0.5,
