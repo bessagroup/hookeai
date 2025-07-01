@@ -146,10 +146,9 @@ if __name__ == "__main__":
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set convergence analysis base directory
     base_dir = ('/home/bernardoferreira/Documents/brown/projects/'
-                'darpa_project/3_local_rc_training/von_mises/'
-                'convergence_analyses/elastic_properties')
+                'darpa_paper_examples/local/standard_models/lou/polynomial')
     # Set training data set sizes
-    training_sizes = (1, 2)
+    training_sizes = (1, 2, 4, 8, 16)
     # Set convergence analyses models base directories
     models_base_dirs = [os.path.join(os.path.normpath(base_dir), f'n{x}')
                         for x in training_sizes]
