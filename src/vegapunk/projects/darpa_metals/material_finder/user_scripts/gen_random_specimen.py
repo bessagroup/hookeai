@@ -397,7 +397,7 @@ def set_patch_geometric_params(n_dim):
         patch_dims = (1.0, 1.0, 1.0)
         # Set range of average deformation along each dimension for each corner
         avg_deformation_ranges = \
-            {str(i): ((-0.05, 0.05), (-0.05, 0.05), (-0.05, 0.05))
+            {str(i): ((-0.1, 0.1), (-0.1, 0.1), (-0.1, 0.1))
              for i in range(1, 9)}
         # Set polynomial deformation order for each edge label
         edge_deformation_order = \
