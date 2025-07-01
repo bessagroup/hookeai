@@ -76,14 +76,14 @@ def perform_model_standard_training(specimen_data_path,
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set model training options:
     # Set number of epochs
-    n_max_epochs = 300
-    # Set learning rate
+    n_max_epochs = 500
+    # Set initial learning rate
     lr_init = 1.0e+01
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Compute exponential decay (learning rate scheduler)
+    # Set final learning rate
     lr_end = 1.0e-01
     # Set learning rate scheduler
-    lr_scheduler_type = ('explr', 'linlr')[1]
+    lr_scheduler_type = ('explr', 'linlr')[0]
     # Set learning rate scheduler parameters
     if lr_scheduler_type == 'explr':
         gamma = (lr_end/lr_init)**(1/n_max_epochs)
@@ -108,9 +108,9 @@ def perform_model_standard_training(specimen_data_path,
     # Set loss scaling factor
     if is_loss_scaling_factor:
         # Set characteristic Young modulus (MPa)
-        young_ref = 100e3
+        young_ref = 110e3
         # Set characteristic length (mm)
-        length_ref = 1.0
+        length_ref = 40.0
         # Set characteristic time (s)
         time_ref = 1.0
         # Set loss scaling factor
@@ -120,10 +120,10 @@ def perform_model_standard_training(specimen_data_path,
         loss_scaling_factor = None
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set loss time weights flag
-    is_loss_time_weights = False
+    is_loss_time_weights = True
     # Set loss time weights
     if is_loss_time_weights:
-        loss_time_weights = None
+        loss_time_weights = 201*[0.005,]
     else:
         loss_time_weights = None
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -281,7 +281,7 @@ def set_default_training_options():
     lr_scheduler_type = None
     lr_scheduler_kwargs = None
     is_params_stopping = True
-    params_stopping_kwargs = {'convergence_tolerance': 0.01,
+    params_stopping_kwargs = {'convergence_tolerance': 1e-4,
                               'trigger_tolerance': 5,
                               'min_hist_length': 50}
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -290,7 +290,7 @@ def set_default_training_options():
 # =============================================================================
 if __name__ == "__main__":
     # Set float precision
-    is_double_precision = True
+    is_double_precision = False
     if is_double_precision:
         torch.set_default_dtype(torch.float64)
     else:
