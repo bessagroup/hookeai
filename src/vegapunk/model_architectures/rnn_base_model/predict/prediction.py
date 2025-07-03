@@ -21,7 +21,7 @@ import tqdm
 import numpy as np
 # Local
 from time_series_data.time_dataset import get_time_series_data_loader
-from rnn_base_model.model.gru_model import GRURNNModel
+from model_architectures.rnn_base_model.model.gru_model import GRURNNModel
 from model_architectures.procedures.model_prediction import \
     make_predictions_subdir, save_sample_predictions, \
     write_prediction_summary_file

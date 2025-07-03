@@ -16,10 +16,8 @@ import pickle
 import torch
 # Local
 from model_architectures.rnn_base_model.custom.gru_vmap import GRU
-from model_architectures.procedures.model_data_scaling import \
-    init_data_scalers
-from model_architectures.procedures.model_state_files import \
-    save_model_state
+from model_architectures.procedures.model_data_scaling import init_data_scalers
+from model_architectures.procedures.model_state_files import save_model_state
 #
 #                                                          Authorship & Credits
 # =============================================================================
@@ -207,7 +205,7 @@ class GRURNNModel(torch.nn.Module):
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Save model initialization file
         if self._is_save_model_init_file:
-            save_model_state(self, state_type='init')
+            self.save_model_init_file()
     # -------------------------------------------------------------------------
     @staticmethod
     def init_model_from_file(model_directory=None, model_init_file_path=None):
