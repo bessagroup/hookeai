@@ -16,6 +16,8 @@ plot_training_loss_history
     Plot model training process loss history.
 plot_training_loss_and_lr_history
     Plot model training process loss and learning rate histories.
+write_cross_validation_summary_file
+    Write summary data file for model cross-validation process.
 """
 #
 #                                                                       Modules
@@ -649,3 +651,74 @@ def plot_training_loss_and_lr_history(loss_history, lr_history, loss_type=None,
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Close plot
     plt.close(figure)
+# =============================================================================
+def write_cross_validation_summary_file(
+    cross_validation_dir, device_type, n_fold, n_max_epochs,
+    is_model_in_normalized, is_model_out_normalized, batch_size, loss_nature,
+    loss_type, loss_kwargs, dataset_file_path, dataset, k_fold_loss_array,
+    total_time_sec, avg_time_fold):
+    """Write summary data file for model cross-validation process.
+    
+    Parameters
+    ----------
+    cross_validation_dir : dir
+        Directory where cross-validation process data is stored.
+    device_type : {'cpu', 'cuda'}
+        Type of device on which torch.Tensor is allocated.
+    n_fold : int
+        Number of folds into which the data set is split to perform
+        cross-validation.
+    n_max_epochs : int
+        Maximum number of training epochs.
+    is_model_in_normalized : bool, default=False
+        If True, then model input features are assumed to be normalized
+        (normalized input data has been seen during model training).
+    is_model_out_normalized : bool, default=False
+        If True, then model output features are assumed to be normalized
+        (normalized output data has been seen during model training).
+    batch_size : int
+        Number of samples loaded per batch.
+    loss_nature : str
+        Loss nature.
+    loss_type : str
+        Loss function type.
+    loss_kwargs : dict
+        Arguments of torch.nn._Loss initializer.
+    dataset_file_path : str
+        Data set file path if such file exists. Only used for output purposes
+    dataset : torch.utils.data.Dataset
+        Data set.
+    k_fold_loss_array : numpy.ndarray(2d)
+        k-fold cross-validation loss array. For the i-th fold,
+        data_array[i, 0] stores the best training loss and data_array[i, 1]
+        stores the average prediction loss per sample.
+    total_time_sec : int
+        Total cross-validation time in seconds.
+    avg_time_fold : float
+        Average cross-validation time per fold.
+    """
+    # Set summary data
+    summary_data = {}
+    summary_data['device_type'] = device_type
+    summary_data['n_fold'] = n_fold
+    summary_data['n_max_epochs'] = n_max_epochs
+    summary_data['is_model_in_normalized'] = is_model_in_normalized
+    summary_data['is_model_out_normalized'] = is_model_out_normalized
+    summary_data['batch_size'] = batch_size
+    summary_data['loss_nature'] = loss_nature
+    summary_data['loss_type'] = loss_type
+    summary_data['loss_kwargs'] = loss_kwargs if loss_kwargs else None
+    summary_data['k-fold cross-validation data set file'] = \
+        dataset_file_path if dataset_file_path else None
+    summary_data['k-fold cross-validation data set size'] = len(dataset)
+    summary_data['k-fold cross-validation results'] = k_fold_loss_array
+    summary_data['Total cross-validation time'] = \
+        str(datetime.timedelta(seconds=int(total_time_sec)))
+    summary_data['Avg. cross-validation time per fold'] = \
+        str(datetime.timedelta(seconds=int(avg_time_fold)))
+    # Set summary title
+    summary_title = 'Summary: Model k-fold cross-validation'
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Write summary file
+    write_summary_file(summary_directory=cross_validation_dir,
+                       summary_title=summary_title, **summary_data)

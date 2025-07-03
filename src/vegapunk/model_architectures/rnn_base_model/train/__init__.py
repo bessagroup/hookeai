@@ -1,5 +1,5 @@
 #
 #                                                                       Modules
 # =============================================================================
-from rnn_base_model.train import training
-from rnn_base_model.train import cross_validation
+from model_architectures.rnn_base_model.train import training
+from model_architectures.rnn_base_model.train import cross_validation

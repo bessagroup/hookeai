@@ -22,9 +22,13 @@ import numpy as np
 # Local
 from time_series_data.time_dataset import get_time_series_data_loader
 from rnn_base_model.model.gru_model import GRURNNModel
+from model_architectures.procedures.model_prediction import \
+    make_predictions_subdir, save_sample_predictions, \
+    write_prediction_summary_file
+from model_architectures.procedures.model_data_scaling import \
+    data_scaler_transform
 from utilities.loss_functions import get_pytorch_loss
-from gnn_base_model.predict.prediction import make_predictions_subdir, \
-    save_sample_predictions, seed_worker, write_prediction_summary_file
+from utilities.data_loaders import seed_worker
 #
 #                                                          Authorship & Credits
 # =============================================================================
@@ -56,16 +60,20 @@ def predict(dataset, model_directory, model=None, predict_directory=None,
     predict_directory : str, default=None
         Directory where model predictions results are stored. If None, then
         all output files are supressed.
-    load_model_state : {'best', 'last', int, None}, default=None
-        Load available model state from the model directory. Options:
+    load_model_state : {'default', 'init', int, 'best', 'last'}, default=None
+        Load available model state from the model directory. Data scalers are
+        also loaded from model initialization file.
+        Options:
         
-        'best' : Model state corresponding to best performance available
+        'default'   : Model default state file
         
-        'last' : Model state corresponding to highest training epoch
+        'init'      : Model initial state
         
-        int    : Model state corresponding to given training epoch
+        int         : Model state of given training epoch
         
-        None   : Model default state file
+        'best'      : Model state of best performance
+        
+        'last'      : Model state of latest training epoch
 
     loss_nature : {'features_out',}, default='features_out'
         Loss nature:
@@ -140,8 +148,8 @@ def predict(dataset, model_directory, model=None, predict_directory=None,
         model.set_device(device_type)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Load recurrent neural network model state
-        _ = model.load_model_state(load_model_state=load_model_state,
-                                   is_remove_posterior=False)
+        _ = load_model_state(model, load_model_state=load_model_state,
+                             is_remove_posterior=False)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Get model input and output features normalization
     is_model_in_normalized = model.is_model_in_normalized
@@ -191,9 +199,9 @@ def predict(dataset, model_directory, model=None, predict_directory=None,
             if is_model_in_normalized:
                 # Normalize features ground-truth
                 features_in = \
-                    model.data_scaler_transform(tensor=batch['features_in'],
-                                                features_type='features_in',
-                                                mode='normalize')
+                    data_scaler_transform(model, tensor=batch['features_in'],
+                                          features_type='features_in',
+                                          mode='normalize')
             else:
                 features_in = batch['features_in']
             # Get initial hidden state features
@@ -218,9 +226,10 @@ def predict(dataset, model_directory, model=None, predict_directory=None,
                 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                 # Denormalize output features data
                 if is_model_out_normalized:
-                    features_out = model.data_scaler_transform(
-                        tensor=features_out, features_type='features_out',
-                        mode='denormalize')
+                    features_out = \
+                        data_scaler_transform(model, tensor=features_out,
+                                              features_type='features_out',
+                                              mode='denormalize')
                 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                 # Loop over batched samples
                 for j in range(batch_n_sample):
@@ -342,13 +351,15 @@ def compute_sample_prediction_loss(model, loss_function, features_out, targets,
         # Normalize output features
         if is_normalized_loss:
             # Normalize output features predictions
-            features_out = model.data_scaler_transform(
-                tensor=features_out, features_type='features_out',
-                mode='normalize')
+            features_out = \
+                data_scaler_transform(model, tensor=features_out,
+                                      features_type='features_out',
+                                      mode='normalize')
             # Normalize output features ground-truth
-            targets = model.data_scaler_transform(
-                tensor=targets, features_type='features_out',
-                mode='normalize')
+            targets = \
+                data_scaler_transform(model, tensor=targets,
+                                      features_type='features_out',
+                                      mode='normalize')
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Compute sample loss
         loss = loss_function(features_out, targets)

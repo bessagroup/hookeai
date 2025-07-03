@@ -17,7 +17,7 @@ import sys
 import pathlib
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Add project root directory to sys.path
-root_dir = str(pathlib.Path(__file__).parents[2])
+root_dir = str(pathlib.Path(__file__).parents[3])
 if root_dir not in sys.path:
     sys.path.insert(0, root_dir)
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -29,21 +29,24 @@ import torch
 # Local
 from time_series_data.time_dataset import load_dataset, \
     concatenate_dataset_features, add_dataset_feature_init
-from rnn_base_model.train.training import train_model
-from rnn_base_model.predict.prediction import predict
-from rnn_base_model.optimization.hydra_optimization_template import \
-    display_hydra_job_header
+from model_architectures.rnn_base_model.train.training import train_model
+from model_architectures.rnn_base_model.predict.prediction import predict
+from model_architectures.rnn_base_model.optimization.\
+    hydra_optimization_template import display_hydra_job_header
 from ioput.iostandard import make_directory, write_summary_file
+
+# TO BE UPDATED:
 from projects.darpa_metals.rnn_material_model.user_scripts.train_model \
     import generate_standard_training_plots
 from projects.darpa_metals.rnn_material_model.user_scripts.predict \
     import generate_prediction_plots
+
 #
 #                                                          Authorship & Credits
 # =============================================================================
 __author__ = 'Bernardo Ferreira (bernardo_ferreira@brown.edu)'
 __credits__ = ['Bernardo Ferreira', ]
-__status__ = 'Planning'
+__status__ = 'Stable'
 # =============================================================================
 #
 # =============================================================================

@@ -1,5 +1,4 @@
 #
 #                                                                       Modules
 # =============================================================================
-from rnn_base_model.optimization import hydra_optimization_template
-from rnn_base_model.optimization import hydra_optimization_plots
+from model_architectures.rnn_base_model.model import gru_vmap

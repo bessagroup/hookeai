@@ -24,19 +24,26 @@ import torch
 import numpy as np
 # Local
 from time_series_data.time_dataset import get_time_series_data_loader
-from rnn_base_model.model.gru_model import GRURNNModel
-from rnn_base_model.predict.prediction import predict
-from gnn_base_model.train.training import get_pytorch_optimizer, \
-    get_learning_rate_scheduler, save_training_state, save_loss_history, \
-    seed_worker, write_training_summary_file
+from model_architectures.rnn_base_model.model.gru_model import GRURNNModel
+from model_architectures.rnn_base_model.predict.prediction import predict
+from model_architectures.procedures.model_training import \
+    save_training_state, save_loss_history, write_training_summary_file
+from model_architectures.procedures.model_summary import \
+    get_model_summary
+from model_architectures.procedures.model_state_files import \
+    save_model_state
+from model_architectures.procedures.model_data_scaling import \
+    fit_data_scalers, data_scaler_transform
 from utilities.loss_functions import get_pytorch_loss
-from gnn_base_model.model.model_summary import get_model_summary
+from utilities.optimizers import get_pytorch_optimizer, \
+    get_learning_rate_scheduler
+from utilities.data_loaders import seed_worker
 #
 #                                                          Authorship & Credits
 # =============================================================================
 __author__ = 'Bernardo Ferreira (bernardo_ferreira@brown.edu)'
 __credits__ = ['Bernardo Ferreira', ]
-__status__ = 'Planning'
+__status__ = 'Stable'
 # =============================================================================
 #
 # =============================================================================
@@ -114,20 +121,20 @@ def train_model(n_max_epochs, dataset, model_init_args, lr_init,
         is triggered.
     early_stopping_kwargs : dict, default={}
         Early stopping criterion parameters (key, str, item, value).
-    load_model_state : {'best', 'last', 'init', int, None}, default=None
+    load_model_state : {'default', 'init', int, 'best', 'last'}, default=None
         Load available model state from the model directory. Data scalers are
         also loaded from model initialization file.
         Options:
         
-        'best'      : Model state corresponding to best performance available
+        'default'   : Model default state file
         
-        'last'      : Model state corresponding to highest training epoch
+        'init'      : Model initial state
         
-        int         : Model state corresponding to given training epoch
+        int         : Model state of given training epoch
         
-        'init'      : Model state corresponding to initial state
+        'best'      : Model state of best performance
         
-        None        : Model default state file
+        'last'      : Model state of latest training epoch
 
     save_every : int, default=None
         Save model every save_every epochs. If None, then saves only initial,
@@ -188,8 +195,8 @@ def train_model(n_max_epochs, dataset, model_init_args, lr_init,
             print('\n> Loading model state...')
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Load recurrent neural network model state
-        _ = model.load_model_state(load_model_state=load_model_state,
-                                   is_remove_posterior=True)
+        _ = load_model_state(model, load_model_state=load_model_state,
+                             is_remove_posterior=True)
     else:
         if is_verbose:
             print('\n> Initializing model...')
@@ -204,11 +211,11 @@ def train_model(n_max_epochs, dataset, model_init_args, lr_init,
         is_model_out_normalized = model.is_model_out_normalized
         # Fit model data scalers
         if is_model_in_normalized or is_model_out_normalized:
-            model.fit_data_scalers(dataset, scaling_type=data_scaling_type,
-                                   scaling_parameters=data_scaling_parameters)
+            fit_data_scalers(model, dataset, scaling_type=data_scaling_type,
+                             scaling_parameters=data_scaling_parameters)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~  
     # Save model initial state
-    model.save_model_init_state()
+    save_model_state(model, state_type='init')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Get model parameters
     model_parameters = model.parameters(recurse=True)
@@ -308,9 +315,9 @@ def train_model(n_max_epochs, dataset, model_init_args, lr_init,
             if is_model_in_normalized:
                 # Normalize features ground-truth
                 features_in = \
-                    model.data_scaler_transform(tensor=batch['features_in'],
-                                                features_type='features_in',
-                                                mode='normalize')
+                    data_scaler_transform(model, tensor=batch['features_in'],
+                                          features_type='features_in',
+                                          mode='normalize')
             else:
                 features_in = batch['features_in']
             # Get initial hidden state features
@@ -323,9 +330,9 @@ def train_model(n_max_epochs, dataset, model_init_args, lr_init,
             if is_model_out_normalized:
                 # Normalize features ground-truth
                 targets = \
-                    model.data_scaler_transform(tensor=batch['features_out'],
-                                                features_type='features_out',
-                                                mode='normalize')
+                    data_scaler_transform(model, tensor=batch['features_out'],
+                                          features_type='features_out',
+                                          mode='normalize')
             else:
                 targets = batch['features_out']
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -371,9 +378,9 @@ def train_model(n_max_epochs, dataset, model_init_args, lr_init,
                 total_time_sec = time.time() - start_time_sec
                 print('> Epoch: {:{width}d}/{:d} | Training step: {:d} | '
                       'Loss: {:.8e} | Elapsed time (s): {:}'.format(
-                    epoch, n_max_epochs, step, loss,
-                    str(datetime.timedelta(seconds=int(total_time_sec))),
-                    width=len(str(n_max_epochs))), end='\r')
+                      epoch, n_max_epochs, step, loss,
+                      str(datetime.timedelta(seconds=int(total_time_sec))),
+                      width=len(str(n_max_epochs))), end='\r')
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Save training step loss and learning rate
             loss_history_steps.append(loss.clone().detach().cpu())
@@ -400,13 +407,14 @@ def train_model(n_max_epochs, dataset, model_init_args, lr_init,
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Save model and optimizer current states
         if save_every is not None and epoch % save_every == 0:
-            save_training_state(model=model, optimizer=optimizer, epoch=epoch)
+            save_training_state(model=model, optimizer=optimizer,
+                                state_type='epoch', epoch=epoch)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Save model and optimizer best performance state corresponding to
         # minimum training loss
         if epoch_avg_loss <= min(loss_history_epochs):
             save_training_state(model=model, optimizer=optimizer,
-                                epoch=epoch, is_best_state=True)
+                                state_type='best', epoch=epoch)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Check early stopping criterion
         if is_early_stopping:
@@ -423,8 +431,8 @@ def train_model(n_max_epochs, dataset, model_init_args, lr_init,
                 best_epoch = early_stopper.load_best_performance_state(
                     model, optimizer)
                 # Save model and optimizer best performance states
-                save_training_state(model, optimizer, epoch=best_epoch,
-                                    is_best_state=True)
+                save_training_state(model=model, optimizer=optimizer,
+                                    state_type='best', epoch=best_epoch)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Check training process flow
         if epoch >= n_max_epochs:
@@ -452,7 +460,8 @@ def train_model(n_max_epochs, dataset, model_init_args, lr_init,
             early_stopper.get_validation_loss_history()
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Save model and optimizer final states
-    save_training_state(model=model, optimizer=optimizer, epoch=epoch)
+    save_training_state(model=model, optimizer=optimizer,
+                        state_type='epoch', epoch=epoch)
     # Save loss and learning rate histories
     save_loss_history(model, n_max_epochs, loss_nature, loss_type,
                       loss_history_epochs, lr_scheduler_type=lr_scheduler_type,
@@ -753,7 +762,8 @@ class EarlyStopper:
             # Update temporary state files flag
             is_state_file_temp = True
             # Save state files
-            save_training_state(model=model, optimizer=optimizer, epoch=epoch)
+            save_training_state(model=model, optimizer=optimizer,
+                                state_type='epoch', epoch=epoch)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Prediction with model
         _, avg_valid_loss_sample = predict(

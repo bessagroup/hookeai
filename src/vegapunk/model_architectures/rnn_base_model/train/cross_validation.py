@@ -17,17 +17,17 @@ import torch
 import sklearn.model_selection
 import numpy as np
 # Local
-from rnn_base_model.train.training import train_model
-from rnn_base_model.predict.prediction import predict
-from gnn_base_model.train.cross_validation import \
-    write_cross_validation_summary_file
+from model_architectures.rnn_base_model.train.training import train_model
+from model_architectures.rnn_base_model.predict.prediction import predict
+from model_architectures.procedures.model_training import \
+    write_cross_validation_summary_file    
 from ioput.iostandard import make_directory
 #
 #                                                          Authorship & Credits
 # =============================================================================
 __author__ = 'Bernardo Ferreira (bernardo_ferreira@brown.edu)'
 __credits__ = ['Bernardo Ferreira', ]
-__status__ = 'Planning'
+__status__ = 'Beta'
 # =============================================================================
 #
 # =============================================================================
