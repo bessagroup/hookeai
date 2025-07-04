@@ -41,7 +41,7 @@ from model_architectures.procedures.model_training import \
 from model_architectures.procedures.model_summary import \
     get_model_summary
 from model_architectures.procedures.model_state_files import \
-    save_model_state
+    save_model_state, load_model_state
 from model_architectures.procedures.model_data_scaling import \
     fit_data_scalers, data_scaler_transform
 from utilities.loss_functions import get_pytorch_loss
@@ -62,7 +62,7 @@ def train_model(n_max_epochs, dataset, model_init_args, lr_init,
                 lr_scheduler_kwargs={}, loss_nature='features_out',
                 loss_type='mse', loss_kwargs={}, batch_size=1,
                 is_sampler_shuffle=False, is_early_stopping=False,
-                early_stopping_kwargs={}, load_model_state=None,
+                early_stopping_kwargs={}, model_load_state=None,
                 save_every=None, dataset_file_path=None, device_type='cpu',
                 seed=None, is_verbose=False):
     """Training of hybrid model.
@@ -118,9 +118,9 @@ def train_model(n_max_epochs, dataset, model_init_args, lr_init,
         is triggered.
     early_stopping_kwargs : dict, default={}
         Early stopping criterion parameters (key, str, item, value).
-    load_model_state : {'default', 'init', int, 'best', 'last'}, default=None
-        Load available model state from the model directory. Data scalers are
-        also loaded from model initialization file.
+    model_load_state : {'default', 'init', int, 'best', 'last'},
+                       default='default'
+        Available model state to be loaded from the model directory.
         Options:
         
         'default'   : Model default state file
@@ -173,7 +173,7 @@ def train_model(n_max_epochs, dataset, model_init_args, lr_init,
               '\n---------------------')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Initialize hybrid material model state
-    if load_model_state is not None:
+    if model_load_state is not None:
         if is_verbose:
             print('\n> Initializing model...')
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -192,7 +192,7 @@ def train_model(n_max_epochs, dataset, model_init_args, lr_init,
             print('\n> Loading model state...')
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Load hybrid material model state
-        _ = load_model_state(model, load_model_state=load_model_state,
+        _ = load_model_state(model, model_load_state=model_load_state,
                              is_remove_posterior=True)
     else:
         # Initialize hybrid model
@@ -550,7 +550,7 @@ def train_model(n_max_epochs, dataset, model_init_args, lr_init,
     model_statistics = get_model_summary(model, device_type=device_type)
     # Write summary data file for model training process
     write_training_summary_file(
-        device_type, seed, model.model_directory, load_model_state,
+        device_type, seed, model.model_directory, model_load_state,
         n_max_epochs, is_model_in_normalized, is_model_out_normalized,
         batch_size, is_sampler_shuffle, loss_nature, loss_type, loss_kwargs,
         opt_algorithm, lr_init, lr_scheduler_type, lr_scheduler_kwargs, epoch,
@@ -966,7 +966,7 @@ class EarlyStopper:
         # Prediction with model
         _, avg_valid_loss_sample = predict(
             self._validation_dataset, model.model_directory,
-            model=model, predict_directory=None, load_model_state=epoch,
+            model=model, predict_directory=None, model_load_state=epoch,
             loss_nature=loss_nature, loss_type=loss_type,
             loss_kwargs=loss_kwargs,
             is_normalized_loss=model.is_model_out_normalized,

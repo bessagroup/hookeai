@@ -340,7 +340,7 @@ def read_lr_history_from_file(loss_record_path):
     return lr_scheduler_type, lr_history_epochs
 # =============================================================================
 def write_training_summary_file(
-    device_type, seed, model_directory, load_model_state, n_max_epochs,
+    device_type, seed, model_directory, model_load_state, n_max_epochs,
     is_model_in_normalized, is_model_out_normalized, batch_size,
     is_sampler_shuffle, loss_nature, loss_type, loss_kwargs, opt_algorithm,
     lr_init, lr_scheduler_type, lr_scheduler_kwargs, n_epochs,
@@ -358,9 +358,8 @@ def write_training_summary_file(
         reproducibility. Does also set workers seed in PyTorch data loaders.
     model_directory : str
         Directory where material patch model is stored.
-    load_model_state : {'best', 'last', int, None}
-        Load available Graph Neural Network model state from the model
-        directory. Data scalers are also loaded from model initialization file.
+    model_load_state : {'default', 'init', int, 'best', 'last'}
+        Available model state to be loaded from the model directory.
     n_max_epochs : int
         Maximum number of training epochs.
     is_model_in_normalized : bool, default=False
@@ -414,8 +413,8 @@ def write_training_summary_file(
     summary_data['device_type'] = device_type
     summary_data['seed'] = seed
     summary_data['model_directory'] = model_directory
-    summary_data['load_model_state'] = \
-        load_model_state if load_model_state else None
+    summary_data['model_load_state'] = \
+        model_load_state if model_load_state else None
     summary_data['n_max_epochs'] = n_max_epochs
     summary_data['is_model_in_normalized'] = is_model_in_normalized
     summary_data['is_model_out_normalized'] = is_model_out_normalized

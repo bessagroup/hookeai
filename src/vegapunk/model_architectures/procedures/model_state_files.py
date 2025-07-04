@@ -113,7 +113,7 @@ def save_model_state(model, state_type='default', epoch=None,
     if isinstance(epoch, int) and is_remove_posterior:
         remove_posterior_state_files(model, epoch)
 # =============================================================================
-def load_model_state(model, load_model_state=None, is_remove_posterior=True):
+def load_model_state(model, model_load_state=None, is_remove_posterior=True):
     """Load model state from file.
     
     Model state file is stored in model_directory under the name
@@ -130,9 +130,9 @@ def load_model_state(model, load_model_state=None, is_remove_posterior=True):
     ----------
     model : torch.nn.Module
         Model.
-    load_model_state : {'default', 'init', int, 'best', 'last'},
+    model_load_state : {'default', 'init', int, 'best', 'last'},
                        default='default'
-        Load available model state from the model directory.
+        Available model state to be loaded from the model directory.
         Options:
         
         'default'   : Model default state file
@@ -171,7 +171,7 @@ def load_model_state(model, load_model_state=None, is_remove_posterior=True):
     model_state_file = model.model_name
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set model state file
-    if load_model_state == 'init':
+    if model_load_state == 'init':
         # Set model initial state file
         model_state_file += '-init'
         # Set epoch
@@ -181,9 +181,9 @@ def load_model_state(model, load_model_state=None, is_remove_posterior=True):
         if is_remove_posterior:
             remove_posterior_state_files(model, epoch)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    elif isinstance(load_model_state, int):
+    elif isinstance(model_load_state, int):
         # Get epoch
-        epoch = load_model_state
+        epoch = model_load_state
         # Set model state filename with epoch
         model_state_file += '-' + str(int(epoch))
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -191,7 +191,7 @@ def load_model_state(model, load_model_state=None, is_remove_posterior=True):
         if is_remove_posterior:
             remove_posterior_state_files(model, epoch)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    elif load_model_state == 'best':
+    elif model_load_state == 'best':
         # Get state files in model directory
         directory_list = os.listdir(model.model_directory)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -227,7 +227,7 @@ def load_model_state(model, load_model_state=None, is_remove_posterior=True):
         if isinstance(epoch, int) and is_remove_posterior:
             remove_posterior_state_files(model, epoch)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    elif load_model_state == 'last':
+    elif model_load_state == 'last':
         # Get state files in model directory
         directory_list = os.listdir(model.model_directory)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

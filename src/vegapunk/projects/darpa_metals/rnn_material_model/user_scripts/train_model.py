@@ -265,7 +265,7 @@ def perform_model_standard_training(train_dataset_file_path, model_directory,
     # Set loss parameters
     loss_kwargs = {}
     # Set model state loading
-    load_model_state = None
+    model_load_state = None
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Training of RNN-based model
     model, _, _ = train_model(n_max_epochs, train_dataset, model_init_args,
@@ -280,7 +280,7 @@ def perform_model_standard_training(train_dataset_file_path, model_directory,
                               is_sampler_shuffle=is_sampler_shuffle,
                               is_early_stopping=is_early_stopping,
                               early_stopping_kwargs=early_stopping_kwargs,
-                              load_model_state=load_model_state,
+                              model_load_state=model_load_state,
                               save_every=None,
                               dataset_file_path=train_dataset_file_path,
                               device_type=device_type, seed=None,

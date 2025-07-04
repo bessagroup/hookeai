@@ -27,6 +27,7 @@ from model_architectures.procedures.model_prediction import \
     write_prediction_summary_file
 from model_architectures.procedures.model_data_scaling import \
     data_scaler_transform
+from model_architectures.procedures.model_state_files import load_model_state
 from utilities.loss_functions import get_pytorch_loss
 from utilities.data_loaders import seed_worker
 #
@@ -39,7 +40,7 @@ __status__ = 'Stable'
 #
 # =============================================================================
 def predict(dataset, model_directory, model=None, predict_directory=None,
-            load_model_state=None, loss_nature='features_out',
+            model_load_state=None, loss_nature='features_out',
             loss_type='mse', loss_kwargs={}, is_normalized_loss=False,
             batch_size=1, dataset_file_path=None, device_type='cpu', seed=None,
             is_verbose=False):
@@ -60,9 +61,9 @@ def predict(dataset, model_directory, model=None, predict_directory=None,
     predict_directory : str, default=None
         Directory where model predictions results are stored. If None, then
         all output files are supressed.
-    load_model_state : {'default', 'init', int, 'best', 'last'}, default=None
-        Load available model state from the model directory. Data scalers are
-        also loaded from model initialization file.
+    model_load_state : {'default', 'init', int, 'best', 'last'},
+                       default='default'
+        Available model state to be loaded from the model directory.
         Options:
         
         'default'   : Model default state file
@@ -148,7 +149,7 @@ def predict(dataset, model_directory, model=None, predict_directory=None,
         model.set_device(device_type)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Load recurrent neural network model state
-        _ = load_model_state(model, load_model_state=load_model_state,
+        _ = load_model_state(model, model_load_state=model_load_state,
                              is_remove_posterior=False)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Get model input and output features normalization
@@ -310,7 +311,7 @@ def predict(dataset, model_directory, model=None, predict_directory=None,
     if predict_directory is not None:
         write_prediction_summary_file(
             predict_subdir, device_type, seed, model_directory,
-            load_model_state, loss_type, loss_kwargs, is_normalized_loss,
+            model_load_state, loss_type, loss_kwargs, is_normalized_loss,
             dataset_file_path, dataset, avg_predict_loss, total_time_sec,
             avg_time_sample)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
