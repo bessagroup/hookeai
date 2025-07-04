@@ -198,7 +198,7 @@ def kfold_cross_validation(cross_validation_dir, n_fold, n_max_epochs,
         # Prediction with recurrent neural network model
         _, avg_valid_loss_sample = predict(
             validation_dataset, model.model_directory,
-            predict_directory=fold_validation_dir, load_model_state='best',
+            predict_directory=fold_validation_dir, model_load_state='best',
             loss_nature=loss_nature, loss_type=loss_type,
             loss_kwargs=loss_kwargs,
             is_normalized_loss=is_model_out_normalized,

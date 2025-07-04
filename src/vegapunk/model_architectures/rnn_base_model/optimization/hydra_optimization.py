@@ -231,7 +231,7 @@ def hydra_wrapper(process, dataset_paths, device_type='cpu'):
                 predict_subdir, avg_predict_loss_sample = predict(
                     testing_dataset, model.model_directory, model=model,
                     predict_directory=testing_subdir,
-                    load_model_state='best', loss_nature=cfg.loss_nature,
+                    model_load_state='best', loss_nature=cfg.loss_nature,
                     loss_type=cfg.loss_type, loss_kwargs=cfg.loss_kwargs,
                     is_normalized_loss=is_normalized_loss,
                     batch_size=batch_size, device_type=device_type,

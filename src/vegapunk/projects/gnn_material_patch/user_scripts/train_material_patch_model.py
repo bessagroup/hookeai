@@ -100,7 +100,7 @@ def perform_model_standard_training(case_study_name, dataset_file_path,
                               is_sampler_shuffle=is_sampler_shuffle,
                               is_early_stopping=is_early_stopping,
                               early_stopping_kwargs=early_stopping_kwargs,
-                              load_model_state=None, save_every=None,
+                              model_load_state=None, save_every=None,
                               dataset_file_path=dataset_file_path,
                               device_type=device_type, seed=None,
                               is_verbose=is_verbose)

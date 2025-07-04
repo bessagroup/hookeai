@@ -117,7 +117,7 @@ def load_sample_predictions(sample_prediction_path):
     return sample_results
 # =============================================================================
 def write_prediction_summary_file(
-    predict_subdir, device_type, seed, model_directory, load_model_state,
+    predict_subdir, device_type, seed, model_directory, model_load_state,
     loss_type, loss_kwargs, is_normalized_loss, dataset_file_path, dataset,
     avg_predict_loss, total_time_sec, avg_time_sample):
     """Write summary data file for model prediction process.
@@ -134,9 +134,8 @@ def write_prediction_summary_file(
         reproducibility. Does also set workers seed in PyTorch data loaders.
     model_directory : str
         Directory where model is stored.
-    load_model_state : {'best', 'last', int, None}
-        Load availabl model state from the model directory. Data scalers are
-        also loaded from model initialization file.
+    model_load_state : {'default', 'init', int, 'best', 'last'}
+        Available model state to be loaded from the model directory.
     loss_type : {'mse',}
         Loss function type.
     loss_kwargs : dict
@@ -161,7 +160,7 @@ def write_prediction_summary_file(
     summary_data['device_type'] = device_type
     summary_data['seed'] = seed
     summary_data['model_directory'] = model_directory
-    summary_data['load_model_state'] = load_model_state
+    summary_data['model_load_state'] = model_load_state
     summary_data['loss_type'] = loss_type
     summary_data['loss_kwargs'] = loss_kwargs if loss_kwargs else None
     summary_data['is_normalized_loss'] = is_normalized_loss
