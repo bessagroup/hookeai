@@ -17,14 +17,13 @@ import torch
 # =============================================================================
 __author__ = 'Bernardo Ferreira (bernardo_ferreira@brown.edu)'
 __credits__ = ['Bernardo Ferreira', ]
-__status__ = 'Planning'
+__status__ = 'Stable'
 # =============================================================================
 #
 # =============================================================================
 def set_hybridized_model(model_class, hyb_indices, model_init_args=None,
-                         model_init_file_path=None,
-                         model_state_file_path=None, is_input_residual=False,
-                         data_scalers=None):
+                         model_init_file_path=None, model_state_file_path=None,
+                         is_input_residual=False, data_scalers=None):
     """Set hybridized model data.
     
     Parameters
@@ -112,7 +111,7 @@ def set_hybridized_model(model_class, hyb_indices, model_init_args=None,
                                            scaler_features_out)
             else:
                 raise RuntimeError('Hybridized model data scalers must be '
-                                'provided as dictionary.') 
+                                   'provided as dictionary.') 
         else:
             raise RuntimeError(f'Cannot set hybridized model '
                                f'\'{model_class}\' data scalers because '
