@@ -4,8 +4,6 @@ Functions
 ---------
 train_model
     Training of recurrent constitutive model.
-save_material_models_init_state
-    Save material models initial states.
 save_material_models_state
     Save material models states at given training epoch.
 save_parameters_history
@@ -16,8 +14,6 @@ save_best_parameters
     Save best performance state model parameters.
 read_best_parameters_from_file
     Read best performance state model parameters from file.
-write_training_summary_file
-    Write summary data file for model training process.
 """
 #
 #                                                                       Modules
@@ -33,17 +29,21 @@ import torch
 import numpy as np
 # Local
 from material_model_finder.model.material_discovery import MaterialModelFinder
-from rc_base_model.train.training import check_model_parameters_convergence
-from gnn_base_model.train.training import get_pytorch_optimizer, \
-    get_learning_rate_scheduler, save_training_state, save_loss_history
-from gnn_base_model.model.model_summary import get_model_summary
-from ioput.iostandard import write_summary_file
+from model_architectures.rc_base_model.train.training import \
+    check_model_parameters_convergence
+from model_architectures.procedures.model_training import \
+    save_training_state, save_loss_history, write_training_summary_file
+from model_architectures.procedures.model_summary import get_model_summary
+from model_architectures.procedures.model_state_files import \
+    save_model_state
+from utilities.optimizers import get_pytorch_optimizer, \
+    get_learning_rate_scheduler
 #
 #                                                          Authorship & Credits
 # =============================================================================
 __author__ = 'Bernardo Ferreira (bernardo_ferreira@brown.edu)'
 __credits__ = ['Bernardo Ferreira', ]
-__status__ = 'Planning'
+__status__ = 'Stable'
 # =============================================================================
 #
 # =============================================================================
@@ -150,7 +150,7 @@ def train_model(n_max_epochs, specimen_data, specimen_material_state,
     model.set_device(device_type)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Save material models initial state
-    save_material_models_init_state(model=model)
+    save_material_models_state(model=model, state_type='init')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Get model parameters
     model_parameters = model.parameters(recurse=True)
@@ -320,19 +320,20 @@ def train_model(n_max_epochs, specimen_data, specimen_material_state,
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Save model and optimizer current states
         if save_every is not None and epoch % save_every == 0:
-            save_training_state(model=model, optimizer=optimizer, epoch=epoch)
+            save_training_state(model=model, optimizer=optimizer,
+                                state_type='epoch', epoch=epoch)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Save model and optimizer best performance state corresponding to
         # minimum training loss
         if epoch_avg_loss <= min(loss_history_epochs):
             save_training_state(model=model, optimizer=optimizer,
-                                epoch=epoch, is_best_state=True)
+                                state_type='best', epoch=epoch)
             # Save model parameters (only explicit learnable parameters)
             if is_explicit_model_parameters:
                 best_model_parameters = model.get_detached_model_parameters()
             # Save material models state
-            save_material_models_state(model=model, epoch=epoch,
-                                       is_best_state=True)
+            save_material_models_state(model=model, state_type='best',
+                                       epoch=epoch)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Check model parameters convergence
         if is_explicit_model_parameters and is_params_stopping:
@@ -358,9 +359,10 @@ def train_model(n_max_epochs, specimen_data, specimen_material_state,
         print('\n\n> Finished training process!')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Save model and optimizer final states
-    save_training_state(model=model, optimizer=optimizer, epoch=epoch)
+    save_training_state(model=model, optimizer=optimizer, state_type='epoch',
+                        epoch=epoch)
     # Save material models final states
-    save_material_models_state(model=model, epoch=epoch)
+    save_material_models_state(model=model, state_type='epoch', epoch=epoch)
     # Save loss and learning rate histories
     save_loss_history(model, n_max_epochs, 'Force equilibrium history',
                       'None', loss_history_epochs,
@@ -414,46 +416,27 @@ def train_model(n_max_epochs, specimen_data, specimen_material_state,
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     return model, best_loss, best_training_epoch
 # =============================================================================
-def save_material_models_init_state(model):
-    """Save material models initial states.
-    
-    Material model state file is stored in the corresponding model_directory
-    under the name < model_name >-init.pt.
+def save_material_models_state(model, state_type='default', epoch=None):
+    """Save material models states to files.
     
     Parameters
     ----------
     model : torch.nn.Module
         Model.
-    """
-    # Get material models
-    material_models = model.get_material_models()
-    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Loop over material models
-    for _, model in material_models.items():
-        # Save model state
-        model.save_model_init_state()
-# =============================================================================
-def save_material_models_state(model, epoch=None, is_best_state=None):
-    """Save material models states at given training epoch.
+    state_type : {'default', 'init', 'epoch', 'best'}, default='default'
+        Saved model state file type.
+        Options:
+        
+        'default' : Model default state
+        
+        'init'    : Model initial state
     
-    Material model state file is stored in the corresponding model_directory
-    under the name < model_name >.pt or < model_name >-< epoch >.pt if epoch is
-    known.
-    
-    Material model state file corresponding to the best performance
-    is stored in the corresponding model_directory under the name
-    < model_name >-best.pt or < model_name >-< epoch >-best.pt if epoch is
-    known.
-    
-    Parameters
-    ----------
-    model : torch.nn.Module
-        Model.
+        'epoch'   : Model state of given training epoch
+        
+        'best'    : Model state of best performance
+        
     epoch : int, default=None
-        Training epoch.
-    is_best_state : bool, default=False
-        If True, save material model state file corresponding to the best
-        performance instead of regular state file.
+        Training epoch corresponding to current model state.
     """
     # Get material models
     material_models = model.get_material_models()
@@ -461,7 +444,7 @@ def save_material_models_state(model, epoch=None, is_best_state=None):
     # Loop over material models
     for _, model in material_models.items():
         # Save model state
-        model.save_model_state(epoch=epoch, is_best_state=is_best_state)
+        save_model_state(model, state_type=state_type, epoch=epoch)
 # =============================================================================
 def save_parameters_history(model, model_parameters_history,
                             model_parameters_bounds):
@@ -606,78 +589,3 @@ def read_best_parameters_from_file(parameters_file_path):
     model_parameters_bounds = parameters_record['model_parameters_bounds']
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     return best_model_parameters, model_parameters_bounds
-# =============================================================================
-def write_training_summary_file(
-    device_type, seed, model_directory, n_max_epochs, opt_algorithm, lr_init,
-    lr_scheduler_type, lr_scheduler_kwargs, n_epochs, best_loss,
-    best_training_epoch, total_time_sec, avg_time_epoch,
-    best_model_parameters=None, torchinfo_summary=None):
-    """Write summary data file for model training process.
-    
-    Parameters
-    ----------
-    device_type : {'cpu', 'cuda'}
-        Type of device on which torch.Tensor is allocated.
-    seed : int
-        Seed used to initialize the random number generators of Python and
-        other libraries (e.g., NumPy, PyTorch) for all devices to preserve
-        reproducibility. Does also set workers seed in PyTorch data loaders.
-    model_directory : str
-        Directory where model is stored.
-    n_max_epochs : int
-        Maximum number of training epochs.
-    opt_algorithm : str
-        Optimization algorithm.
-    lr_init : float
-        Initial value optimizer learning rate. Constant learning rate value if
-        no learning rate scheduler is specified (lr_scheduler_type=None).
-    lr_scheduler_type : str
-        Type of learning rate scheduler.
-    lr_scheduler_kwargs : dict
-        Arguments of torch.optim.lr_scheduler.LRScheduler initializer.
-    n_epochs : int
-        Number of completed epochs in the training process.
-    best_loss : float
-        Best loss during training process.
-    best_training_epoch : int
-        Training epoch corresponding to best loss during training process.
-    total_time_sec : int
-        Total training time in seconds.
-    avg_time_epoch : float
-        Average training time per epoch.
-    best_model_parameters : dict
-        Model parameters corresponding to best model state.
-    torchinfo_summary : str, default=None
-        Torchinfo model architecture summary.
-    """
-    # Set summary data
-    summary_data = {}
-    summary_data['device_type'] = device_type
-    summary_data['seed'] = seed
-    summary_data['model_directory'] = model_directory
-    summary_data['n_max_epochs'] = n_max_epochs
-    summary_data['opt_algorithm'] = opt_algorithm
-    summary_data['lr_init'] = lr_init
-    summary_data['lr_scheduler_type'] = \
-        lr_scheduler_type if lr_scheduler_type else None
-    summary_data['lr_scheduler_kwargs'] = \
-        lr_scheduler_kwargs if lr_scheduler_kwargs else None
-    summary_data['Number of completed epochs'] = n_epochs
-    summary_data['Best loss: '] = \
-        f'{best_loss:.8e} (training epoch {best_training_epoch})'
-    summary_data['Total training time'] = \
-        str(datetime.timedelta(seconds=int(total_time_sec)))
-    summary_data['Avg. training time per epoch'] = \
-        str(datetime.timedelta(seconds=int(avg_time_epoch)))
-    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Set summary optional data
-    if best_model_parameters is not None:
-        summary_data['Model parameters (best state)'] = best_model_parameters
-    if torchinfo_summary is not None:
-        summary_data['torchinfo summary'] = torchinfo_summary
-    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Write summary file
-    write_summary_file(
-        summary_directory=model_directory,
-        summary_title='Summary: Model training',
-        **summary_data)

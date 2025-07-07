@@ -1,4 +1,4 @@
-"""DARPA METALS PROJECT: Specimen numerical data.
+"""Specimen numerical data.
 
 Classes
 -------
@@ -17,7 +17,7 @@ from simulators.fetorch.structure.structure_mesh import StructureMesh
 # =============================================================================
 __author__ = 'Bernardo Ferreira (bernardo_ferreira@brown.edu)'
 __credits__ = ['Bernardo Ferreira', ]
-__status__ = 'Planning'
+__status__ = 'Stable'
 # =============================================================================
 #
 # =============================================================================
