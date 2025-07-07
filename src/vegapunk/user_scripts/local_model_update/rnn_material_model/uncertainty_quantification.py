@@ -1,4 +1,4 @@
-"""DARPA METALS PROJECT: Uncertainty quantification of RNN material model.
+"""Uncertainty quantification: RNN material model.
 
 Functions
 ---------
@@ -19,7 +19,7 @@ import sys
 import pathlib
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Add project root directory to sys.path
-root_dir = str(pathlib.Path(__file__).parents[4])
+root_dir = str(pathlib.Path(__file__).parents[3])
 if root_dir not in sys.path:
     sys.path.insert(0, root_dir)
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -32,13 +32,14 @@ import numpy as np
 import matplotlib.pyplot as plt
 # Local
 from time_series_data.time_dataset import load_dataset
-from rnn_base_model.predict.prediction_plots import plot_time_series_prediction
-from projects.darpa_metals.rnn_material_model.user_scripts.train_model import \
+from model_architectures.procedures.model_prediction import \
+    plot_time_series_prediction
+from model_architectures.materials.process_predictions import \
+    build_time_series_predictions_data
+from user_scripts.local_model_update.rnn_material_model.train_model import \
     perform_model_standard_training
-from projects.darpa_metals.rnn_material_model.user_scripts.predict import \
+from user_scripts.local_model_update.rnn_material_model.predict import \
     perform_model_prediction
-from projects.darpa_metals.rnn_material_model.rnn_model_tools. \
-    process_predictions import build_time_series_predictions_data
 from ioput.iostandard import make_directory, find_unique_file_with_regex
 from ioput.plots import plot_boxplots, save_figure
 
@@ -47,7 +48,7 @@ from ioput.plots import plot_boxplots, save_figure
 # =============================================================================
 __author__ = 'Bernardo Ferreira (bernardo_ferreira@brown.edu)'
 __credits__ = ['Bernardo Ferreira', ]
-__status__ = 'Planning'
+__status__ = 'Stable'
 # =============================================================================
 #
 # =============================================================================

@@ -1,4 +1,4 @@
-"""DARPA METALS PROJECT: Local training of RNN material model.
+"""Local model update: RNN material model.
 
 Functions
 ---------
@@ -19,7 +19,7 @@ import sys
 import pathlib
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Add project root directory to sys.path
-root_dir = str(pathlib.Path(__file__).parents[4])
+root_dir = str(pathlib.Path(__file__).parents[3])
 if root_dir not in sys.path:
     sys.path.insert(0, root_dir)
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -30,21 +30,20 @@ import torch
 from time_series_data.time_dataset import load_dataset, \
     concatenate_dataset_features, sum_dataset_features, \
     add_dataset_feature_init
-from rnn_base_model.train.training import train_model
-from gnn_base_model.train.training import \
+from model_architectures.rnn_base_model.train.training import train_model    
+from model_architectures.procedures.model_training import \
     read_loss_history_from_file, read_lr_history_from_file
-from gnn_base_model.model.model_summary import get_model_summary
-from gnn_base_model.train.training_plots import plot_training_loss_history, \
-    plot_training_loss_and_lr_history
+from model_architectures.procedures.model_summary import get_model_summary
+from model_architectures.procedures.model_training import \
+    plot_training_loss_history, plot_training_loss_and_lr_history
+from model_architectures.materials.strain_features import add_strain_features
 from ioput.iostandard import make_directory, find_unique_file_with_regex
-from projects.darpa_metals.rnn_material_model.rnn_model_tools.strain_features \
-    import add_strain_features
 #
 #                                                          Authorship & Credits
 # =============================================================================
 __author__ = 'Bernardo Ferreira (bernardo_ferreira@brown.edu)'
 __credits__ = ['Bernardo Ferreira', ]
-__status__ = 'Planning'
+__status__ = 'Stable'
 # =============================================================================
 #
 # =============================================================================
