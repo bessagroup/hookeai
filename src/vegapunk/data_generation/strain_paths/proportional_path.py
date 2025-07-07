@@ -186,7 +186,7 @@ class ProportionalStrainPathGenerator(StrainPathGenerator):
                     self._n_dim, strain_path[i - 1, :], strain_comps_order,
                     is_symmetric=self._strain_formulation == 'infinitesimal')
                 # Compute strain increment
-                if strain_formulation == 'infinitesimal':
+                if self._strain_formulation == 'infinitesimal':
                     inc_strain = strain - strain_old
                 else:
                     raise RuntimeError('Not implemented.')
