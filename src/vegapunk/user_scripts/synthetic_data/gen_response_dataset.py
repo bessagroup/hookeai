@@ -1,4 +1,4 @@
-"""DARPA METALS PROJECT: Generate strain-stress material response data set.
+"""Generate strain-stress material response data set.
 
 Classes
 -------
@@ -18,7 +18,7 @@ import sys
 import pathlib
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Add project root directory to sys.path
-root_dir = str(pathlib.Path(__file__).parents[4])
+root_dir = str(pathlib.Path(__file__).parents[2])
 if root_dir not in sys.path:
     sys.path.insert(0, root_dir)
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -37,12 +37,10 @@ import matplotlib.pyplot as plt
 # Local
 from time_series_data.time_dataset import TimeSeriesDatasetInMemory, \
     TimeSeriesDataset, get_time_series_data_loader, save_dataset
-from projects.darpa_metals.rnn_material_model.strain_paths.interface import \
-    StrainPathGenerator
-from projects.darpa_metals.rnn_material_model.strain_paths.random_path import \
-    RandomStrainPathGenerator
-from projects.darpa_metals.rnn_material_model.strain_paths.proportional_path \
-    import ProportionalStrainPathGenerator
+from data_generation.strain_paths.interface import StrainPathGenerator
+from data_generation.strain_paths.random_path import RandomStrainPathGenerator
+from data_generation.strain_paths.proportional_path import \
+    ProportionalStrainPathGenerator
 from simulators.fetorch.math.matrixops import get_problem_type_parameters, \
     get_tensor_from_mf
 from simulators.fetorch.material.material_su import material_state_update
@@ -62,7 +60,7 @@ from ioput.plots import plot_xy_data, plot_xyz_data, scatter_xy_data, \
 # =============================================================================
 __author__ = 'Bernardo Ferreira (bernardo_ferreira@brown.edu)'
 __credits__ = ['Bernardo Ferreira', ]
-__status__ = 'Planning'
+__status__ = 'Stable'
 # =============================================================================
 #
 # =============================================================================
