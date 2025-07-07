@@ -20,15 +20,14 @@ import numpy as np
 import matplotlib.pyplot as plt
 import shapely.geometry
 # Local
-from projects.gnn_material_patch.material_patch.patch import \
-    FiniteElementPatch
+from data_generation.spdg.patch import FiniteElementPatch
 from simulators.links.discretization.finite_element import FiniteElement
 #
 #                                                          Authorship & Credits
 # =============================================================================
 __author__ = 'Bernardo Ferreira (bernardo_ferreira@brown.edu)'
 __credits__ = ['Bernardo Ferreira', ]
-__status__ = 'Alpha'
+__status__ = 'Stable'
 # =============================================================================
 #
 # =============================================================================
