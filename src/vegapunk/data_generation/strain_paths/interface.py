@@ -1,22 +1,14 @@
-"""DARPA METALS PROJECT: Strain paths numerical data.
+"""Generation of synthetic strain loading paths.
 
 Classes
 -------
 StrainPathGenerator(ABC)
-    Strain paths generator interface.
+    Strain loading path generator interface.
 """
 #
 #                                                                       Modules
 # =============================================================================
 # Standard
-import sys
-import pathlib
-# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-# Add project root directory to sys.path
-root_dir = str(pathlib.Path(__file__).parents[4])
-if root_dir not in sys.path:
-    sys.path.insert(0, root_dir)
-# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 from abc import ABC, abstractmethod
 # Third-party
 import numpy as np
@@ -29,12 +21,12 @@ from ioput.plots import plot_xy_data, scatter_xy_data, plot_histogram, \
 # =============================================================================
 __author__ = 'Bernardo Ferreira (bernardo_ferreira@brown.edu)'
 __credits__ = ['Bernardo Ferreira', ]
-__status__ = 'Planning'
+__status__ = 'Stable'
 # =============================================================================
 #
 # =============================================================================
 class StrainPathGenerator(ABC):
-    """Strain path generator interface.
+    """Strain loading path generator interface.
     
     Attributes
     ----------

@@ -1,41 +1,32 @@
-"""DARPA METALS PROJECT: Strain deformation paths numerical data.
+"""Generation of synthetic strain loading paths: Random generator.
 
 Classes
 -------
 RandomStrainPathGenerator(StrainPathGenerator)
-    Random strain deformation path generator.
+    Random strain loading path generator.
 """
 #
 #                                                                       Modules
 # =============================================================================
 # Standard
-import sys
-import pathlib
-# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-# Add project root directory to sys.path
-root_dir = str(pathlib.Path(__file__).parents[4])
-if root_dir not in sys.path:
-    sys.path.insert(0, root_dir)
-# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 import random
 # Third-party
 import numpy as np
 import sklearn.gaussian_process
 import sklearn.gaussian_process.kernels
 # Local
-from projects.darpa_metals.rnn_material_model.strain_paths.interface import \
-    StrainPathGenerator
+from data_generation.strain_paths.interface import StrainPathGenerator
 #
 #                                                          Authorship & Credits
 # =============================================================================
 __author__ = 'Bernardo Ferreira (bernardo_ferreira@brown.edu)'
 __credits__ = ['Bernardo Ferreira', ]
-__status__ = 'Planning'
+__status__ = 'Stable'
 # =============================================================================
 #
 # =============================================================================
 class RandomStrainPathGenerator(StrainPathGenerator):
-    """Random strain path generator.
+    """Random strain loading path generator.
     
     Attributes
     ----------
@@ -345,78 +336,3 @@ class RandomStrainPathGenerator(StrainPathGenerator):
                     np.concatenate((strain_path, initial_strain), axis=0)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         return strain_comps_order, time_hist, strain_path
-# =============================================================================
-if __name__ == '__main__':
-    # Set strain parameters
-    strain_formulation = 'infinitesimal'
-    n_dim = 2
-    # Initialize strain path generator
-    strain_path_generator = \
-        RandomStrainPathGenerator(strain_formulation, n_dim)
-    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Set number of strain control points
-    n_control = 5
-    # Set strain components bounds
-    strain_bounds = {'11': (-1.0, 1.0),
-                     '22': (-1.0, 1.0),
-                     '12': (-1.0, 1.0)}
-    # Set number of discrete times
-    n_time = 100
-    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Set number of strain paths
-    n_path = 1
-    # Set number of loading cycles
-    n_cycle = 1
-    # Initialize strain paths data
-    time_hists = []
-    strain_paths = []
-    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Loop over strain paths
-    for i in range(n_path):
-        # Generate strain path
-        strain_comps_order, time_hist, strain_path = \
-            strain_path_generator.generate_strain_path(
-                n_control, strain_bounds, n_time,
-                generative_type='polynomial',
-                time_init=0.0, time_end=1.0,
-                inc_strain_norm=None, strain_noise_std=None,
-                n_cycle=n_cycle, random_seed=None)
-        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        # Plot strain path
-        strain_path_generator.plot_strain_path(
-            strain_formulation, n_dim,
-            strain_comps_order, time_hist, strain_path,
-            is_plot_strain_path=True,
-            is_plot_strain_comp_hist=False,
-            is_plot_strain_norm=False,
-            is_plot_strain_norm_hist=False,
-            is_plot_inc_strain_norm=False,
-            is_plot_inc_strain_norm_hist=False,
-            is_plot_strain_path_pairs=False,
-            is_plot_strain_pairs_hist=False,
-            is_plot_strain_pairs_marginals=False,
-            is_plot_strain_comp_box=False,
-            is_stdout_display=True,
-            is_latex=True)
-        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        # Store strain path data
-        time_hists.append(time_hist)
-        strain_paths.append(strain_path)
-    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Plot global strain paths data
-    if n_path > 1:
-        # Concatenate strain paths data
-        global_strain_path = np.vstack(strain_paths)
-        global_time_hist = np.concatenate(time_hists)
-        # Plot strain paths data
-        strain_path_generator.plot_strain_path(
-            strain_formulation, n_dim,
-            strain_comps_order, global_time_hist, global_strain_path,
-            is_plot_strain_comp_hist=False,
-            is_plot_strain_norm_hist=False,
-            is_plot_inc_strain_norm_hist=False,
-            is_plot_strain_pairs_hist=False,
-            is_plot_strain_pairs_marginals=False,
-            is_plot_strain_comp_box=False,
-            is_stdout_display=True,
-            is_latex=True)
