@@ -1,4 +1,4 @@
-"""DARPA METALS PROJECT: Plot convergence analysis of RNN material model.
+"""Plot material model convergence analysis.
 
 Functions
 ---------
@@ -13,24 +13,23 @@ import sys
 import pathlib
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Add project root directory to sys.path
-root_dir = str(pathlib.Path(__file__).parents[4])
+root_dir = str(pathlib.Path(__file__).parents[2])
 if root_dir not in sys.path:
     sys.path.insert(0, root_dir)
 import os
 # Third-party
 import numpy as np
 # Local
-from projects.darpa_metals.rnn_material_model.rnn_model_tools. \
-    convergence_plots import plot_prediction_loss_convergence, \
-        plot_time_series_convergence, plot_prediction_loss_convergence_uq, \
-        plot_time_series_convergence_uq
+from model_architectures.procedures.convergence_plots import \
+    plot_prediction_loss_convergence, plot_time_series_convergence, \
+    plot_prediction_loss_convergence_uq, plot_time_series_convergence_uq
 from ioput.iostandard import make_directory
 #
 #                                                          Authorship & Credits
 # =============================================================================
 __author__ = 'Bernardo Ferreira (bernardo_ferreira@brown.edu)'
 __credits__ = ['Bernardo Ferreira', ]
-__status__ = 'Planning'
+__status__ = 'Stable'
 # =============================================================================
 #
 # =============================================================================

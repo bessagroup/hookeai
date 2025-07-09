@@ -1,4 +1,4 @@
-"""DARPA METALS PROJECT: Learning procedure of material model finder.
+"""Global model update: general parametric material model.
 
 Functions
 ---------
@@ -19,7 +19,7 @@ import sys
 import pathlib
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Add project root directory to sys.path
-root_dir = str(pathlib.Path(__file__).parents[4])
+root_dir = str(pathlib.Path(__file__).parents[3])
 if root_dir not in sys.path:
     sys.path.insert(0, root_dir)
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -28,20 +28,22 @@ import os
 import torch
 # Local
 from material_model_finder.train.training import train_model
-from rc_base_model.train.training import read_parameters_history_from_file
-from rc_base_model.train.training_plots import plot_model_parameters_history
-from gnn_base_model.train.training import \
+from model_architectures.rc_base_model.train.training import \
+    read_parameters_history_from_file
+from model_architectures.procedures.model_training import \
+    plot_model_parameters_history
+from model_architectures.procedures.model_training import \
     read_loss_history_from_file, read_lr_history_from_file
-from gnn_base_model.model.model_summary import get_model_summary
-from gnn_base_model.train.training_plots import plot_training_loss_history, \
-    plot_training_loss_and_lr_history
+from model_architectures.procedures.model_summary import get_model_summary
+from model_architectures.procedures.model_training import \
+    plot_training_loss_history, plot_training_loss_and_lr_history
 from ioput.iostandard import make_directory
 #
 #                                                          Authorship & Credits
 # =============================================================================
 __author__ = 'Bernardo Ferreira (bernardo_ferreira@brown.edu)'
 __credits__ = ['Bernardo Ferreira', ]
-__status__ = 'Planning'
+__status__ = 'Stable'
 # =============================================================================
 #
 # =============================================================================

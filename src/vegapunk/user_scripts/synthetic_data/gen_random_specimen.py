@@ -1,4 +1,4 @@
-"""DARPA METALS PROJECT: Generate and simulate random material patches.
+"""Generate and simulate randomly deformed material patches.
 
 Functions
 ---------
@@ -25,7 +25,7 @@ import sys
 import pathlib
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Add project root directory to sys.path
-root_dir = str(pathlib.Path(__file__).parents[4])
+root_dir = str(pathlib.Path(__file__).parents[2])
 if root_dir not in sys.path:
     sys.path.insert(0, root_dir)
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -41,8 +41,7 @@ import numpy as np
 from simulators.links.links import LinksSimulator
 from simulators.fetorch.material.models.standard.hardening import \
     get_hardening_law
-from projects.gnn_material_patch.material_patch.patch_generator import \
-    FiniteElementPatchGenerator
+from data_generation.spdg.patch_generator import FiniteElementPatchGenerator
 from testing_utilities.links_plot_tfact import plot_links_tfact_hist
 from testing_utilities.links_dat_to_inp import links_dat_to_abaqus_inp
 from testing_utilities.links_nodedata_to_csv import links_node_output_to_csv
@@ -52,7 +51,7 @@ from ioput.iostandard import make_directory
 # =============================================================================
 __author__ = 'Bernardo Ferreira (bernardo_ferreira@brown.edu)'
 __credits__ = ['Bernardo Ferreira', ]
-__status__ = 'Planning'
+__status__ = 'Stable'
 # =============================================================================
 #
 # =============================================================================

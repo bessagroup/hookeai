@@ -1,4 +1,4 @@
-"""DARPA METALS PROJECT: Generate specimen local strain-stress paths data set.
+"""Generate specimen local strain-stress paths data set.
 
 Functions
 ---------
@@ -15,7 +15,7 @@ import sys
 import pathlib
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Add project root directory to sys.path
-root_dir = str(pathlib.Path(__file__).parents[4])
+root_dir = str(pathlib.Path(__file__).parents[3])
 if root_dir not in sys.path:
     sys.path.insert(0, root_dir)
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -25,15 +25,15 @@ import torch
 # Local
 from material_model_finder.model.material_discovery import MaterialModelFinder
 from time_series_data.time_dataset import load_dataset
-from projects.darpa_metals.rnn_material_model.user_scripts. \
-    gen_response_dataset import generate_dataset_plots
+from user_scripts.synthetic_data.gen_response_dataset import \
+    generate_dataset_plots
 from ioput.iostandard import make_directory, find_unique_file_with_regex
 #
 #                                                          Authorship & Credits
 # =============================================================================
 __author__ = 'Bernardo Ferreira (bernardo_ferreira@brown.edu)'
 __credits__ = ['Bernardo Ferreira', ]
-__status__ = 'Planning'
+__status__ = 'Stable'
 # =============================================================================
 #
 # =============================================================================

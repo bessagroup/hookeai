@@ -1,4 +1,4 @@
-"""DARPA METALS PROJECT: Generate specimen data and material state files.
+"""Generate specimen data and material state files.
 
 Functions
 ---------
@@ -21,7 +21,7 @@ import sys
 import pathlib
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Add project root directory to sys.path
-root_dir = str(pathlib.Path(__file__).parents[4])
+root_dir = str(pathlib.Path(__file__).parents[3])
 if root_dir not in sys.path:
     sys.path.insert(0, root_dir)
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -45,15 +45,15 @@ from simulators.fetorch.material.models.standard.hardening import \
     get_hardening_law
 from material_model_finder.data.specimen_data import SpecimenNumericalData
 from time_series_data.time_dataset import load_dataset
-from projects.darpa_metals.hybrid_material_model.user_scripts.train_model \
-    import set_hybridized_gru_model, set_hybridized_rcm_model
+from user_scripts.local_model_update.hybrid_material_model.train_model import \
+    set_hybridized_gru_model, set_hybridized_rcm_model
 from ioput.iostandard import make_directory
 #
 #                                                          Authorship & Credits
 # =============================================================================
 __author__ = 'Bernardo Ferreira (bernardo_ferreira@brown.edu)'
 __credits__ = ['Bernardo Ferreira', ]
-__status__ = 'Planning'
+__status__ = 'Stable'
 # =============================================================================
 #
 # =============================================================================
