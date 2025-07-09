@@ -1,4 +1,4 @@
-"""DARPA METALS PROJECT: Local training of recurrent constitutive model.
+"""Local model update: RC material model.
 
 Functions
 ---------
@@ -19,7 +19,7 @@ import sys
 import pathlib
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Add project root directory to sys.path
-root_dir = str(pathlib.Path(__file__).parents[4])
+root_dir = str(pathlib.Path(__file__).parents[3])
 if root_dir not in sys.path:
     sys.path.insert(0, root_dir)
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -32,15 +32,20 @@ import numpy as np
 # Local
 from time_series_data.time_dataset import load_dataset, \
     concatenate_dataset_features
-from rc_base_model.model.recurrent_model import RecurrentConstitutiveModel
-from rc_base_model.train.training import train_model, \
+from model_architectures.rc_base_model.model.recurrent_model import \
+    RecurrentConstitutiveModel
+from model_architectures.rc_base_model.train.training import train_model, \
     read_parameters_history_from_file
-from rc_base_model.train.training_plots import plot_model_parameters_history
-from gnn_base_model.train.training import \
+from model_architectures.procedures.model_training import \
     read_loss_history_from_file, read_lr_history_from_file
-from gnn_base_model.model.model_summary import get_model_summary
-from gnn_base_model.train.training_plots import plot_training_loss_history, \
-    plot_training_loss_and_lr_history
+from model_architectures.procedures.model_summary import get_model_summary
+from model_architectures.procedures.model_training import \
+    plot_training_loss_history, plot_training_loss_and_lr_history, \
+        plot_model_parameters_history
+from model_architectures.procedures.model_data_scaling import \
+    fit_data_scalers
+from model_architectures.procedures.model_state_files import \
+    save_model_state
 from simulators.fetorch.material.models.standard.hardening import \
     get_hardening_law
 from ioput.iostandard import make_directory, find_unique_file_with_regex
@@ -49,7 +54,7 @@ from ioput.iostandard import make_directory, find_unique_file_with_regex
 # =============================================================================
 __author__ = 'Bernardo Ferreira (bernardo_ferreira@brown.edu)'
 __credits__ = ['Bernardo Ferreira', ]
-__status__ = 'Planning'
+__status__ = 'Stable'
 # =============================================================================
 #
 # =============================================================================
@@ -489,10 +494,10 @@ def save_model_init(model_init_args, training_dataset=None):
             raise RuntimeError('Training data set needs to be provided in '
                                'order to fit model data scalers.')
         else:
-            model.fit_data_scalers(training_dataset)
+            fit_data_scalers(model, training_dataset)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Save model initial state
-    model.save_model_init_state()
+    save_model_state(model, state_type='init')
 # =============================================================================
 def set_default_model_parameters(model_directory, device_type='cpu'):
     """Set default model initialization parameters.
