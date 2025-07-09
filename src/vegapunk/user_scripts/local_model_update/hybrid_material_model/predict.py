@@ -1,4 +1,4 @@
-"""DARPA METALS PROJECT: Local prediction of hybrid material model.
+"""Local prediction: hybrid material model.
 
 Functions
 ---------
@@ -17,7 +17,7 @@ import sys
 import pathlib
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Add project root directory to sys.path
-root_dir = str(pathlib.Path(__file__).parents[4])
+root_dir = str(pathlib.Path(__file__).parents[3])
 if root_dir not in sys.path:
     sys.path.insert(0, root_dir)
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -30,23 +30,21 @@ import numpy as np
 # Local
 from time_series_data.time_dataset import load_dataset, \
     concatenate_dataset_features
-from hybrid_base_model.predict.prediction import predict
-from rnn_base_model.predict.prediction_plots import plot_time_series_prediction
-from projects.darpa_metals.rnn_material_model.rnn_model_tools. \
-    process_predictions import build_prediction_data_arrays, \
-        build_time_series_predictions_data
-from projects.darpa_metals.rnn_material_model.rnn_model_tools.strain_features \
-    import add_strain_features
-from gnn_base_model.predict.prediction_plots import plot_truth_vs_prediction
-from ioput.iostandard import make_directory, find_unique_file_with_regex
-from testing_utilities.output_prediction_metrics import \
+from model_architectures.hybrid_base_model.predict.prediction import predict
+from model_architectures.procedures.model_prediction import \
+    plot_time_series_prediction, plot_truth_vs_prediction
+from model_architectures.materials.process_predictions import \
+    build_prediction_data_arrays, build_time_series_predictions_data
+from model_architectures.materials.strain_features import add_strain_features
+from utilities.output_prediction_metrics import \
     compute_directory_prediction_metrics
+from ioput.iostandard import make_directory, find_unique_file_with_regex
 #
 #                                                          Authorship & Credits
 # =============================================================================
 __author__ = 'Bernardo Ferreira (bernardo_ferreira@brown.edu)'
 __credits__ = ['Bernardo Ferreira', ]
-__status__ = 'Planning'
+__status__ = 'Stable'
 # =============================================================================
 #
 # =============================================================================

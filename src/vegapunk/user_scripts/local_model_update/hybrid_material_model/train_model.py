@@ -1,4 +1,4 @@
-"""DARPA METALS PROJECT: Local training of hybrid material model.
+"""Local model update: hybrid material model.
 
 Functions
 ---------
@@ -19,44 +19,46 @@ import sys
 import pathlib
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Add project root directory to sys.path
-root_dir = str(pathlib.Path(__file__).parents[4])
+root_dir = str(pathlib.Path(__file__).parents[3])
 if root_dir not in sys.path:
     sys.path.insert(0, root_dir)
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 import os
-import copy
 # Third-party
 import torch
 import numpy as np
 # Local
 from time_series_data.time_dataset import load_dataset, \
     concatenate_dataset_features, sum_dataset_features
-from rnn_base_model.model.gru_model import GRURNNModel
-from rc_base_model.model.recurrent_model import RecurrentConstitutiveModel
-from hybrid_base_model.model.hybridized_layers import BatchedElasticModel, \
-    VolDevCompositionModel
-from hybrid_base_model.model.hybridized_model import set_hybridized_model
-from hybrid_base_model.model.hybrid_model import HybridModel
-from hybrid_base_model.train.training import train_model
-from gnn_base_model.train.training import \
+from model_architectures.rnn_base_model.model.gru_model import GRURNNModel
+from model_architectures.rc_base_model.model.recurrent_model import \
+    RecurrentConstitutiveModel
+from model_architectures.hybrid_base_model.model.hybrid_model import \
+    HybridModel
+from model_architectures.hybrid_base_model.model.hybridized_layers import \
+    BatchedElasticModel, VolDevCompositionModel
+from model_architectures.hybrid_base_model.model.hybridized_model import \
+    set_hybridized_model
+from model_architectures.hybrid_base_model.train.training import train_model
+from model_architectures.procedures.model_training import \
     read_loss_history_from_file, read_lr_history_from_file
-from gnn_base_model.model.model_summary import get_model_summary
-from gnn_base_model.train.training_plots import plot_training_loss_history, \
-    plot_training_loss_and_lr_history
+from model_architectures.procedures.model_summary import get_model_summary
+from model_architectures.procedures.model_training import \
+    plot_training_loss_history, plot_training_loss_and_lr_history
+from model_architectures.procedures.model_data_scaling import fit_data_scalers
+from model_architectures.procedures.model_state_files import save_model_state
+from model_architectures.materials.strain_features import add_strain_features
+from model_architectures.materials.stress_features import add_stress_features
 from simulators.fetorch.material.models.standard.hardening import \
     get_hardening_law
 from utilities.fit_data_scalers import fit_data_scaler_from_dataset
-from projects.darpa_metals.rnn_material_model.rnn_model_tools.strain_features \
-    import add_strain_features
-from projects.darpa_metals.rnn_material_model.rnn_model_tools.stress_features \
-    import add_stress_features
 from ioput.iostandard import make_directory, find_unique_file_with_regex
 #
 #                                                          Authorship & Credits
 # =============================================================================
 __author__ = 'Bernardo Ferreira (bernardo_ferreira@brown.edu)'
 __credits__ = ['Bernardo Ferreira', ]
-__status__ = 'Planning'
+__status__ = 'Stable'
 # =============================================================================
 #
 # =============================================================================
@@ -416,10 +418,10 @@ def save_model_init(model_init_args, training_dataset=None):
             raise RuntimeError('Training data set needs to be provided in '
                                'order to fit model data scalers.')
         else:
-            model.fit_data_scalers(training_dataset)
+            fit_data_scalers(model, training_dataset)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Save model initial state
-    model.save_model_init_state()
+    save_model_state(model, state_type='init')
 # =============================================================================
 def set_hybridized_gru_model(hyb_indices, features_option, scaling_dataset,
                              device_type='cpu'):
