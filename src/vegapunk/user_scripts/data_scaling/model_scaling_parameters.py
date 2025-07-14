@@ -1,57 +1,56 @@
+"""Extract data scalers parameters from model initialization file."""
+#
+#                                                                       Modules
+# =============================================================================
 # Standard
 import sys
 import pathlib
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Add project root directory to sys.path
-root_dir = str(pathlib.Path(__file__).parents[1])
+root_dir = str(pathlib.Path(__file__).parents[2])
 if root_dir not in sys.path:
     sys.path.insert(0, root_dir)
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+import os
+import pickle
 # Local
-from time_series_data.time_dataset import load_dataset
-from utilities.fit_data_scalers import fit_data_scaler_from_dataset
 from utilities.data_scalers import TorchStandardScaler, TorchMinMaxScaler
+#
+#                                                          Authorship & Credits
 # =============================================================================
-# Summary: Compute data scalers parameters from data set
+__author__ = 'Bernardo Ferreira (bernardo_ferreira@brown.edu)'
+__credits__ = ['Bernardo Ferreira', ]
+__status__ = 'Stable'
 # =============================================================================
-# Set data set file path
-dataset_file_path = ('/home/bernardoferreira/Documents/brown/projects/'
-                     'darpa_paper_examples/global/'
-                     'random_material_patch_von_mises/local/datasets/n10/'
-                     '1_training_dataset/ss_paths_dataset_n10.pkl')
+#
+# =============================================================================
+# Set model initialization file path
+model_init_file_path = ('/home/bernardoferreira/Documents/brown/projects/'
+                        'darpa_project/2_local_rnn_training/composite_rve/'
+                        'dataset_07_2024/2_training_strain_vf_to_stress/'
+                        '3_model/model_init_file.pkl')
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-# Load data set
-dataset = load_dataset(dataset_file_path)
+# Load model initialization attributes from file
+if not os.path.isfile(model_init_file_path):
+    raise RuntimeError('The model initialization file has not been found:\n\n'
+                       + model_init_file_path)
+else:
+    with open(model_init_file_path, 'rb') as model_init_file:
+        model_init_attributes = pickle.load(model_init_file)
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-# Initialize data scalers
-data_scalers = {}
-# Set data scaling type
-scaling_type = 'mean-std'
+# Get model data scalers
+if 'model_data_scalers' not in model_init_attributes.keys():
+    raise RuntimeError('Model data scalers are not available from model '
+                       'initialization file.')
+else:
+    model_data_scalers = model_init_attributes['model_data_scalers']
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-# Set features type and number of features
-features_type = 'strain_path'
-n_features = 6
-# Get scaling parameters and fit data scalers
-data_scaler = fit_data_scaler_from_dataset(
-    dataset, features_type, n_features, scaling_type=scaling_type)
-# Store data scaler
-data_scalers[features_type] = data_scaler
-# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-# Set features type and number of features
-features_type = 'stress_path'
-n_features = 6
-# Get scaling parameters and fit data scalers
-data_scaler = fit_data_scaler_from_dataset(
-    dataset, features_type, n_features, scaling_type=scaling_type)
-# Store data scaler
-data_scalers[features_type] = data_scaler
-# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-print('\nCompute data scalers parameters'
-      '\n------------------------------')
-print(f'\nData set file: {dataset_file_path}')
+print('\nExtract data scalers parameters'
+      '\n-------------------------------')
+print(f'\nModel initialization file: {model_init_file_path}')
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Loop over model data scalers
-for features_type, data_scaler in data_scalers.items():
+for features_type, data_scaler in model_data_scalers.items():
     # Output data scaler normalization parameters
     if isinstance(data_scaler, TorchStandardScaler):
         # Set scaling type
