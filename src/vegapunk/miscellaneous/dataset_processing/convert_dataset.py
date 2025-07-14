@@ -1,9 +1,13 @@
+"""Convert time series data set file to given format."""
+#
+#                                                                       Modules
+# =============================================================================
 # Standard
 import sys
 import pathlib
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Add project root directory to sys.path
-root_dir = str(pathlib.Path(__file__).parents[1])
+root_dir = str(pathlib.Path(__file__).parents[2])
 if root_dir not in sys.path:
     sys.path.insert(0, root_dir)
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -13,8 +17,14 @@ import re
 # Local
 from time_series_data.time_dataset import TimeSeriesDatasetInMemory, \
     save_dataset
+#
+#                                                          Authorship & Credits
 # =============================================================================
-# Summary: Convert dataset file to given format
+__author__ = 'Bernardo Ferreira (bernardo_ferreira@brown.edu)'
+__credits__ = ['Bernardo Ferreira', ]
+__status__ = 'Stable'
+# =============================================================================
+#
 # =============================================================================
 # Set conversion format
 conversion_format = ('list', 'TimeSeriesDatasetInMemory')[0]

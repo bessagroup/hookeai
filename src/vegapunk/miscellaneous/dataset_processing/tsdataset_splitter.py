@@ -1,9 +1,13 @@
+"""Split time series data set into non-overlapping subsets."""
+#
+#                                                                       Modules
+# =============================================================================
 # Standard
 import sys
 import pathlib
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Add project root directory to sys.path
-root_dir = str(pathlib.Path(__file__).parents[1])
+root_dir = str(pathlib.Path(__file__).parents[2])
 if root_dir not in sys.path:
     sys.path.insert(0, root_dir)
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -11,8 +15,14 @@ import os
 import re
 # Local
 from time_series_data.time_dataset import load_dataset, split_dataset
+#
+#                                                          Authorship & Credits
 # =============================================================================
-# Summary: Split time series data set into non-overlapping subsets
+__author__ = 'Bernardo Ferreira (bernardo_ferreira@brown.edu)'
+__credits__ = ['Bernardo Ferreira', ]
+__status__ = 'Stable'
+# =============================================================================
+#
 # =============================================================================
 # Set data set file path
 dataset_file_path = ('/home/bernardoferreira/Documents/brown/projects/'
