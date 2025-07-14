@@ -1,5 +1,18 @@
+"""Get finite element local paths indices.
+
+Functions
+---------
+get_element_local_paths_idx
+    Get finite element local paths global indices.
+"""
+#
+#                                                          Authorship & Credits
 # =============================================================================
-# Summary: Get elements local paths indices
+__author__ = 'Bernardo Ferreira (bernardo_ferreira@brown.edu)'
+__credits__ = ['Bernardo Ferreira', ]
+__status__ = 'Stable'
+# =============================================================================
+#
 # =============================================================================
 def get_element_local_paths_idx(element_id, n_gauss):
     """Get finite element local paths global indices.

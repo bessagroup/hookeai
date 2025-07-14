@@ -1,3 +1,7 @@
+"""Generate strain-stress response path data set from .csv files."""
+#
+#                                                                       Modules
+# =============================================================================
 # Standard
 import sys
 import pathlib
@@ -12,11 +16,17 @@ import os
 import re
 # Local
 from time_series_data.time_dataset import save_dataset
-from gnn_base_model.data.graph_dataset import split_dataset
-from projects.darpa_metals.rnn_material_model.user_scripts. \
-    gen_response_dataset import MaterialResponseDatasetGenerator
+from miscellaneous.dataset_processing.tsdataset_splitter import split_dataset
+from user_scripts.synthetic_data.gen_response_dataset import \
+    MaterialResponseDatasetGenerator
+#
+#                                                          Authorship & Credits
 # =============================================================================
-# Summary: Generate strain-stress response path data set from .csv files.
+__author__ = 'Bernardo Ferreira (bernardo_ferreira@brown.edu)'
+__credits__ = ['Bernardo Ferreira', ]
+__status__ = 'Stable'
+# =============================================================================
+#
 # =============================================================================
 # Set response paths data directory
 response_path_files_dir = ('/home/bernardoferreira/Documents/brown/projects/'

@@ -1,3 +1,7 @@
+"""Process case study directories."""
+#
+#                                                                       Modules
+# =============================================================================
 # Standard
 import sys
 import pathlib
@@ -13,8 +17,14 @@ import shutil
 import pickle
 # Third-party
 import torch
+#
+#                                                          Authorship & Credits
 # =============================================================================
-# Summary: Process case study directories and perform some task
+__author__ = 'Bernardo Ferreira (bernardo_ferreira@brown.edu)'
+__credits__ = ['Bernardo Ferreira', ]
+__status__ = 'Stable'
+# =============================================================================
+#
 # =============================================================================
 # Set available tasks
 available_tasks = {'1': 'remove_plots_dirs',

@@ -1,9 +1,13 @@
+"""Compare models stress prediction files."""
+#
+#                                                                       Modules
+# =============================================================================
 # Standard
 import sys
 import pathlib
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Add project root directory to sys.path
-root_dir = str(pathlib.Path(__file__).parents[1])
+root_dir = str(pathlib.Path(__file__).parents[2])
 if root_dir not in sys.path:
     sys.path.insert(0, root_dir)
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -13,13 +17,19 @@ import random
 import numpy as np
 # Local
 from time_series_data.time_dataset import load_dataset
-from rnn_base_model.predict.prediction_plots import plot_time_series_prediction
-from gnn_base_model.predict.prediction import load_sample_predictions
-from ioput.iostandard import make_directory
-from testing_utilities.output_prediction_metrics import \
+from model_architectures.procedures.model_prediction import \
+    plot_time_series_prediction, load_sample_predictions
+from utilities.output_prediction_metrics import \
     compute_mean_prediction_metrics
+from ioput.iostandard import make_directory
+#
+#                                                          Authorship & Credits
 # =============================================================================
-# Summary: Compare models stress path prediction
+__author__ = 'Bernardo Ferreira (bernardo_ferreira@brown.edu)'
+__credits__ = ['Bernardo Ferreira', ]
+__status__ = 'Stable'
+# =============================================================================
+#
 # =============================================================================
 def plot_models_stress_prediction(response_path, models_prediction_results,
                                   is_plot_ground_truth=True,

@@ -1,9 +1,13 @@
+"""Generate and export set of strain loading paths (.csv files)."""
+#
+#                                                                       Modules
+# =============================================================================
 # Standard
 import sys
 import pathlib
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Add project root directory to sys.path
-root_dir = str(pathlib.Path(__file__).parents[1])
+root_dir = str(pathlib.Path(__file__).parents[2])
 if root_dir not in sys.path:
     sys.path.insert(0, root_dir)
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -13,12 +17,18 @@ import pandas
 import torch
 import tqdm
 # Local
-from projects.darpa_metals.rnn_material_model.strain_paths.random_path import \
+from data_generation.strain_paths.random_path import \
     RandomStrainPathGenerator
-from projects.darpa_metals.rnn_material_model.strain_paths.proportional_path \
-    import ProportionalStrainPathGenerator
+from data_generation.strain_paths.proportional_path import \
+    ProportionalStrainPathGenerator
+#
+#                                                          Authorship & Credits
 # =============================================================================
-# Summary: Generate and export set of strain deformation paths (.csv files)
+__author__ = 'Bernardo Ferreira (bernardo_ferreira@brown.edu)'
+__credits__ = ['Bernardo Ferreira', ]
+__status__ = 'Stable'
+# =============================================================================
+#
 # =============================================================================
 # Set strain paths directory
 strain_paths_dir = ('/home/bernardoferreira/Documents/brown/projects/'

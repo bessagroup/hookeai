@@ -1,7 +1,18 @@
+"""Simple benchmark on how to optimize parametric models with PyTorch."""
+#
+#                                                                       Modules
+# =============================================================================
+# Third-party
 import torch
 import matplotlib.pyplot as plt
+#
+#                                                          Authorship & Credits
 # =============================================================================
-# Summary: Simple benchmark on how to optimize parametric model with PyTorch
+__author__ = 'Bernardo Ferreira (bernardo_ferreira@brown.edu)'
+__credits__ = ['Bernardo Ferreira', ]
+__status__ = 'Stable'
+# =============================================================================
+#
 # =============================================================================
 # Create ground-truth model
 def ground_truth(x):
