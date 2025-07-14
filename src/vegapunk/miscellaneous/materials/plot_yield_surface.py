@@ -1,9 +1,35 @@
+"""Plot yield surface of generic constitutive material models.
+
+Functions
+---------
+yield_function
+    Compute model yield function value from principal stresses.
+yf_von_mises
+    Yield function: Von Mises model with isotropic hardening.
+yf_drucker_prager
+    Yield function: Drucker-Prager model with isotropic hardening.
+yf_lou_zhang_yoon
+    Yield function: Lou-Zhang-Yoon model with isotropic strain hardening.
+get_stress_invariants
+    Compute invariants of stress and deviatoric stress.
+pi_to_principal
+    Convert pi-stress to principal stress.
+batched_yield_function
+    Compute model yield function from batch of stress points.
+plot_yield_surface
+    Plot constitutive material models yield surface.
+plot_yield_surface_pi_plane
+    Plot constitutive material models yield surface in pi-plane.
+"""
+#
+#                                                                       Modules
+# =============================================================================
 # Standard
 import sys
 import pathlib
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Add project root directory to sys.path
-root_dir = str(pathlib.Path(__file__).parents[1])
+root_dir = str(pathlib.Path(__file__).parents[2])
 if root_dir not in sys.path:
     sys.path.insert(0, root_dir)
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -14,12 +40,18 @@ import pyvista as pv
 import matplotlib.pyplot as plt
 # Local
 from ioput.plots import plot_xy_data, save_figure
+#
+#                                                          Authorship & Credits
+# =============================================================================
+__author__ = 'Bernardo Ferreira (bernardo_ferreira@brown.edu)'
+__credits__ = ['Bernardo Ferreira', ]
+__status__ = 'Stable'
+# =============================================================================
+#
 # =============================================================================
 # Solving: AttributeError: module 'numpy' has no attribute 'bool'
 # Cause: vtk 9.0.3 requires numpy < 1.24
 np.bool = np.bool_
-# =============================================================================
-# Summary: Plot yield surface of generic constitutive material model
 # =============================================================================
 def yield_function(s1, s2, s3, sy, model_name, model_parameters,
                    is_normalize_sy=False):
@@ -644,11 +676,11 @@ if __name__ == '__main__':
         parametric_name = 'yield_d'
         parametric_label = 'd'
         parametric_values = {'yield_a': (0.5, 0.8, 1.2, 1.5),
-                            'yield_b': (0.0, 0.03, 0.07, 0.1),
-                            'yield_c': (-3.0, -1.0, 1.0, 2.0),
-                            'yield_d': (-1.0, -0.5, 0.5, 1.0)}
+                             'yield_b': (0.0, 0.03, 0.07, 0.1),
+                             'yield_c': (-3.0, -1.0, 1.0, 2.0),
+                             'yield_d': (-1.0, -0.5, 0.5, 1.0)}
         parametric_labels = [f'${parametric_label} = {x}$'
-                            for x in parametric_values[parametric_name]]
+                             for x in parametric_values[parametric_name]]
         # Initialize models data
         models_names = []
         models_parameters = {}

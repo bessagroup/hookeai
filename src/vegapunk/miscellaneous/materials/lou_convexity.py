@@ -1,9 +1,13 @@
+"""Plot Lou-Zhang-Yoon model convexity boundary."""
+#
+#                                                                       Modules
+# =============================================================================
 # Standard
 import sys
 import pathlib
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Add project root directory to sys.path
-root_dir = str(pathlib.Path(__file__).parents[1])
+root_dir = str(pathlib.Path(__file__).parents[2])
 if root_dir not in sys.path:
     sys.path.insert(0, root_dir)
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -14,8 +18,14 @@ import torch
 # Local
 from simulators.fetorch.material.models.standard.lou import LouZhangYoon
 from ioput.iostandard import make_directory
+#
+#                                                          Authorship & Credits
 # =============================================================================
-# Summary: Plot Lou-Zhang-Yoon model convexity boundary
+__author__ = 'Bernardo Ferreira (bernardo_ferreira@brown.edu)'
+__credits__ = ['Bernardo Ferreira', ]
+__status__ = 'Stable'
+# =============================================================================
+#
 # =============================================================================
 if __name__ == '__main__':
     # Compute convexity domain boundary
@@ -46,7 +56,6 @@ if __name__ == '__main__':
     # Set plots directory
     plots_dir = ('/home/bernardoferreira/Downloads/generate_plots/vm')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    
     # Set parameter name prefix
     is_global_optimization = False
     if is_global_optimization:

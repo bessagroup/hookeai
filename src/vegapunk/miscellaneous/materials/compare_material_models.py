@@ -1,22 +1,27 @@
+"""Compare material models stress prediction.
+
+Functions
+---------
+compare_material_model_response
+    Compare constitutive models stress predictions for given strain path.
+"""
+#
+#                                                                       Modules
+# =============================================================================
 # Standard
 import sys
 import pathlib
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Add project root directory to sys.path
-root_dir = str(pathlib.Path(__file__).parents[1])
+root_dir = str(pathlib.Path(__file__).parents[2])
 if root_dir not in sys.path:
     sys.path.insert(0, root_dir)
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-import math
 # Third-party
 import torch
 import numpy as np
 import matplotlib.pyplot as plt
 # Local
-from projects.darpa_metals.rnn_material_model.user_scripts. \
-    gen_response_dataset import MaterialResponseDatasetGenerator
-from projects.darpa_metals.rnn_material_model.strain_paths.interface import \
-    StrainPathGenerator
 from time_series_data.time_dataset import load_dataset
 from simulators.fetorch.material.models.standard.von_mises import VonMises
 from simulators.fetorch.material.models.vmap.von_mises import VonMisesVMAP
@@ -29,9 +34,18 @@ from simulators.fetorch.material.models.vmap.lou import LouZhangYoonVMAP
 from simulators.fetorch.math.matrixops import get_problem_type_parameters
 from simulators.fetorch.material.models.standard.hardening import \
     get_hardening_law
+from data_generation.strain_paths.interface import StrainPathGenerator
+from user_scripts.synthetic_data.gen_response_dataset import \
+    MaterialResponseDatasetGenerator
 from ioput.plots import plot_xy_data, save_figure
+#
+#                                                          Authorship & Credits
 # =============================================================================
-# Summary: Compare constitutive models stress prediction
+__author__ = 'Bernardo Ferreira (bernardo_ferreira@brown.edu)'
+__credits__ = ['Bernardo Ferreira', ]
+__status__ = 'Stable'
+# =============================================================================
+#
 # =============================================================================
 def compare_material_model_response(strain_formulation, problem_type,
                                     strain_comps_order, time_hist,
@@ -433,12 +447,7 @@ if __name__ == "__main__":
                                           model_parameters)
     # Store constitutive model
     #constitutive_models[model_label] = constitutive_model
-    
-    
-    
-    
-    
-    
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set constitutive model label
     model_label = 'von_mises'
     # Set constitutive model parameters
@@ -564,11 +573,7 @@ if __name__ == "__main__":
                                            model_parameters)
     # Store constitutive model
     #constitutive_models[model_label] = constitutive_model
-
-
-
-
-
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set constitutive model label
     model_label = 'lou_zhang_yoon_gt'
     # Set constitutive model parameters
@@ -633,9 +638,7 @@ if __name__ == "__main__":
         is_fixed_yield_parameters=is_fixed_yield_parameters)
     # Store constitutive model
     #constitutive_models[model_label] = constitutive_model
-
-
-
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set constitutive model label
     model_label = 'lou_zhang_yoon_gt'
     # Set constitutive model parameters
@@ -669,8 +672,7 @@ if __name__ == "__main__":
         is_fixed_yield_parameters=is_fixed_yield_parameters)
     # Store constitutive model
     #constitutive_models[model_label] = constitutive_model
-
-
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set constitutive model label
     model_label = 'lou_zhang_yoon_found'
     # Set constitutive model parameters
@@ -704,13 +706,7 @@ if __name__ == "__main__":
         is_fixed_yield_parameters=is_fixed_yield_parameters)
     # Store constitutive model
     #constitutive_models[model_label] = constitutive_model
-    
-
-
-
-
-
-
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set constitutive model label
     model_label = 'Ground-truth'
     # Set constitutive model parameters
@@ -727,9 +723,8 @@ if __name__ == "__main__":
     constitutive_model = VonMisesVMAP(strain_formulation, problem_type,
                                       model_parameters)
     # Store constitutive model
-    constitutive_models[model_label] = constitutive_model
-    
-    
+    #constitutive_models[model_label] = constitutive_model
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set constitutive model label
     model_label = 'Noisy parameters'
     # Set constitutive model parameters
@@ -746,9 +741,7 @@ if __name__ == "__main__":
     constitutive_model = VonMisesVMAP(strain_formulation, problem_type,
                                       model_parameters)
     # Store constitutive model
-    constitutive_models[model_label] = constitutive_model
-
-
+    #constitutive_models[model_label] = constitutive_model
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set reference stress path
     if is_reference_stress_path:
