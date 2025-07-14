@@ -1,9 +1,43 @@
+"""Pruning procedure of time series data set.
+
+Functions
+---------
+prune_time_series_dataset
+    Prune time series data set.
+setup_pruning_dirs
+    Setup main pruning process directories.
+set_pruning_iter_dir
+    Setup pruning iteration directory.
+set_default_pruning_parameters
+    Set default pruning parameters.
+get_n_prun_sample
+    Get number of pruned samples.
+perform_pruning_step
+    Perform pruning step.
+set_pruning_step_dir
+    Setup pruning iteration directory.
+write_summary_file
+    Write summary file.
+load_full_dataset
+    Load full data set.
+read_samples_loss_from_dir
+    Read loss samples from prediction directory.
+plot_pruning_iterative_data
+    Plot pruning iterative data.
+display_pruning_data
+    Display data from pruning data file.
+preview_pruning_iterations
+    Preview pruning iterations.
+"""
+#
+#                                                                       Modules
+# =============================================================================
 # Standard
 import sys
 import pathlib
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Add project root directory to sys.path
-root_dir = str(pathlib.Path(__file__).parents[1])
+root_dir = str(pathlib.Path(__file__).parents[2])
 if root_dir not in sys.path:
     sys.path.insert(0, root_dir)
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -20,16 +54,21 @@ import matplotlib.pyplot as plt
 # Local
 from time_series_data.time_dataset import save_dataset, load_dataset, \
     split_dataset, get_parent_dataset_indices, TimeSeriesDatasetInMemory
-from projects.darpa_metals.rnn_material_model.user_scripts.train_model import \
+from user_scripts.local_model_update.rnn_material_model.train_model import \
     perform_model_standard_training
-from projects.darpa_metals.rnn_material_model.user_scripts.predict import \
+from user_scripts.local_model_update.rnn_material_model.predict import \
     perform_model_prediction
 from ioput.plots import plot_xy_data, save_figure
 from ioput.iostandard import make_directory, find_unique_file_with_regex
-from testing_utilities.output_prediction_metrics import \
-    read_mean_metrics_results_file
+from utilities.output_prediction_metrics import read_mean_metrics_results_file
+#
+#                                                          Authorship & Credits
 # =============================================================================
-# Summary: Pruning procedure of time series data set 
+__author__ = 'Bernardo Ferreira (bernardo_ferreira@brown.edu)'
+__credits__ = ['Bernardo Ferreira', ]
+__status__ = 'Stable'
+# =============================================================================
+#
 # =============================================================================
 def prune_time_series_dataset(pruning_dir, testing_types, pruning_params=None,
                               is_remove_pruning_models=False,
