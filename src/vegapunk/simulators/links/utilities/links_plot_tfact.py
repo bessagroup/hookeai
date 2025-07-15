@@ -1,9 +1,23 @@
+"""Generate total load factor history plot from Links input data file.
+
+Functions
+---------
+plot_links_tfact_hist
+    Plot Links total loading factor history.
+gen_links_loading_incrementation_file
+    Generate Links loading incrementation file.
+scale_tfact_hist
+    Perform linear scaling of total load factor history.
+"""
+#
+#                                                                       Modules
+# =============================================================================
 # Standard
 import sys
 import pathlib
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Add project root directory to sys.path
-root_dir = str(pathlib.Path(__file__).parents[1])
+root_dir = str(pathlib.Path(__file__).parents[3])
 if root_dir not in sys.path:
     sys.path.insert(0, root_dir)
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -15,8 +29,14 @@ import matplotlib.pyplot as plt
 # Local
 from simulators.links.links import LinksSimulator
 from ioput.plots import save_figure, plot_xy_data
+#
+#                                                          Authorship & Credits
 # =============================================================================
-# Summary: Generate total load factor history plot from Links input data file
+__author__ = 'Bernardo Ferreira (bernardo_ferreira@brown.edu)'
+__credits__ = ['Bernardo Ferreira', ]
+__status__ = 'Stable'
+# =============================================================================
+#
 # =============================================================================
 def plot_links_tfact_hist(links_input_file_path, is_stdout_display=False,
                           is_save_fig=False):

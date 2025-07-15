@@ -1,10 +1,34 @@
+"""Generate specimen Dirichlet boundary conditions from Links mesh.
+
+Functions
+---------
+build_specimen_dbc
+    Build specimen Dirichlet boundary conditions.
+get_specimen_node_dbc
+    Get node Dirichlet boundary conditions for given uniaxial specimen.
+build_node_disps
+    Build node displacements array.
+write_links_dirichlet_bc_file
+    Write Dirichlet boundary conditions file (Links format).
+read_links_nodes_coords_mesh
+    Read finite element mesh nodes coordinates from Links input data file.
+"""
+#
+#                                                                       Modules
+# =============================================================================
 # Standard
 import os
 import re
 # Third-party
 import numpy as np
+#
+#                                                          Authorship & Credits
 # =============================================================================
-# Summary: Generate specimen Dirichlet boundary conditions from Links mesh
+__author__ = 'Bernardo Ferreira (bernardo_ferreira@brown.edu)'
+__credits__ = ['Bernardo Ferreira', ]
+__status__ = 'Stable'
+# =============================================================================
+#
 # =============================================================================
 def build_specimen_dbc(specimen_label, specimen_top_coord, specimen_top_disp,
                        nodes_coords_mesh):

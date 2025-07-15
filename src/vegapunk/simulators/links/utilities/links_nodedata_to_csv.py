@@ -1,11 +1,27 @@
+"""Convert Links '.nodedata' output files to '.csv' files.
+
+Functions
+---------
+links_node_output_to_csv
+    Convert Links '.nodedata' output files to '.csv' files.
+"""
+#
+#                                                                       Modules
+# =============================================================================
 # Standard
 import os
 import re
 import shutil
 # Third-party
 import pandas
+#
+#                                                          Authorship & Credits
 # =============================================================================
-# Summary: Convert Links '.nodedata' files to '.csv' files
+__author__ = 'Bernardo Ferreira (bernardo_ferreira@brown.edu)'
+__credits__ = ['Bernardo Ferreira', ]
+__status__ = 'Stable'
+# =============================================================================
+#
 # =============================================================================
 def links_node_output_to_csv(links_output_dir):
     """Convert Links '.nodedata' output files to '.csv' files.

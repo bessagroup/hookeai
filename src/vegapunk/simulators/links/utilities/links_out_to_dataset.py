@@ -1,9 +1,21 @@
+"""Convert Links Gauss point '.out' files to time series data set.
+
+Functions
+---------
+build_dataset
+    Build time series data set from set of Links Gauss point '.out' files.
+extract_sample_path
+    Build material response path data from Links Gauss point '.out' file.
+"""
+#
+#                                                                       Modules
+# =============================================================================
 # Standard
 import sys
 import pathlib
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Add project root directory to sys.path
-root_dir = str(pathlib.Path(__file__).parents[1])
+root_dir = str(pathlib.Path(__file__).parents[3])
 if root_dir not in sys.path:
     sys.path.insert(0, root_dir)
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -16,10 +28,16 @@ import pandas
 from time_series_data.time_dataset import TimeSeriesDatasetInMemory, \
     save_dataset
 from ioput.iostandard import make_directory
-from projects.darpa_metals.rnn_material_model.user_scripts\
-    .gen_response_dataset import generate_dataset_plots
+from user_scripts.synthetic_data.gen_response_dataset import \
+    generate_dataset_plots
+#
+#                                                          Authorship & Credits
 # =============================================================================
-# Summary: Convert Links Gauss point '.out' files to time series data set
+__author__ = 'Bernardo Ferreira (bernardo_ferreira@brown.edu)'
+__credits__ = ['Bernardo Ferreira', ]
+__status__ = 'Stable'
+# =============================================================================
+#
 # =============================================================================
 def build_dataset(links_out_file_paths, n_dim):
     """Build time series data set from set of Links Gauss point '.out' files.

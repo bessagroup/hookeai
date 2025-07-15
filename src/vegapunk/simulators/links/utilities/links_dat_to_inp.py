@@ -1,10 +1,26 @@
+"""Convert Links '.dat' file to Abaqus-like '.inp' file.
+
+Functions
+---------
+links_dat_to_abaqus_inp
+    Convert Links input data file to Abaqus data input data file.
+"""
+#
+#                                                                       Modules
+# =============================================================================
 # Standard
 import os
 import re
 # Third-party
 import numpy as np
+#
+#                                                          Authorship & Credits
 # =============================================================================
-# Summary: Convert Links '.dat' file to Abaqus '.inp' file
+__author__ = 'Bernardo Ferreira (bernardo_ferreira@brown.edu)'
+__credits__ = ['Bernardo Ferreira', ]
+__status__ = 'Stable'
+# =============================================================================
+#
 # =============================================================================
 def links_dat_to_abaqus_inp(links_input_file_path):
     """Convert Links input data file to Abaqus data input data file.

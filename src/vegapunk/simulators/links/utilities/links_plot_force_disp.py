@@ -1,9 +1,13 @@
+"""Generate force-displacement plot from Links simulation."""
+#
+#                                                                       Modules
+# =============================================================================
 # Standard
 import sys
 import pathlib
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Add project root directory to sys.path
-root_dir = str(pathlib.Path(__file__).parents[1])
+root_dir = str(pathlib.Path(__file__).parents[3])
 if root_dir not in sys.path:
     sys.path.insert(0, root_dir)
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -15,8 +19,14 @@ import pandas
 import matplotlib.pyplot as plt
 # Local
 from ioput.plots import plot_xy_data, save_figure
+#
+#                                                          Authorship & Credits
 # =============================================================================
-# Summary: Generate force-displacement plot from Links simulation
+__author__ = 'Bernardo Ferreira (bernardo_ferreira@brown.edu)'
+__credits__ = ['Bernardo Ferreira', ]
+__status__ = 'Stable'
+# =============================================================================
+#
 # =============================================================================
 # Set displacement multiplier (accounting for model symmetries)
 displacement_multiplier = 2.0
