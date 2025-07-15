@@ -1,9 +1,19 @@
+"""Denoise synthetic noise from mesh nodes displacements ('.csv' files).
+
+Functions
+---------
+inject_displacements_noise
+    Inject synthetic noise into structure nodes displacements.
+"""
+#
+#                                                                       Modules
+# =============================================================================
 # Standard
 import sys
 import pathlib
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Add project root directory to sys.path
-root_dir = str(pathlib.Path(__file__).parents[1])
+root_dir = str(pathlib.Path(__file__).parents[2])
 if root_dir not in sys.path:
     sys.path.insert(0, root_dir)
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -18,8 +28,14 @@ import pandas
 from utilities.data_denoisers import Denoiser
 from ioput.plots import plot_xy_data, save_figure
 from ioput.iostandard import make_directory
+#
+#                                                          Authorship & Credits
 # =============================================================================
-# Summary: Denoise synthetic noise from mesh nodes displacements ('.csv' files)
+__author__ = 'Bernardo Ferreira (bernardo_ferreira@brown.edu)'
+__credits__ = ['Bernardo Ferreira', ]
+__status__ = 'Stable'
+# =============================================================================
+#
 # =============================================================================
 def denoise_displacements_noise(csv_data_dir, denoise_parameters={},
                                 plot_parameters=None):

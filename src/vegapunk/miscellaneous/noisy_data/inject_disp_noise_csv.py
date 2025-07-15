@@ -1,9 +1,19 @@
+"""Inject synthetic noise into mesh nodes displacements ('.csv' files).
+
+Functions
+---------
+inject_displacements_noise
+    Inject synthetic noise into structure nodes displacements.
+"""
+#
+#                                                                       Modules
+# =============================================================================
 # Standard
 import sys
 import pathlib
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Add project root directory to sys.path
-root_dir = str(pathlib.Path(__file__).parents[1])
+root_dir = str(pathlib.Path(__file__).parents[2])
 if root_dir not in sys.path:
     sys.path.insert(0, root_dir)
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -13,11 +23,16 @@ import re
 import numpy as np
 import pandas
 # Local
-from projects.darpa_metals.rnn_material_model.user_scripts.\
-    noise_analyses.gen_noisy_response_datasets import NoiseGenerator
+from data_generation.strain_paths.noise_generator import NoiseGenerator
 from ioput.iostandard import make_directory
+#
+#                                                          Authorship & Credits
 # =============================================================================
-# Summary: Inject synthetic noise into mesh nodes displacements ('.csv' files)
+__author__ = 'Bernardo Ferreira (bernardo_ferreira@brown.edu)'
+__credits__ = ['Bernardo Ferreira', ]
+__status__ = 'Stable'
+# =============================================================================
+#
 # =============================================================================
 def inject_displacements_noise(csv_data_dir, noise_parameters):
     """Inject synthetic noise into structure nodes displacements.

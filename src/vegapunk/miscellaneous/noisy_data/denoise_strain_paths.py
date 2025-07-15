@@ -1,9 +1,13 @@
+"""Denoise noisy strain loading paths."""
+#
+#                                                                       Modules
+# =============================================================================
 # Standard
 import sys
 import pathlib
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Add project root directory to sys.path
-root_dir = str(pathlib.Path(__file__).parents[1])
+root_dir = str(pathlib.Path(__file__).parents[2])
 if root_dir not in sys.path:
     sys.path.insert(0, root_dir)
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -16,10 +20,14 @@ from time_series_data.time_dataset import TimeSeriesDatasetInMemory, \
     load_dataset
 from utilities.data_denoisers import Denoiser
 from ioput.plots import plot_xy_data
-from projects.darpa_metals.rnn_material_model.strain_paths.interface import \
-    StrainPathGenerator
+#
+#                                                          Authorship & Credits
 # =============================================================================
-# Summary: Test denoising methods in noisy strain paths
+__author__ = 'Bernardo Ferreira (bernardo_ferreira@brown.edu)'
+__credits__ = ['Bernardo Ferreira', ]
+__status__ = 'Stable'
+# =============================================================================
+#
 # =============================================================================
 # Set reference noiseless strain-stress data set file path
 noiseless_dataset_file_path = \

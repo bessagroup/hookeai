@@ -1,4 +1,4 @@
-"""DARPA METALS PROJECT: Plot convergence analysis of RNN material model.
+"""Plot material model convergence analysis (noisy data).
 
 This module is adapted from 'plot_convergence_analysis' to handle data stemming
 from different noise scenarios. It only includes the plotting of the average
@@ -17,9 +17,10 @@ import sys
 import pathlib
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Add project root directory to sys.path
-root_dir = str(pathlib.Path(__file__).parents[5])
+root_dir = str(pathlib.Path(__file__).parents[2])
 if root_dir not in sys.path:
     sys.path.insert(0, root_dir)
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 import os
 import re
 import shutil
@@ -28,7 +29,6 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
 import cycler
-import sklearn.linear_model
 # Local
 from time_series_data.time_dataset import load_dataset
 from ioput.iostandard import make_directory
@@ -39,7 +39,7 @@ from ioput.iostandard import find_unique_file_with_regex
 # =============================================================================
 __author__ = 'Bernardo Ferreira (bernardo_ferreira@brown.edu)'
 __credits__ = ['Bernardo Ferreira', ]
-__status__ = 'Planning'
+__status__ = 'Stable'
 # =============================================================================
 #
 # =============================================================================
@@ -359,11 +359,12 @@ def scatter_xy_data_noise_cases(data_xy, data_labels=None, n_noise_case=1,
             data_labels = n_datasets*[None,]
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set default color cycle
-    cycler_color = cycler.cycler('color',['#4477AA', '#EE6677', '#228833',
-                                          '#CCBB44', '#66CCEE', '#AA3377',
-                                          '#BBBBBB', '#EE7733', '#009988',
-                                          '#CC3311', '#DDAA33', '#999933',
-                                          '#DDCC77', '#882255'])
+    cycler_color = cycler.cycler('color',
+                                 ['#4477AA', '#EE6677', '#228833',
+                                  '#CCBB44', '#66CCEE', '#AA3377',
+                                  '#BBBBBB', '#EE7733', '#009988',
+                                  '#CC3311', '#DDAA33', '#999933',
+                                  '#DDCC77', '#882255'])
     # Set default linestyle cycle
     cycler_linestyle = cycler.cycler('linestyle',['-','--','-.'])
     # Set default cycler

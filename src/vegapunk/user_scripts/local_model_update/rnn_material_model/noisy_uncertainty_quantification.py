@@ -1,4 +1,4 @@
-"""DARPA METALS PROJECT: Uncertainty quantification of RNN material model."""
+"""Uncertainty quantification (noisy data): RNN material model."""
 #
 #                                                                       Modules
 # =============================================================================
@@ -7,25 +7,24 @@ import sys
 import pathlib
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Add project root directory to sys.path
-root_dir = str(pathlib.Path(__file__).parents[5])
+root_dir = str(pathlib.Path(__file__).parents[3])
 if root_dir not in sys.path:
     sys.path.insert(0, root_dir)
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 import os
 import shutil
-import re
 # Third-party
 import torch
 # Local
-from projects.darpa_metals.rnn_material_model.user_scripts \
-    .uncertainty_quantification import perform_model_uq, gen_model_uq_plots
+from user_scripts.local_model_update.rnn_material_model.\
+    uncertainty_quantification import perform_model_uq, gen_model_uq_plots
 from ioput.iostandard import make_directory, find_unique_file_with_regex
 #
 #                                                          Authorship & Credits
 # =============================================================================
 __author__ = 'Bernardo Ferreira (bernardo_ferreira@brown.edu)'
 __credits__ = ['Bernardo Ferreira', ]
-__status__ = 'Planning'
+__status__ = 'Stable'
 # =============================================================================
 #
 # =============================================================================
