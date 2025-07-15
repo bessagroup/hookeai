@@ -1,9 +1,33 @@
+"""Build data set from material patches local strain-stress paths.
+
+Functions
+---------
+build_local_paths_dataset
+    Build data set from material patches local strain-stress paths.
+compute_patch_local_paths
+    Compute material patch local strain-stress paths data set.
+get_patch_analysis_dirs
+    Get material patch analysis data directories.
+gen_patch_formatted_data
+    Generate material patch formatted data.
+set_analysis_dir
+    Set material patch analysis directory.
+set_simulation_dir
+    Set material patch simulation data directory.
+gen_patch_data
+    Generate material patch data and material state files.
+gen_patch_local_dataset
+    Generate material patch local strain-stress paths data set.
+"""
+#
+#                                                                       Modules
+# =============================================================================
 # Standard
 import sys
 import pathlib
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Add project root directory to sys.path
-root_dir = str(pathlib.Path(__file__).parents[1])
+root_dir = str(pathlib.Path(__file__).parents[2])
 if root_dir not in sys.path:
     sys.path.insert(0, root_dir)
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -15,18 +39,25 @@ import torch
 # Local
 from time_series_data.time_dataset import TimeSeriesDatasetInMemory, \
     save_dataset
-from projects.darpa_metals.material_finder.user_scripts.gen_specimen_data \
+from user_scripts.global_model_update.material_finder.gen_specimen_data \
     import gen_specimen_dataset, get_specimen_history_paths, \
         set_material_model_parameters
-from projects.darpa_metals.material_finder.user_scripts. \
+from user_scripts.global_model_update.material_finder. \
     gen_specimen_local_paths import gen_specimen_local_dataset
-from projects.darpa_metals.rnn_material_model.user_scripts. \
-    gen_response_dataset import generate_dataset_plots
-from testing_utilities.links_dat_to_inp import links_dat_to_abaqus_inp
-from testing_utilities.links_nodedata_to_csv import links_node_output_to_csv
+from user_scripts.synthetic_data.gen_response_dataset import \
+    generate_dataset_plots
+from simulators.links.utilities.links_dat_to_inp import links_dat_to_abaqus_inp
+from simulators.links.utilities.links_nodedata_to_csv import \
+    links_node_output_to_csv
 from ioput.iostandard import make_directory
+#
+#                                                          Authorship & Credits
 # =============================================================================
-# Summary: Build data set from material patches local strain-stress paths
+__author__ = 'Bernardo Ferreira (bernardo_ferreira@brown.edu)'
+__credits__ = ['Bernardo Ferreira', ]
+__status__ = 'Stable'
+# =============================================================================
+#
 # =============================================================================
 def build_local_paths_dataset(patches_data_dir, patch_name,
                               device_type='cpu', is_verbose=False):
