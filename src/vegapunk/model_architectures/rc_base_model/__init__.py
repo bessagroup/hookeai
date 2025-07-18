@@ -1,3 +1,4 @@
+"""ADiMU: Recurrent constitutive model architecture."""
 #
 #                                                                       Modules
 # =============================================================================

@@ -27,10 +27,12 @@ import numpy as np
 import matplotlib.pyplot as plt
 # Local
 from time_series_data.time_dataset import load_dataset
-from rnn_base_model.predict.prediction_plots import plot_time_series_prediction
-from rc_base_model.train.training import read_best_parameters_from_file
+from model_architectures.procedures.model_prediction import \
+    plot_time_series_prediction
+from model_architectures.rc_base_model.train.training import \
+    read_best_parameters_from_file
 from model_architectures.materials.process_predictions import \
-    build_time_series_predictions_data
+    build_prediction_data_arrays, build_time_series_predictions_data
 from model_architectures.procedures.model_prediction import \
     plot_truth_vs_prediction
 from ioput.plots import scatter_xy_data, plot_boxplots, save_figure
@@ -40,7 +42,7 @@ from ioput.iostandard import find_unique_file_with_regex, make_directory
 # =============================================================================
 __author__ = 'Bernardo Ferreira (bernardo_ferreira@brown.edu)'
 __credits__ = ['Bernardo Ferreira', ]
-__status__ = 'Planning'
+__status__ = 'Stable'
 # =============================================================================
 #
 # =============================================================================

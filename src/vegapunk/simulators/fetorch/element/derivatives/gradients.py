@@ -25,7 +25,7 @@ from simulators.fetorch.element.derivatives.jacobian import eval_jacobian
 # =============================================================================
 __author__ = 'Bernardo Ferreira (bernardo_ferreira@brown.edu)'
 __credits__ = ['Bernardo Ferreira', ]
-__status__ = 'Planning'
+__status__ = 'Stable'
 # =============================================================================
 #
 # =============================================================================

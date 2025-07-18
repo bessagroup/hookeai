@@ -29,7 +29,7 @@ from simulators.fetorch.math.voigt_notation import vget_strain_from_vmf, \
 # =============================================================================
 __author__ = 'Bernardo Ferreira (bernardo_ferreira@brown.edu)'
 __credits__ = ['Bernardo Ferreira', ]
-__status__ = 'Planning'
+__status__ = 'Stable'
 # =============================================================================
 #
 # =============================================================================

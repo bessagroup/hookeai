@@ -27,15 +27,13 @@ __status__ = 'Stable'
 #
 # =============================================================================
 # Set conversion format
-conversion_format = ('list', 'TimeSeriesDatasetInMemory')[0]
+conversion_format = ('list', 'TimeSeriesDatasetInMemory')[1]
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Initialize source data set file paths
 src_dataset_file_paths = []
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Set source data sets base directories
-src_base_dirs = ('/home/bernardoferreira/Documents/brown/projects/'
-                 'colaboration_shunyu/deliverable_03_28_2025/3Dpath_2Dsim/'
-                 'n2560',)
+src_base_dirs = ('/home/bernardoferreira/Documents/brown/projects/colaboration_shunyu/deliverable_07_17_2025/Main_design/n10240',)
 # Loop over base directories
 for src_base_dir in src_base_dirs:
     # Set data set file regex

@@ -27,7 +27,7 @@ import numpy as np
 # =============================================================================
 __author__ = 'Bernardo Ferreira (bernardo_ferreira@brown.edu)'
 __credits__ = ['Bernardo Ferreira', ]
-__status__ = 'Alpha'
+__status__ = 'Stable'
 # =============================================================================
 def make_directory(directory, is_overwrite=False):
     """Create a directory.

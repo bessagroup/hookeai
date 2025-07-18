@@ -28,7 +28,7 @@ import torch
 # =============================================================================
 __author__ = 'Bernardo Ferreira (bernardo_ferreira@brown.edu)'
 __credits__ = ['Bernardo Ferreira', ]
-__status__ = 'Planning'
+__status__ = 'Stable'
 # =============================================================================
 #
 # =============================================================================
@@ -353,7 +353,7 @@ def remove_posterior_state_files(model, epoch):
     # Loop over files in model directory
     for filename in directory_list:
         # Check if file is model epoch state file
-        is_state_file, file_epoch = model._check_state_file(filename)
+        is_state_file, file_epoch = check_state_file(model, filename)
         # Delete model epoch state file posterior to given epoch
         if is_state_file and file_epoch > epoch:
             os.remove(os.path.join(model.model_directory, filename))

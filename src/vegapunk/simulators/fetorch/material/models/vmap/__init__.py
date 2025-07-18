@@ -1,3 +1,4 @@
+"""FETorch: Material constitutive models (vmap-compatible implementation)."""
 #
 #                                                                       Modules
 # =============================================================================

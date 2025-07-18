@@ -33,7 +33,7 @@ from utilities.fit_data_scalers import fit_data_scaler_from_dataset
 # =============================================================================
 __author__ = 'Bernardo Ferreira (bernardo_ferreira@brown.edu)'
 __credits__ = ['Bernardo Ferreira', ]
-__status__ = 'Planning'
+__status__ = 'Stable'
 # =============================================================================
 #
 # =============================================================================
@@ -62,7 +62,7 @@ def set_data_scalers(model, scaler_features_in, scaler_features_out):
         Data scaler for output features.
     """
     # Initialize data scalers
-    model._init_data_scalers()
+    init_data_scalers(model)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set fitted data scalers
     model._data_scalers['features_in'] = scaler_features_in
@@ -161,7 +161,7 @@ def fit_data_scalers(model, dataset, scaling_type='mean-std',
               '\n--------------------------\n')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Initialize data scalers
-    model._init_data_scalers()
+    init_data_scalers(model)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Get scaling parameters and fit data scalers: input features
     scaler_features_in = fit_data_scaler_from_dataset(
@@ -240,7 +240,7 @@ def data_scaler_transform(model, tensor, features_type, mode='normalize'):
         Transformed features PyTorch tensor.
     """
     # Check model data normalization
-    model.check_normalized_return()
+    check_normalized_return(model)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Check input features tensor
     if not isinstance(tensor, torch.Tensor):

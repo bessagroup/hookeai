@@ -1,3 +1,4 @@
+"""FETorch: Material constitutive models (standard implementation)."""
 #
 #                                                                       Modules
 # =============================================================================

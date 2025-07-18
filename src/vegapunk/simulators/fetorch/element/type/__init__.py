@@ -1,3 +1,4 @@
+"""FETorch: Finite element types and quadratures."""
 #
 #                                                                       Modules
 # =============================================================================

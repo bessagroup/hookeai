@@ -24,7 +24,7 @@ from model_architectures.procedures.model_prediction import \
 # =============================================================================
 __author__ = 'Bernardo Ferreira (bernardo_ferreira@brown.edu)'
 __credits__ = ['Bernardo Ferreira', ]
-__status__ = 'Planning'
+__status__ = 'Stable'
 # =============================================================================
 #
 # =============================================================================
@@ -352,6 +352,10 @@ def build_time_series_predictions_data(dataset_file_path, predictions_dir,
         n_pred_comps = n_strain_comps
     else:
         raise RuntimeError('Unknown prediction data array type.')
+    
+    print(prediction_type)
+    print(n_pred_comps)
+    
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Initialize prediction components data
     prediction_data_arrays = [{} for _ in range(n_pred_comps)]

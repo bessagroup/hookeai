@@ -44,7 +44,7 @@ import sklearn.linear_model
 # =============================================================================
 __author__ = 'Bernardo Ferreira (bernardo_ferreira@brown.edu)'
 __credits__ = ['Bernardo Ferreira', ]
-__status__ = 'Planning'
+__status__ = 'Stable'
 # =============================================================================
 def plot_xy_data(data_xy, data_labels=None, is_reference_data=False,
                  x_lims=(None, None), y_lims=(None, None), title=None,

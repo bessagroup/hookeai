@@ -1,3 +1,4 @@
+"""Prediction: Recurrent neural network model architecture."""
 #
 #                                                                       Modules
 # =============================================================================

@@ -1,3 +1,4 @@
+"""ADiMU: Global, indirect material model discovery."""
 #
 #                                                                       Modules
 # =============================================================================

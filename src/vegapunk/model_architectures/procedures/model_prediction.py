@@ -34,7 +34,7 @@ from ioput.plots import plot_xy_data, plot_xny_data, scatter_xy_data, \
 # =============================================================================
 __author__ = 'Bernardo Ferreira (bernardo_ferreira@brown.edu)'
 __credits__ = ['Bernardo Ferreira', ]
-__status__ = 'Planning'
+__status__ = 'Stable'
 # =============================================================================
 #
 # =============================================================================

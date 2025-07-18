@@ -1,3 +1,4 @@
+"""Training: Recurrent constitutive model architecture."""
 #
 #                                                                       Modules
 # =============================================================================

@@ -1,4 +1,5 @@
+"""Model: Recurrent neural network model architecture."""
 #
 #                                                                       Modules
 # =============================================================================
-from model_architectures.rnn_base_model.model import gru_vmap
+from model_architectures.rnn_base_model.custom import gru_vmap

@@ -21,15 +21,17 @@ from simulators.fetorch.material.models.standard.von_mises_mixed import \
     VonMisesMixed
 from simulators.fetorch.material.models.standard.drucker_prager import \
     DruckerPrager
-from rc_base_model.model.recurrent_model import RecurrentConstitutiveModel
-from rnn_base_model.model.gru_model import GRURNNModel
-from hybrid_base_model.model.hybrid_model import HybridModel
+from model_architectures.rnn_base_model.model.gru_model import GRURNNModel
+from model_architectures.rc_base_model.model.recurrent_model import \
+    RecurrentConstitutiveModel
+from model_architectures.hybrid_base_model.model.hybrid_model import \
+    HybridModel
 #
 #                                                          Authorship & Credits
 # =============================================================================
 __author__ = 'Bernardo Ferreira (bernardo_ferreira@brown.edu)'
 __credits__ = ['Bernardo Ferreira', ]
-__status__ = 'Planning'
+__status__ = 'Stable'
 # =============================================================================
 #
 # =============================================================================

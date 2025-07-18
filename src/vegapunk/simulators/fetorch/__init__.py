@@ -1,3 +1,4 @@
+"""Simulator: FETorch (PyTorch-based Finite Element Method)."""
 #
 #                                                                       Modules
 # =============================================================================
