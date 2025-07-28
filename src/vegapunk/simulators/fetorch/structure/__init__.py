@@ -3,4 +3,5 @@
 #                                                                       Modules
 # =============================================================================
 from simulators.fetorch.structure import structure_mesh
-from simulators.fetorch.structure import structure_state
+# Prevent circular import
+#from simulators.fetorch.structure import structure_state
