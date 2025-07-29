@@ -26,45 +26,46 @@ __status__ = 'Stable'
 # =============================================================================
 #
 # =============================================================================
-# Set TimeSeriesDatasetInMemory data set file path
-im_dataset_file_path = ('/home/bernardoferreira/Desktop/test_dataset/n10/'
-                        '1_training_dataset/ss_paths_dataset_n10.pkl')
-# Set sample file base name
-sample_basename = 'ss_response_path'
-# Set TimeSeriesDataset directory
-dataset_directory = os.path.dirname(im_dataset_file_path)
-# Set TimeSeriesDataset data set file basename
-dataset_basename = 'ss_paths_dataset'
-# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-# Initialize time series data set samples
-dataset_sample_files = []
-# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~         
-# Load TimeSeriesDatasetInMemory data set
-im_dataset = load_dataset(im_dataset_file_path)
-# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-# Check TimeSeriesDatasetInMemory data set
-if not isinstance(im_dataset, TimeSeriesDatasetInMemory):
-    raise RuntimeError('Data set file path does not contain a '
-                       'TimeSeriesDatasetInMemory data set.')
-# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-# Loop over samples
-for i in range(len(im_dataset)):
-    # Get sample
-    sample = im_dataset[i]
+if __name__ == '__main__':
+    # Set TimeSeriesDatasetInMemory data set file path
+    im_dataset_file_path = ('/home/bernardoferreira/Desktop/test_dataset/n10/'
+                            '1_training_dataset/ss_paths_dataset_n10.pkl')
+    # Set sample file base name
+    sample_basename = 'ss_response_path'
+    # Set TimeSeriesDataset directory
+    dataset_directory = os.path.dirname(im_dataset_file_path)
+    # Set TimeSeriesDataset data set file basename
+    dataset_basename = 'ss_paths_dataset'
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Set sample file path
-    sample_file_path = os.path.join(dataset_directory,
-                                    f'{sample_basename}_{i}.pt')
-    # Store sample (local directory)
-    torch.save(sample, sample_file_path)
-    # Append material response path file path
-    dataset_sample_files.append(sample_file_path)
-# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-# Create TimeSeriesDataset data set
-dataset = TimeSeriesDataset(dataset_directory,
-                            dataset_sample_files,
-                            dataset_basename=dataset_basename)
-# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-# Save TimeSeriesDataset data set
-save_dataset(dataset, dataset_basename, dataset_directory,
-             is_append_n_sample=True)
+    # Initialize time series data set samples
+    dataset_sample_files = []
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~         
+    # Load TimeSeriesDatasetInMemory data set
+    im_dataset = load_dataset(im_dataset_file_path)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Check TimeSeriesDatasetInMemory data set
+    if not isinstance(im_dataset, TimeSeriesDatasetInMemory):
+        raise RuntimeError('Data set file path does not contain a '
+                           'TimeSeriesDatasetInMemory data set.')
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Loop over samples
+    for i in range(len(im_dataset)):
+        # Get sample
+        sample = im_dataset[i]
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set sample file path
+        sample_file_path = os.path.join(dataset_directory,
+                                        f'{sample_basename}_{i}.pt')
+        # Store sample (local directory)
+        torch.save(sample, sample_file_path)
+        # Append material response path file path
+        dataset_sample_files.append(sample_file_path)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Create TimeSeriesDataset data set
+    dataset = TimeSeriesDataset(dataset_directory,
+                                dataset_sample_files,
+                                dataset_basename=dataset_basename)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Save TimeSeriesDataset data set
+    save_dataset(dataset, dataset_basename, dataset_directory,
+                 is_append_n_sample=True)
