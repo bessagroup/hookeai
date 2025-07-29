@@ -99,7 +99,8 @@ class MaterialResponseDatasetGenerator():
     store_tensor_comps(comps, tensor)
         Store strain/stress tensor components in array.
     gen_response_dataset_from_csv(self, response_file_paths, \
-                                  is_in_memory_dataset=True, save_dir=None, \
+                                  is_in_memory_dataset=True, \
+                                  dataset_directory, save_dir=None, \
                                   is_save_fig=False, is_verbose=False)
     plot_material_response_path(cls, strain_formulation, n_dim, \
                                 strain_comps_order, strain_path, \
@@ -238,9 +239,6 @@ class MaterialResponseDatasetGenerator():
                 self._strain_formulation, self._problem_type, model_parameters)
         elif model_name == 'lou_zhang_yoon':
             constitutive_model = LouZhangYoon(
-                self._strain_formulation, self._problem_type, model_parameters)
-        elif model_name == 'bazant_m7':
-            constitutive_model = BazantM7(
                 self._strain_formulation, self._problem_type, model_parameters)
         else:
             raise RuntimeError(f'Unknown material constitutive model '
@@ -571,7 +569,8 @@ class MaterialResponseDatasetGenerator():
         return comps_array
     # -------------------------------------------------------------------------
     def gen_response_dataset_from_csv(self, response_file_paths,
-                                      is_in_memory_dataset=True, save_dir=None,
+                                      is_in_memory_dataset=True,
+                                      dataset_directory=None, save_dir=None,
                                       is_save_fig=False, is_verbose=False):
         """Generate strain-stress path data set from set of .csv files.
         

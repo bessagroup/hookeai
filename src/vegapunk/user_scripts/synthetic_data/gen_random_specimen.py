@@ -42,9 +42,10 @@ from simulators.links.links import LinksSimulator
 from simulators.fetorch.material.models.standard.hardening import \
     get_hardening_law
 from data_generation.spdg.patch_generator import FiniteElementPatchGenerator
-from testing_utilities.links_plot_tfact import plot_links_tfact_hist
-from testing_utilities.links_dat_to_inp import links_dat_to_abaqus_inp
-from testing_utilities.links_nodedata_to_csv import links_node_output_to_csv
+from simulators.links.utilities.links_plot_tfact import plot_links_tfact_hist
+from simulators.links.utilities.links_dat_to_inp import links_dat_to_abaqus_inp
+from simulators.links.utilities.links_nodedata_to_csv import \
+    links_node_output_to_csv
 from ioput.iostandard import make_directory
 #
 #                                                          Authorship & Credits
