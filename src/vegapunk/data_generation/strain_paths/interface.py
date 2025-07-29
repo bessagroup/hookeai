@@ -609,7 +609,7 @@ class StrainPathGenerator(ABC):
             # Save figure
             if is_save_fig:
                 save_figure(figure, filename + '_boxplot',
-                            format='pdf', save_dir=save_dir)
+                            format='png', save_dir=save_dir)
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Close plot
             plt.close('all')
