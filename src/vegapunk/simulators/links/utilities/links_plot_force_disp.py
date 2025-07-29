@@ -146,6 +146,24 @@ data_array[:, 0] = data_array[:, 0]*displacement_multiplier
 # Apply reaction force multiplier
 data_array[:, 1] = data_array[:, 1]*reaction_multiplier
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# Set force-displacement history data file path
+force_disp_path = os.path.join(os.path.dirname(links_output_directory),
+                               f'{simulation_name}_force_displacement.dat')
+# Open force-displacement history data file
+force_disp_file = open(force_disp_path, 'w')
+# Build force-displacement history file content
+write_lines = \
+    ['\nFORCE-DISPLACEMENT HISTORY' + '\n'] \
+    + [f'\nNumber of time steps = {n_time}'] \
+    + [f'\n\nForce-displacement history data:'] \
+    + [f'\n\n{"Displacement":^16s}   {"Force":^16s}'] \
+    + [f'\n{data_array[i, 0]:^16.8e}   {data_array[i, 1]:^16.8e}'
+    for i in range(n_time)]
+# Write force-displacement history data file
+force_disp_file.writelines(write_lines)
+# Close force-displacement history data file
+force_disp_file.close()
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Plot force-displacement data
 figure, axes = plot_xy_data(data_array,
                             x_label=f'Displacement ({disp_units})',
