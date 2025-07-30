@@ -17,6 +17,7 @@ root_dir = str(pathlib.Path(__file__).parents[2])
 if root_dir not in sys.path:
     sys.path.insert(0, root_dir)
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+import os
 # Third-party
 import torch
 import numpy as np
@@ -38,6 +39,7 @@ from data_generation.strain_paths.interface import StrainPathGenerator
 from user_scripts.synthetic_data.gen_response_dataset import \
     MaterialResponseDatasetGenerator
 from ioput.plots import plot_xy_data, save_figure
+from ioput.iostandard import make_directory
 #
 #                                                          Authorship & Credits
 # =============================================================================
@@ -239,6 +241,11 @@ if __name__ == "__main__":
              '0_simulation/local_response_dataset/ss_paths_dataset_n8.pkl')
         # Set sample index:
         sample_idx = 0
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set sample plots directory
+        plots_dir = os.path.join(plots_dir, f'sample_{sample_idx}')
+        # Create sample plots directory
+        make_directory(plots_dir, is_overwrite=True)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Load data set
         dataset = load_dataset(dataset_file_path)
