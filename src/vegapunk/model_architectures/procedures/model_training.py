@@ -432,7 +432,8 @@ def write_training_summary_file(
     summary_data['Number of completed epochs'] = n_epochs
     summary_data['Training data set file'] = \
         dataset_file_path if dataset_file_path else None
-    summary_data['Training data set size'] = len(dataset)
+    summary_data['Training data set size'] = \
+        len(dataset) if dataset else None
     summary_data['Best loss: '] = \
         f'{best_loss:.8e} (training epoch {best_training_epoch})'
     summary_data['Total training time'] = \

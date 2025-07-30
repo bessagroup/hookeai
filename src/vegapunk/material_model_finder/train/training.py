@@ -408,8 +408,9 @@ def train_model(n_max_epochs, specimen_data, specimen_material_state,
     model_statistics = get_model_summary(model, device_type=device_type)
     # Write summary data file for model training process
     write_training_summary_file(
-        device_type, seed, model.model_directory, n_max_epochs,
-        opt_algorithm, lr_init, lr_scheduler_type, lr_scheduler_kwargs, epoch,
+        device_type, seed, model.model_directory, None, n_max_epochs, None,
+        None, None, None, None, None, None, opt_algorithm, lr_init,
+        lr_scheduler_type, lr_scheduler_kwargs, epoch, None, None,
         best_loss, best_training_epoch, total_time_sec, avg_time_epoch,
         best_model_parameters=best_model_parameters,
         torchinfo_summary=str(model_statistics))
