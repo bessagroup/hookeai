@@ -4,6 +4,8 @@ Functions
 ---------
 links_dat_to_abaqus_inp
     Convert Links input data file to Abaqus data input data file.
+abaqus_inp_to_links_dat
+    Convert Abaqus data input data file to Links input data file.
 """
 #
 #                                                                       Modules
@@ -212,6 +214,194 @@ def links_dat_to_abaqus_inp(links_input_file_path):
     abaqus_file.close()
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     return abaqus_inp_file_path
+# =============================================================================
+def abaqus_inp_to_links_dat(specimen_inp_path, n_dim=3):
+    """Convert Abaqus data input data file to Links input data file.
+
+    Parameters
+    ----------
+    specimen_inp_path : str
+        Specimen mesh input file path (.inp).
+    n_dim : int, default=3
+        Number of spatial dimensions.
+        
+    Returns
+    -------
+    abaqus_inp_file_path : str
+        Abaqus input data file path.
+    """
+    # Set unique Links group ID (element type + material type)
+    group_id = 1
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Get specimen name
+    specimen_name = os.path.splitext(os.path.basename(specimen_inp_path))[0]
+    # Open specimen mesh input file
+    input_file = open(specimen_inp_path, 'r')
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Initialize nodes coordinates
+    nodes_coords = []
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Reset file position
+    input_file.seek(0)
+    # Initialize search flags
+    is_keyword_found = False
+    # Search for NODE keyword and collect nodes coordinates
+    for line in input_file:
+        if bool(re.search(r'\*node\b', line, re.IGNORECASE)):
+            # Start processing NODE section
+            is_keyword_found = True
+        elif is_keyword_found and (bool(re.search(r'^' + r'[*][A-Z]+', line))
+                                   or line.strip() == ''):
+            # Finished processing NODE section
+            break
+        elif is_keyword_found:
+            # Get node coordinates
+            nodes_coords.append(
+                [float(x) for x in line.split(sep=',')[1:1+n_dim]])
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Check mesh nodes initial coordinates
+    if len(nodes_coords) == 0:
+        raise RuntimeError('The *NODE keyword has not been found in the '
+                           'specimen mesh input file (.inp).')
+    # Get total number of nodes
+    n_node_mesh = len(nodes_coords)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Initialize elements connectivities
+    connectivities = {}
+    # Initialize connectivities nodes (validation only)
+    connect_nodes = []
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Reset file position
+    input_file.seek(0)
+    # Initialize search flags
+    is_keyword_found = False
+    # Search for ELEMENT keyword and collect nodes connectivities
+    for line in input_file:
+        if bool(re.search(r'\*element, type\b', line, re.IGNORECASE)):
+            # Start processing ELEMENT section
+            is_keyword_found = True
+            # Get ABAQUS element type
+            elem_abaqus_type = \
+                re.search(r'type=([A-Z0-9]+)', line, re.IGNORECASE).groups()[0]
+            # Get Links element type
+            if elem_abaqus_type is None:
+                raise RuntimeError('The *ELEMENT keyword TYPE parameter has '
+                                   'not been found in the specimen mesh input '
+                                   'file (.inp).')
+        elif is_keyword_found and (bool(re.search(r'^' + r'[*][A-Z]+', line))
+                                   or line.strip() == ''):
+            # Finished processing ELEMENT section
+            is_keyword_found = False
+        elif is_keyword_found:
+            # Get element label and nodes
+            elem_id = int(line.split(sep=',')[0])
+            elem_nodes = tuple([int(x) for x in line.split(sep=',')[1:]])
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Check element nodes
+            for node in elem_nodes:
+                if node not in range(1, n_node_mesh + 1):
+                    raise RuntimeError(f'Invalid node in element {elem_id} '
+                                       f'connectivities. Node labels must be '
+                                       f'within the range 1 to {n_node_mesh} '
+                                       f'for the provided mesh.')
+            # Store element nodes
+            connectivities[str(elem_id)] = elem_nodes
+            connect_nodes += list(elem_nodes)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Check nodes connectivities
+    if set(range(1, n_node_mesh + 1)) != set(connect_nodes):
+        raise RuntimeError(f'Invalid mesh connectivities. Mesh has '
+                           f'{(n_node_mesh)} nodes, but only '
+                           f'{len(set(connect_nodes))} nodes are part of the '
+                           f'elements connectivities.')
+    # Get total number of elements
+    n_element = len(connectivities.keys())
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Initialize Dirichlet boundary conditions
+    nodes_dirichlet_bc = {}
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Reset file position
+    input_file.seek(0)
+    # Initialize search flags
+    is_keyword_found = False
+    # Search for BOUNDARY keyword and collect nodes constraints
+    for line in input_file:
+        if bool(re.search(r'\*boundary\b', line, re.IGNORECASE)):
+            # Start processing BOUNDARY section
+            is_keyword_found = True
+        elif is_keyword_found and (bool(re.search(r'^' + r'[*][A-Z]+', line))
+                                   or line.strip() == ''):
+            # Finished processing BOUNDARY section
+            is_keyword_found = False
+        elif is_keyword_found:
+            # Get Dirichlet boundary condition data
+            dirichlet_bc = line.split(sep=',')
+            # Get node label
+            node_id = int(dirichlet_bc[0])
+            # Get prescribed degrees of freedom
+            node_dofs = tuple([int(x) for x in dirichlet_bc[1:3]])
+            # Get prescribed displacement
+            dirichlet_disp = float(dirichlet_bc[3])
+            # Initialize node Dirichlet boundary condition data
+            if str(node_id) not in nodes_dirichlet_bc.keys():
+                nodes_dirichlet_bc[str(node_id)] = {}
+            # Store node Dirichlet boundary condition data
+            for dim in range(node_dofs[0] - 1, node_dofs[1]):
+                nodes_dirichlet_bc[str(node_id)][str(dim)] = dirichlet_disp
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Get total number of nodes with Dirichlet boundary conditions
+    n_node_dirichlet = len(nodes_dirichlet_bc.keys())
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Set Links input data file path
+    links_file_path = os.path.join(os.path.dirname(specimen_inp_path),
+                                   f'{specimen_name}_links.dat')
+    # Open Links input data file
+    links_file = open(links_file_path, 'w')
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Initialize Links input file data
+    write_lines = []
+    # Append elements connectivities to Links input file data
+    write_lines += \
+        ['\nELEMENTS ' + str(n_element) + '\n'] \
+        + ['{:>3s}'.format(str(elem))
+            + '{:^5d}'.format(group_id)
+            + ' '.join([str(node) for node in connectivities[str(elem)]])
+            + '\n' for elem in range(1, n_element + 1)] 
+    # Append node coordinates to Links input file data
+    write_lines += \
+        ['\nNODE_COORDINATES ' + str(n_node_mesh) + ' CARTESIAN' + '\n'] \
+        + ['{:>3s}'.format(str(i + 1)) + ' '
+           + ' '.join([str('{:16.8e}'.format(coord)) \
+                       for coord in nodes_coords[i]]) + '\n' \
+            for i in range(n_node_mesh)]
+    # Append nodes Dirichlet boundary conditions
+    write_lines += ['\nNODES_WITH_PRESCRIBED_DISPLACEMENTS ' \
+                    + str(n_node_dirichlet) + '\n']
+    nodes_id_sorted = sorted([int(x) for x in nodes_dirichlet_bc.keys()])
+    for node_id in nodes_id_sorted:
+        # Get node Dirichlet boundary conditions
+        node_dirichlet_bc = nodes_dirichlet_bc[str(node_id)]
+        # Get Dirichlet code
+        dirichlet_code = [1 if str(dim) in node_dirichlet_bc.keys() else 0
+                          for dim in range(3)]
+        # Get Dirichlet displacements
+        dirichlet_disps = [node_dirichlet_bc[str(dim)] if str(dim) in
+                           node_dirichlet_bc.keys() else 0.0
+                           for dim in range(3)]
+        # Add required angle (2D only)
+        if n_dim == 2:
+            dirichlet_disps.append(0.0)
+        # Append node Dirichlet boundary conditions
+        write_lines += \
+            [' ' + '{:>3s}'.format(str(node_id)) + ' '
+             + ''.join(['{:^1d}'.format(i) for i in dirichlet_code]) \
+             + ' '.join(['{:16.8e}'.format(val) for val in dirichlet_disps])
+             + '\n']
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~     
+    # Write Links input data file
+    links_file.writelines(write_lines)
+    # Close Links input data file
+    links_file.close()
 # =============================================================================
 if __name__ == "__main__":
     # Set Links simulation input data file
