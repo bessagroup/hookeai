@@ -890,7 +890,7 @@ class LinksSimulator:
         n_reverse = 1
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Set number of increments
-        n_inc = 200
+        n_inc = 100
         # Set convergence tolerance
         conv_tol = '{:<16.8e}'.format(1e-6)
         # Set maximum number of iterations
@@ -1048,7 +1048,7 @@ class LinksSimulator:
                         f'\n1.0 {dfact:>16.8e} {conv_tol} {max_n_iter}']
                 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                 # Set plot flag
-                is_display_tfact_hist = True
+                is_display_tfact_hist = False
                 # Display total load factor history
                 if is_display_tfact_hist:
                     # Assemble total load factor history data

@@ -670,7 +670,7 @@ class FiniteElementPatch:
                         bbox_inches='tight', pad_inches=pad_inches)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Close plot
-        plt.close(fig)
+        plt.close('all')
 # =============================================================================
 def rotation_angle_2d(x1, x2):
     """Compute the rotation angle between two vectors in 2D.

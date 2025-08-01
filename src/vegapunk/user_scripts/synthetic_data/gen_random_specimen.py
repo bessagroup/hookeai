@@ -397,7 +397,7 @@ def set_patch_geometric_params(n_dim):
         patch_dims = (1.0, 1.0, 1.0)
         # Set range of average deformation along each dimension for each corner
         avg_deformation_ranges = \
-            {str(i): ((-0.1, 0.1), (-0.1, 0.1), (-0.1, 0.1))
+            {str(i): ((-0.05, 0.05), (-0.05, 0.05), (-0.05, 0.05))
              for i in range(1, 9)}
         # Set polynomial deformation order for each edge label
         edge_deformation_order = \
@@ -495,7 +495,7 @@ def set_patch_material_params(n_elems_per_dim):
     mesh_elem_material = np.ones(n_elems_per_dim, dtype=int)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set material model
-    model_name = 'VON_MISES'
+    model_name = 'ELASTIC'
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Initialize material phase descriptors
     mat_phases_descriptors = {}
@@ -607,7 +607,7 @@ def perform_links_simulation(simulations_dir, patch, patch_material_params):
                                      analysis_type)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set configuration
-    configuration = 'voids_lattice'
+    configuration = 'default'
     # Get number of finite elements per dimension
     n_elems_per_dim = patch.get_n_elems_per_dim()
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -713,36 +713,36 @@ if __name__ == "__main__":
                                 is_load_material_patch=is_load_material_patch,
                                 is_verbose=True)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Loop over material patches
-    for patch_key in links_file_paths.keys():
-        # Convert Links input data file to Abaqus data input data file
-        abaqus_inp_file_path = \
-            links_dat_to_abaqus_inp(links_file_paths[patch_key])
-        # Convert Links '.nodedata' output files to '.csv' files
-        csv_output_dir = links_node_output_to_csv(links_output_dirs[patch_key])   
-        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        # Get material patch directory
-        material_patch_dir = \
-            os.path.dirname(os.path.dirname(abaqus_inp_file_path))
-        # Set material model finder directory
-        material_model_finder_dir = os.path.join(
-            os.path.normpath(material_patch_dir), 'material_model_finder')
-        # Create material model finder directory
-        make_directory(material_model_finder_dir, is_overwrite=True)
-        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        # Set simulation data directory
-        simulation_dir = os.path.join(
-            os.path.normpath(material_model_finder_dir), '0_simulation')
-        # Create simulation data directory
-        make_directory(simulation_dir, is_overwrite=True)
-        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        # Copy Abaqus data input data file
-        shutil.copy(abaqus_inp_file_path,
-                    os.path.join(os.path.normpath(simulation_dir),
-                                 os.path.basename(abaqus_inp_file_path)))
-        # Copy node data directory
-        shutil.copytree(csv_output_dir,
-                        os.path.join(os.path.normpath(simulation_dir),
-                                     os.path.basename(csv_output_dir)))
+    ## Loop over material patches
+    #for patch_key in links_file_paths.keys():
+    #    # Convert Links input data file to Abaqus data input data file
+    #    abaqus_inp_file_path = \
+    #        links_dat_to_abaqus_inp(links_file_paths[patch_key])
+    #    # Convert Links '.nodedata' output files to '.csv' files
+    #    csv_output_dir = links_node_output_to_csv(links_output_dirs[patch_key])   
+    #    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    #    # Get material patch directory
+    #    material_patch_dir = \
+    #        os.path.dirname(os.path.dirname(abaqus_inp_file_path))
+    #    # Set material model finder directory
+    #    material_model_finder_dir = os.path.join(
+    #        os.path.normpath(material_patch_dir), 'material_model_finder')
+    #    # Create material model finder directory
+    #    make_directory(material_model_finder_dir, is_overwrite=True)
+    #    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    #    # Set simulation data directory
+    #    simulation_dir = os.path.join(
+    #        os.path.normpath(material_model_finder_dir), '0_simulation')
+    #    # Create simulation data directory
+    #    make_directory(simulation_dir, is_overwrite=True)
+    #    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    #    # Copy Abaqus data input data file
+    #    shutil.copy(abaqus_inp_file_path,
+    #                os.path.join(os.path.normpath(simulation_dir),
+    #                             os.path.basename(abaqus_inp_file_path)))
+    #    # Copy node data directory
+    #    shutil.copytree(csv_output_dir,
+    #                    os.path.join(os.path.normpath(simulation_dir),
+    #                                 os.path.basename(csv_output_dir)))
         
     
