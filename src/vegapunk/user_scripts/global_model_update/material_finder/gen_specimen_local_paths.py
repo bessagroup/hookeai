@@ -76,6 +76,8 @@ def gen_specimen_local_dataset(specimen_data_path,
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set material model finder name
     model_finder_name = 'material_model_finder'
+    # Set force equilibrium loss type
+    force_equilibrium_loss_type = 'pointwise'
     # Set force normalization
     is_force_normalization = False
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -88,6 +90,7 @@ def gen_specimen_local_dataset(specimen_data_path,
     # Initialize material model finder
     material_finder = MaterialModelFinder(
         model_directory, model_name=model_finder_name,
+        force_equilibrium_loss_type=force_equilibrium_loss_type,
         is_force_normalization=is_force_normalization,
         is_store_local_paths=is_store_local_paths,
         local_paths_elements=local_paths_elements, device_type=device_type)

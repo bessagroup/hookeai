@@ -240,11 +240,21 @@ def set_default_model_parameters(model_directory, device_type='cpu'):
     """
     # Set model name
     model_name = 'material_model_finder'
+    # Set force equilibrium loss type
+    force_equilibrium_loss_type = 'pointwise'
+    # Set force normalization flag (force equilibrium loss computation)
+    is_force_normalization = False
+    # Set autograd anomaly detection flag
+    is_detect_autograd_anomaly = False
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Build model initialization parameters
-    model_init_args = {'model_directory': model_directory,
-                       'model_name': model_name,
-                       'device_type': device_type}
+    model_init_args = {
+        'model_directory': model_directory,
+        'model_name': model_name,
+        'force_equilibrium_loss_type': force_equilibrium_loss_type,
+        'is_force_normalization': is_force_normalization,
+        'is_detect_autograd_anomaly': is_detect_autograd_anomaly,
+        'device_type': device_type}
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     return model_init_args
 # =============================================================================

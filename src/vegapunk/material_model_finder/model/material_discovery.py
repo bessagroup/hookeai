@@ -52,6 +52,17 @@ class MaterialModelFinder(torch.nn.Module):
         Specimen numerical data translated from experimental results.
     _specimen_material_state : StructureMaterialState
         FETorch specimen material state.
+    _force_equilibrium_loss_type : str
+        Type of force equilibrium loss:
+        
+        'pointwise'      : Force equilibrium strictly based on pointwise
+                           internal, external and reaction forces.
+
+        'dirichlet_sets' : Force equilibrium (1) based on pointwise
+                           internal and external forces (non-Dirichlet
+                           degrees of freedom) and (2) based on pointwise
+                           internal, external and set-based reaction forces
+                           (Dirichlet constrained degrees of freedom).
     _is_force_normalization : bool, default=False
         If True, then normalize forces prior to the computation of the force
         equilibrium loss.
@@ -97,6 +108,8 @@ class MaterialModelFinder(torch.nn.Module):
         Set model subdirectories.
     _set_material_models_dirs(self)
         Set material models directories.
+    check_force_equilibrium_loss_type(cls, force_equilibrium_loss_type)
+        Check if force equilibrium loss type is available.
     set_specimen_data(self, specimen_data, specimen_material_state,
                       force_minimum=None, force_maximum=None)
         Set specimen data and material state.
@@ -204,6 +217,7 @@ class MaterialModelFinder(torch.nn.Module):
         Check if generic model expects normalized output features.
     """
     def __init__(self, model_directory, model_name='material_model_finder',
+                 force_equilibrium_loss_type='pointwise',
                  is_force_normalization=False, is_store_local_paths=False,
                  local_paths_elements=None, is_detect_autograd_anomaly=False,
                  device_type='cpu'):
@@ -215,6 +229,18 @@ class MaterialModelFinder(torch.nn.Module):
             Directory where model is stored.
         model_name : str, default='material_model_finder'
             Name of model.
+        force_equilibrium_loss_type : str, default='pointwise'
+            Type of force equilibrium loss:
+            
+            'pointwise'      : Force equilibrium strictly based on pointwise
+                               internal, external and reaction forces.
+
+            'dirichlet_sets' : Force equilibrium (1) based on pointwise
+                               internal and external forces (non-Dirichlet
+                               degrees of freedom) and (2) based on pointwise
+                               internal, external and set-based reaction forces
+                               (Dirichlet constrained degrees of freedom).
+            
         is_force_normalization : bool, default=False
             If True, then normalize forces prior to the computation of the
             force equilibrium loss.
@@ -252,6 +278,10 @@ class MaterialModelFinder(torch.nn.Module):
             self.model_name = model_name
         # Set model subdirectories
         self._set_model_subdirs()
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set force equilibrium loss type
+        self._force_equilibrium_loss_type = \
+            self.check_force_equilibrium_loss_type(force_equilibrium_loss_type)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Set storage of specimen local strain-stress paths
         self._is_store_local_paths = is_store_local_paths
@@ -304,6 +334,34 @@ class MaterialModelFinder(torch.nn.Module):
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Update material model directory
             model.model_directory = model_dir
+    # -------------------------------------------------------------------------
+    @classmethod
+    def check_force_equilibrium_loss_type(cls, force_equilibrium_loss_type):
+        """Check if force equilibrium loss type is available.
+        
+        Parameters
+        ----------
+        force_equilibrium_loss_type : str
+            Type of force equilibrium loss.
+        
+        Returns
+        -------
+        force_equilibrium_loss_type : str
+            Type of force equilibrium loss.
+        """
+        # Set available force equilibrium loss types
+        available_force_equilibrium_loss_types = \
+            ('pointwise', 'dirichlet_sets')
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Check force equilibrium loss type
+        if (force_equilibrium_loss_type not in
+                available_force_equilibrium_loss_types):
+            raise RuntimeError(f'Invalid force equilibrium loss type: '
+                               f'{force_equilibrium_loss_type}. \n\n'
+                               f'Available types are: '
+                               f'{available_force_equilibrium_loss_types}.')
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        return force_equilibrium_loss_type
     # -------------------------------------------------------------------------
     def set_specimen_data(self, specimen_data, specimen_material_state,
                           force_minimum=None, force_maximum=None,
