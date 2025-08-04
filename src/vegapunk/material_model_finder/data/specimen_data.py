@@ -39,6 +39,12 @@ class SpecimenNumericalData:
         Reaction forces (Dirichlet boundary conditions) history of finite
         element mesh nodes stored as torch.Tensor(3d) of shape
         (n_node_mesh, n_dim, n_time).
+    dirichlet_bc_mesh_hist : torch.Tensor(3d)
+        Dirichlet boundary constraints history of finite element mesh nodes
+        stored as torch.Tensor(3d) of shape (n_node_mesh, n_dim, n_time).
+        Encodes if each degree of freedom is free (assigned 0) or constrained
+        (greater than 0) under Dirichlet boundary conditions. The encoding
+        depends on the selected force equilibrium loss type.
     time_hist : torch.Tensor(1d)
         Discrete time history.
 
@@ -65,6 +71,7 @@ class SpecimenNumericalData:
         # Initialize specimen data
         self.nodes_disps_mesh_hist = None
         self.reaction_forces_mesh_hist = None
+        self.dirichlet_bc_mesh_hist = None
         self.time_hist = None
     # -------------------------------------------------------------------------
     def set_specimen_mesh(self, nodes_coords_mesh_init, elements_type,
@@ -97,7 +104,8 @@ class SpecimenNumericalData:
             dirichlet_bool_mesh)
     # -------------------------------------------------------------------------
     def set_specimen_data(self, nodes_disps_mesh_hist,
-                          reaction_forces_mesh_hist, time_hist):
+                          reaction_forces_mesh_hist, dirichlet_bc_mesh_hist,
+                          time_hist):
         """Set specimen numerical data translated from experimental results.
         
         Parameters
@@ -109,6 +117,12 @@ class SpecimenNumericalData:
             Reaction forces (Dirichlet boundary conditions) history of finite
             element mesh nodes stored as torch.Tensor(3d) of shape
             (n_node_mesh, n_dim, n_time).
+        dirichlet_bc_mesh_hist : torch.Tensor(3d)
+            Dirichlet boundary constraints history of finite element mesh nodes
+            stored as torch.Tensor(3d) of shape (n_node_mesh, n_dim, n_time).
+            Encodes if each degree of freedom is free (assigned 0) or
+            constrained (greater than 0) under Dirichlet boundary conditions.
+            The encoding depends on the selected force equilibrium loss type.
         time_hist : torch.Tensor(1d)
             Discrete time history.
         """
@@ -125,10 +139,12 @@ class SpecimenNumericalData:
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Set data labels
         data_labels = ('nodes displacement history',
-                       'nodes reaction forces history')
+                       'nodes reaction forces history',
+                       'dirichlet boundary constraints history')
         # Check specimen data
         for i, tensor in enumerate((nodes_disps_mesh_hist,
-                                    reaction_forces_mesh_hist)):
+                                    reaction_forces_mesh_hist,
+                                    dirichlet_bc_mesh_hist)):
             if (not isinstance(tensor, torch.Tensor)
                 or (len(tensor.shape) != 3)):
                 raise RuntimeError(f'The {data_labels[i]} must be provided as '
@@ -148,7 +164,8 @@ class SpecimenNumericalData:
             raise RuntimeError(f'The discrete time history must be provided '
                                f'as a torch.Tensor(1d).')
         elif (nodes_disps_mesh_hist.shape[2] != time_hist.shape[0]
-              or reaction_forces_mesh_hist.shape[2] != time_hist.shape[0]):
+              or reaction_forces_mesh_hist.shape[2] != time_hist.shape[0]
+              or dirichlet_bc_mesh_hist.shape[2] != time_hist.shape[0]):
             raise RuntimeError(
                 f'The time history length of the {data_labels[0]} '
                 f'({nodes_disps_mesh_hist.shape[2]}) or the {data_labels[1]} '
@@ -159,6 +176,8 @@ class SpecimenNumericalData:
         self.nodes_disps_mesh_hist = nodes_disps_mesh_hist
         # Store nodes reaction forces history
         self.reaction_forces_mesh_hist = reaction_forces_mesh_hist
+        # Store nodes Dirichlet boundary constraints history
+        self.dirichlet_bc_mesh_hist = dirichlet_bc_mesh_hist
         # Store discrete time history
         self.time_hist = time_hist
     # -------------------------------------------------------------------------
