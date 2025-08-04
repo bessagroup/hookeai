@@ -126,8 +126,9 @@ def gen_specimen_dataset(specimen_name, specimen_raw_dir, specimen_inp_path,
     elements_ids = tuple([elem_id for elem_id in range(1, n_elem + 1)])
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Get specimen numerical data
-    nodes_disps_mesh_hist, reaction_forces_mesh_hist, time_hist = \
-        get_specimen_numerical_data(specimen_history_paths, n_dim, n_node_mesh)
+    nodes_disps_mesh_hist, reaction_forces_mesh_hist, dirichlet_bc_mesh_hist, \
+        time_hist = get_specimen_numerical_data(
+            specimen_history_paths, n_dim, n_node_mesh)
     # Set specimen numerical data
     specimen_data.set_specimen_data(nodes_disps_mesh_hist,
                                     reaction_forces_mesh_hist, time_hist)
@@ -409,6 +410,12 @@ def get_specimen_numerical_data(specimen_history_paths, n_dim, n_node_mesh):
         Reaction forces (Dirichlet boundary conditions) history of finite
         element mesh nodes stored as torch.Tensor(3d) of shape
         (n_node_mesh, n_dim, n_time).
+    dirichlet_bc_mesh_hist : torch.Tensor(3d)
+        Dirichlet boundary constraints history of finite element mesh nodes
+        stored as torch.Tensor(3d) of shape (n_node_mesh, n_dim, n_time).
+        Encodes if each degree of freedom is free (assigned 0) or constrained
+        (greater than 0) under Dirichlet boundary conditions. The encoding
+        depends on the selected force equilibrium loss type.
     time_hist : torch.Tensor(1d)
         Discrete time history.
     """
@@ -416,7 +423,7 @@ def get_specimen_numerical_data(specimen_history_paths, n_dim, n_node_mesh):
     n_time = len(specimen_history_paths)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Initialize node data
-    node_data = torch.zeros((n_node_mesh, 10, n_time))
+    node_data = torch.zeros((n_node_mesh, 13, n_time))
     # Loop over time step files
     for i, data_file_path in enumerate(specimen_history_paths):
         # Load data
@@ -427,11 +434,11 @@ def get_specimen_numerical_data(specimen_history_paths, n_dim, n_node_mesh):
             raise RuntimeError(f'Mismatch between expected number of nodes '
                                f'({n_node_mesh}) and number of nodes in the '
                                f'time step data file ({df.shape[0]}).')
-        if df.shape[1] != 10:
-            raise RuntimeError(f'Expecting data frame to have 10 columns, but '
+        if df.shape[1] != 13:
+            raise RuntimeError(f'Expecting data frame to have 13 columns, but '
                                f'{df.shape[1]} were found. \n\n'
                                f'Expected columns: NODE | X1 X2 X3 | '
-                               f'U1 U2 U3 | RF1 RF2 RF3')
+                               f'U1 U2 U3 | RF1 RF2 RF3 | DBC1 DBC2 DBC3')
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Store time step data
         node_data[:, :, i] = torch.tensor(df.values)
@@ -440,10 +447,14 @@ def get_specimen_numerical_data(specimen_history_paths, n_dim, n_node_mesh):
     nodes_disps_mesh_hist = node_data[:, 4:4+n_dim, :]
     # Extract reaction forces history
     reaction_forces_mesh_hist = node_data[:, 7:7+n_dim, :]
+    # Extract Dirichlet boundary constraints
+    dirichlet_bc_mesh_hist = node_data[:, 10:10+n_dim, :]
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Build time discrete history
     time_hist = torch.linspace(0, n_time - 1, steps=n_time)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    return nodes_disps_mesh_hist, reaction_forces_mesh_hist, time_hist
+    return nodes_disps_mesh_hist, reaction_forces_mesh_hist, \
+        dirichlet_bc_mesh_hist, time_hist
 # =============================================================================
 def set_material_model_parameters():
     """Set material model parameters.
