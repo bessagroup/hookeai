@@ -191,10 +191,10 @@ class MaterialModelFinder(torch.nn.Module):
     vforce_equilibrium_hist_loss(self, internal_forces_mesh_hist, \
                                  external_forces_mesh_hist, \
                                  reaction_forces_mesh_hist, \
-                                 dirichlet_bool_mesh)
+                                 dirichlet_bc_mesh_hist)
         Compute force equilibrium history loss.
     vforce_equilibrium_loss(self, internal_forces_mesh, external_forces_mesh, \
-                            reaction_forces_mesh, dirichlet_bool_mesh)
+                            reaction_forces_mesh, dirichlet_bc_mesh)
         Compute force equilibrium loss.
     build_elements_local_samples(self, strain_formulation, problem_type, \
                                  time_hist, elements_state_hist)
@@ -1667,16 +1667,16 @@ class MaterialModelFinder(torch.nn.Module):
         # element mesh nodes
         reaction_forces_mesh_hist = \
             specimen_data.reaction_forces_mesh_hist.to(self._device)
-        # Get degrees of freedom subject to Dirichlet boundary conditions
-        dirichlet_bool_mesh = \
-            specimen_mesh.get_dirichlet_bool_mesh().to(self._device)
+        # Get Dirichlet boundary constraints history
+        dirichlet_bc_mesh_hist = \
+            specimen_data.dirichlet_bc_mesh_hist.to(self._device)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Compute force equilibrium history loss
         force_equilibrium_hist_loss = \
             self.vforce_equilibrium_hist_loss(internal_forces_mesh_hist,
                                               external_forces_mesh_hist,
                                               reaction_forces_mesh_hist,
-                                              dirichlet_bool_mesh)
+                                              dirichlet_bc_mesh_hist)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Store specimen local strain-stress paths data set
         if self._is_store_local_paths:
@@ -1756,16 +1756,6 @@ class MaterialModelFinder(torch.nn.Module):
                 elements_coords_hist, elements_disps_hist, strain_formulation,
                 problem_type, element_type, element_material, time_hist)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        for elem in range(elements_state_hist.shape[0]):
-            pass
-            
-            
-            if torch.isnan(elements_internal_forces_hist[elem, :, :]).any():
-                print(f'ERROR - ELEMENT {elem}')
-                
-        
-        
-        
         # Check elements internal forces history
         if torch.isnan(elements_internal_forces_hist).any():
             raise RuntimeError('NaNs were detected in the tensor storing the '
@@ -2159,7 +2149,7 @@ class MaterialModelFinder(torch.nn.Module):
     def vforce_equilibrium_hist_loss(self, internal_forces_mesh_hist,
                                      external_forces_mesh_hist,
                                      reaction_forces_mesh_hist,
-                                     dirichlet_bool_mesh):
+                                     dirichlet_bc_mesh_hist):
         """Compute force equilibrium history loss.
         
         Compatible with vectorized mapping.
@@ -2176,11 +2166,12 @@ class MaterialModelFinder(torch.nn.Module):
             Reaction forces (Dirichlet boundary conditions) history of finite
             element mesh nodes stored as torch.Tensor(3d) of shape
             (n_node_mesh, n_dim, n_time).
-        dirichlet_bool_mesh : torch.Tensor(2d)
-            Degrees of freedom of finite element mesh subject to Dirichlet
-            boundary conditions. Stored as torch.Tensor(2d) of shape
-            (n_node_mesh, n_dim) where constrained degrees of freedom are
-            labeled 1, otherwise 0.
+        dirichlet_bc_mesh_hist : torch.Tensor(3d)
+            Dirichlet boundary constraints history of finite element mesh nodes
+            stored as torch.Tensor(3d) of shape (n_node_mesh, n_dim, n_time).
+            Encodes if each degree of freedom is free (assigned 0) or
+            constrained (greater than 0) under Dirichlet boundary conditions.
+            The encoding depends on the selected force equilibrium loss type.
             
         Returns
         -------
@@ -2191,20 +2182,20 @@ class MaterialModelFinder(torch.nn.Module):
         # along time)
         vmap_force_equilibrium_loss = \
             torch.vmap(self.vforce_equilibrium_loss,
-                       in_dims=(2, 2, 2, None), out_dims=(0,))
+                       in_dims=(2, 2, 2, 2), out_dims=(0,))
         # Compute force equilibrium history loss
         force_equilibrium_hist_loss = torch.sum(
             self._loss_time_weights[:, None, None, None]
             *vmap_force_equilibrium_loss(internal_forces_mesh_hist,
                                          external_forces_mesh_hist,
                                          reaction_forces_mesh_hist,
-                                         dirichlet_bool_mesh))
+                                         dirichlet_bc_mesh_hist))
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         return force_equilibrium_hist_loss
     # -------------------------------------------------------------------------
     def vforce_equilibrium_loss(self, internal_forces_mesh,
                                 external_forces_mesh, reaction_forces_mesh,
-                                dirichlet_bool_mesh):
+                                dirichlet_bc_mesh):
         """Compute force equilibrium loss.
         
         Compatible with vectorized mapping.
@@ -2221,11 +2212,12 @@ class MaterialModelFinder(torch.nn.Module):
             Reaction forces (Dirichlet boundary conditions) of finite element
             mesh nodes stored as torch.Tensor(2d) of shape
             (n_node_mesh, n_dim).
-        dirichlet_bool_mesh : torch.Tensor(2d)
-            Degrees of freedom of finite element mesh subject to Dirichlet
-            boundary conditions. Stored as torch.Tensor(2d) of shape
-            (n_node_mesh, n_dim) where constrained degrees of freedom are
-            labeled 1, otherwise 0.
+        dirichlet_bc_mesh : torch.Tensor(2d)
+            Dirichlet boundary constraints of finite element mesh nodes
+            stored as torch.Tensor(2d) of shape (n_node_mesh, n_dim).
+            Encodes if each degree of freedom is free (assigned 0) or
+            constrained (greater than 0) under Dirichlet boundary conditions.
+            The encoding depends on the selected force equilibrium loss type.
             
         Returns
         -------
@@ -2245,10 +2237,58 @@ class MaterialModelFinder(torch.nn.Module):
                 reaction_forces_mesh, features_type='forces', mode='normalize')
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Compute force equilibrium loss
-        force_equilibrium_loss = \
-            torch.sum((internal_forces_mesh - external_forces_mesh
-                       - torch.where(dirichlet_bool_mesh == 1,
-                                     reaction_forces_mesh, 0.0))**2)
+        if self._force_equilibrium_loss_type == 'pointwise':
+            # Force equilibrium strictly based on pointwise internal, external
+            # and reaction forces
+            force_equilibrium_loss = \
+                torch.sum((internal_forces_mesh - external_forces_mesh
+                           - torch.where(dirichlet_bc_mesh == 1,
+                                         reaction_forces_mesh, 0.0))**2)
+        elif self._force_equilibrium_loss_type == 'dirichlet_sets':
+            # Flatten Dirichlet constraints sets
+            dirichlet_bc_mesh_flat = dirichlet_bc_mesh.view(-1)
+            # Set non-Dirichlet and Dirichlet constrained sets masks
+            mask_ndbc_flat = dirichlet_bc_mesh_flat == 0
+            mask_dbc_flat = dirichlet_bc_mesh_flat > 1
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Flatten mesh data
+            internal_forces_mesh_flat = internal_forces_mesh.view(-1)
+            external_forces_mesh_flat = external_forces_mesh.view(-1)
+            reaction_forces_mesh_flat = reaction_forces_mesh.view(-1)
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Compute force equilibrium (non-Dirichlet constrained set)
+            force_equilibrium_ndbc = \
+                (internal_forces_mesh_flat[mask_ndbc_flat]
+                 - external_forces_mesh_flat[mask_ndbc_flat])
+            # Compute force equilibrium loss term (non-Dirichlet constrained
+            # set)
+            force_equilibrium_loss_ndbc = torch.sum(force_equilibrium_ndbc**2)
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Compute force equilibrium (Dirichlet constrained sets)
+            force_equilibrium_dbc = \
+                (internal_forces_mesh_flat[mask_dbc_flat]
+                 - external_forces_mesh_flat[mask_dbc_flat]
+                 - reaction_forces_mesh_flat[mask_dbc_flat])
+            # Get Dirichlet constrained sets indices
+            dbc_sets_labels = \
+                torch.unique(dirichlet_bc_mesh_flat[mask_dbc_flat])
+            dbc_sets_indices = torch.bucketize(
+                dirichlet_bc_mesh_flat[mask_dbc_flat], dbc_sets_labels)
+            # Compute force equilibrium for each Dirichlet constrained set
+            force_equilibrium_dbc_sets = torch.zeros(
+                dbc_sets_labels.numel(), dtype=force_equilibrium_dbc.dtype)
+            force_equilibrium_dbc_sets.scatter_add_(0, dbc_sets_indices,
+                                                    force_equilibrium_dbc)
+            # Compute force equilibrium loss term (Dirichlet constrained sets)
+            force_equilibrium_loss_dbc = \
+                torch.sum(force_equilibrium_dbc_sets**2)
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Compute force equilibrium loss
+            force_equilibrium_loss = \
+                force_equilibrium_loss_ndbc + force_equilibrium_loss_dbc
+        else:
+            raise RuntimeError(f'Unknown force equilibrium loss type: '
+                               f'\'{self._force_equilibrium_loss_type}\'.')
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         return force_equilibrium_loss
     # -------------------------------------------------------------------------
