@@ -130,8 +130,9 @@ def gen_specimen_dataset(specimen_name, specimen_raw_dir, specimen_inp_path,
         time_hist = get_specimen_numerical_data(
             specimen_history_paths, n_dim, n_node_mesh)
     # Set specimen numerical data
-    specimen_data.set_specimen_data(nodes_disps_mesh_hist,
-                                    reaction_forces_mesh_hist, time_hist)
+    specimen_data.set_specimen_data(
+        nodes_disps_mesh_hist, reaction_forces_mesh_hist,
+        dirichlet_bc_mesh_hist, time_hist)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Save specimen data
     if is_save_specimen_data:

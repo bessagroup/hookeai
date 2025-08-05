@@ -63,6 +63,8 @@ class SpecimenNumericalData:
         Get field history of finite element nodes.
     get_n_dim(self)
         Get number of spatial dimensions.
+    check_dirichlet_bc_mesh_hist(self, force_equilibrium_loss_type)
+        Check if Dirichlet boundary constraints history is admissible.
     """
     def __init__(self):
         """Constructor."""
@@ -309,4 +311,58 @@ class SpecimenNumericalData:
         n_dim = self.specimen_mesh.get_n_dim()
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         return n_dim
+    # -------------------------------------------------------------------------
+    def check_dirichlet_bc_mesh_hist(self, force_equilibrium_loss_type):
+        """Check if Dirichlet boundary constraints history is admissible.
         
+        Dirichlet boundary constraints history must be consistent with the
+        selected force equilibrium loss type in the material model finder.
+        
+        Parameters
+        ----------
+        force_equilibrium_loss_type : str
+            Type of force equilibrium loss.
+        """
+        # Check Dirichlet boundary constraints history
+        if self.dirichlet_bc_mesh_hist is None:
+            return
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Check if Dirichlet boundary constraints are consistent with force
+        # equilibrium loss type
+        if force_equilibrium_loss_type == 'pointwise':
+            # Check admissible labels
+            if not torch.all((self.dirichlet_bc_mesh_hist == 0) |
+                             (self.dirichlet_bc_mesh_hist == 1)):
+                raise RuntimeError(
+                    'All elements of dirichlet_bc_mesh_hist must be 0 '
+                    '(non-Dirichlet) or 1 (Dirichlet)for \'pointwise\' force '
+                    'equilibrium loss type.')
+        elif force_equilibrium_loss_type == 'dirichlet_sets':
+            # Check admissible labels
+            if not torch.all(self.dirichlet_bc_mesh_hist >= 0):
+                raise RuntimeError(
+                    'All elements of dirichlet_bc_mesh_hist must be greater '
+                    'than or equal to 0 for \'dirichlet_sets\' force '
+                    'equilibrium loss type.')
+            # Check that each Dirichlet set label is associated with a single
+            # dimension over the whole history
+            set_labels = torch.unique(self.dirichlet_bc_mesh_hist)
+            set_labels = set_labels[set_labels > 0]
+            for label in set_labels:
+                # Get mask of Dirichlet set label
+                mask = self.dirichlet_bc_mesh_hist == label
+                # Get dimensions associated with Dirichlet set label
+                dims_with_label = \
+                    mask.any(dim=2).any(dim=0).nonzero(as_tuple=True)[0]
+                # Check if Dirichlet set label is associated with a single
+                # dimension
+                if dims_with_label.numel() > 1:
+                    raise RuntimeError(
+                        f'Set label {label.item()} in dirichlet_bc_mesh_hist '
+                        f'is associated with multiple dimensions: '
+                        f'{dims_with_label.tolist()}. Each set label (>0) '
+                        f'must only be associated with a single dimension '
+                        f'over the whole history.')
+        else:
+            raise RuntimeError(f'Unknown force equilibrium loss type: '
+                               f'\'{force_equilibrium_loss_type}\'.')

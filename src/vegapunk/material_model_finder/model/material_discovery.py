@@ -391,6 +391,10 @@ class MaterialModelFinder(torch.nn.Module):
             pre-multiplied by corresponding weight. If None, time weights are
             set to 1.0.
         """
+        # Check Dirichlet boundary constraints admissibility
+        specimen_data.check_dirichlet_bc_mesh_hist(
+            self._force_equilibrium_loss_type)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Set specimen numerical data
         self._specimen_data = specimen_data
         # Set specimen material state (material models parameters linkage)
