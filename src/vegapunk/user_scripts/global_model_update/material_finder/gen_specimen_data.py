@@ -448,7 +448,7 @@ def get_specimen_numerical_data(specimen_history_paths, n_dim, n_node_mesh):
     # Extract reaction forces history
     reaction_forces_mesh_hist = node_data[:, 7:7+n_dim, :]
     # Extract Dirichlet boundary constraints
-    dirichlet_bc_mesh_hist = node_data[:, 10:10+n_dim, :]
+    dirichlet_bc_mesh_hist = node_data[:, 10:10+n_dim, :].int()
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Build time discrete history
     time_hist = torch.linspace(0, n_time - 1, steps=n_time)
