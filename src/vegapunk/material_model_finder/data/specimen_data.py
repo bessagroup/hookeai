@@ -335,7 +335,7 @@ class SpecimenNumericalData:
                              (self.dirichlet_bc_mesh_hist == 1)):
                 raise RuntimeError(
                     'All elements of dirichlet_bc_mesh_hist must be 0 '
-                    '(non-Dirichlet) or 1 (Dirichlet)for \'pointwise\' force '
+                    '(non-Dirichlet) or 1 (Dirichlet) for \'pointwise\' force '
                     'equilibrium loss type.')
         elif force_equilibrium_loss_type == 'dirichlet_sets':
             # Check admissible labels
