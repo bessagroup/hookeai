@@ -2178,18 +2178,23 @@ class MaterialModelFinder(torch.nn.Module):
         force_equilibrium_hist_loss : torch.Tensor(0d)
             Force equilibrium history loss.
         """
+        # Get initial Dirichlet boundary constraints
+        # (vectorized mapping does not support dynamic shaping due to potential
+        # dynamic Dirichlet boundary constrains throughout time)
+        dirichlet_bc_mesh_init = dirichlet_bc_mesh_hist[:, :, 0]
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Set vectorized force equilibrium history loss computation (batch
         # along time)
         vmap_force_equilibrium_loss = \
             torch.vmap(self.vforce_equilibrium_loss,
-                       in_dims=(2, 2, 2, 2), out_dims=(0,))
+                       in_dims=(2, 2, 2, None), out_dims=(0,))
         # Compute force equilibrium history loss
         force_equilibrium_hist_loss = torch.sum(
             self._loss_time_weights[:, None, None, None]
             *vmap_force_equilibrium_loss(internal_forces_mesh_hist,
                                          external_forces_mesh_hist,
                                          reaction_forces_mesh_hist,
-                                         dirichlet_bc_mesh_hist))
+                                         dirichlet_bc_mesh_init))
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         return force_equilibrium_hist_loss
     # -------------------------------------------------------------------------
@@ -2245,43 +2250,58 @@ class MaterialModelFinder(torch.nn.Module):
                            - torch.where(dirichlet_bc_mesh == 1,
                                          reaction_forces_mesh, 0.0))**2)
         elif self._force_equilibrium_loss_type == 'dirichlet_sets':
-            # Flatten Dirichlet constraints sets
-            dirichlet_bc_mesh_flat = dirichlet_bc_mesh.view(-1)
-            # Set non-Dirichlet and Dirichlet constrained sets masks
-            mask_ndbc_flat = dirichlet_bc_mesh_flat == 0
-            mask_dbc_flat = dirichlet_bc_mesh_flat > 1
-            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Flatten mesh data
             internal_forces_mesh_flat = internal_forces_mesh.view(-1)
             external_forces_mesh_flat = external_forces_mesh.view(-1)
             reaction_forces_mesh_flat = reaction_forces_mesh.view(-1)
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            # Compute force equilibrium (non-Dirichlet constrained set)
-            force_equilibrium_ndbc = \
-                (internal_forces_mesh_flat[mask_ndbc_flat]
-                 - external_forces_mesh_flat[mask_ndbc_flat])
-            # Compute force equilibrium loss term (non-Dirichlet constrained
-            # set)
-            force_equilibrium_loss_ndbc = torch.sum(force_equilibrium_ndbc**2)
+            # Flatten mesh sets
+            dirichlet_bc_mesh_flat = dirichlet_bc_mesh.view(-1).long()
+            # Get unique set labels
+            unique_labels = torch.unique(dirichlet_bc_mesh_flat)
+            # Set contiguous set labels
+            dense_indices = \
+                torch.bucketize(dirichlet_bc_mesh_flat, unique_labels)
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            # Compute force equilibrium (Dirichlet constrained sets)
-            force_equilibrium_dbc = \
-                (internal_forces_mesh_flat[mask_dbc_flat]
-                 - external_forces_mesh_flat[mask_dbc_flat]
-                 - reaction_forces_mesh_flat[mask_dbc_flat])
-            # Get Dirichlet constrained sets indices
-            dbc_sets_labels = \
-                torch.unique(dirichlet_bc_mesh_flat[mask_dbc_flat])
-            dbc_sets_indices = torch.bucketize(
-                dirichlet_bc_mesh_flat[mask_dbc_flat], dbc_sets_labels)
-            # Compute force equilibrium for each Dirichlet constrained set
-            force_equilibrium_dbc_sets = torch.zeros(
-                dbc_sets_labels.numel(), dtype=force_equilibrium_dbc.dtype)
-            force_equilibrium_dbc_sets.scatter_add_(0, dbc_sets_indices,
-                                                    force_equilibrium_dbc)
-            # Compute force equilibrium loss term (Dirichlet constrained sets)
-            force_equilibrium_loss_dbc = \
-                torch.sum(force_equilibrium_dbc_sets**2)
+            # Get total number of degrees of freedom
+            n_total = dirichlet_bc_mesh_flat.numel()
+            # Get number of sets
+            n_sets = unique_labels.numel()
+            # Initialize one-hot encoding of mesh degrees of freedom
+            one_hot = torch.zeros(n_total, n_sets,
+                                  device=dirichlet_bc_mesh.device)
+            # Scatter one-hot encoding based on contiguous set labels
+            one_hot.scatter_(dim=1, index=dense_indices.unsqueeze(1),
+                             value=1.0)
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Get one-hot enconding for non-Dirichlet and Dirichlet constrained
+            # sets
+            one_hot_ndbc = one_hot[:, 0]
+            one_hot_dbc = one_hot[:, 1:]
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Set mask for reaction forces (0 for non-Dirichlet degrees of
+            # freedom, 1 for Dirichlet constrained degrees of freedom)
+            reaction_forces_mask = 1.0 - one_hot_ndbc.unsqueeze(1)
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Compute force equilibrium (all degrees of freedom)
+            force_equilibrium = (
+                internal_forces_mesh_flat - external_forces_mesh_flat
+                - reaction_forces_mesh_flat*reaction_forces_mask.squeeze(1))
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Output total reaction forces per Dirichlet constrained set
+            #torch.set_printoptions(linewidth=1000)
+            #reaction_dbc = \
+            #    reaction_forces_mesh_flat*reaction_forces_mask.squeeze(1)
+            #print((reaction_dbc.unsqueeze(1)*one_hot_dbc).sum(dim=0))
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Compute force equilibrium loss term
+            # (non-Dirichlet constrained set)
+            force_equilibrium_loss_ndbc = torch.sum(
+                (force_equilibrium*one_hot_ndbc)**2)
+            # Compute force equilibrium loss term
+            # (Dirichlet constrained sets)
+            force_equilibrium_loss_dbc = torch.sum(
+                (force_equilibrium.unsqueeze(1)*one_hot_dbc).sum(dim=0)**2)
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Compute force equilibrium loss
             force_equilibrium_loss = \
