@@ -22,17 +22,30 @@ write_adimu_mesh_hist_data_files
     Write ADiMU mesh history data files.
 generate_dirichlet_sets
     Generate Dirichlet sets data for ADiMU mesh history data files.
+update_adimu_mesh_hist_data_files_dirichlet_bcs
+    Update ADiMU mesh history data files Dirichlet boundary conditions.
 """
 #
 #                                                                       Modules
 # =============================================================================
 # Standard
+import sys
+import pathlib
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# Add project root directory to sys.path
+root_dir = str(pathlib.Path(__file__).parents[3])
+if root_dir not in sys.path:
+    sys.path.insert(0, root_dir)
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 import os
 import re
 import shutil
 # Third-party
 import numpy as np
 import pandas
+# Local
+from user_scripts.global_model_update.material_finder.gen_specimen_data \
+    import get_specimen_history_paths
 #
 #                                                          Authorship & Credits
 # =============================================================================
@@ -538,7 +551,7 @@ def write_adimu_mesh_hist_data_files(
                 # Set Dirichlet boundary condition
                 dirichlet_bcs_mesh[node_idx, dof_idx] = 1
     elif force_equilibrium_loss_type == 'dirichlet_sets':
-        dirichlet_bcs_mesh = generate_dirichlet_sets(n_node, 3)
+        dirichlet_bcs_mesh = generate_dirichlet_sets(n_node)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Loop over time steps
     for t in range(n_time):
@@ -573,7 +586,7 @@ def write_adimu_mesh_hist_data_files(
         # Store time step data into '.csv' file format
         df_csv.to_csv(time_step_file_path, encoding='utf-8', index=False)
 # =============================================================================
-def generate_dirichlet_sets(n_node_mesh, n_dim):
+def generate_dirichlet_sets(n_node_mesh):
     """Generate Dirichlet sets data for ADiMU mesh history data files.
     
     This function generates Dirichlet sets data consistent with the force
@@ -586,14 +599,12 @@ def generate_dirichlet_sets(n_node_mesh, n_dim):
     ----------
     n_node_mesh : int
         Number of nodes of finite element mesh.
-    n_dim : int
-        Number of spatial dimensions.
     
     Returns
     -------
     dirichlet_bcs_mesh : numpy.ndarray(2d)
         Dirichlet boundary constraints of finite element mesh nodes stored as
-        numpy.ndarray(2d) of shape (n_node_mesh, n_dim).
+        numpy.ndarray(2d) of shape (n_node_mesh, 3).
     """
     # Set constrained node sets
     node_sets = {}
@@ -647,7 +658,7 @@ def generate_dirichlet_sets(n_node_mesh, n_dim):
             dirichlet_sets[str(node)] = tuple(set_labels)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Initialize Dirichlet boundary constraints data
-    dirichlet_bcs_mesh = np.zeros((n_node_mesh, n_dim), dtype=int)
+    dirichlet_bcs_mesh = np.zeros((n_node_mesh, 3), dtype=int)
     # Build Dirichlet boundary constraints data
     for node_label, node_dofs in dirichlet_sets.items():
         # Get node index
@@ -656,6 +667,50 @@ def generate_dirichlet_sets(n_node_mesh, n_dim):
         dirichlet_bcs_mesh[node_idx, :] = node_dofs
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     return dirichlet_bcs_mesh
+# =============================================================================
+def update_adimu_mesh_hist_data_files_dirichlet(specimen_history_paths,
+                                                dirichlet_bcs_mesh):
+    """Update ADiMU mesh history data files Dirichlet boundary conditions.
+    
+    This function updates the Dirichlet boundary conditions in the ADiMU mesh
+    history data files with the new provided Dirichlet boundary conditions.
+    
+    Parameters
+    ----------
+    specimen_history_paths : tuple
+        Specimen history time step files paths (.csv). Files paths must be
+        sorted according to history time.
+    dirichlet_bcs_mesh : numpy.ndarray(2d)
+        Dirichlet boundary constraints of finite element mesh nodes stored as
+        numpy.ndarray(2d) of shape (n_node_mesh, 3).
+    """
+    # Get number of nodes from first node data file
+    n_node_mesh = pandas.read_csv(specimen_history_paths[0], sep='\s+',
+                                  header=0).shape[0]
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Loop over time step files
+    for time_step_file_path in specimen_history_paths:
+        # Load data
+        df = pandas.read_csv(time_step_file_path)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Check data
+        if df.shape[0] != n_node_mesh:
+            raise RuntimeError(f'Mismatch between expected number of nodes '
+                               f'({n_node_mesh}) and number of nodes in the '
+                               f'time step data file ({df.shape[0]}).')
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Update Dirichlet boundary conditions
+        df[['DBC1', 'DBC2', 'DBC3']] = dirichlet_bcs_mesh
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Check data
+        if df.shape[1] != 13:
+            raise RuntimeError(f'Expecting data frame to have 13 columns, but '
+                               f'{df.shape[1]} were found. \n\n'
+                               f'Expected columns: NODE | X1 X2 X3 | '
+                               f'U1 U2 U3 | RF1 RF2 RF3 | DBC1 DBC2 DBC3')
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Store time step data into '.csv' file format
+        df.to_csv(time_step_file_path, encoding='utf-8', index=False)
 # =============================================================================
 if __name__ == '__main__':
     # Set Links input data file path
