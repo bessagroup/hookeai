@@ -540,16 +540,7 @@ def write_adimu_mesh_hist_data_files(
     # Build Dirichlet boundary conditions data
     if (force_equilibrium_loss_type == 'pointwise'
             and dirichlet_bcs is not None):
-        # Loop over nodes with Dirichlet boundary conditions
-        for node_id, node_dofs_bcs in dirichlet_bcs.items():
-            # Get node index
-            node_idx = int(node_id) - 1
-            # Loop over node degrees of freedom
-            for dof_str in node_dofs_bcs.keys():
-                # Get degree of freedom index
-                dof_idx = int(dof_str) - 1
-                # Set Dirichlet boundary condition
-                dirichlet_bcs_mesh[node_idx, dof_idx] = 1
+        dirichlet_bcs_mesh = generate_pointwise_sets(n_node, dirichlet_bcs)
     elif force_equilibrium_loss_type == 'dirichlet_sets':
         dirichlet_bcs_mesh = generate_dirichlet_sets(n_node)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -586,14 +577,53 @@ def write_adimu_mesh_hist_data_files(
         # Store time step data into '.csv' file format
         df_csv.to_csv(time_step_file_path, encoding='utf-8', index=False)
 # =============================================================================
+def generate_pointwise_sets(n_node_mesh, dirichlet_bcs):
+    """Generate Dirichlet sets data for ADiMU mesh history data files.
+    
+    This function generates Dirichlet sets data consistent with the force
+    force equilibrium loss type \'pointwise\' in ADiMU.
+    
+    Parameters
+    ----------
+    n_node_mesh : int
+        Number of nodes of finite element mesh.
+    dirichlet_bcs : dict
+        Dirichlet boundary conditions (item, dict) for each node with
+        prescribed displacements (key, str[int]). The boundary conditions of
+        each node consist of a prescribed displacement value (item, float) for
+        the associated degree of freedom (key, str[int]).
+    
+    Returns
+    -------
+    dirichlet_bcs_mesh : numpy.ndarray(2d)
+        Dirichlet boundary conditions sets of finite element mesh nodes stored
+        as numpy.ndarray(2d) of shape (n_node_mesh, 3).
+    """
+    # Initialize Dirichlet boundary conditions data
+    dirichlet_bcs_mesh = np.zeros((n_node_mesh, 3), dtype=int)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Loop over nodes with Dirichlet boundary conditions
+    for node_id, node_dofs_bcs in dirichlet_bcs.items():
+        # Get node index
+        node_idx = int(node_id) - 1
+        # Loop over node degrees of freedom
+        for dof_str in node_dofs_bcs.keys():
+            # Get degree of freedom index
+            dof_idx = int(dof_str) - 1
+            # Set Dirichlet boundary condition
+            dirichlet_bcs_mesh[node_idx, dof_idx] = 1
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    return dirichlet_bcs_mesh
+# =============================================================================
 def generate_dirichlet_sets(n_node_mesh):
     """Generate Dirichlet sets data for ADiMU mesh history data files.
     
     This function generates Dirichlet sets data consistent with the force
     force equilibrium loss type \'dirichlet_sets\' in ADiMU.
     
-    Constrained node sets must be explicitly defined in this function
-    according to the specific specimen geometry and boundary conditions.
+    Attention: Constrained node sets must be explicitly defined in this
+    function according to the specific specimen geometry and boundary
+    conditions.
     
     Parameters
     ----------
@@ -603,8 +633,8 @@ def generate_dirichlet_sets(n_node_mesh):
     Returns
     -------
     dirichlet_bcs_mesh : numpy.ndarray(2d)
-        Dirichlet boundary constraints of finite element mesh nodes stored as
-        numpy.ndarray(2d) of shape (n_node_mesh, 3).
+        Dirichlet boundary conditions sets of finite element mesh nodes stored
+        as numpy.ndarray(2d) of shape (n_node_mesh, 3).
     """
     # Set constrained node sets
     node_sets = {}
@@ -681,8 +711,8 @@ def update_adimu_mesh_hist_data_files_dirichlet(specimen_history_paths,
         Specimen history time step files paths (.csv). Files paths must be
         sorted according to history time.
     dirichlet_bcs_mesh : numpy.ndarray(2d)
-        Dirichlet boundary constraints of finite element mesh nodes stored as
-        numpy.ndarray(2d) of shape (n_node_mesh, 3).
+        Dirichlet boundary conditions sets of finite element mesh nodes stored
+        as numpy.ndarray(2d) of shape (n_node_mesh, 3).
     """
     # Get number of nodes from first node data file
     n_node_mesh = pandas.read_csv(specimen_history_paths[0], sep='\s+',
@@ -713,38 +743,83 @@ def update_adimu_mesh_hist_data_files_dirichlet(specimen_history_paths,
         df.to_csv(time_step_file_path, encoding='utf-8', index=False)
 # =============================================================================
 if __name__ == '__main__':
-    # Set Links input data file path
-    links_input_file_path = (
-        '/home/bernardoferreira/Documents/brown/projects/'
-        'colaboration_antonios/dtp_validation/2_dtp1_j2_validation/'
-        '2_debug_new_loss_type/links_boundary_conditions/links_simulation/'
-        'force_equilibrium_loss_dirichlet_sets/0_links_simulation/'
-        'Ti6242_HIP2_UT_Specimen2_J2.dat')
-    # Set Links simulation output directory
-    links_output_dir = (
-        '/home/bernardoferreira/Documents/brown/projects/'
-        'colaboration_antonios/dtp_validation/2_dtp1_j2_validation/'
-        '2_debug_new_loss_type/links_boundary_conditions/links_simulation/'
-        'force_equilibrium_loss_dirichlet_sets/0_links_simulation/'
-        'Ti6242_HIP2_UT_Specimen2_J2')
-    # Set data storage directory
-    save_dir = (
-        '/home/bernardoferreira/Documents/brown/projects/'
-        'colaboration_antonios/dtp_validation/2_dtp1_j2_validation/'
-        '2_debug_new_loss_type/links_boundary_conditions/links_simulation/'
-        'force_equilibrium_loss_dirichlet_sets/0_links_simulation')
+    # Set computation process
+    process = ('generate_adimu_data_from_links',
+               'update_adimu_mesh_hist_data_files_dirichlet')[0]
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Set ADiMU data storage directory
-    adimu_save_dir = os.path.join(save_dir, f'adimu_data')
-    # Create ADiMU mesh history data directory
-    if os.path.isdir(adimu_save_dir):
-        # Remove existing directory
-        shutil.rmtree(adimu_save_dir)
-    # Create directory
-    os.makedirs(adimu_save_dir)
+    # Generate ADiMU model discovery data from Links simulation data
+    if process == 'generate_adimu_data_from_links':
+        # Set Links input data file path
+        links_input_file_path = (
+            '/home/bernardoferreira/Documents/brown/projects/'
+            'colaboration_antonios/dtp_validation/2_dtp1_j2_validation/'
+            '2_debug_new_loss_type/links_boundary_conditions/links_simulation/'
+            'force_equilibrium_loss_dirichlet_sets/0_links_simulation/'
+            'Ti6242_HIP2_UT_Specimen2_J2.dat')
+        # Set Links simulation output directory
+        links_output_dir = (
+            '/home/bernardoferreira/Documents/brown/projects/'
+            'colaboration_antonios/dtp_validation/2_dtp1_j2_validation/'
+            '2_debug_new_loss_type/links_boundary_conditions/links_simulation/'
+            'force_equilibrium_loss_dirichlet_sets/0_links_simulation/'
+            'Ti6242_HIP2_UT_Specimen2_J2')
+        # Set data storage directory
+        save_dir = (
+            '/home/bernardoferreira/Documents/brown/projects/'
+            'colaboration_antonios/dtp_validation/2_dtp1_j2_validation/'
+            '2_debug_new_loss_type/links_boundary_conditions/links_simulation/'
+            'force_equilibrium_loss_dirichlet_sets/0_links_simulation')
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set ADiMU data storage directory
+        adimu_save_dir = os.path.join(save_dir, f'adimu_data')
+        # Create ADiMU mesh history data directory
+        if os.path.isdir(adimu_save_dir):
+            # Remove existing directory
+            shutil.rmtree(adimu_save_dir)
+        # Create directory
+        os.makedirs(adimu_save_dir)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Generate ADiMU model discovery data from Links simulation data
+        adimu_mesh_file_path, adimu_mesh_hist_data_dir = \
+            gen_adimu_data_from_links(links_input_file_path, links_output_dir,
+                                      adimu_save_dir)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    ## Generate ADiMU model discovery data from Links simulation data
-    adimu_mesh_file_path, adimu_mesh_hist_data_dir = \
-        gen_adimu_data_from_links(links_input_file_path, links_output_dir,
-                                  adimu_save_dir)
+    elif process == 'update_adimu_mesh_hist_data_files_dirichlet':
+        # Set specimen name
+        specimen_name = 'Ti6242_HIP2_UT_Specimen2_J2'
+        # Set force equilibrium loss type
+        force_equilibrium_loss_type = ('pointwise', 'dirichlet_sets')[0]
+        # Set ADiMU mesh history data directory
+        specimen_history_dir = (
+            '/home/bernardoferreira/Documents/brown/projects/'
+            'colaboration_antonios/dtp_validation/2_dtp1_j2_validation/'
+            '2_debug_new_loss_type/links_boundary_conditions/'
+            'abaqus_simulation/force_equilibrium_pointwise/'
+            '1_discover_rc_von_mises/material_model_finder/0_simulation/'
+            'specimen_history_data')
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Get specimen history time step files paths
+        specimen_history_paths = \
+            get_specimen_history_paths(specimen_history_dir, specimen_name)
+        # Get number of nodes from first node data file
+        n_node_mesh = pandas.read_csv(specimen_history_paths[0], sep='\s+',
+                                      header=0).shape[0]
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Generate Dirichlet boundary conditions sets data
+        if force_equilibrium_loss_type == 'pointwise':
+            # Set reference Links input data file path
+            links_input_file_path = ''
+            # Extract Dirichlet boundary conditions from Links input data file
+            dirichlet_bcs = \
+                extract_mesh_dirichlet_from_links_data(links_input_file_path)
+            # Build Dirichlet boundary conditions sets
+            dirichlet_bcs_mesh = \
+                generate_pointwise_sets(n_node_mesh, dirichlet_bcs)
+        elif force_equilibrium_loss_type == 'dirichlet_sets':
+            # Build Dirichlet boundary conditions sets
+            dirichlet_bcs_mesh = generate_dirichlet_sets(n_node_mesh, n_dim=3)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Update ADiMU mesh history data files Dirichlet boundary conditions
+        update_adimu_mesh_hist_data_files_dirichlet(specimen_history_paths,
+                                                    dirichlet_bcs_mesh)
     
