@@ -81,19 +81,30 @@ def gen_specimen_local_dataset(specimen_data_path,
     # Set force normalization
     is_force_normalization = False
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Set storage of force equilibrium loss components history
+    is_store_force_equilibrium_loss_hist = True
     # Set storage of specimen local strain-stress paths
     is_store_local_paths = True
     # Set elements of specimen local strain-stress data set
     local_paths_elements = \
         [x for x in range(1, specimen_data.specimen_mesh.get_n_elem() + 1)]
+    # Set Dirichlet boundary sets reaction forces history
+    if force_equilibrium_loss_type == 'dirichlet_sets':
+        is_compute_sets_reaction_hist = True
+    else:
+        is_compute_sets_reaction_hist = False
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Initialize material model finder
     material_finder = MaterialModelFinder(
         model_directory, model_name=model_finder_name,
         force_equilibrium_loss_type=force_equilibrium_loss_type,
         is_force_normalization=is_force_normalization,
+        is_store_force_equilibrium_loss_hist=
+            is_store_force_equilibrium_loss_hist,
         is_store_local_paths=is_store_local_paths,
-        local_paths_elements=local_paths_elements, device_type=device_type)
+        local_paths_elements=local_paths_elements,
+        is_compute_sets_reaction_hist=is_compute_sets_reaction_hist,
+        device_type=device_type)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set loss scaling flag
     is_loss_scaling_factor = True

@@ -11,10 +11,12 @@ MaterialModelFinder(torch.nn.Module)
 # Standard
 import os
 import copy
-import re
 import itertools
+import pickle
+import warnings
 # Third-party
 import torch
+import numpy as np
 # Local
 from model_architectures.hybrid_base_model.model.hybrid_model import \
     HybridModel
@@ -34,6 +36,7 @@ from model_architectures.procedures.model_data_scaling import \
 from time_series_data.time_dataset import TimeSeriesDatasetInMemory, \
     save_dataset
 from ioput.iostandard import make_directory
+from ioput.plots import plot_xy_data, save_figure
 #
 #                                                          Authorship & Credits
 # =============================================================================
@@ -77,6 +80,8 @@ class MaterialModelFinder(torch.nn.Module):
         If provided, then each discrete time loss contribution is
         pre-multiplied by corresponding weight. If None, time weights are
         set to 1.0.
+    _is_store_force_equilibrium_loss_hist : bool
+        If True, then store force equilibrium loss components history.
     _is_store_local_paths : bool
         If True, then store data set of specimen local (Gauss integration
         points) strain-stress paths in dedicated model subdirectory.
@@ -86,6 +91,9 @@ class MaterialModelFinder(torch.nn.Module):
         paths are stored as part of the specimen local data set. Elements
         are labeled from 1 to n_elem. If None, then all elements are
         stored. Only effective if is_store_local_paths=True.
+    _is_compute_sets_reaction_hist : bool
+        If True, then compute reaction forces history of Dirichlet boundary
+        sets. Only available for 'dirichlet_sets' force equilibrium loss type.
     model_directory : str
         Directory where model is stored.
     model_name : str
@@ -147,8 +155,17 @@ class MaterialModelFinder(torch.nn.Module):
     build_element_local_samples(self, strain_formulation, problem_type, \
                                 element_type, time_hist, element_state_hist)
         Build element Gauss integration points local strain-stress paths.
-    build_tensor_from_comps(cls, n_dim, comps, comps_array, is_symmetric=False,
-                            device=None)
+    compute_dirichlet_sets_reaction_hist(self, dirichlet_bc_mesh_hist, \
+                                          dirichlet_bool_mesh_hist)
+        Compute Dirichlet boundary sets reaction forces history.
+    compute_dirichlet_sets_reaction(self, internal_forces_mesh, \
+                                    external_forces_mesh, dirichlet_bc_mesh)
+        Compute reaction forces of Dirichlet boundary sets.
+    store_dirichlet_sets_reaction_hist(self, dirichlet_sets_reaction_hist, \
+                                       is_plot=True)
+        Store reaction forces history of Dirichlet boundary sets.
+    build_tensor_from_comps(cls, n_dim, comps, comps_array, \
+                            is_symmetric=False, device=None)
         Build strain/stress tensor from given components.
     store_tensor_comps(cls, comps, tensor, device=None)
         Store strain/stress tensor components in array.
@@ -196,9 +213,28 @@ class MaterialModelFinder(torch.nn.Module):
     vforce_equilibrium_loss(self, internal_forces_mesh, external_forces_mesh, \
                             reaction_forces_mesh, dirichlet_bc_mesh)
         Compute force equilibrium loss.
+    force_equilibrium_loss_components_hist(self, internal_forces_mesh_hist, \
+                                           external_forces_mesh_hist, \
+                                           reaction_forces_mesh_hist, \
+                                           dirichlet_bc_mesh_hist)
+        Compute force equilibrium loss components history (output purposes).
+    store_force_equilibrium_loss_components_hist( \
+        self, force_equilibrium_loss_components_hist, is_plot=True)
+        Store force equilibrium loss components history.
     build_elements_local_samples(self, strain_formulation, problem_type, \
                                  time_hist, elements_state_hist)
         Build elements local strain-stress paths.
+    compute_dirichlet_sets_reaction_hist(self, internal_forces_mesh_hist, \
+                                         external_forces_mesh_hist, \
+                                         dirichlet_bc_mesh_hist)
+        Compute reaction forces history of Dirichlet boundary sets.
+    compute_dirichlet_sets_reaction(self, internal_forces_mesh, \
+                                    external_forces_mesh, \
+                                    dirichlet_bc_mesh)
+        Compute reaction forces of Dirichlet boundary sets.
+    store_dirichlet_sets_reaction_hist(self, dirichlet_sets_reaction_hist, \
+                                       is_plot=True)
+        Store reaction forces history of Dirichlet boundary sets.
     vbuild_tensor_from_comps(cls, n_dim, comps, comps_array, device=None)
         Build strain/stress tensor from given components.
     vstore_tensor_comps(cls, comps, tensor, device=None)
@@ -218,8 +254,11 @@ class MaterialModelFinder(torch.nn.Module):
     """
     def __init__(self, model_directory, model_name='material_model_finder',
                  force_equilibrium_loss_type='pointwise',
-                 is_force_normalization=False, is_store_local_paths=False,
-                 local_paths_elements=None, is_detect_autograd_anomaly=False,
+                 is_force_normalization=False,
+                 is_store_force_equilibrium_loss_hist=False,
+                 is_store_local_paths=False, local_paths_elements=None,
+                 is_compute_sets_reaction_hist=False,
+                 is_detect_autograd_anomaly=False,
                  device_type='cpu'):
         """Constructor.
         
@@ -244,6 +283,8 @@ class MaterialModelFinder(torch.nn.Module):
         is_force_normalization : bool, default=False
             If True, then normalize forces prior to the computation of the
             force equilibrium loss.
+        is_store_force_equilibrium_loss_hist : bool, default=False
+            If True, then store force equilibrium loss components history.
         is_store_local_paths : bool, default=False
             If True, then store data set of specimen local (Gauss integration
             points) strain-stress paths in dedicated model subdirectory.
@@ -253,6 +294,10 @@ class MaterialModelFinder(torch.nn.Module):
             paths are stored as part of the specimen local data set. Elements
             are labeled from 1 to n_elem. If None, then all elements are
             stored. Only effective if is_store_local_paths=True.
+        is_compute_sets_reaction_hist : bool, default=False
+            If True, then compute reaction forces history of Dirichlet
+            boundary sets. Only available for 'dirichlet_sets' force
+            equilibrium loss type.
         is_detect_autograd_anomaly : bool, default=False
             If True, then set context-manager that enables anomaly detection
             for the autograd engine. Should only be enabled for debugging
@@ -283,10 +328,25 @@ class MaterialModelFinder(torch.nn.Module):
         self._force_equilibrium_loss_type = \
             self.check_force_equilibrium_loss_type(force_equilibrium_loss_type)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set storage of force equilibrium loss components history
+        self._is_store_force_equilibrium_loss_hist = \
+            is_store_force_equilibrium_loss_hist
         # Set storage of specimen local strain-stress paths
         self._is_store_local_paths = is_store_local_paths
         # Set elements of specimen local strain-stress data set
         self._local_paths_elements = local_paths_elements
+        # Set computation of force equilibrium loss components path
+        self._is_store_force_equilibrium_loss_hist = True
+        # Set computation of Dirichlet boundary sets reaction forces
+        if (is_compute_sets_reaction_hist
+                and self._force_equilibrium_loss_type != 'dirichlet_sets'):
+            warnings.warn('The computation of Dirichlet boundary sets '
+                          'reaction forces is only available for the '
+                          '\'dirichlet_sets\' force equilibrium loss type.',
+                          category=UserWarning)
+            self._is_compute_sets_reaction_hist = False
+        else:
+            self._is_compute_sets_reaction_hist = is_compute_sets_reaction_hist
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Set force normalization
         self._is_force_normalization = is_force_normalization
@@ -1678,6 +1738,17 @@ class MaterialModelFinder(torch.nn.Module):
                                               reaction_forces_mesh_hist,
                                               dirichlet_bc_mesh_hist)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Compute force equilibrium loss components history
+        if self._is_store_force_equilibrium_loss_hist:
+            # Compute force equilibrium loss components history
+            force_equilibrium_loss_hist = \
+                self.force_equilibrium_loss_components_hist(
+                    internal_forces_mesh_hist, external_forces_mesh_hist,
+                    reaction_forces_mesh_hist, dirichlet_bc_mesh_hist)  
+            # Store force equilibrium loss components history
+            self.store_force_equilibrium_loss_components_hist(
+                force_equilibrium_loss_hist, is_plot=True)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Store specimen local strain-stress paths data set
         if self._is_store_local_paths:
             # Build elements local strain-stress paths
@@ -1700,6 +1771,18 @@ class MaterialModelFinder(torch.nn.Module):
             # Save data set
             save_dataset(dataset, dataset_basename, dataset_directory,
                          is_append_n_sample=True)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Compute Dirichlet boundary constrained sets reaction forces
+        if (self._force_equilibrium_loss_type == 'dirichlet_sets'
+                and self._is_compute_sets_reaction_hist):
+            # Compute Dirichlet boundary constrained sets reaction forces
+            dirichlet_sets_reaction_hist = \
+                self.compute_dirichlet_sets_reaction_hist(
+                    internal_forces_mesh_hist, external_forces_mesh_hist,
+                    dirichlet_bc_mesh_hist)
+            # Store Dirichlet boundary constrained sets reaction forces
+            self.store_dirichlet_sets_reaction_hist(
+                dirichlet_sets_reaction_hist, is_plot=True)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         return force_equilibrium_hist_loss
     # -------------------------------------------------------------------------
@@ -2190,7 +2273,7 @@ class MaterialModelFinder(torch.nn.Module):
                        in_dims=(2, 2, 2, None), out_dims=(0,))
         # Compute force equilibrium history loss
         force_equilibrium_hist_loss = torch.sum(
-            self._loss_time_weights[:, None, None, None]
+            self._loss_time_weights
             *vmap_force_equilibrium_loss(internal_forces_mesh_hist,
                                          external_forces_mesh_hist,
                                          reaction_forces_mesh_hist,
@@ -2312,6 +2395,233 @@ class MaterialModelFinder(torch.nn.Module):
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         return force_equilibrium_loss
     # -------------------------------------------------------------------------
+    def force_equilibrium_loss_components_hist(
+        self, internal_forces_mesh_hist, external_forces_mesh_hist,
+        reaction_forces_mesh_hist, dirichlet_bc_mesh_hist):
+        """Compute force equilibrium loss components history (output purposes).
+        
+        Parameters
+        ----------
+        internal_forces_mesh_hist : torch.Tensor(3d)
+            Internal forces history of finite element mesh nodes stored as
+            torch.Tensor(3d) of shape (n_node_mesh, n_dim, n_time).
+        external_forces_mesh_hist : torch.Tensor(3d)
+            External forces history of finite element mesh nodes stored as
+            torch.Tensor(3d) of shape (n_node_mesh, n_dim, n_time).
+        reaction_forces_mesh_hist : torch.Tensor(3d)
+            Reaction forces (Dirichlet boundary conditions) history of finite
+            element mesh nodes stored as torch.Tensor(3d) of shape
+            (n_node_mesh, n_dim, n_time).
+        dirichlet_bc_mesh_hist : torch.Tensor(3d)
+            Dirichlet boundary constraints history of finite element mesh nodes
+            stored as torch.Tensor(3d) of shape (n_node_mesh, n_dim, n_time).
+            Encodes if each degree of freedom is free (assigned 0) or
+            constrained (greater than 0) under Dirichlet boundary conditions.
+            The encoding depends on the selected force equilibrium loss type.
+
+        Returns
+        -------
+        force_equilibrium_loss_components_hist : torch.Tensor(2d)
+            Force equilibrium loss components history stored as
+            torch.Tensor(2d) of shape (1 + n_loss_comp, n_time).
+        """
+        # Set number of force equilibrium loss components
+        if self._force_equilibrium_loss_type == 'pointwise':
+            n_loss_comp = 0
+        elif self._force_equilibrium_loss_type == 'dirichlet_sets':
+            n_loss_comp = 2
+        else:
+            raise RuntimeError(f'Unknown force equilibrium loss type: '
+                               f'\'{self._force_equilibrium_loss_type}\'.')
+        # Get history length
+        n_time = internal_forces_mesh_hist.shape[2]
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Normalize forces
+        if self._is_force_normalization:
+            # Normalize internal forces
+            internal_forces_mesh = data_scaler_transform(
+                self, internal_forces_mesh_hist, features_type='forces',
+                mode='normalize')
+            # Normalize external forces
+            external_forces_mesh = data_scaler_transform(
+                self, external_forces_mesh_hist, features_type='forces',
+                mode='normalize')
+            # Normalize reaction forces
+            reaction_forces_mesh = data_scaler_transform(
+                self, reaction_forces_mesh_hist, features_type='forces',
+                mode='normalize')
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Initialize force equilibrium loss components history
+        force_equilibrium_loss_components_hist = \
+            torch.zeros(1 + n_loss_comp, n_time,
+                        device=internal_forces_mesh_hist.device)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Loop over time
+        for i in range(n_time):
+            # Get internal forces at time step
+            internal_forces_mesh = internal_forces_mesh_hist[:, :, i]
+            # Get external forces at time step
+            external_forces_mesh = external_forces_mesh_hist[:, :, i]
+            # Get reaction forces at time step
+            reaction_forces_mesh = reaction_forces_mesh_hist[:, :, i]
+            # Get Dirichlet boundary constraints at time step
+            dirichlet_bc_mesh = dirichlet_bc_mesh_hist[:, :, i]
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Compute force equilibrium loss components
+            if self._force_equilibrium_loss_type == 'pointwise':
+                # Force equilibrium strictly based on pointwise internal,
+                # external and reaction forces
+                force_equilibrium_loss = \
+                    torch.sum((internal_forces_mesh - external_forces_mesh
+                               - torch.where(dirichlet_bc_mesh == 1,
+                                             reaction_forces_mesh, 0.0))**2)
+                # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                # Store force equilibrium loss and components
+                force_equilibrium_loss_components_hist[0, i] = \
+                    force_equilibrium_loss
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            elif self._force_equilibrium_loss_type == 'dirichlet_sets':
+                # Flatten mesh data
+                internal_forces_mesh_flat = internal_forces_mesh.view(-1)
+                external_forces_mesh_flat = external_forces_mesh.view(-1)
+                reaction_forces_mesh_flat = reaction_forces_mesh.view(-1)
+                # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                # Flatten mesh sets
+                dirichlet_bc_mesh_flat = dirichlet_bc_mesh.view(-1).long()
+                # Get unique set labels
+                unique_labels = torch.unique(dirichlet_bc_mesh_flat)
+                # Set contiguous set labels
+                dense_indices = \
+                    torch.bucketize(dirichlet_bc_mesh_flat, unique_labels)
+                # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                # Get total number of degrees of freedom
+                n_total = dirichlet_bc_mesh_flat.numel()
+                # Get number of sets
+                n_sets = unique_labels.numel()
+                # Initialize one-hot encoding of mesh degrees of freedom
+                one_hot = torch.zeros(n_total, n_sets,
+                                      device=dirichlet_bc_mesh.device)
+                # Scatter one-hot encoding based on contiguous set labels
+                one_hot.scatter_(dim=1, index=dense_indices.unsqueeze(1),
+                                 value=1.0)
+                # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                # Get one-hot enconding for non-Dirichlet and Dirichlet
+                # constrained sets
+                one_hot_ndbc = one_hot[:, 0]
+                one_hot_dbc = one_hot[:, 1:]
+                # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                # Set mask for reaction forces (0 for non-Dirichlet degrees of
+                # freedom, 1 for Dirichlet constrained degrees of freedom)
+                reaction_forces_mask = 1.0 - one_hot_ndbc.unsqueeze(1)
+                # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                # Compute force equilibrium (all degrees of freedom)
+                force_equilibrium = (
+                    internal_forces_mesh_flat - external_forces_mesh_flat
+                    - reaction_forces_mesh_flat
+                    *reaction_forces_mask.squeeze(1))
+                # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                # Compute force equilibrium loss term
+                # (non-Dirichlet constrained set)
+                force_equilibrium_loss_ndbc = torch.sum(
+                    (force_equilibrium*one_hot_ndbc)**2)
+                # Compute force equilibrium loss term
+                # (Dirichlet constrained sets)
+                force_equilibrium_loss_dbc = torch.sum(
+                    (force_equilibrium.unsqueeze(1)*one_hot_dbc).sum(dim=0)**2)
+                # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                # Compute force equilibrium loss
+                force_equilibrium_loss = \
+                    force_equilibrium_loss_ndbc + force_equilibrium_loss_dbc
+                # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                # Store force equilibrium loss and components
+                force_equilibrium_loss_components_hist[0, i] = \
+                    force_equilibrium_loss
+                force_equilibrium_loss_components_hist[1, i] = \
+                    force_equilibrium_loss_ndbc
+                force_equilibrium_loss_components_hist[2, i] = \
+                    force_equilibrium_loss_dbc
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Apply loss time weights
+        if self._loss_time_weights is not None:
+            force_equilibrium_loss_components_hist = \
+                (self._loss_time_weights[None, :] \
+                 *force_equilibrium_loss_components_hist)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Apply loss scaling factor
+        if self._loss_scaling_factor is not None:
+            force_equilibrium_loss_components_hist = \
+                (self._loss_scaling_factor
+                 *force_equilibrium_loss_components_hist)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        return force_equilibrium_loss_components_hist
+    # -------------------------------------------------------------------------
+    def store_force_equilibrium_loss_components_hist(
+        self, force_equilibrium_loss_components_hist, is_plot=True):
+        """Store force equilibrium loss components history.
+        
+        Parameters
+        ----------
+        force_equilibrium_loss_components_hist : torch.Tensor(2d)
+            Force equilibrium loss components history stored as
+            torch.Tensor(2d) of shape (1 + n_loss_comp, n_time).
+        is_plot : bool, default=True
+            If True, then plot force equilibrium loss components history.
+        """
+        # Set storage directory
+        save_dir = os.path.join(os.path.normpath(self.model_directory),
+                                'force_equilibrium_loss_components')
+        # Create storage directory
+        make_directory(save_dir, is_overwrite=True)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Build force equilibrium loss data
+        force_equilibrium_loss_data = {}
+        force_equilibrium_loss_components_hist = \
+            force_equilibrium_loss_components_hist.detach().cpu().numpy()
+        force_equilibrium_loss_data['force_equilibrium_loss_components_hist'] \
+            = force_equilibrium_loss_components_hist
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set data file path
+        data_file_path = \
+            os.path.join(save_dir, 'force_equilibrium_loss_data.pkl')
+        # Save data
+        with open(data_file_path, 'wb') as data_file:
+            pickle.dump(force_equilibrium_loss_data, data_file)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Plot force equilibrium loss components history
+        if is_plot:
+            # Get number of loss components
+            n_loss_comp = force_equilibrium_loss_components_hist.shape[0] - 1
+            # Get number of time steps
+            n_time = force_equilibrium_loss_components_hist.shape[1]
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Initialize data labels
+            data_labels = []
+            # Build data array and set data labels
+            data_array = np.zeros((n_time, 2*(1 + n_loss_comp)))
+            for i in range(n_loss_comp + 1):
+                data_array[:, 2*i] = np.arange(n_time)
+                data_array[:, 2*i + 1] = \
+                    force_equilibrium_loss_components_hist[i, :]
+                if i == 0:
+                    data_labels.append('Total')
+                else:
+                    data_labels.append(f'Component {i}')
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Plot force equilibrium loss components history
+            figure, _ = plot_xy_data(data_array,
+                                     data_labels=data_labels,
+                                     x_lims=(0, None),
+                                     y_lims=(None, None),
+                                     x_label=f'Time step',
+                                     y_label=f'Force equilibrium loss',
+                                     y_scale='log',
+                                     is_latex=True)
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Set file name
+            filename = f'force_equilibrium_loss_components_hist'
+            # Save figure
+            save_figure(figure, filename, format='pdf', save_dir=save_dir)
+    # -------------------------------------------------------------------------
     def build_elements_local_samples(self, strain_formulation, problem_type,
                                      time_hist, elements_state_hist):
         """Build elements local strain-stress paths.
@@ -2386,6 +2696,177 @@ class MaterialModelFinder(torch.nn.Module):
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         return elements_local_samples
     # -------------------------------------------------------------------------
+    def compute_dirichlet_sets_reaction_hist(self, internal_forces_mesh_hist,
+                                             external_forces_mesh_hist,
+                                             dirichlet_bc_mesh_hist):
+        """Compute reaction forces history of Dirichlet boundary sets.
+        
+        
+        At a given time step, the reaction force of each Dirichlet boundary
+        set is computed to strictly satisfy the total force equilibrium,
+        assuming that the internal and external forces are known.
+
+        Parameters
+        ----------
+        internal_forces_mesh_hist : torch.Tensor(3d)
+            Internal forces history of finite element mesh nodes stored as
+            torch.Tensor(3d) of shape (n_node_mesh, n_dim, n_time).
+        external_forces_mesh_hist : torch.Tensor(3d)
+            External forces history of finite element mesh nodes stored as
+            torch.Tensor(3d) of shape (n_node_mesh, n_dim, n_time).
+        dirichlet_bc_mesh_hist : torch.Tensor(3d)
+            Dirichlet boundary constraints history of finite element mesh nodes
+            stored as torch.Tensor(3d) of shape (n_node_mesh, n_dim, n_time).
+            Encodes if each degree of freedom is free (assigned 0) or
+            constrained (greater than 0) under Dirichlet boundary conditions.
+            The encoding depends on the selected force equilibrium loss type.
+            
+        Returns
+        -------
+        dirichlet_sets_reaction_hist : torch.Tensor(3d)
+            Reaction forces history of Dirichlet boundary sets stored as
+            torch.Tensor(3d) of shape (n_sets, 1, n_time). Sets are sorted
+            according with their encoding labels and are associated with a
+            single spatial dimension.
+        """
+        # Get initial Dirichlet boundary constraints
+        # (vectorized mapping does not support dynamic shaping due to potential
+        # dynamic Dirichlet boundary constrains throughout time)
+        dirichlet_bc_mesh_init = dirichlet_bc_mesh_hist[:, :, 0]
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set vectorized Dirichlet boundary constrained sets reaction forces
+        # computation (batch along time)
+        vmap_compute_dirichlet_sets_reaction = \
+            torch.vmap(self.compute_dirichlet_sets_reaction,
+                       in_dims=(2, 2, None), out_dims=(2,))
+        # Compute force equilibrium history loss
+        dirichlet_sets_reaction_hist = \
+            vmap_compute_dirichlet_sets_reaction(internal_forces_mesh_hist,
+                                                 external_forces_mesh_hist,
+                                                 dirichlet_bc_mesh_init)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        return dirichlet_sets_reaction_hist
+    # -------------------------------------------------------------------------
+    def compute_dirichlet_sets_reaction(self, internal_forces_mesh,
+                                        external_forces_mesh,
+                                        dirichlet_bc_mesh):
+        """Compute reaction forces of Dirichlet boundary sets.
+        
+        Parameters
+        ----------
+        internal_forces_mesh : torch.Tensor(2d)
+            Internal forces of finite element mesh nodes stored as
+            torch.Tensor(2d) of shape (n_node_mesh, n_dim).
+        external_forces_mesh : torch.Tensor(2d)
+            External forces of finite element mesh nodes stored as
+            torch.Tensor(2d) of shape (n_node_mesh, n_dim).
+            (n_node_mesh, n_dim).
+        dirichlet_bc_mesh : torch.Tensor(2d)
+            Dirichlet boundary constraints of finite element mesh nodes
+            stored as torch.Tensor(2d) of shape (n_node_mesh, n_dim).
+            Encodes if each degree of freedom is free (assigned 0) or
+            constrained (greater than 0) under Dirichlet boundary conditions.
+            The encoding depends on the selected force equilibrium loss type.
+            
+        Returns
+        -------
+        dirichlet_sets_reaction : torch.Tensor(2d)
+            Reaction forces of Dirichlet boundary sets stored as
+            torch.Tensor(2d) of shape (n_sets, 1). Sets are sorted according
+            with their encoding labels and are associated with a single spatial
+            dimension.
+        """
+        # Flatten mesh data
+        internal_forces_mesh_flat = internal_forces_mesh.view(-1)
+        external_forces_mesh_flat = external_forces_mesh.view(-1)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Flatten mesh sets
+        dirichlet_bc_mesh_flat = dirichlet_bc_mesh.view(-1).long()
+        # Get unique set labels
+        unique_labels = torch.unique(dirichlet_bc_mesh_flat)
+        # Set contiguous set labels
+        dense_indices = \
+            torch.bucketize(dirichlet_bc_mesh_flat, unique_labels)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Get total number of degrees of freedom
+        n_total = dirichlet_bc_mesh_flat.numel()
+        # Get number of sets
+        n_sets = unique_labels.numel()
+        # Initialize one-hot encoding of mesh degrees of freedom
+        one_hot = torch.zeros(n_total, n_sets, device=dirichlet_bc_mesh.device)
+        # Scatter one-hot encoding based on contiguous set labels
+        one_hot.scatter_(dim=1, index=dense_indices.unsqueeze(1), value=1.0)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Compute force equilibrium (all degrees of freedom)
+        force_equilibrium = (internal_forces_mesh_flat
+                             - external_forces_mesh_flat)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Compute reaction forces of Dirichlet constrained sets
+        dirichlet_sets_reaction = \
+            (force_equilibrium.unsqueeze(1)*one_hot).sum(dim=0).view(n_sets, 1)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        return dirichlet_sets_reaction
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    def store_dirichlet_sets_reaction_hist(self, dirichlet_sets_reaction_hist,
+                                           is_plot=True):
+        """Store reaction forces history of Dirichlet boundary sets.
+        
+        Parameters
+        ----------
+        dirichlet_sets_reaction_hist : torch.Tensor(3d)
+            Reaction forces history of Dirichlet boundary sets stored as
+            torch.Tensor(3d) of shape (n_sets, 1, n_time).
+        is_plot : bool, default=True
+            If True, then plot the reaction force history of each Dirichlet
+            boundary set.
+        """
+        # Set storage directory
+        save_dir = os.path.join(os.path.normpath(self.model_directory),
+                                'dirichlet_sets_reaction_forces')
+        # Create storage directory
+        make_directory(save_dir, is_overwrite=True)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Build Dirichlet boundary sets data
+        dirichlet_sets_data = {}
+        dirichlet_sets_data['dirichlet_sets_reaction_hist'] = \
+            dirichlet_sets_reaction_hist.detach().cpu().numpy()
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set data file path
+        data_file_path = \
+            os.path.join(save_dir, 'dirichlet_sets_data.pkl')
+        # Save data
+        with open(data_file_path, 'wb') as data_file:
+            pickle.dump(dirichlet_sets_data, data_file)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Plot Dirichlet boundary sets reaction force history
+        if is_plot:
+            # Get number of Dirichlet boundary sets
+            n_sets = dirichlet_sets_reaction_hist.shape[0]
+            # Get number of time steps
+            n_time = dirichlet_sets_reaction_hist.shape[2]
+            # Loop over Dirichlet boundary sets
+            for i in range(n_sets):
+                # Get Dirichlet boundary set reaction force history
+                dirichlet_set_reaction_hist = \
+                    dirichlet_sets_reaction_hist[i, 0, :].detach().cpu().numpy()
+                # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                # Build data array
+                data_array = np.zeros((n_time, 2))
+                data_array[:, 0] = np.arange(n_time)
+                data_array[:, 1] = dirichlet_set_reaction_hist
+                # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                # Plot Dirichlet boundary set reaction force history
+                figure, _ = plot_xy_data(data_array,
+                                         x_lims=(0, None),
+                                         x_label=f'Time step',
+                                         y_label=f'Reaction force',
+                                         is_latex=True)
+                # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                # Set file name
+                filename = f'dirichlet_reaction_hist_set_{i}'
+                # Save figure
+                save_figure(figure, filename, format='pdf', save_dir=save_dir)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     @classmethod
     def vbuild_tensor_from_comps(cls, n_dim, comps, comps_array, device=None):
         """Build strain/stress tensor from given components.
