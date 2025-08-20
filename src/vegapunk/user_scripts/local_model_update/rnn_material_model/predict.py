@@ -180,6 +180,19 @@ def perform_model_prediction(predict_directory, dataset_file_path,
         # Set number of input and output features
         model_init_args['n_features_in'] = 7
         model_init_args['n_features_out'] = 6
+    elif features_option == 'strain_temperature_composition_to_stress':
+        # Set input features
+        new_label_in = 'features_in'
+        features_in_list = ('strain_path', 'temperature_hist',
+                            'composition_hist')
+        features_in_build = 'cat'
+        # Set output features
+        new_label_out = 'features_out'
+        features_out_list = ('stress_path',)
+        features_out_build = 'cat'
+        # Set number of input and output features
+        model_init_args['n_features_in'] = 8
+        model_init_args['n_features_out'] = 6
     else:
         raise RuntimeError('Unknown features option.')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

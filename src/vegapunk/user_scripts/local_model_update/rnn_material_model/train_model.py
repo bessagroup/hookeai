@@ -164,8 +164,8 @@ def perform_model_standard_training(train_dataset_file_path, model_directory,
     elif features_option == 'strain_temperature_composition_to_stress':
         # Set input features
         new_label_in = 'features_in'
-        features_in_list = ('strain_path', 'temperature_path',
-                            'composition_path')
+        features_in_list = ('strain_path', 'temperature_hist',
+                            'composition_hist')
         features_in_build = 'cat'
         # Set output features
         new_label_out = 'features_out'
