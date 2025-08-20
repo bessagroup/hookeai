@@ -557,13 +557,17 @@ def perform_material_model_updating(
               f'{str(datetime.timedelta(seconds=int(total_time_sec)))}')
         print('\n------------------------------------')
 # =============================================================================
-def set_lmu_dir(base_dir):
+def set_lmu_dir(base_dir, is_overwrite=False):
     """Set local model update main directory.
     
     Parameters
     ----------
     base_dir : str
-    
+        Base directory.
+    is_overwrite : bool, default=False
+        If True, then overwrite the local model updating main directory if it
+        already exists.
+
     Returns
     -------
     lmu_dir : str
@@ -579,6 +583,13 @@ def set_lmu_dir(base_dir):
     # Create data set directory
     if not os.path.isdir(lmu_dir):
         lmu_dir = make_directory(lmu_dir)
+    else:
+        if is_overwrite:
+            # Overwrite existing directory
+            lmu_dir = make_directory(lmu_dir, is_overwrite=True)
+        else:
+            # Keep existing directory
+            pass
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     return lmu_dir
 # =============================================================================
@@ -999,7 +1010,7 @@ if __name__ == '__main__':
                  'generate_material_data': False,
                  'assemble_material_datasets': False,
                  'perform_material_model_updating': False,
-                 'plot_model_parameters': True}
+                 'plot_model_parameters': False}
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set base directory
     base_dir = ('/home/bernardoferreira/Documents/brown/projects/'
@@ -1036,7 +1047,7 @@ if __name__ == '__main__':
     is_generate_uq_plots = False
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set local model update main directory
-    lmu_dir = set_lmu_dir(base_dir)
+    lmu_dir = set_lmu_dir(base_dir, is_overwrite=False)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Preview material response data sets sizes
     if processes['preview_material_datasets_sizes']:
