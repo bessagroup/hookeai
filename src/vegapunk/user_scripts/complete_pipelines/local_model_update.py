@@ -999,7 +999,7 @@ if __name__ == '__main__':
                  'generate_material_data': False,
                  'assemble_material_datasets': False,
                  'perform_material_model_updating': False,
-                 'plot_model_parameters': False}
+                 'plot_model_parameters': True}
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set base directory
     base_dir = ('/home/bernardoferreira/Documents/brown/projects/'
@@ -1080,4 +1080,4 @@ if __name__ == '__main__':
         # Plot model parameters
         plot_model_parameters(model_name, temperatures, compositions,
                               save_dir=save_dir, is_save_fig=True,
-                              is_stdout_display=True)
+                              is_stdout_display=False)
