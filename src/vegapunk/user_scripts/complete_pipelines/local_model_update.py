@@ -46,6 +46,7 @@ import datetime
 import re
 import random
 import warnings
+import shutil
 # Third-party
 import torch
 import numpy as np
@@ -258,7 +259,8 @@ def generate_material_data(lmu_dir, strain_formulation, problem_type,
               f'{str(datetime.timedelta(seconds=int(total_time_sec)))}')
         print('\n--------------------------------------------------')
 # =============================================================================
-def assemble_material_datasets(lmu_dir, dataset_types, dataset_basename,
+def assemble_material_datasets(lmu_dir, strain_formulation, problem_type,
+                               dataset_types, dataset_basename,
                                size_balanced_reduction=None,
                                is_save_dataset_plots=False, is_verbose=False):
     """Assemble material response data sets.
@@ -267,6 +269,11 @@ def assemble_material_datasets(lmu_dir, dataset_types, dataset_basename,
     ----------
     lmu_dir : str
         Local model updating main directory.
+    strain_formulation : {'infinitesimal', 'finite'}
+        Strain formulation.
+    problem_type : int
+        Problem type: 2D plane strain (1), 2D plane stress (2),
+        2D axisymmetric (3) and 3D (4).
     dataset_types : list[str]
         Data set types to be assembled.
     dataset_basename : str
@@ -391,7 +398,14 @@ def assemble_material_datasets(lmu_dir, dataset_types, dataset_basename,
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Generate data set plots
         if is_save_dataset_plots:
-            generate_dataset_plots(dataset, dataset_dir)
+            # Get problem type parameters
+            n_dim, _, _ = get_problem_type_parameters(problem_type)
+            # Create plots directory
+            plots_dir = make_directory(
+                os.path.join(dataset_dir, 'plots'), is_overwrite=True)
+            # Generate data set plots
+            generate_dataset_plots(strain_formulation, n_dim, dataset,
+                                   save_dir=plots_dir, is_save_fig=True)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Compute total data generation time
     total_time_sec = time.time() - start_time_sec
@@ -407,9 +421,13 @@ def perform_material_model_updating(
         is_generate_uq_plots=False, is_verbose=False):
     """Perform model updating with uncertainty quantification.
     
+    Model features: rnn_material_model/train_model.py
     
-    NOTES
+    Model architecture: rnn_material_model/train_model.py
     
+    Training parameters: rnn_material_model/train_model.py
+    
+    Prediction parameters: rnn_material_model/predict_model.py
     
     Parameters
     ----------
@@ -439,12 +457,13 @@ def perform_material_model_updating(
     # Set model base directory
     model_dir = os.path.join(lmu_dir, '3_model')
     make_directory(model_dir, is_overwrite=True)
-    # Set model prediction type directory
-    model_prediction_dir = os.path.join(model_dir, '7_prediction')
-    make_directory(model_prediction_dir, is_overwrite=True)
+    # Set prediction type
     testing_type = 'in_distribution'
-    model_prediction_type_dir = \
-        os.path.join(model_prediction_dir, testing_type)
+    # Set model prediction type base directory
+    model_prediction_dir = os.path.join(lmu_dir, '7_prediction')
+    make_directory(model_prediction_dir, is_overwrite=True)
+    model_prediction_type_dir = os.path.join(model_prediction_dir,
+                                             testing_type)
     make_directory(model_prediction_type_dir, is_overwrite=True)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Get training data set file path
@@ -459,7 +478,7 @@ def perform_material_model_updating(
         target_dir=testing_dataset_dir)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set uncertainty quantification directory
-    uq_dir = os.path.join(model_dir, 'uncertainty_quantification')
+    uq_dir = os.path.join(lmu_dir, 'uncertainty_quantification')
     make_directory(uq_dir, is_overwrite=True)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Perform local model updating with uncertainty quantification
@@ -474,6 +493,13 @@ def perform_material_model_updating(
     if is_generate_uq_plots:
         gen_model_uq_plots(uq_dir, n_model_sample, testing_dataset_dir,
                            testing_type, is_save_fig=True, is_latex=True)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Remove model base directory
+    if os.path.isdir(model_dir):
+        shutil.rmtree(model_dir)
+    # Remove model prediction base directory
+    if os.path.isdir(model_prediction_dir):
+        shutil.rmtree(model_prediction_dir)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Compute total data generation time
     total_time_sec = time.time() - start_time_sec
@@ -746,8 +772,6 @@ def get_model_parameters(model_name, temperature, composition):
              'euler_angles': (0.0, 0.0, 0.0),
              'hardening_law': get_hardening_law('piecewise_linear'),
              'hardening_parameters': {'hardening_points': hardening_points}}
-            
-        print(model_parameters)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     return model_parameters
 # =============================================================================
@@ -813,7 +837,7 @@ def find_dataset_file(target_dir):
     dataset_basename = get_dataset_basename()
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set data set file regex
-    dataset_file_regex = re.compile(dataset_basename + r'_n\d+\.pkl')
+    dataset_file_regex = dataset_basename + r'_n\d+\.pkl'
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Search data set file in target directory
     is_file_found, dataset_file_path = \
@@ -831,8 +855,8 @@ if __name__ == '__main__':
     # Set computational processes
     processes = {'set_local_model_update_dir': True,
                  'generate_material_data': False,
-                 'assemble_material_datasets': True,
-                 'perform_material_model_updating': False}
+                 'assemble_material_datasets': False,
+                 'perform_material_model_updating': True}
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set base directory
     base_dir = ('/home/bernardoferreira/Documents/brown/projects/'
@@ -875,7 +899,7 @@ if __name__ == '__main__':
                                model_name, temperatures=temperatures,
                                compositions=compositions,
                                n_sample_type=n_sample_type,
-                               is_save_dataset_plots=True, is_verbose=True)
+                               is_save_dataset_plots=False, is_verbose=True)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Assemble material response data sets
     if processes['assemble_material_datasets']:
@@ -884,7 +908,8 @@ if __name__ == '__main__':
         # Set data set types to be assembled
         dataset_types = n_sample_type.keys()
         # Assemble material response data sets
-        assemble_material_datasets(lmu_dir, dataset_types, dataset_basename,
+        assemble_material_datasets(lmu_dir, strain_formulation, problem_type,
+                                   dataset_types, dataset_basename,
                                    size_balanced_reduction=None,
                                    is_save_dataset_plots=is_save_dataset_plots,
                                    is_verbose=True)
@@ -892,7 +917,7 @@ if __name__ == '__main__':
     # Perform model updating with uncertainty quantification
     if processes['perform_material_model_updating']:
         perform_material_model_updating(
-            lmu_dir, dataset_basename, n_model_sample=n_model_sample,
+            lmu_dir, n_model_sample=n_model_sample,
             is_model_training=is_model_training,
             is_generate_uq_plots=is_generate_uq_plots,
             is_verbose=True)
