@@ -6,6 +6,8 @@ generate_material_data
     Generate material response data sets with multiple dependencies.
 assemble_material_datasets
     Assemble material response data sets.
+preview_material_datasets_sizes
+    Preview material response data sets sizes.
 perform_material_model_updating
     Perform model updating with uncertainty quantification.
 set_lmu_dir
@@ -22,6 +24,8 @@ get_model_parameters
     Get model parameters for given temperature and composition.
 polynomial
     Evaluate polynomial function with given coefficients.
+plot_model_parameters
+    Plot model parameters for given material model.
 get_dataset_basename
     Set data set basename.
 find_dataset_file
@@ -51,6 +55,7 @@ import shutil
 import torch
 import numpy as np
 import tqdm
+import matplotlib.pyplot as plt
 # Local
 from time_series_data.time_dataset import TimeSeriesDatasetInMemory, \
     save_dataset, load_dataset
@@ -60,6 +65,7 @@ from simulators.fetorch.material.models.standard.von_mises import VonMises
 from simulators.fetorch.material.models.standard.hardening import \
     get_hardening_law
 from ioput.iostandard import make_directory, find_unique_file_with_regex
+from ioput.plots import plot_surface_xyz_data, save_figure
 from user_scripts.synthetic_data.gen_response_dataset import \
     MaterialResponseDatasetGenerator, generate_dataset_plots
 from user_scripts.local_model_update.rnn_material_model. \
@@ -416,6 +422,47 @@ def assemble_material_datasets(lmu_dir, strain_formulation, problem_type,
               f'{str(datetime.timedelta(seconds=int(total_time_sec)))}')
         print('\n------------------------------------')
 # =============================================================================
+def preview_material_datasets_sizes(temperatures, compositions,
+                                    n_sample_type={}):
+    """Preview material response data sets sizes.
+    
+    Parameters
+    ----------
+    temperatures : list[float]
+        Discrete temperatures.
+    compositions : list[float]
+        Discrete compositions.
+    n_sample_type : dict, default={}
+        Number of samples (item, int) per data set type (str, key) for each
+        set of material parameters.
+    """
+    print('\nPreview material response data sets sizes'
+          '\n-----------------------------------------')
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Compute number of temperature-composition pairs
+    n_temp_comp_pairs = len(temperatures)*len(compositions)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    print('\nTemperature-Composition dependencies:'
+          f'\n\n  > Number of discrete temperatures: {len(temperatures)}'
+          f'\n\n  > Number of discrete compositions: {len(compositions)}'
+          f'\n\n  > Number of temperature-composition pairs: '
+          f'{n_temp_comp_pairs}')
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    print('\n\nData set sizes:')
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Loop over data set types
+    for dataset_type, n_sample in n_sample_type.items():
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Compute total number of samples for given data set type
+        n_sample_total = n_temp_comp_pairs*n_sample
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        print(f'\n  Data set type: \'{dataset_type}\''
+              f'\n\n    > Number of samples per temperature-composition pair: '
+              f'{n_sample}'
+              f'\n\n    > Total number of samples: {n_sample_total}')
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    print('\n-----------------------------------------\n')
+# =============================================================================
 def perform_material_model_updating(
         lmu_dir, n_model_sample=1, is_model_training=True,
         is_generate_uq_plots=False, is_verbose=False):
@@ -563,8 +610,7 @@ def set_dependencies_dir(target_dir, temperature, composition):
     # Set dependencies directory
     dependencies_dir = os.path.join(os.path.normpath(target_dir), dirname)
     # Create dependencies directory
-    if not os.path.isdir(dependencies_dir):
-        dependencies_dir = make_directory(dependencies_dir, is_overwrite=True)
+    dependencies_dir = make_directory(dependencies_dir, is_overwrite=True)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     return dependencies_dir
 # =============================================================================
@@ -773,6 +819,9 @@ def get_model_parameters(model_name, temperature, composition):
              'hardening_law': get_hardening_law('piecewise_linear'),
              'hardening_parameters': {'hardening_points': hardening_points}}
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    else:
+        raise RuntimeError(f'Unknown constitutive model: {model_name}')
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     return model_parameters
 # =============================================================================
 def polynomial(coefficients, x):
@@ -797,6 +846,99 @@ def polynomial(coefficients, x):
     value = sum(c*(x**i) for i, c in enumerate(coefficients))
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     return value
+# =============================================================================
+def plot_model_parameters(model_name, temperatures=[], compositions=[],
+                          save_dir=None, is_save_fig=False,
+                          is_stdout_display=False):
+    """Plot model parameters for given material model.
+    
+    Parameters
+    ----------
+    model_name : str
+        FETorch material constitutive model name.
+    temperatures : list[float], default=[]
+        Discrete temperatures.
+    compositions : list[float], default=[]
+        Discrete compositions.
+    save_dir : str, default=None
+        Directory where figure is saved. If None, then figure is saved in
+        current working directory.
+    is_save_fig : bool, default=False
+        Save figure.
+    is_stdout_display : bool, default=False
+        True if displaying figure to standard output device, False otherwise.
+    """
+    # Check model name
+    if model_name == 'von_mises':
+        # Set plotting parameters
+        plotting_params = {'E': '$E$ (GPa)',
+                           'v': '$\\nu$',
+                           's0': '$\\sigma_{y,0}$ (MPa)',
+                           's1': '$H$ (MPa)'}
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Build meshgrid of temperature and composition values
+        if len(temperatures) > 0 and len(compositions) > 0:
+            # Create meshgrid of temperature and composition values
+            t_mesh, c_mesh = np.meshgrid(temperatures, compositions,
+                                         indexing='ij')
+        else:
+            raise RuntimeError('Both temperatures and compositions must have '
+                               'at least one value to plot model parameters.')
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Loop over plotting parameters
+        for param, param_label in plotting_params.items():
+            # Initialize parameter meshgrid
+            p_mesh = np.zeros_like(t_mesh)
+            # Loop over temperature and composition values
+            for i, temperature in enumerate(temperatures):
+                for j, composition in enumerate(compositions):
+                    # Get model parameters for given temperature and
+                    # composition
+                    model_parameters = get_model_parameters(
+                        model_name, temperature, composition)
+                    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                    # Set parameter value
+                    if param == 'E':
+                        # Get parameter (convert to GPa)
+                        p_mesh[i, j] = model_parameters[param]*(10**-3)
+                    elif param == 'v':
+                        # Get parameter
+                        p_mesh[i, j] = model_parameters[param]
+                    elif param == 's0':
+                        # Get hardening points
+                        hard = model_parameters[
+                            'hardening_parameters']['hardening_points']
+                        # Get initial yield stress from hardening points
+                        p_mesh[i, j] = hard[0, 1]
+                    elif param == 's1':
+                        hard = model_parameters[
+                            'hardening_parameters']['hardening_points']
+                        # Get linear hardening slope
+                        p_mesh[i, j] = ((hard[-1, 1] - hard[0, 1])/
+                                        (hard[-1, 0] - hard[0, 0]))
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Plot parameter surface
+            figure, _ = plot_surface_xyz_data(
+                t_mesh, c_mesh, p_mesh, colormap='viridis',
+                x_label='$T$ ($^\circ$C)', y_label='$C$', z_label=param_label,
+                view_angles_deg=(40, -145, 0), is_latex=True)
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Save figure
+            if is_save_fig:
+                # Set figure name
+                filename = f'{model_name}_{param}_temperature_composition'
+                # Save figure
+                save_figure(figure, filename, height=5.0, format='pdf',
+                            save_dir=save_dir)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Display figures
+        if is_stdout_display:
+            plt.show()
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Close figures
+        plt.close('all')
+    else:
+        raise RuntimeError(f'Unknown constitutive model: {model_name}')
 # =============================================================================
 def get_dataset_basename(dataset_type=None):
     """Get data set basename.
@@ -853,10 +995,11 @@ def find_dataset_file(target_dir):
 # =============================================================================
 if __name__ == '__main__':
     # Set computational processes
-    processes = {'set_local_model_update_dir': True,
+    processes = {'preview_material_datasets_sizes': True,
                  'generate_material_data': False,
                  'assemble_material_datasets': False,
-                 'perform_material_model_updating': True}
+                 'perform_material_model_updating': False,
+                 'plot_model_parameters': False}
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set base directory
     base_dir = ('/home/bernardoferreira/Documents/brown/projects/'
@@ -872,6 +1015,9 @@ if __name__ == '__main__':
     # Set temperatures and compositions
     temperatures = [25.0, 100.0]
     compositions = [0.0, 0.5]
+    
+    temperatures = list(np.linspace(25.0, 625.0, num=10))
+    compositions = list(np.linspace(0.0, 1.0, num=10))
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set number of samples per data set type for each set of material
     # parameters
@@ -890,8 +1036,12 @@ if __name__ == '__main__':
     is_generate_uq_plots = False
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set local model update main directory
-    if processes['set_local_model_update_dir']:
-        lmu_dir = set_lmu_dir(base_dir)
+    lmu_dir = set_lmu_dir(base_dir)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Preview material response data sets sizes
+    if processes['preview_material_datasets_sizes']:
+        preview_material_datasets_sizes(temperatures, compositions,
+                                        n_sample_type=n_sample_type)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Generate material response data sets
     if processes['generate_material_data']:
@@ -921,3 +1071,13 @@ if __name__ == '__main__':
             is_model_training=is_model_training,
             is_generate_uq_plots=is_generate_uq_plots,
             is_verbose=True)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Plot model parameters
+    if processes['plot_model_parameters']:
+        # Set save directory
+        save_dir = os.path.join(lmu_dir, '0_model_parameters_plots')
+        make_directory(save_dir, is_overwrite=True)
+        # Plot model parameters
+        plot_model_parameters(model_name, temperatures, compositions,
+                              save_dir=save_dir, is_save_fig=True,
+                              is_stdout_display=True)
