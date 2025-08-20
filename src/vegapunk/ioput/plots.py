@@ -10,6 +10,8 @@ plot_xny_data
     Plot data in xy axes with given range of y-values for each x-value.
 plot_xyz_data
     Plot data in xyz axes.
+plot_surface_xyz_data
+    Plot surface data in xyz axes.
 scatter_xy_data
     Scatter data in xy axes.
 scatter_xny_data
@@ -711,7 +713,7 @@ def plot_xyz_data(data_xyz, data_labels=None, x_lims=(None, None),
     z_tick_format : {'int', 'float', 'exp'}, default=None
         z-axis ticks formatting. If None or invalid format, then default
         formatting is set.
-    view_angles_deg : tuple[float], default=None
+    view_angles_deg : tuple[float], default=(30, 30, 0)
         Elevation (0), aximuth (1) and roll angles (2) that define the view
         angle of the 3D plot (defined in degrees).
     marker : str, default=None
@@ -845,6 +847,171 @@ def plot_xyz_data(data_xyz, data_labels=None, x_lims=(None, None),
         axes.legend(loc=loc, ncols=ncols, frameon=True, fancybox=True,
                     facecolor='inherit', edgecolor='inherit', fontsize=8,
                     framealpha=1.0)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Set axes limits
+    if x_lims != (None, None):
+        axes.set_xlim(x_lims)
+    if y_lims != (None, None):
+        axes.set_ylim(y_lims)
+    if z_lims != (None, None):
+        axes.set_zlim(z_lims)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Return figure and axes handlers
+    return figure, axes
+# =============================================================================
+def plot_surface_xyz_data(x_mesh, y_mesh, z_mesh, colormap='viridis',
+                          x_lims=(None, None), y_lims=(None, None),
+                          z_lims=(None, None), title=None,
+                          x_label=None, y_label=None, z_label=None,
+                          x_tick_format=None, y_tick_format=None,
+                          z_tick_format=None, view_angles_deg=(30, 30, 0),
+                          marker=None, markersize=None, is_latex=False):
+    """Plot surface data in xyz axes.
+
+    Parameters
+    ----------
+    x_mesh : numpy.ndarray(2d)
+        Mesh grid x-coordinates.
+    y_mesh : numpy.ndarray(2d)
+        Mesh grid y-coordinates.
+    z_mesh : numpy.ndarray(2d)
+        Mesh grid z-coordinates.
+    colormap : str, default='viridis'
+        Surface plot colormap.
+    x_lims : tuple, default=(None, None)
+        x-axis limits in data coordinates.
+    y_lims : tuple, default=(None, None)
+        y-axis limits in data coordinates.
+    z_lims : tuple, default=(None, None)
+        z-axis limits in data coordinates.
+    title : str, default=None
+        Plot title.
+    x_label : str, default=None
+        x-axis label.
+    y_label : str, default=None
+        y-axis label.
+    z_label : str, default=None
+        z-axis label.
+    x_tick_format : {'int', 'float', 'exp'}, default=None
+        x-axis ticks formatting. If None or invalid format, then default
+        formatting is set.
+    y_tick_format : {'int', 'float', 'exp'}, default=None
+        y-axis ticks formatting. If None or invalid format, then default
+        formatting is set.
+    z_tick_format : {'int', 'float', 'exp'}, default=None
+        z-axis ticks formatting. If None or invalid format, then default
+        formatting is set.
+    view_angles_deg : tuple[float], default=(30, 30, 0)
+        Elevation (0), aximuth (1) and roll angles (2) that define the view
+        angle of the 3D plot (defined in degrees).
+    marker : str, default=None
+        Marker type.
+    markersize : float, default=None
+        Marker size in points.
+    is_latex : bool, default=False
+        If True, then render all strings in LaTeX. If LaTex is not available,
+        then this option is silently set to False and all input strings are
+        processed to remove $(...)$ enclosure.
+
+    Returns
+    -------
+    figure : Matplotlib Figure
+        Figure.
+    axes : Matplotlib Axes
+        Axes.
+    """
+    # Reset matplotlib internal default style
+    plt.rcParams.update(plt.rcParamsDefault)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Check data
+    if (len(x_mesh.shape) != 2 or len(y_mesh.shape) != 2 or \
+            len(z_mesh.shape) != 2):
+        raise RuntimeError('Mesh grid data arrays must be provided as '
+                           'numpy.ndarray(2d).')
+    elif x_mesh.shape != y_mesh.shape or x_mesh.shape != z_mesh.shape:
+        raise RuntimeError('Mesh grid data arrays must have the same shape.')
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Set surface colormap
+    if colormap is None:
+        # Set default colormap
+        colormap = 'viridis'
+    else:
+        # Check colormap
+        if not isinstance(colormap, str):
+            raise RuntimeError('Colormap must be provided as a string.')
+        elif colormap not in plt.colormaps():
+            raise RuntimeError(f'Colormap \'{colormap}\' is not available. '
+                               f'Check available Matplotlib colormaps.')
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~    
+    # Check LaTeX availability
+    if not bool(shutil.which('latex')):
+        is_latex = False
+    # Set LaTeX font
+    if is_latex:
+        # Default LaTeX Computer Modern Roman
+        plt.rc('text', usetex=True)
+        plt.rc('font', **{'family': 'serif',
+                          'serif': ['Computer Modern Roman']})        
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Create figure
+    figure = plt.figure()
+    # Set figure size (inches) - stdout print purpose
+    figure.set_figheight(6, forward=True)
+    figure.set_figwidth(6, forward=True)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Create axes
+    axes = figure.add_subplot(1, 1, 1, projection='3d')
+    # Set view angle
+    axes.view_init(elev=view_angles_deg[0], azim=view_angles_deg[1],
+                   roll=view_angles_deg[2])
+    # Set zoom
+    axes.set_box_aspect(None, zoom=0.75)
+    # Set title
+    axes.set_title(tex_str(title, is_latex), fontsize=12, pad=10)
+    # Set axes labels
+    axes.set_xlabel(tex_str(x_label, is_latex), fontsize=12, labelpad=10)
+    axes.set_ylabel(tex_str(y_label, is_latex), fontsize=12, labelpad=10)
+    axes.set_zlabel(tex_str(z_label, is_latex), fontsize=12, labelpad=10)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Set tick formatting functions
+    def intTickFormat(x, pos):
+        frmt = tex_str('{:2d}', is_latex)
+        return frmt.format(int(x))
+    def floatTickFormat(x, pos):
+        frmt = tex_str('{:3.1f}', is_latex)
+        return frmt.format(x)
+    def expTickFormat(x, pos):
+        frmt = tex_str('{:7.2e}', is_latex)
+        return frmt.format(x)
+    tick_formats = {'int': intTickFormat, 'float': floatTickFormat,
+                    'exp': expTickFormat}
+    # Set axes tick formats
+    if x_tick_format in ('int', 'float', 'exp'):
+        axes.xaxis.set_major_formatter(
+            ticker.FuncFormatter(tick_formats[x_tick_format]))
+    if y_tick_format in ('int', 'float', 'exp'):
+        axes.yaxis.set_major_formatter(
+            ticker.FuncFormatter(tick_formats[y_tick_format]))
+    if z_tick_format in ('int', 'float', 'exp'):
+        axes.zaxis.set_major_formatter(
+            ticker.FuncFormatter(tick_formats[z_tick_format]))
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Configure grid major lines
+    axes.grid(which='major', axis='both', linestyle='-', linewidth=0.5,
+              color='0.5', zorder=-20)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Plot surface data
+    axes.plot_surface(x_mesh, y_mesh, z_mesh, cmap='viridis',
+                      edgecolor='k', linewidth=0.5, shade=True)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Overlay mesh grid points
+    if marker is not None:
+        # Set marker size
+        if markersize is None:
+            markersize = 10
+        # Plot mesh grid points
+        axes.scatter(x_mesh, y_mesh, z_mesh, marker=marker, s=markersize,
+                     color='k', alpha=1.0)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set axes limits
     if x_lims != (None, None):
@@ -2107,7 +2274,7 @@ def plot_histogram_2d(data, bins=10, bins_range=None,
     # Return figure and axes handlers
     return figure, axes
 # =============================================================================
-def save_figure(figure, filename, format='pdf', save_dir=None,
+def save_figure(figure, filename, height=3.6, format='pdf', save_dir=None,
                 is_tight_layout=False):
     """Save Matplotlib figure.
     
@@ -2117,6 +2284,8 @@ def save_figure(figure, filename, format='pdf', save_dir=None,
         Figure.
     filename : str
         Figure name.
+    height : float, default=3.6
+        Figure height (inches).
     format : {'pdf', 'png'}, default='pdf'
         File format.
     save_dir : str, default=None
@@ -2142,8 +2311,8 @@ def save_figure(figure, filename, format='pdf', save_dir=None,
     size_ratio = fig_width/fig_height
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~    
     # Set figure size (inches)
-    figure.set_figheight(3.6, forward=False)
-    figure.set_figwidth(3.6*size_ratio, forward=False)
+    figure.set_figheight(height, forward=False)
+    figure.set_figwidth(height*size_ratio, forward=False)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~    
     # Adjust subplots to avoid overlaps
     if is_tight_layout:
