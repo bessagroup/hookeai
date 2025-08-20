@@ -144,8 +144,8 @@ def generate_material_data(lmu_dir, strain_formulation, problem_type,
     # Loop over temperature and composition pairs
     for temperature, composition in dependencies_iterator:
         if is_verbose:
-            print(f'\n\nTemperature: {temperature} |'
-                  f' Composition: {composition}')
+            print(f'\n\nTemperature: {temperature:.2f} |'
+                  f' Composition: {composition:.2f}')
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Set dependencies directory
         dependencies_dir = \
@@ -526,7 +526,8 @@ def perform_material_model_updating(
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set uncertainty quantification directory
     uq_dir = os.path.join(lmu_dir, 'uncertainty_quantification')
-    make_directory(uq_dir, is_overwrite=True)
+    if not os.path.isdir(uq_dir) or is_model_training:
+        make_directory(uq_dir, is_overwrite=True)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Perform local model updating with uncertainty quantification
     perform_model_uq(uq_dir, n_model_sample, training_dataset_file_path,
@@ -1032,8 +1033,8 @@ if __name__ == '__main__':
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set number of samples per data set type for each set of material
     # parameters
-    n_sample_type = {'training': 5,
-                     'validation': 2,
+    n_sample_type = {'training': 20,
+                     'validation': 4,
                      'testing_id': 2}
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set whether to generate data set plots
@@ -1044,7 +1045,7 @@ if __name__ == '__main__':
     # Set whether to perform model training
     is_model_training = True
     # Set whether to generate uncertainty quantification plots
-    is_generate_uq_plots = False
+    is_generate_uq_plots = True
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set local model update main directory
     lmu_dir = set_lmu_dir(base_dir, is_overwrite=False)
