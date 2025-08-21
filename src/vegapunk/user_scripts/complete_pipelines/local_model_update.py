@@ -101,9 +101,9 @@ def generate_material_data(lmu_dir, strain_formulation, problem_type,
     model_name : str
         FETorch material constitutive model name.
     temperatures : list[float], default=[]
-        Discrete temperatures.
+        Discrete temperatures sorted in ascending order.
     compositions : list[float], default=[]
-        Discrete compositions.
+        Discrete compositions sorted in ascending order.
     n_sample_type : dict, default={}
         Number of samples (item, int) per data set type (str, key) for each
         set of material parameters.
@@ -151,11 +151,6 @@ def generate_material_data(lmu_dir, strain_formulation, problem_type,
         dependencies_dir = \
             set_dependencies_dir(data_dir, temperature, composition)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        # Set data constitutive model
-        constitutive_model, state_features = \
-            set_data_material_model(strain_formulation, problem_type,
-                                    model_name, temperature, composition)
-        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Loop over data set types
         for dataset_type, n_sample in n_sample_type.items():
             if is_verbose:
@@ -174,9 +169,33 @@ def generate_material_data(lmu_dir, strain_formulation, problem_type,
             # Initialize data set samples
             dataset_samples = []
             # Loop over samples
-            for i in tqdm.tqdm(range(n_sample),
+            for _ in tqdm.tqdm(range(n_sample),
                                desc=f'  > Generating {dataset_type} data set',
                                disable=not is_verbose):
+                # Set effective temperature and composition
+                if dataset_type in ('validation', 'testing_id'):
+                    # Find closest temperature and composition indexes
+                    ti = np.abs(np.array(temperatures) - temperature).argmin()
+                    ci = np.abs(np.array(compositions) - composition).argmin()
+                    # Set lower and upper indexes
+                    tli, tui = max(0, ti-1), min(ti+1, len(temperatures)-1)
+                    cli, cui = max(0, ci-1), min(ci+1, len(compositions)-1)
+                    # Sample random temperature and composition from
+                    # neighborhood-based range (assumes sorted temperatures
+                    # and compositions)
+                    eff_temperature = random.uniform(
+                        temperatures[tli], temperatures[tui])
+                    eff_composition = random.uniform(
+                        compositions[cli], compositions[cui])
+                else:
+                    eff_temperature = temperature
+                    eff_composition = composition
+                # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                # Set data constitutive model
+                constitutive_model, state_features = set_data_material_model(
+                    strain_formulation, problem_type, model_name,
+                    eff_temperature, eff_composition)
+                # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                 # Initialize number of sample trials
                 n_sample_trials = 0
                 # Initialize stress response path failure flag
@@ -230,10 +249,10 @@ def generate_material_data(lmu_dir, strain_formulation, problem_type,
                     time_hist, dtype=torch.get_default_dtype()).reshape(-1, 1)
                 # Assemble temperature and composition history
                 response_path['temperature_hist'] = torch.tensor(
-                    [temperature,]*len(time_hist),
+                    [eff_temperature,]*len(time_hist),
                     dtype=torch.get_default_dtype()).reshape(-1, 1)
                 response_path['composition_hist'] = torch.tensor(
-                    [composition,]*len(time_hist),
+                    [eff_composition,]*len(time_hist),
                     dtype=torch.get_default_dtype()).reshape(-1, 1)
                 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                 # Store material response path
@@ -428,10 +447,10 @@ def preview_material_datasets_sizes(temperatures, compositions,
     
     Parameters
     ----------
-    temperatures : list[float]
-        Discrete temperatures.
-    compositions : list[float]
-        Discrete compositions.
+    temperatures : list[float], default=[]
+        Discrete temperatures sorted in ascending order.
+    compositions : list[float], default=[]
+        Discrete compositions sorted in ascending order.
     n_sample_type : dict, default={}
         Number of samples (item, int) per data set type (str, key) for each
         set of material parameters.
@@ -869,9 +888,9 @@ def plot_model_parameters(model_name, temperatures=[], compositions=[],
     model_name : str
         FETorch material constitutive model name.
     temperatures : list[float], default=[]
-        Discrete temperatures.
+        Discrete temperatures sorted in ascending order.
     compositions : list[float], default=[]
-        Discrete compositions.
+        Discrete compositions sorted in ascending order.
     save_dir : str, default=None
         Directory where figure is saved. If None, then figure is saved in
         current working directory.
@@ -1007,7 +1026,7 @@ def find_dataset_file(target_dir):
 # =============================================================================
 if __name__ == '__main__':
     # Set computational processes
-    processes = {'preview_material_datasets_sizes': True,
+    processes = {'preview_material_datasets_sizes': False,
                  'generate_material_data': False,
                  'assemble_material_datasets': False,
                  'perform_material_model_updating': False,
@@ -1024,12 +1043,9 @@ if __name__ == '__main__':
     # Set model name
     model_name = 'von_mises'
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Set temperatures and compositions
-    temperatures = [25.0, 100.0]
-    compositions = [0.0, 0.5]
-    
-    temperatures = list(np.linspace(25.0, 625.0, num=10))
-    compositions = list(np.linspace(0.0, 1.0, num=10))
+    # Set temperatures and compositions (sorted)
+    temperatures = list(np.linspace(25.0, 625.0, num=25))
+    compositions = list(np.linspace(0.0, 1.0, num=11))
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set number of samples per data set type for each set of material
     # parameters
@@ -1041,7 +1057,7 @@ if __name__ == '__main__':
     is_save_dataset_plots = True
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set number of model samples (uncertainty quantification)
-    n_model_sample = 1
+    n_model_sample = 5
     # Set whether to perform model training
     is_model_training = True
     # Set whether to generate uncertainty quantification plots
