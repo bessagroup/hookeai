@@ -17,6 +17,7 @@ import warnings
 # Third-party
 import torch
 import numpy as np
+import pandas
 # Local
 from model_architectures.hybrid_base_model.model.hybrid_model import \
     HybridModel
@@ -233,7 +234,7 @@ class MaterialModelFinder(torch.nn.Module):
                                     dirichlet_bc_mesh)
         Compute reaction forces of Dirichlet boundary sets.
     store_dirichlet_sets_reaction_hist(self, dirichlet_sets_reaction_hist, \
-                                       is_plot=True)
+                                       is_export_csv=True, is_plot=True)
         Store reaction forces history of Dirichlet boundary sets.
     vbuild_tensor_from_comps(cls, n_dim, comps, comps_array, device=None)
         Build strain/stress tensor from given components.
@@ -2808,7 +2809,7 @@ class MaterialModelFinder(torch.nn.Module):
         return dirichlet_sets_reaction
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     def store_dirichlet_sets_reaction_hist(self, dirichlet_sets_reaction_hist,
-                                           is_plot=True):
+                                           is_export_csv=True, is_plot=True):
         """Store reaction forces history of Dirichlet boundary sets.
         
         Parameters
@@ -2816,6 +2817,9 @@ class MaterialModelFinder(torch.nn.Module):
         dirichlet_sets_reaction_hist : torch.Tensor(3d)
             Reaction forces history of Dirichlet boundary sets stored as
             torch.Tensor(3d) of shape (n_sets, 1, n_time).
+        is_export_csv : bool, default=True
+            If True, then export the reaction force history of Dirichlet
+            boundary sets to a '.csv' file.
         is_plot : bool, default=True
             If True, then plot the reaction force history of each Dirichlet
             boundary set.
@@ -2838,6 +2842,23 @@ class MaterialModelFinder(torch.nn.Module):
         with open(data_file_path, 'wb') as data_file:
             pickle.dump(dirichlet_sets_data, data_file)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Export Dirichlet boundary sets reaction force history to '.csv' file
+        if is_export_csv:
+            # Get number of Dirichlet boundary sets
+            n_sets = dirichlet_sets_reaction_hist.shape[0]
+            # Set data to export CSV file
+            csv_data = dirichlet_sets_reaction_hist.squeeze(1).T
+            # Set data frame headers
+            headers = [f"SET {i}" for i in range(n_sets)]
+            # Build data frame
+            df = pandas.DataFrame(csv_data.detach().cpu().numpy(),
+                                  columns=headers)
+            # Set '.csv' data file path
+            csv_file_path = \
+                os.path.join(save_dir, 'dirichlet_reaction_hist_sets.csv')
+            # Export '.csv' data file
+            df.to_csv(csv_file_path, index=False)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Plot Dirichlet boundary sets reaction force history
         if is_plot:
             # Get number of Dirichlet boundary sets
@@ -2848,7 +2869,8 @@ class MaterialModelFinder(torch.nn.Module):
             for i in range(n_sets):
                 # Get Dirichlet boundary set reaction force history
                 dirichlet_set_reaction_hist = \
-                    dirichlet_sets_reaction_hist[i, 0, :].detach().cpu().numpy()
+                    dirichlet_sets_reaction_hist[
+                        i, 0, :].detach().cpu().numpy()
                 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                 # Build data array
                 data_array = np.zeros((n_time, 2))
