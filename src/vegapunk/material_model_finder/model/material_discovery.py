@@ -18,6 +18,7 @@ import warnings
 import torch
 import numpy as np
 import pandas
+import matplotlib.pyplot as plt
 # Local
 from model_architectures.hybrid_base_model.model.hybrid_model import \
     HybridModel
@@ -25,12 +26,14 @@ from simulators.fetorch.element.integrations.internal_forces import \
     compute_element_internal_forces, compute_infinitesimal_inc_strain, \
     compute_infinitesimal_strain
 from simulators.fetorch.element.derivatives.gradients import \
-    eval_shapefun_deriv, vbuild_discrete_sym_gradient
+    eval_shapefun_deriv, vbuild_discrete_sym_gradient, \
+    vbuild_discrete_gradient, vexpand_grad_operator_sym_2d_to_3d, \
+    vreduce_grad_operator_sym_3d_to_2d
 from simulators.fetorch.material.material_su import material_state_update
 from simulators.fetorch.math.matrixops import get_problem_type_parameters, \
     vget_tensor_mf, vget_tensor_from_mf
 from simulators.fetorch.math.voigt_notation import vget_stress_vmf, \
-    vget_strain_from_vmf
+    vget_strain_from_vmf, get_projection_tensors_vmf
 from utilities.data_scalers import TorchMinMaxScaler
 from model_architectures.procedures.model_data_scaling import \
     set_fitted_data_scalers, data_scaler_transform
@@ -184,15 +187,38 @@ class MaterialModelFinder(torch.nn.Module):
                                           problem_type, element_type, \
                                           element_material, time_hist)
         Compute history of finite element internal forces.
+    vcompute_element_vol_grad_hist(self, nodes_coords_hist, nodes_disps_hist, \
+                                   strain_formulation, problem_type, \
+                                   element_type, time_hist)
+        Compute history of finite element volumetric gradient operator.
+    vcompute_local_vol_grad_operator_hist(self, local_coords, weight, \
+                                          strain_formulation, problem_type, \
+                                          element_type, nodes_coords_hist, \
+                                          nodes_disps_hist, time_hist)
+        Compute local integration point gradient contribution history.
+    vcompute_local_gradient(self, nodes_coords, local_coords, comp_order, \
+                            element_type, is_symmetric=True)
+        Compute discrete gradient operator at given local point of element.
+    vcompute_local_vol_sym_gradient(self, grad_operator_sym, n_dim)
+        Compute discrete volumetric symmetric gradient operator.
     vcompute_local_internal_forces_hist(self, local_coords, weight, \
                                         strain_formulation, problem_type, \
                                         element_type, nodes_coords_hist, \
                                         nodes_disps_hist, time_hist, \
-                                        element_material)
+                                        element_material, \
+                                        is_volumetric_bar=False, \
+                                        avg_vol_grad_operator_hist=None)
         Compute local integration point internal force contribution history.
     vcompute_local_strain(self, nodes_coords, nodes_disps, local_coords, \
                           strain_formulation, n_dim, comp_order, element_type)
         Compute strain tensor at given local point of element.
+    vcompute_local_strain_vbar(self, nodes_coords, nodes_disps, \
+                               avg_vol_grad_operator, local_coords, \
+                               strain_formulation, n_dim, comp_order, \
+                               element_type)
+        Compute strain tensor at given local point of element.
+    vcompute_local_dev_sym_gradient(self, grad_operator_sym, n_dim)
+        Compute discrete deviatoric symmetric gradient operator.
     vrecurrent_material_state_update(self, strain_formulation, problem_type, \
                                      constitutive_model, strain_hist, \
                                      time_hist)
@@ -336,8 +362,6 @@ class MaterialModelFinder(torch.nn.Module):
         self._is_store_local_paths = is_store_local_paths
         # Set elements of specimen local strain-stress data set
         self._local_paths_elements = local_paths_elements
-        # Set computation of force equilibrium loss components path
-        self._is_store_force_equilibrium_loss_hist = True
         # Set computation of Dirichlet boundary sets reaction forces
         if (is_compute_sets_reaction_hist
                 and self._force_equilibrium_loss_type != 'dirichlet_sets'):
@@ -1892,11 +1916,23 @@ class MaterialModelFinder(torch.nn.Module):
             element_type.get_batched_gauss_integration_points(
                 device=self._device)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set average volumetric strain formulation flag
+        # (must be refactored as StructureMesh attribute)
+        is_volumetric_bar = False
+        # Compute element average volumetric gradient operator history
+        if strain_formulation == 'infinitesimal' and is_volumetric_bar:
+            avg_vol_grad_operator_hist = self.vcompute_element_vol_grad_hist(
+                nodes_coords_hist, nodes_disps_hist, strain_formulation,
+                problem_type, element_type, time_hist)
+        else:
+            avg_vol_grad_operator_hist = None
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Set vectorized strain computation (batch along Gauss integration
         # points)
         vmap_compute_local_internal_forces_hist = torch.vmap(
             self.vcompute_local_internal_forces_hist,
-            in_dims=(0, 0, None, None, None, None, None, None, None),
+            in_dims=(0, 0, None, None, None, None, None, None, None, None,
+                     None),
             out_dims=(0, 0))
         # Compute Gauss integration points contribution history to element
         # internal forces
@@ -1904,7 +1940,8 @@ class MaterialModelFinder(torch.nn.Module):
             vmap_compute_local_internal_forces_hist(
                 gp_coords_tensor, gp_weights_tensor, strain_formulation,
                 problem_type, element_type, nodes_coords_hist,
-                nodes_disps_hist, time_hist, element_material)
+                nodes_disps_hist, time_hist, element_material,
+                is_volumetric_bar, avg_vol_grad_operator_hist)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Compute element internal forces history
         element_internal_forces_hist = \
@@ -1912,10 +1949,235 @@ class MaterialModelFinder(torch.nn.Module):
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         return element_internal_forces_hist, element_state_hist
     # -------------------------------------------------------------------------
+    def vcompute_element_vol_grad_hist(
+        self, nodes_coords_hist, nodes_disps_hist, strain_formulation,
+        problem_type, element_type, time_hist):
+        """Compute history of finite element volumetric gradient operator.
+        
+        Compatible with vectorized mapping.
+        
+        Parameters
+        ----------
+        nodes_coords_hist : torch.Tensor(3d)
+            Coordinates history of finite element nodes stored as
+            torch.Tensor(3d) of shape (n_node, n_dim, n_time).
+        nodes_disps_hist : torch.Tensor(3d)
+            Displacements history of finite element nodes stored as
+            torch.Tensor(3d) of shape (n_node, n_dim, n_time).
+        strain_formulation: {'infinitesimal', 'finite'}
+            Strain formulation.
+        problem_type : int
+            Problem type: 2D plane strain (1), 2D plane stress (2),
+            2D axisymmetric (3) and 3D (4).
+        element_type : Element
+            FETorch finite element.
+        time_hist : torch.Tensor(1d)
+            Discrete time history.
+            
+        Returns
+        -------
+        avg_vol_grad_operator_hist : torch.Tensor(3d)
+            Element average volumetric gradient operator history stored as
+            torch.Tensor(3d) of shape (n_time, n_strain_comp, n_node*n_dim).
+        """
+        # Get element Gauss quadrature integration points local coordinates
+        # and weights
+        gp_coords_tensor, gp_weights_tensor = \
+            element_type.get_batched_gauss_integration_points(
+                device=self._device)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set vectorized gradient computation (batch along Gauss integration
+        # points)
+        vmap_compute_local_vol_grad_operator_hist = torch.vmap(
+            self.vcompute_local_vol_grad_operator_hist,
+            in_dims=(0, 0, None, None, None, None, None, None),
+            out_dims=(0, 0))
+        # Compute Gauss integration points contribution history to element
+        # average volumetric gradient operator and volume history
+        gps_local_vol_grad_operator_hist, gps_local_vol_hist = \
+            vmap_compute_local_vol_grad_operator_hist(
+                gp_coords_tensor, gp_weights_tensor, strain_formulation,
+                problem_type, element_type, nodes_coords_hist,
+                nodes_disps_hist, time_hist)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Compute element volumetric gradient operator history
+        vol_grad_operator_hist = \
+            torch.sum(gps_local_vol_grad_operator_hist, dim=0)
+        # Compute element volume history
+        vol_hist = torch.sum(gps_local_vol_hist, dim=0)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Compute element average volumetric gradient operator history
+        avg_vol_grad_operator_hist = \
+            torch.mul(1/vol_hist[:, None, None], vol_grad_operator_hist)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        return avg_vol_grad_operator_hist
+    # -------------------------------------------------------------------------
+    def vcompute_local_vol_grad_operator_hist(
+        self, local_coords, weight, strain_formulation, problem_type,
+        element_type, nodes_coords_hist, nodes_disps_hist, time_hist):
+        """Compute local integration point gradient contribution history.
+        
+        Compatible with vectorized mapping.
+        
+        Parameters
+        ----------
+        local_coords : torch.Tensor(1d)
+            Local integration point coordinates.
+        weight : torch.Tensor(0d)
+            Local integration point weight.
+        strain_formulation: {'infinitesimal', 'finite'}
+            Strain formulation.
+        problem_type : int
+            Problem type: 2D plane strain (1), 2D plane stress (2),
+            2D axisymmetric (3) and 3D (4).
+        element_type : Element
+            FETorch finite element.
+        nodes_coords_hist : torch.Tensor(3d)
+            Coordinates history of finite element nodes stored as
+            torch.Tensor(3d) of shape (n_node, n_dim, n_time).
+        nodes_disps_hist : torch.Tensor(3d)
+            Displacements history of finite element nodes stored as
+            torch.Tensor(3d) of shape (n_node, n_dim, n_time).
+        time_hist : torch.Tensor(1d)
+            Discrete time history.
+            
+        Returns
+        -------
+        vol_grad_operator_hist : torch.Tensor(3d)
+            Local integration point contribution history to finite element
+            average volumetric gradient operator history stored as
+            torch.Tensor(3d) of shape (n_time, n_strain_comp, n_node*n_dim).
+        vol_hist : torch.Tensor(1d)
+            Local integration point contribution history to finite element
+            volume history stored as torch.Tensor(1d) of shape (n_time,).
+        """
+        # Get problem type parameters
+        n_dim, comp_order_sym, _ = \
+            get_problem_type_parameters(problem_type)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set vectorized discrete gradient computation (batch along time)
+        vmap_compute_local_gradient = \
+            torch.vmap(self.vcompute_local_gradient,
+                       in_dims=(2, None, None, None, None),
+                       out_dims=(0, 0))
+        # Compute Gauss integration point discrete gradient history
+        if strain_formulation == 'infinitesimal':
+            # Set symmetric gradient flag
+            is_symmetric = True
+            # Compute discrete symmetric gradient operator history
+            jacobian_det_hist, grad_operator_hist = \
+                vmap_compute_local_gradient(nodes_coords_hist, local_coords,
+                                            comp_order_sym, element_type,
+                                            is_symmetric)
+            # Set vectorized volumetric gradient operator computation (batch
+            # along time)
+            vmap_compute_local_vol_sym_gradient = torch.vmap(
+                self.vcompute_local_vol_sym_gradient,
+                in_dims=(0, None), out_dims=(0,))
+            # Compute volumetric gradient operator history
+            vol_grad_operator_hist = vmap_compute_local_vol_sym_gradient(
+                grad_operator_hist, n_dim)
+        else:
+            raise RuntimeError('Not implemented.')
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Compute local integration point contribution to element average
+        # volumetric gradient operator history
+        vol_grad_operator_hist = weight*vol_grad_operator_hist
+        # Compute local integration point contribution to element volume
+        vol_hist = weight*jacobian_det_hist
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        return vol_grad_operator_hist, vol_hist   
+    # -------------------------------------------------------------------------
+    def vcompute_local_gradient(self, nodes_coords, local_coords, comp_order,
+                                element_type, is_symmetric=True):
+        """Compute discrete gradient operator at given local point of element.
+
+        Compatible with vectorized mapping.
+        
+        Parameters
+        ----------
+        nodes_coords : torch.Tensor(2d)
+            Nodes coordinates stored as torch.Tensor(2d) of shape
+            (n_node, n_dof_node).
+        local_coords : torch.Tensor(1d)
+            Local coordinates of point where strain is computed.
+        comp_order : tuple
+            Strain/Stress components order associated to matricial form.
+        element_type : Element
+            FETorch finite element.
+        is_symmetric : bool, default=True
+            If True, then compute discrete symmetric gradient operator.
+            Otherwise, compute non-symmetric discrete gradient operator.
+            
+        Returns
+        -------
+        jacobian_det : torch.Tensor(0d)
+            Determinant of element Jacobian at given local coordinates.
+        grad_operator : torch.Tensor(2d)
+            Discrete gradient operator evaluated at given local coordinates.
+        """
+        # Evaluate shape functions derivates and Jacobian
+        shape_fun_deriv, _, jacobian_det = \
+            eval_shapefun_deriv(element_type, nodes_coords, local_coords)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Build discrete gradient operator
+        if is_symmetric:
+            # Build discrete symmetric gradient operator
+            grad_operator = \
+                vbuild_discrete_sym_gradient(shape_fun_deriv, comp_order)
+        else:
+            # Build discrete non-symmetric gradient operator
+            grad_operator = \
+                vbuild_discrete_gradient(shape_fun_deriv, comp_order)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        return jacobian_det, grad_operator
+    # -------------------------------------------------------------------------
+    def vcompute_local_vol_sym_gradient(self, grad_operator_sym, n_dim):
+        """Compute discrete volumetric symmetric gradient operator.
+        
+        Parameters
+        ----------
+        grad_operator_sym : torch.Tensor(2d)
+            Discrete symmetric gradient operator.
+        n_dim : int
+            Number of spatial dimensions.
+            
+        Returns
+        -------
+        vol_grad_operator_sym : torch.Tensor(2d)
+            Discrete volumetric symmetric gradient operator.
+        """
+        # Get device
+        device = grad_operator_sym.device
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # 2D > 3D conversion
+        if n_dim == 2:
+            # Expand 2D symmetric gradient operator to 3D
+            grad_operator_sym = \
+                vexpand_grad_operator_sym_2d_to_3d(grad_operator_sym)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Get 3D problem type parameters
+        _, comp_order_sym, _ = get_problem_type_parameters(4)
+        # Get volumetric and deviatoric projection tensors
+        vol_proj_vmf, _ = \
+            get_projection_tensors_vmf(n_dim, comp_order_sym, device=device)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Compute discrete volumetric symmetric gradient operator
+        vol_grad_operator_sym = torch.matmul(vol_proj_vmf, grad_operator_sym)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # 3D > 2D conversion
+        if n_dim == 2:
+            # Reduce 3D volumetric symmetric gradient operator to 2D
+            vol_grad_operator_sym = \
+                vreduce_grad_operator_sym_3d_to_2d(vol_grad_operator_sym)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        return vol_grad_operator_sym
+    # -------------------------------------------------------------------------
     def vcompute_local_internal_forces_hist(
         self, local_coords, weight, strain_formulation, problem_type,
         element_type, nodes_coords_hist, nodes_disps_hist, time_hist,
-        element_material):
+        element_material, is_volumetric_bar=False,
+        avg_vol_grad_operator_hist=None):
         """Compute local integration point internal force contribution history.
         
         Compatible with vectorized mapping.
@@ -1943,6 +2205,13 @@ class MaterialModelFinder(torch.nn.Module):
             Discrete time history.
         element_material : ConstitutiveModel
             FETorch material constitutive model.
+        is_volumetric_bar : bool, default=False
+            If True, then use volumetric strain averaging formulation (e.g.,
+            B-bar formulation under infinitesimal strains).
+        avg_vol_grad_operator_hist : torch.Tensor(3d), default=None
+            Element average volumetric gradient operator history stored as
+            torch.Tensor(3d) of shape (n_time, n_strain_comp, n_node*n_dim).
+            Required only if volumetric strain averaging formulation is used.
             
         Returns
         -------
@@ -1970,9 +2239,31 @@ class MaterialModelFinder(torch.nn.Module):
                 vmap_compute_local_strain(nodes_coords_hist, nodes_disps_hist,
                                           local_coords, strain_formulation,
                                           n_dim, comp_order_sym, element_type)
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Apply volumetric strain averaging formulation
+            if is_volumetric_bar:
+                # Check average volumetric gradient operator history
+                if avg_vol_grad_operator_hist is None:
+                    raise RuntimeError('The average volumetric gradient '
+                                       'operator history must be provided '
+                                       'when using a volumetric strain '
+                                       'averaging formulation.')
+                # Set vectorized strain computation with volumetric strain
+                # averaging formulation (batch along time)
+                vmap_compute_local_strain_vbar = \
+                    torch.vmap(self.vcompute_local_strain_vbar,
+                               in_dims=(2, 2, 0, None, None, None, None, None),
+                               out_dims=(0,))
+                # Compute infinitesimal strain tensor history with volumetric
+                # strain averaging formulation
+                strain_hist = vmap_compute_local_strain_vbar(
+                    nodes_coords_hist, nodes_disps_hist,
+                    avg_vol_grad_operator_hist, local_coords,
+                    strain_formulation, n_dim, comp_order_sym, element_type)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         else:
             raise RuntimeError('Not implemented.')
-        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~        
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Material state update
         state_variables_hist = self.vrecurrent_material_state_update(
             strain_formulation, problem_type, element_material,
@@ -2055,6 +2346,110 @@ class MaterialModelFinder(torch.nn.Module):
             raise RuntimeError('Not implemented.')      
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         return strain, jacobian_det, grad_operator_sym
+    # -------------------------------------------------------------------------
+    def vcompute_local_strain_vbar(self, nodes_coords, nodes_disps,
+                                   avg_vol_grad_operator, local_coords,
+                                   strain_formulation, n_dim, comp_order,
+                                   element_type):
+        """Compute strain tensor at given local point of element.
+        
+        The strain tensor is computed using a volumetric strain averaging
+        formulation (e.g., B-bar formulation under infinitesimal strains).
+        
+        Compatible with vectorized mapping.
+        
+        Parameters
+        ----------
+        nodes_coords : torch.Tensor(2d)
+            Nodes coordinates stored as torch.Tensor(2d) of shape
+            (n_node, n_dof_node).
+        nodes_disps : torch.Tensor(2d)
+            Nodes displacements stored as torch.Tensor(2d) of shape
+            (n_node, n_dof_node).
+        avg_vol_grad_operator : torch.Tensor(2d)
+            Element average volumetric gradient operator.
+        local_coords : torch.Tensor(1d)
+            Local coordinates of point where strain is computed.
+        strain_formulation: {'infinitesimal', 'finite'}
+            Strain formulation.
+        n_dim : int
+            Number of spatial dimensions.
+        comp_order : tuple
+            Strain/Stress components order associated to matricial form.
+        element_type : Element
+            FETorch finite element.
+            
+        Returns
+        -------
+        strain : torch.Tensor(2d)
+            Strain tensor at given local coordinates.
+        """
+        # Evaluate shape functions derivates and Jacobian
+        shape_fun_deriv, _, _ = \
+            eval_shapefun_deriv(element_type, nodes_coords, local_coords)
+        # Build discrete symmetric gradient operator
+        grad_operator_sym = vbuild_discrete_sym_gradient(shape_fun_deriv,
+                                                         comp_order)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+       # Compute discrete deviatoric symmetric gradient operator
+        dev_grad_operator_sym = self.vcompute_local_dev_sym_gradient(
+            grad_operator_sym, n_dim)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Compute modified discrete symmetric gradient operator
+        vbar_grad_operator_sym = avg_vol_grad_operator + dev_grad_operator_sym
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Compute strain tensor
+        if strain_formulation == 'infinitesimal':
+            # Compute infinitesimal strain tensor (Voigt matricial form)
+            strain_vmf = compute_infinitesimal_strain(
+                vbar_grad_operator_sym, nodes_disps)
+            # Get strain tensor
+            strain = vget_strain_from_vmf(strain_vmf, n_dim, comp_order)
+        else:
+            raise RuntimeError('Not implemented.')      
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        return strain
+    # -------------------------------------------------------------------------
+    def vcompute_local_dev_sym_gradient(self, grad_operator_sym, n_dim):
+        """Compute discrete deviatoric symmetric gradient operator.
+        
+        Parameters
+        ----------
+        grad_operator_sym : torch.Tensor(2d)
+            Discrete symmetric gradient operator.
+        n_dim : int
+            Number of spatial dimensions.
+            
+        Returns
+        -------
+        dev_grad_operator_sym : torch.Tensor(2d)
+            Discrete deviatoric symmetric gradient operator.
+        """
+        # Get device
+        device = grad_operator_sym.device
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # 2D > 3D conversion
+        if n_dim == 2:
+            # Expand 2D symmetric gradient operator to 3D
+            grad_operator_sym = \
+                vexpand_grad_operator_sym_2d_to_3d(grad_operator_sym)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Get 3D problem type parameters
+        _, comp_order_sym, _ = get_problem_type_parameters(4)
+        # Get volumetric and deviatoric projection tensors
+        _, dev_proj_vmf = \
+            get_projection_tensors_vmf(n_dim, comp_order_sym, device=device)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Compute discrete deviatoric symmetric gradient operator
+        dev_grad_operator_sym = torch.matmul(dev_proj_vmf, grad_operator_sym)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # 3D > 2D conversion
+        if n_dim == 2:
+            # Reduce 3D volumetric symmetric gradient operator to 2D
+            dev_grad_operator_sym = \
+                vreduce_grad_operator_sym_3d_to_2d(dev_grad_operator_sym)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        return dev_grad_operator_sym
     # -------------------------------------------------------------------------
     def vrecurrent_material_state_update(self, strain_formulation,
                                          problem_type, constitutive_model,
@@ -2617,11 +3012,14 @@ class MaterialModelFinder(torch.nn.Module):
                                      y_label=f'Force equilibrium loss',
                                      y_scale='log',
                                      is_latex=True)
-            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Set file name
             filename = f'force_equilibrium_loss_components_hist'
             # Save figure
             save_figure(figure, filename, format='pdf', save_dir=save_dir)
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Close figure
+            plt.close('all')
     # -------------------------------------------------------------------------
     def build_elements_local_samples(self, strain_formulation, problem_type,
                                      time_hist, elements_state_hist):
