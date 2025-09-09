@@ -13,6 +13,8 @@ get_stress_vmf
     Get stress tensor Voigt matricial form.
 vget_stress_vmf
     Get stress tensor Voigt matricial form.
+get_projection_tensors_vmf(n_dim, comp_order_sym, device='cpu')
+    Get volumetric and deviatoric projection tensors Voigt matricial form.
 """
 #
 #                                                                       Modules
@@ -226,3 +228,38 @@ def vget_stress_vmf(stress, n_dim, comp_order_sym, device=None):
     stress_vmf = stress[index_map]
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     return stress_vmf
+# =============================================================================
+def get_projection_tensors_vmf(n_dim, comp_order_sym, device='cpu'):
+    """Get volumetric and deviatoric projection tensors Voigt matricial form.
+    
+    Parameters
+    ----------
+    n_dim : int
+        Number of spatial dimensions.
+    comp_order_sym : tuple
+        Strain/Stress components symmetric order.
+    device : torch.device, default='cpu'
+        Device on which torch.Tensor is allocated.
+        
+    Returns
+    -------
+    vol_proj_vmf : torch.Tensor(2d)
+        Volumetric projection tensor Voigt matricial form.
+    dev_proj_vmf : torch.Tensor(2d)
+        Deviatoric projection tensor Voigt matricial form.
+    """
+    # Get number of strain components
+    n_comp = len(comp_order_sym)
+    # Set second-order identity tensor (strain dimensionality)
+    soid = torch.eye(n_comp, device=device)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Set volumetric indicator
+    vol_indicator = torch.tensor(
+        [1.0 if x[0] == x[1] else 0.0 for x in comp_order_sym], device=device)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Build volumetric projection operator
+    vol_proj_vmf = (1.0/n_dim)*torch.outer(vol_indicator, vol_indicator)
+    # Build deviatoric projection operator
+    dev_proj_vmf = soid - vol_proj_vmf
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    return vol_proj_vmf, dev_proj_vmf
