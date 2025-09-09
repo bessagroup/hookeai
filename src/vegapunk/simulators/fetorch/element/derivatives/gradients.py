@@ -12,6 +12,10 @@ build_discrete_gradient
     Build discrete gradient operator.
 vbuild_discrete_gradient
     Build discrete gradient operator.
+vexpand_grad_operator_sym_2d_to_3d
+    Expand 2D discrete symmetric gradient operator to 3D.
+vreduce_grad_operator_sym_3d_to_2d
+    Reduce 3D discrete symmetric gradient operator to 2D.
 """
 #
 #                                                                       Modules
@@ -20,6 +24,7 @@ vbuild_discrete_gradient
 import torch
 # Local
 from simulators.fetorch.element.derivatives.jacobian import eval_jacobian
+from simulators.fetorch.math.matrixops import get_problem_type_parameters
 #
 #                                                          Authorship & Credits
 # =============================================================================
@@ -297,3 +302,100 @@ def vbuild_discrete_gradient(shape_fun_deriv, comp_order_nsym):
          for i in range(n_node)], dim=1)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     return grad_operator
+# =============================================================================
+def vexpand_grad_operator_sym_2d_to_3d(grad_operator_sym_2d):
+    """Expand 2D discrete symmetric gradient operator to 3D.
+    
+    Compatible with vectorized mapping.
+    
+    Parameters
+    ----------
+    grad_operator_sym_2d : torch.Tensor(2d)
+        Discrete symmetric gradient operator (2D).
+        
+    Returns
+    -------
+    grad_operator_sym_3d : torch.Tensor(2d)
+        Discrete symmetric gradient operator (3D).
+    """
+    # Get device
+    device = grad_operator_sym_2d.device
+    # Get float type
+    dtype = grad_operator_sym_2d.dtype
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Get 2D strain/stress components order
+    _, comp_order_sym_2d, _ = get_problem_type_parameters(problem_type=1)
+    # Get 3D strain/stress components order
+    _, comp_order_sym_3d, _ = get_problem_type_parameters(problem_type=4)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Get number of nodes
+    n_node = grad_operator_sym_2d.shape[1]//2
+    # Get number of components
+    n_comp_2d = grad_operator_sym_2d.shape[0]
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Reshape 2D gradient operator to split nodes and degrees of freedom
+    grad_operator_reshape = grad_operator_sym_2d.view(n_comp_2d, n_node, 2)
+    # Initialize out-of-plane zero tensor
+    oop_zeros = torch.zeros((n_comp_2d, n_node, 1), device=device, dtype=dtype)
+    # Expand 2D gradient operator to include out-of-plane degree of freedom
+    grad_operator_reshape = \
+        torch.cat((grad_operator_reshape, oop_zeros), dim=2).reshape(
+            n_comp_2d, 3*n_node)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Collect 3D gradient operator components
+    grad_comps = [
+        grad_operator_reshape[comp_order_sym_2d.index(comp), :].unsqueeze(0)
+        if comp in comp_order_sym_2d
+        else torch.zeros((1, 3*n_node), device=device, dtype=dtype)
+        for comp in comp_order_sym_3d]
+    # Assemble 3D gradient operator
+    grad_operator_sym_3d = torch.cat(grad_comps, dim=0)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    return grad_operator_sym_3d
+# =============================================================================
+def vreduce_grad_operator_sym_3d_to_2d(grad_operator_sym_3d):
+    """Reduce 3D discrete symmetric gradient operator to 2D.
+    
+    Compatible with vectorized mapping.
+    
+    Parameters
+    ----------
+    grad_operator_sym_3d : torch.Tensor(2d)
+        Discrete symmetric gradient operator (3D).
+        
+    Returns
+    -------
+    grad_operator_sym_2d : torch.Tensor(2d)
+        Discrete symmetric gradient operator (2D).
+    """
+    # Get device
+    device = grad_operator_sym_3d.device
+    # Get float type
+    dtype = grad_operator_sym_3d.dtype
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Get 2D strain/stress components order
+    _, comp_order_sym_2d, _ = get_problem_type_parameters(problem_type=1)
+    # Get 3D strain/stress components order
+    _, comp_order_sym_3d, _ = get_problem_type_parameters(problem_type=4)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Get number of nodes
+    n_node = grad_operator_sym_3d.shape[1]//3
+    # Get number of components
+    n_comp_3d = grad_operator_sym_3d.shape[0]
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Reshape 3D gradient operator to split nodes and degrees of freedom
+    grad_operator_reshape = grad_operator_sym_3d.view(n_comp_3d, n_node, 3)
+    # Reduce 3D gradient operator to remove out-of-plane degree of freedom
+    grad_operator_reshape = grad_operator_reshape[:, :, :2].reshape(
+        n_comp_3d, 2*n_node)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Collect 2D gradient operator components
+    grad_comps = [
+        grad_operator_reshape[comp_order_sym_3d.index(comp), :].unsqueeze(0)
+        if comp in comp_order_sym_2d
+        else torch.zeros((1, 2*n_node), device=device, dtype=dtype)
+        for comp in comp_order_sym_2d]
+    # Assemble 2D gradient operator
+    grad_operator_sym_2d = torch.cat(grad_comps, dim=0)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    return grad_operator_sym_2d
