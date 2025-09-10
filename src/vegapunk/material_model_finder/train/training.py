@@ -322,6 +322,8 @@ def train_model(n_max_epochs, specimen_data, specimen_material_state,
         if save_every is not None and epoch % save_every == 0:
             save_training_state(model=model, optimizer=optimizer,
                                 state_type='epoch', epoch=epoch)
+            save_material_models_state(model=model, state_type='epoch',
+                                       epoch=epoch)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Save model and optimizer best performance state corresponding to
         # minimum training loss
