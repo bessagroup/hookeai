@@ -2773,14 +2773,36 @@ class MaterialModelFinder(torch.nn.Module):
             #    reaction_forces_mesh_flat*reaction_forces_mask.squeeze(1)
             #print((reaction_dbc.unsqueeze(1)*one_hot_dbc).sum(dim=0))
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            # Compute force equilibrium loss term
-            # (non-Dirichlet constrained set)
-            force_equilibrium_loss_ndbc = torch.sum(
-                (force_equilibrium*one_hot_ndbc)**2)
-            # Compute force equilibrium loss term
-            # (Dirichlet constrained sets)
-            force_equilibrium_loss_dbc = torch.sum(
-                (force_equilibrium.unsqueeze(1)*one_hot_dbc).sum(dim=0)**2)
+            # Set force equilibrium loss multi-objective weights flag
+            is_multi_objective_weights = False
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Compute force equilibrium loss terms
+            if is_multi_objective_weights:
+                # Compute sets number of degrees of freedom
+                sets_n_dof = one_hot.sum(dim=0)
+                # Compute sets weights
+                sets_weights = sets_n_dof/n_total
+                # Set weights for non-Dirichlet and Dirichlet constrained sets
+                weight_ndbc = sets_weights[0]
+                weight_dbc = sets_weights[1:]
+                # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                # Compute force equilibrium loss term
+                # (non-Dirichlet constrained set)
+                force_equilibrium_loss_ndbc = weight_ndbc*torch.sum(
+                    (force_equilibrium*one_hot_ndbc)**2)
+                # Compute force equilibrium loss term
+                # (Dirichlet constrained sets)
+                force_equilibrium_loss_dbc = torch.sum(weight_dbc*((
+                    force_equilibrium.unsqueeze(1)*one_hot_dbc).sum(dim=0)**2))
+            else:
+                # Compute force equilibrium loss term
+                # (non-Dirichlet constrained set)
+                force_equilibrium_loss_ndbc = torch.sum(
+                    (force_equilibrium*one_hot_ndbc)**2)
+                # Compute force equilibrium loss term
+                # (Dirichlet constrained sets)
+                force_equilibrium_loss_dbc = torch.sum(((
+                    force_equilibrium.unsqueeze(1)*one_hot_dbc).sum(dim=0)**2))
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Compute force equilibrium loss
             force_equilibrium_loss = \
@@ -2916,14 +2938,39 @@ class MaterialModelFinder(torch.nn.Module):
                     - reaction_forces_mesh_flat
                     *reaction_forces_mask.squeeze(1))
                 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-                # Compute force equilibrium loss term
-                # (non-Dirichlet constrained set)
-                force_equilibrium_loss_ndbc = torch.sum(
-                    (force_equilibrium*one_hot_ndbc)**2)
-                # Compute force equilibrium loss term
-                # (Dirichlet constrained sets)
-                force_equilibrium_loss_dbc = torch.sum(
-                    (force_equilibrium.unsqueeze(1)*one_hot_dbc).sum(dim=0)**2)
+                # Set force equilibrium loss multi-objective weights flag
+                is_multi_objective_weights = False
+                # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                # Compute force equilibrium loss terms
+                if is_multi_objective_weights:
+                    # Compute sets number of degrees of freedom
+                    sets_n_dof = one_hot.sum(dim=0)
+                    # Compute sets weights
+                    sets_weights = sets_n_dof/n_total
+                    # Set weights for non-Dirichlet and Dirichlet constrained
+                    # sets
+                    weight_ndbc = sets_weights[0]
+                    weight_dbc = sets_weights[1:]
+                    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                    # Compute force equilibrium loss term
+                    # (non-Dirichlet constrained set)
+                    force_equilibrium_loss_ndbc = weight_ndbc*torch.sum(
+                        (force_equilibrium*one_hot_ndbc)**2)
+                    # Compute force equilibrium loss term
+                    # (Dirichlet constrained sets)
+                    force_equilibrium_loss_dbc = torch.sum(weight_dbc*(
+                        (force_equilibrium.unsqueeze(1)*one_hot_dbc).sum(
+                            dim=0)**2))
+                else:
+                    # Compute force equilibrium loss term
+                    # (non-Dirichlet constrained set)
+                    force_equilibrium_loss_ndbc = torch.sum(
+                        (force_equilibrium*one_hot_ndbc)**2)
+                    # Compute force equilibrium loss term
+                    # (Dirichlet constrained sets)
+                    force_equilibrium_loss_dbc = torch.sum((
+                        (force_equilibrium.unsqueeze(1)*one_hot_dbc).sum(
+                            dim=0)**2))
                 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                 # Compute force equilibrium loss
                 force_equilibrium_loss = \
