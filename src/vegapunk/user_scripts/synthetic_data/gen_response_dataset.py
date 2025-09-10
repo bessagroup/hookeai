@@ -481,7 +481,8 @@ class MaterialResponseDatasetGenerator():
             for state_var in state_features.keys():
                 # Skip if state variable is not available
                 if state_var not in state_variables.keys():
-                    state_path.pop(state_var)
+                    if state_var in state_path.keys():
+                        state_path.pop(state_var)
                     continue
                 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                 # Store state variable
