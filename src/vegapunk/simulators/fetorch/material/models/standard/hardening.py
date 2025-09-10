@@ -244,6 +244,8 @@ class PiecewiseLinearIHL(IsotropicHardeningLaw):
     def _hardening_slope(acc_p_strain, a, b):
         """Compute hardening slope for given plastic strain.
         
+        Extrapolation enforces null hardening slope.
+        
         Parameters
         ----------
         acc_p_strain : torch.Tensor(0d)
@@ -260,6 +262,9 @@ class PiecewiseLinearIHL(IsotropicHardeningLaw):
         """
         # Get hardening curve bracket index
         idx = torch.sum(torch.ge(acc_p_strain, a)).view(-1) - 1
+        # Avoid out-of-bounds bracket indices
+        idx = torch.clamp(idx, min=0, max=a.shape[0] - 2)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Get hardening curve bracket points
         x0 = a[idx]
         y0 = b[idx]
@@ -267,6 +272,13 @@ class PiecewiseLinearIHL(IsotropicHardeningLaw):
         y1 = b[idx + 1]
         # Compute hardening slope
         hard_slope = (y1 - y0)/(x1 - x0)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Enforce null hardening slope when extrapolating
+        lower_mask = torch.relu(acc_p_strain - a[0]).sign()
+        upper_mask = torch.relu(a[-1] - acc_p_strain).sign()
+        mask = lower_mask*upper_mask
+        # Enforce extrapolation masking
+        hard_slope = hard_slope*mask
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         return hard_slope
 # =============================================================================
