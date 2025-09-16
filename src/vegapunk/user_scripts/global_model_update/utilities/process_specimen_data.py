@@ -8,6 +8,9 @@ plot_nodes_displacement_history(specimen_name, specimen_history_dir, \
 plot_reaction_forces_history(specimen_name, specimen_history_dir, n_dim=3, \
                              reference_displacement_node=None, save_dir=None)
     Plot specimen reaction forces history from specimen history data.
+copy_dbc_labels(specimen_name, src_specimen_history_dir, \
+                target_specimen_history_dir)
+    Copy Dirichlet boundary constraints labels from specimen history data.
 """
 #
 #                                                                       Modules
@@ -197,7 +200,7 @@ def plot_reaction_forces_history(specimen_name, specimen_history_dir, n_dim=3,
                     reaction_forces_mesh_hist[label_mask, i, t].sum()
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Store assembly label
-            assembly_labels.append(f'dim_{i}_label_{label.item()}')
+            assembly_labels.append(f'dim_{i + 1}_label_{label.item()}')
             # Increment assembly label index
             assembly_index += 1
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -246,6 +249,62 @@ def plot_reaction_forces_history(specimen_name, specimen_history_dir, n_dim=3,
         # Save figure
         save_figure(figure, filename, format='pdf', save_dir=save_dir)
 # =============================================================================
+def copy_dbc_labels(specimen_name, src_specimen_history_dir,
+                    target_specimen_history_dir):
+    """Copy Dirichlet boundary constraints labels from specimen history data.
+    
+    Given a source and target specimen history data directories for a given
+    specimen, copies the Dirichlet boundary constraints labels from the source
+    to the target directory files. Source and target specimen history data
+    files must be consistent (same specimen, mesh and history length).
+
+    Parameters
+    ----------
+    specimen_name : str
+        Specimen name.
+    src_specimen_history_dir : str
+        Source specimen history data directory.
+    target_specimen_history_dir : str
+        Target specimen history data directory.
+    """
+    # Get source specimen history data file paths
+    src_specimen_history_paths = get_specimen_history_paths(
+        src_specimen_history_dir, specimen_name)
+    # Get target specimen history data file paths
+    target_specimen_history_paths = get_specimen_history_paths(
+        target_specimen_history_dir, specimen_name)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Get time history length
+    if len(src_specimen_history_paths) != len(target_specimen_history_paths):
+        raise RuntimeError('Source and target specimen history data files '
+                           'must have the same history length. Source has '
+                           f'{len(src_specimen_history_paths)} time steps, '
+                           f'target has {len(target_specimen_history_paths)} '
+                           'time steps.')
+    else:
+        n_time = len(src_specimen_history_paths)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Loop over time steps
+    for i in range(n_time):
+        # Load source specimen history data file
+        df_src = pandas.read_csv(src_specimen_history_paths[i])
+        # Load target specimen history data file
+        df_target = pandas.read_csv(target_specimen_history_paths[i])
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Check if source specimen history data file has Dirichlet boundary
+        # constraints labels
+        if not all(col in df_src.columns for col in ['DBC1', 'DBC2', 'DBC3']):
+            raise RuntimeError('Source specimen history data file does not '
+                               'have Dirichlet boundary constraints labels '
+                               '(\'DBC1\', \'DBC2\', \'DBC3\').')
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Copy Dirichlet boundary constraints labels from source to target
+        df_target[['DBC1', 'DBC2', 'DBC3']] = df_src[['DBC1', 'DBC2', 'DBC3']]
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Save modified target specimen history data file
+        df_target.to_csv(target_specimen_history_paths[i], encoding='utf-8',
+                         index=False)   
+# =============================================================================
 if __name__ == '__main__':
     # Set specimen name
     specimen_name = 'Ti6242_HIP2_UT_Specimen2_J2'
@@ -253,17 +312,13 @@ if __name__ == '__main__':
     specimen_history_dir = \
         ('/home/bernardoferreira/Documents/brown/projects/'
          'colaboration_antonios/dtp_validation/3_dtp1_j2_rowan_data/'
-         '1_DTP1U_data/loss_dirichlet_sets/'
-         '0_abaqus_simulation_hexa8_8GP_gt_parameters/0_simulation/'
-         'debug_plots/specimen_history_data')
+         'testing/dtp1u/specimen_history_data')
     # Set number of spatial dimensions
     n_dim = 3
     # Set plots directory
     save_dir = ('/home/bernardoferreira/Documents/brown/projects/'
                 'colaboration_antonios/dtp_validation/3_dtp1_j2_rowan_data/'
-                '1_DTP1U_data/loss_dirichlet_sets/'
-                '0_abaqus_simulation_hexa8_8GP_gt_parameters/0_simulation/'
-                'debug_plots/plots')
+                'testing/dtp1u/plots')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set nodes labels
     nodes_labels = [131, 1301]
