@@ -329,6 +329,7 @@ def elem_type_abaqus_to_fetorch(elem_abaqus_type):
     elif elem_abaqus_type in ('C3D4',):
         elem_fetorch_type = FETetra4(n_gauss=4)
     elif elem_abaqus_type in ('C3D8',):
+        elem_fetorch_type = FEHexa8(n_gauss=8)
     elif elem_abaqus_type in ('C3D8R',):
         elem_fetorch_type = FEHexa8(n_gauss=1)
     elif elem_abaqus_type in ('C3D20R',):
