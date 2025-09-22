@@ -2082,7 +2082,8 @@ class MaterialModelFinder(torch.nn.Module):
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Compute local integration point contribution to element average
         # volumetric gradient operator history
-        vol_grad_operator_hist = weight*vol_grad_operator_hist
+        vol_grad_operator_hist = weight*torch.mul(
+            vol_grad_operator_hist, jacobian_det_hist[:, None, None])
         # Compute local integration point contribution to element volume
         vol_hist = weight*jacobian_det_hist
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
