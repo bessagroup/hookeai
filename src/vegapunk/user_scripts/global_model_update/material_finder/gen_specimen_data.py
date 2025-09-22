@@ -329,7 +329,8 @@ def elem_type_abaqus_to_fetorch(elem_abaqus_type):
     elif elem_abaqus_type in ('C3D4',):
         elem_fetorch_type = FETetra4(n_gauss=4)
     elif elem_abaqus_type in ('C3D8',):
-        elem_fetorch_type = FEHexa8(n_gauss=8)
+    elif elem_abaqus_type in ('C3D8R',):
+        elem_fetorch_type = FEHexa8(n_gauss=1)
     elif elem_abaqus_type in ('C3D20R',):
         elem_fetorch_type = FEHexa20(n_gauss=8)
     else:
@@ -484,7 +485,7 @@ def set_material_model_parameters():
     n_dim, comp_order_sym, _ = get_problem_type_parameters(problem_type)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set constitutive model name
-    model_name = 'rc_drucker_prager_vmap'
+    model_name = 'rc_von_mises_vmap'
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set constitutive model name parameters
     if bool(re.search(r'^rc_.*$', model_name)):
@@ -511,13 +512,13 @@ def set_material_model_parameters():
             # Set constitutive model parameters
             model_parameters = {
                 'elastic_symmetry': 'isotropic',
-                'E': 110e3, 'v': 0.33,
+                'E': 118640, 'v': 0.334,
                 'euler_angles': (0.0, 0.0, 0.0),
                 'hardening_law': get_hardening_law('nadai_ludwik'),
                 'hardening_parameters':
-                    {'s0': math.sqrt(3)*900,
-                     'a': math.sqrt(3)*700,
-                     'b': 0.5,
+                    {'s0': 823.14484,
+                     'a': 522.23411,
+                     'b': 0.375146,
                      'ep0': 1e-5}}
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Set learnable parameters
@@ -852,7 +853,7 @@ if __name__ == "__main__":
                                   f'{case_study_name}')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set specimen name
-    specimen_name = 'random_specimen'
+    specimen_name = 'Ti6242_HIP2_UT_Specimen2_J2'
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set strain formulation
     strain_formulation = 'infinitesimal'

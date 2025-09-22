@@ -66,6 +66,8 @@ def gen_specimen_local_dataset(specimen_data_path,
         Time series data set. Each sample is stored as a dictionary where
         each feature (key, str) data is a torch.Tensor(2d) of shape
         (sequence_length, n_features).
+    force_equilibrium_hist_loss : torch.Tensor(0d)
+        Force equilibrium history loss.
     """
     # Load specimen numerical data
     specimen_data = torch.load(specimen_data_path)
@@ -77,7 +79,7 @@ def gen_specimen_local_dataset(specimen_data_path,
     # Set material model finder name
     model_finder_name = 'material_model_finder'
     # Set force equilibrium loss type
-    force_equilibrium_loss_type = 'pointwise'
+    force_equilibrium_loss_type = 'dirichlet_sets'
     # Set force normalization
     is_force_normalization = False
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -202,7 +204,7 @@ def gen_specimen_local_dataset(specimen_data_path,
             specimen_data.get_n_dim(), dataset, save_dir=plots_dir,
             is_save_fig=True, is_stdout_display=False)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    return dataset
+    return dataset, force_equilibrium_hist_loss
 # =============================================================================
 def set_default_model_parameters(model_directory, device_type='cpu'):
     """Set default model initialization parameters.
@@ -289,6 +291,6 @@ if __name__ == "__main__":
         device_type = 'cpu'
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Generate specimen local strain-stress paths data set
-    _ = gen_specimen_local_dataset(
+    _, _ = gen_specimen_local_dataset(
         specimen_data_path, specimen_material_state_path, model_directory,
-        is_plot_dataset=True, device_type=device_type, is_verbose=True)
+        is_plot_dataset=False, device_type=device_type, is_verbose=True)

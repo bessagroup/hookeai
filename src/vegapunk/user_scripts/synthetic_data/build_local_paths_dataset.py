@@ -458,7 +458,7 @@ def gen_patch_local_dataset(model_finder_dir, patch_data_path,
         make_directory(model_directory, is_overwrite=True)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Generate material patch local strain-stress paths data set
-    local_dataset = gen_specimen_local_dataset(
+    local_dataset, _ = gen_specimen_local_dataset(
         patch_data_path, patch_material_state_path, model_directory,
         device_type=device_type, is_verbose=is_verbose)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

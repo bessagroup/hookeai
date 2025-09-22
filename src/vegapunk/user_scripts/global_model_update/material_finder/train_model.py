@@ -130,7 +130,7 @@ def perform_model_standard_training(specimen_data_path,
         loss_time_weights = None
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set explicit handling of model parameters
-    is_explicit_model_parameters = False
+    is_explicit_model_parameters = True
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~    
     # Discovery of material model
     model, _, _ = train_model(
@@ -241,7 +241,11 @@ def set_default_model_parameters(model_directory, device_type='cpu'):
     # Set model name
     model_name = 'material_model_finder'
     # Set force equilibrium loss type
-    force_equilibrium_loss_type = 'pointwise'
+    force_equilibrium_loss_type = 'dirichlet_sets'
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # Set storage of force equilibrium loss components history
+    is_store_force_equilibrium_loss_hist = True
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set force normalization flag (force equilibrium loss computation)
     is_force_normalization = False
     # Set autograd anomaly detection flag
@@ -252,6 +256,8 @@ def set_default_model_parameters(model_directory, device_type='cpu'):
         'model_directory': model_directory,
         'model_name': model_name,
         'force_equilibrium_loss_type': force_equilibrium_loss_type,
+        'is_store_force_equilibrium_loss_hist':
+            is_store_force_equilibrium_loss_hist,
         'is_force_normalization': is_force_normalization,
         'is_detect_autograd_anomaly': is_detect_autograd_anomaly,
         'device_type': device_type}

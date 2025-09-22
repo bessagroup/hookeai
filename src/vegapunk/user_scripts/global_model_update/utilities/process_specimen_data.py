@@ -30,12 +30,15 @@ root_dir = str(pathlib.Path(__file__).parents[3])
 if root_dir not in sys.path:
     sys.path.insert(0, root_dir)
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+import os
 import pickle
+import re
 # Third-party
 import numpy as np
 import pandas
 import torch
 # Local
+from ioput.iostandard import make_directory
 from ioput.plots import plot_xy_data, save_figure
 from user_scripts.global_model_update.material_finder.gen_specimen_data \
     import get_specimen_history_paths, get_specimen_numerical_data
@@ -299,7 +302,7 @@ def build_dirichlet_sets_reaction_history(specimen_name, specimen_history_dir,
         nodes_disps_mesh_hist
 # =============================================================================
 def compare_reaction_forces_history(dirichlet_sets_reaction_hist,
-                                    dirichlet_sets_data_labels,
+                                    dirichlet_sets_data_labels=None,
                                     save_dir=None):
     """Compare reaction forces history between different Dirichlet sets.
     
@@ -313,15 +316,16 @@ def compare_reaction_forces_history(dirichlet_sets_reaction_hist,
     dirichlet_sets_reaction_hist : numpy.ndarray(3d)
         Reaction forces history of Dirichlet boundary sets stored as
         numpy.ndarray(3d) of shape (n_sets, 1, n_time).
-    dirichlet_sets_data_labels : list[str]
+    dirichlet_sets_data_labels : list[str], default=None
         List of strings with the Dirichlet boundary sets data labels.
     save_dir : str, default=None
         Directory where figure is saved. If None, then figure is saved in
         current working directory.
     """
     # Check Dirichlet boundary sets data labels
-    if (len(dirichlet_sets_data_labels)
-        != dirichlet_sets_reaction_hist.shape[0]):
+    if (dirichlet_sets_data_labels is not None
+        and (len(dirichlet_sets_data_labels)
+             != dirichlet_sets_reaction_hist.shape[0])):
         raise RuntimeError('The number of Dirichlet boundary sets data labels '
                            f'({len(dirichlet_sets_data_labels)}) must be '
                            'equal to the number of Dirichlet boundary '
@@ -422,7 +426,8 @@ if __name__ == '__main__':
     process = ('plot_nodes_displacement_history',
                'plot_reaction_forces_history',
                'compare_reaction_forces_history',
-               'copy_dbc_labels')[2]
+               'plot_optimization_reaction_forces_history',
+               'copy_dbc_labels')[3]
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Plot nodes displacement history or reaction forces history
     if process in ('plot_nodes_displacement_history',
@@ -563,6 +568,92 @@ if __name__ == '__main__':
             dirichlet_sets_reaction_hist, dirichlet_sets_data_labels,
             save_dir=save_dir)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    elif process == 'plot_optimization_reaction_forces_history':
+        # Set hyperparameter optimization jobs output directory
+        hyperopt_jobs_dir = \
+            ('/home/bernardoferreira/Documents/brown/projects/'
+             'colaboration_antonios/dtp_validation/3_dtp1_j2_rowan_data/'
+             '2_DTP1U_V2_data/loss_dirichlet_sets/'
+             '4_hyperparameter_optimization/optimize_von_mises_parameters/'
+             '2025-09-19/18-31-54')
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set plots directory
+        save_dir = \
+            os.path.join(os.path.normpath(hyperopt_jobs_dir), 'plots')
+        # Create plots directory (overwrite)
+        make_directory(save_dir, is_overwrite=True)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Initialize Dirichlet sets reaction forces history data
+        dirichlet_sets_reaction_hist_data = []
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Set specimen name
+        specimen_name = 'Ti6242_HIP2_UT_Specimen2_J2'
+        # Set specimen history (source) data directory
+        specimen_history_dir = \
+            ('/home/bernardoferreira/Documents/brown/projects/'
+             'colaboration_antonios/dtp_validation/3_dtp1_j2_rowan_data/'
+             '2_DTP1U_V2_data/loss_dirichlet_sets/'
+             '4_hyperparameter_optimization/0_simulation_src/'
+             'specimen_history_data')
+        # Set number of spatial dimensions
+        n_dim = 3
+        # Build Dirichlet sets reaction forces history
+        dirichlet_sets_reaction_hist, _, _ = \
+            build_dirichlet_sets_reaction_history(
+                specimen_name, specimen_history_dir, n_dim=n_dim)
+        # Store Dirichlet sets reaction forces history data
+        dirichlet_sets_reaction_hist_data.append(
+            dirichlet_sets_reaction_hist[4:5, :, :])
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Get job directories in optimization process directory
+        directory_list = [x for x in os.listdir(hyperopt_jobs_dir)
+                          if re.search(r'^(\d+)$', x)]
+        # Sort job files in optimization process directory
+        directory_list = sorted(directory_list,
+               key=lambda x: int(re.search(r'^(\d+)$', x).groups()[-1]))
+        # Check directory
+        if not directory_list:
+            raise RuntimeError('No job files have been found in optimization '
+                               'process directory:\n\n' + hyperopt_jobs_dir)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Loop over optimization process jobs
+        for job_dir in directory_list:
+            # Set material model finder directory
+            material_model_finder_dir = os.path.join(
+                hyperopt_jobs_dir, job_dir, 'material_model_finder')
+            # Check material model finder directory
+            if not os.path.isdir(material_model_finder_dir):
+                raise RuntimeError('Material model finder directory does not '
+                                   f'exist:\n\n' + material_model_finder_dir)
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Set Dirichlet sets reaction forces history file
+            dirichlet_sets_reaction_hist_file_path = os.path.join(
+                material_model_finder_dir, '3_model',
+                'dirichlet_sets_reaction_forces', 'dirichlet_sets_data.pkl')
+            # Check Dirichlet sets reaction forces history file
+            if not os.path.isfile(dirichlet_sets_reaction_hist_file_path):
+                raise RuntimeError('Dirichlet sets reaction forces history '
+                                   'file does not exist:\n\n'
+                                   + dirichlet_sets_reaction_hist_file_path)
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Load Dirichlet sets reaction forces history data
+            with open(dirichlet_sets_reaction_hist_file_path, 'rb') as file:
+                dirichlet_sets_reaction_hist = \
+                    pickle.load(file)['dirichlet_sets_reaction_hist']
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Store Dirichlet sets reaction forces history data
+            dirichlet_sets_reaction_hist_data.append(
+                dirichlet_sets_reaction_hist[2:3, :, :])
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Concatenate Dirichlet sets reaction forces history data
+        dirichlet_sets_reaction_hist = \
+            np.concatenate(dirichlet_sets_reaction_hist_data, axis=0)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Compare reaction forces history between different Dirichlet sets
+        compare_reaction_forces_history(dirichlet_sets_reaction_hist,
+                                        dirichlet_sets_data_labels=None,
+                                        save_dir=save_dir)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     elif process == 'copy_dbc_labels':
         # Set specimen name
         specimen_name = 'Ti6242_HIP2_UT_Specimen2_J2'
@@ -580,3 +671,6 @@ if __name__ == '__main__':
         # Copy Dirichlet boundary constraints labels from source to target
         copy_dbc_labels(specimen_name, src_specimen_history_dir,
                         target_specimen_history_dir)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    else:
+        raise RuntimeError(f'Unknown computation process: {process}')
