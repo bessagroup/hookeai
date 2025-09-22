@@ -2159,8 +2159,8 @@ class MaterialModelFinder(torch.nn.Module):
         # Get 3D problem type parameters
         _, comp_order_sym, _ = get_problem_type_parameters(4)
         # Get volumetric and deviatoric projection tensors
-        vol_proj_vmf, _ = \
-            get_projection_tensors_vmf(n_dim, comp_order_sym, device=device)
+        vol_proj_vmf, _ = get_projection_tensors_vmf(
+            n_dim=3, comp_order_sym=comp_order_sym, device=device)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Compute discrete volumetric symmetric gradient operator
         vol_grad_operator_sym = torch.matmul(vol_proj_vmf, grad_operator_sym)
@@ -2253,13 +2253,15 @@ class MaterialModelFinder(torch.nn.Module):
                 vmap_compute_local_strain_vbar = \
                     torch.vmap(self.vcompute_local_strain_vbar,
                                in_dims=(2, 2, 0, None, None, None, None, None),
-                               out_dims=(0,))
+                               out_dims=(0, 0))
                 # Compute infinitesimal strain tensor history with volumetric
                 # strain averaging formulation
-                strain_hist = vmap_compute_local_strain_vbar(
-                    nodes_coords_hist, nodes_disps_hist,
-                    avg_vol_grad_operator_hist, local_coords,
-                    strain_formulation, n_dim, comp_order_sym, element_type)
+                strain_hist, grad_operator_sym_hist = \
+                    vmap_compute_local_strain_vbar(
+                        nodes_coords_hist, nodes_disps_hist,
+                        avg_vol_grad_operator_hist, local_coords,
+                        strain_formulation, n_dim, comp_order_sym,
+                        element_type)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         else:
             raise RuntimeError('Not implemented.')
@@ -2383,6 +2385,9 @@ class MaterialModelFinder(torch.nn.Module):
         -------
         strain : torch.Tensor(2d)
             Strain tensor at given local coordinates.
+        vbar_grad_operator_sym : torch.Tensor(2d)
+            Modified discrete symmetric gradient operator evaluated at given
+            local coordinates.
         """
         # Evaluate shape functions derivates and Jacobian
         shape_fun_deriv, _, _ = \
@@ -2408,7 +2413,7 @@ class MaterialModelFinder(torch.nn.Module):
         else:
             raise RuntimeError('Not implemented.')      
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        return strain
+        return strain, vbar_grad_operator_sym
     # -------------------------------------------------------------------------
     def vcompute_local_dev_sym_gradient(self, grad_operator_sym, n_dim):
         """Compute discrete deviatoric symmetric gradient operator.
