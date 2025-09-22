@@ -247,7 +247,8 @@ class SpecimenNumericalData:
             as torch.Tensor(4d) of shape (n_elem, n_node, n_dim, n_time).        
         """
         # Build connectivities tensor
-        connectivities_tensor = self.specimen_mesh.get_connectivities_tensor()
+        connectivities_tensor = \
+            self.specimen_mesh.get_connectivities_tensor().to(device)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Set vectorized element field history computation (batch along
         # element)
@@ -257,7 +258,8 @@ class SpecimenNumericalData:
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Get batched finite element mesh elements displacement history
         elements_disps_hist = vmap_get_element_nodes_field_hist(
-            connectivities_tensor, self.nodes_disps_mesh_hist).to(device)
+            connectivities_tensor, self.nodes_disps_mesh_hist.to(device)
+            ).to(device)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Get finite element mesh nodes initial coordinates
         nodes_coords_mesh_init, _ = \
@@ -270,7 +272,8 @@ class SpecimenNumericalData:
                 nodes_coords_mesh_hist + self.nodes_disps_mesh_hist
         # Get batched finite element mesh elements coordinates history
         elements_coords_hist = vmap_get_element_nodes_field_hist(
-            connectivities_tensor, nodes_coords_mesh_hist).to(device)
+            connectivities_tensor, nodes_coords_mesh_hist.to(device)
+            ).to(device)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         return elements_coords_hist, elements_disps_hist
     # -------------------------------------------------------------------------
