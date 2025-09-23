@@ -1,6 +1,6 @@
 
 <p align="center">
-  <a href=""><img alt="logo" src="https://" width="80%"></a>
+  <a href=""><img alt="logo" src="https://private-user-images.githubusercontent.com/25851824/492778208-2e8896e2-6eb9-4d94-b632-7385ca7c2ffc.png?jwt=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJnaXRodWIuY29tIiwiYXVkIjoicmF3LmdpdGh1YnVzZXJjb250ZW50LmNvbSIsImtleSI6ImtleTUiLCJleHAiOjE3NTg2MjY1MjAsIm5iZiI6MTc1ODYyNjIyMCwicGF0aCI6Ii8yNTg1MTgyNC80OTI3NzgyMDgtMmU4ODk2ZTItNmViOS00ZDk0LWI2MzItNzM4NWNhN2MyZmZjLnBuZz9YLUFtei1BbGdvcml0aG09QVdTNC1ITUFDLVNIQTI1NiZYLUFtei1DcmVkZW50aWFsPUFLSUFWQ09EWUxTQTUzUFFLNFpBJTJGMjAyNTA5MjMlMkZ1cy1lYXN0LTElMkZzMyUyRmF3czRfcmVxdWVzdCZYLUFtei1EYXRlPTIwMjUwOTIzVDExMTcwMFomWC1BbXotRXhwaXJlcz0zMDAmWC1BbXotU2lnbmF0dXJlPThjMmUyOTQzYzAxYmNjNjk4ODg1ZDk5NzNkYzc0NjU3YTczODU4NjlhMzUzZmVlNGIwZjZmZWZmZGJhMzkxZDUmWC1BbXotU2lnbmVkSGVhZGVycz1ob3N0In0.lrCDFAwpBfWPsrPYK-ErqHkoiOjfphd4Au2s8hIwHRE" width="80%"></a>
 </p>
 
 # What is HookeAI?
