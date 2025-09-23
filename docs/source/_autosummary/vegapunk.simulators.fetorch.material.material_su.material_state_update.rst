@@ -1,0 +1,6 @@
+vegapunk.simulators.fetorch.material.material\_su.material\_state\_update
+=========================================================================
+
+.. currentmodule:: vegapunk.simulators.fetorch.material.material_su
+
+.. autofunction:: material_state_update

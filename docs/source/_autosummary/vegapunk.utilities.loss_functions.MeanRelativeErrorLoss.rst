@@ -1,0 +1,80 @@
+vegapunk.utilities.loss\_functions.MeanRelativeErrorLoss
+========================================================
+
+.. currentmodule:: vegapunk.utilities.loss_functions
+
+.. autoclass:: MeanRelativeErrorLoss
+   :members:
+   :show-inheritance:
+   :inherited-members:
+   :special-members: __call__, __add__, __mul__
+
+   
+   
+   .. rubric:: List of Public Methods
+
+   .. autosummary::
+      :nosignatures:
+   
+      ~MeanRelativeErrorLoss.add_module
+      ~MeanRelativeErrorLoss.apply
+      ~MeanRelativeErrorLoss.bfloat16
+      ~MeanRelativeErrorLoss.buffers
+      ~MeanRelativeErrorLoss.children
+      ~MeanRelativeErrorLoss.cpu
+      ~MeanRelativeErrorLoss.cuda
+      ~MeanRelativeErrorLoss.double
+      ~MeanRelativeErrorLoss.eval
+      ~MeanRelativeErrorLoss.extra_repr
+      ~MeanRelativeErrorLoss.float
+      ~MeanRelativeErrorLoss.forward
+      ~MeanRelativeErrorLoss.get_buffer
+      ~MeanRelativeErrorLoss.get_extra_state
+      ~MeanRelativeErrorLoss.get_parameter
+      ~MeanRelativeErrorLoss.get_submodule
+      ~MeanRelativeErrorLoss.half
+      ~MeanRelativeErrorLoss.ipu
+      ~MeanRelativeErrorLoss.load_state_dict
+      ~MeanRelativeErrorLoss.modules
+      ~MeanRelativeErrorLoss.named_buffers
+      ~MeanRelativeErrorLoss.named_children
+      ~MeanRelativeErrorLoss.named_modules
+      ~MeanRelativeErrorLoss.named_parameters
+      ~MeanRelativeErrorLoss.parameters
+      ~MeanRelativeErrorLoss.register_backward_hook
+      ~MeanRelativeErrorLoss.register_buffer
+      ~MeanRelativeErrorLoss.register_forward_hook
+      ~MeanRelativeErrorLoss.register_forward_pre_hook
+      ~MeanRelativeErrorLoss.register_full_backward_hook
+      ~MeanRelativeErrorLoss.register_full_backward_pre_hook
+      ~MeanRelativeErrorLoss.register_load_state_dict_post_hook
+      ~MeanRelativeErrorLoss.register_module
+      ~MeanRelativeErrorLoss.register_parameter
+      ~MeanRelativeErrorLoss.register_state_dict_pre_hook
+      ~MeanRelativeErrorLoss.requires_grad_
+      ~MeanRelativeErrorLoss.set_extra_state
+      ~MeanRelativeErrorLoss.share_memory
+      ~MeanRelativeErrorLoss.state_dict
+      ~MeanRelativeErrorLoss.to
+      ~MeanRelativeErrorLoss.to_empty
+      ~MeanRelativeErrorLoss.train
+      ~MeanRelativeErrorLoss.type
+      ~MeanRelativeErrorLoss.xpu
+      ~MeanRelativeErrorLoss.zero_grad
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~MeanRelativeErrorLoss.T_destination
+      ~MeanRelativeErrorLoss.call_super_init
+      ~MeanRelativeErrorLoss.dump_patches
+      ~MeanRelativeErrorLoss.training
+   
+   
+
+   .. rubric:: Methods

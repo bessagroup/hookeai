@@ -1,0 +1,80 @@
+vegapunk.model\_architectures.hybrid\_base\_model.model.hybridization.HybridizationModel
+========================================================================================
+
+.. currentmodule:: vegapunk.model_architectures.hybrid_base_model.model.hybridization
+
+.. autoclass:: HybridizationModel
+   :members:
+   :show-inheritance:
+   :inherited-members:
+   :special-members: __call__, __add__, __mul__
+
+   
+   
+   .. rubric:: List of Public Methods
+
+   .. autosummary::
+      :nosignatures:
+   
+      ~HybridizationModel.add_module
+      ~HybridizationModel.apply
+      ~HybridizationModel.bfloat16
+      ~HybridizationModel.buffers
+      ~HybridizationModel.children
+      ~HybridizationModel.cpu
+      ~HybridizationModel.cuda
+      ~HybridizationModel.double
+      ~HybridizationModel.eval
+      ~HybridizationModel.extra_repr
+      ~HybridizationModel.float
+      ~HybridizationModel.forward
+      ~HybridizationModel.get_buffer
+      ~HybridizationModel.get_extra_state
+      ~HybridizationModel.get_parameter
+      ~HybridizationModel.get_submodule
+      ~HybridizationModel.half
+      ~HybridizationModel.ipu
+      ~HybridizationModel.load_state_dict
+      ~HybridizationModel.modules
+      ~HybridizationModel.named_buffers
+      ~HybridizationModel.named_children
+      ~HybridizationModel.named_modules
+      ~HybridizationModel.named_parameters
+      ~HybridizationModel.parameters
+      ~HybridizationModel.register_backward_hook
+      ~HybridizationModel.register_buffer
+      ~HybridizationModel.register_forward_hook
+      ~HybridizationModel.register_forward_pre_hook
+      ~HybridizationModel.register_full_backward_hook
+      ~HybridizationModel.register_full_backward_pre_hook
+      ~HybridizationModel.register_load_state_dict_post_hook
+      ~HybridizationModel.register_module
+      ~HybridizationModel.register_parameter
+      ~HybridizationModel.register_state_dict_pre_hook
+      ~HybridizationModel.requires_grad_
+      ~HybridizationModel.set_extra_state
+      ~HybridizationModel.share_memory
+      ~HybridizationModel.state_dict
+      ~HybridizationModel.to
+      ~HybridizationModel.to_empty
+      ~HybridizationModel.train
+      ~HybridizationModel.type
+      ~HybridizationModel.xpu
+      ~HybridizationModel.zero_grad
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~HybridizationModel.T_destination
+      ~HybridizationModel.call_super_init
+      ~HybridizationModel.dump_patches
+      ~HybridizationModel.training
+   
+   
+
+   .. rubric:: Methods

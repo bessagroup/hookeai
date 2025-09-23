@@ -1,0 +1,27 @@
+vegapunk.miscellaneous.noisy\_data.denoise\_strain\_paths.Denoiser
+==================================================================
+
+.. currentmodule:: vegapunk.miscellaneous.noisy_data.denoise_strain_paths
+
+.. autoclass:: Denoiser
+   :members:
+   :show-inheritance:
+   :inherited-members:
+   :special-members: __call__, __add__, __mul__
+
+   
+   
+   .. rubric:: List of Public Methods
+
+   .. autosummary::
+      :nosignatures:
+   
+      ~Denoiser.denoise
+   
+   
+
+   
+   
+   
+
+   .. rubric:: Methods

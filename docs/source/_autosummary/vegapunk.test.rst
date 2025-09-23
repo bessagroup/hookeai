@@ -14,7 +14,8 @@ vegapunk.test
    .. autosummary::
       :toctree:
    
-      compute_quadrilateral_area
+      get_model_parameter_dict
+      set_parameter_in_dict
    
    
 
@@ -26,9 +27,9 @@ vegapunk.test
       :toctree:
       :template: custom-class-template.rst
    
-      A
-      B
-      Polygon
+      Model1
+      Model2
+      ModelFinder
    
    
 

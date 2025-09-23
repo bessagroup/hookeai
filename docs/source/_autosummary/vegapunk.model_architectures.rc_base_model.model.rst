@@ -1,0 +1,32 @@
+vegapunk.model\_architectures.rc\_base\_model.model
+===================================================
+
+.. automodule:: vegapunk.model_architectures.rc_base_model.model
+  
+   
+   
+   
+
+   
+   
+   
+
+   
+   
+   
+
+   
+   
+   
+
+
+
+.. rubric:: Modules
+
+.. autosummary::
+   :toctree:
+   :template: custom-module-template.rst
+   :recursive:
+
+   vegapunk.model_architectures.rc_base_model.model.recurrent_model
+

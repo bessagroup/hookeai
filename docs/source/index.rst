@@ -5,7 +5,7 @@ Summary
 -------
 HookeAI is an open-source Python package built on `PyTorch <https://pytorch.org/>`_ to perform material model updating at the intersection of computational mechanics, machine learning and scientific computing. At its core lies the Automatically Differentiable Model Updating (ADiMU) framework, which enables finding general history-dependent material models - conventional (physics-based), neural network (data-driven), or hybrid - from different data sources (e.g., strain-stress data, displacement-force data). It also includes numerous computational resources to support material modeling research, namely data generation methods, highly-customizable material model architectures, and data analysis and visualization tools.
 
----
+----
 
 Statement of Need
 -----------------
@@ -24,21 +24,23 @@ HookeAI was originally developed by Bernardo P. Ferreira [#]_.
 
 If you use HookeAI in your research or in a scientific publication, please cite:
 
-**Journal of the Mechanics and Physics of Solids** ([paper](???)):
-```
-@article{ferreira2025a,
-  title = {Automatically Differentiable Model Updating (ADiMU): conventional, hybrid, and neural network material model discovery including history-dependency},
-  author = {Bernardo P. Ferreira and Miguel A. Bessa}
-  doi = {???},
-  url = {???},
-  year = {2025},
-  publisher = {Elsevier},
-  volume = {???},
-  number = {???},
-  pages = {???},
-  journal = {Journal of the Mechanics and Physics of Solids}
-}
-```
+**Journal of the Mechanics and Physics of Solids** (`paper <>`_):
+
+.. code-block:: python
+
+    @article{ferreira2025a,
+      title = {Automatically Differentiable Model Updating (ADiMU): conventional, hybrid, and neural network material model discovery including history-dependency},
+      author = {Bernardo P. Ferreira and Miguel A. Bessa}
+      doi = {???},
+      url = {???},
+      year = {2025},
+      publisher = {Elsevier},
+      volume = {???},
+      number = {???},
+      pages = {???},
+      journal = {Journal of the Mechanics and Physics of Solids}
+    }
+
 
 ----
 
@@ -62,6 +64,34 @@ Please refer to HookeAI's `Code of Conduct <https://github.com/bessagroup/hookea
 
 ----
 
+License
+-------
+Copyright 2020, Bernardo Ferreira
+
+All rights reserved.
+
+HookeAI is a free and open-source software published under a :doc:`MIT License <../license>`.
+
+
+.. toctree::
+   :name: gettingstartedtoc
+   :caption: Getting started
+   :maxdepth: 3
+   :hidden:
+   :includehidden:
+
+   rst_doc_files/getting_started/overview.rst
+   rst_doc_files/getting_started/installation.rst
+
+
+.. toctree::
+   :name: guidelinestoc
+   :caption: Guidelines
+   :maxdepth: 3
+   :hidden:
+   :includehidden:
+
+   rst_doc_files/guidelines/roadmap.rst
 
 
 .. toctree::
@@ -70,6 +100,4 @@ Please refer to HookeAI's `Code of Conduct <https://github.com/bessagroup/hookea
    :hidden:
 
    Code <_autosummary/hookeai>
-
-.. include:: readme.rst
   
