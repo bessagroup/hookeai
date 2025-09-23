@@ -34,13 +34,10 @@ from model_architectures.rnn_base_model.predict.prediction import predict
 from model_architectures.rnn_base_model.optimization.\
     hydra_optimization_template import display_hydra_job_header
 from ioput.iostandard import make_directory, write_summary_file
-
-# TO BE UPDATED:
-from projects.darpa_metals.rnn_material_model.user_scripts.train_model \
-    import generate_standard_training_plots
-from projects.darpa_metals.rnn_material_model.user_scripts.predict \
-    import generate_prediction_plots
-
+from user_scripts.local_model_update.rnn_material_model.train_model import \
+    generate_standard_training_plots
+from user_scripts.local_model_update.rnn_material_model.predict import \
+    generate_prediction_plots
 #
 #                                                          Authorship & Credits
 # =============================================================================
