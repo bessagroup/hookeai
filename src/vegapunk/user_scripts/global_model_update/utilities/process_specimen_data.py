@@ -37,6 +37,7 @@ import re
 import numpy as np
 import pandas
 import torch
+import matplotlib.pyplot as plt
 # Local
 from ioput.iostandard import make_directory
 from ioput.plots import plot_xy_data, save_figure
@@ -138,6 +139,9 @@ def plot_nodes_displacement_history(specimen_name, specimen_history_dir,
         filename = f'displacement_hist_node_{node_label}'
         # Save figure
         save_figure(figure, filename, format='pdf', save_dir=save_dir)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Close figure
+        plt.close('all')
 # =============================================================================
 def plot_reaction_forces_history(specimen_name, specimen_history_dir, n_dim=3,
                                  reference_displacement_node=None,
@@ -214,6 +218,9 @@ def plot_reaction_forces_history(specimen_name, specimen_history_dir, n_dim=3,
         filename = f'dirichlet_reaction_hist_{dirichlet_sets_data_labels[i]}'
         # Save figure
         save_figure(figure, filename, format='pdf', save_dir=save_dir)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Close figure
+        plt.close('all')
 # =============================================================================
 def build_dirichlet_sets_reaction_history(specimen_name, specimen_history_dir,
                                           n_dim=3):
