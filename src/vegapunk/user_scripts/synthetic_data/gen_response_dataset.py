@@ -36,7 +36,7 @@ import tqdm
 import matplotlib.pyplot as plt
 # Local
 from time_series_data.time_dataset import TimeSeriesDatasetInMemory, \
-    TimeSeriesDataset, get_time_series_data_loader, save_dataset
+    TimeSeriesDataset, get_time_series_data_loader, save_dataset, load_dataset
 from data_generation.strain_paths.interface import StrainPathGenerator
 from data_generation.strain_paths.random_path import RandomStrainPathGenerator
 from data_generation.strain_paths.proportional_path import \
@@ -102,6 +102,11 @@ class MaterialResponseDatasetGenerator():
                                   is_in_memory_dataset=True, \
                                   dataset_directory, save_dir=None, \
                                   is_save_fig=False, is_verbose=False)
+    gen_response_dataset_from_strain_dataset(self, dataset_path, model_name, \
+                                             model_parameters, \
+                                             state_features={}, \
+                                             is_verbose=False)
+        Generate material response data set from strain data set.
     plot_material_response_path(cls, strain_formulation, n_dim, \
                                 strain_comps_order, strain_path, \
                                 stress_comps_order, stress_path, \
@@ -804,6 +809,139 @@ class MaterialResponseDatasetGenerator():
             save_figure(figure, f'ss_paths_valid_vf_hist_{n_path_files_valid}',
                         format='pdf', save_dir=save_dir)        
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ^ SECTION TO BE REMOVED
+        return dataset
+    # -------------------------------------------------------------------------
+    def gen_response_dataset_from_strain_dataset(
+            self, dataset_path, model_name, model_parameters,
+            state_features={}, is_verbose=False):
+        """Generate material response data set from strain data set.
+
+        Parameters
+        ----------
+        dataset_file_path : str
+            Data set file path.
+        model_name : str
+            FETorch material constitutive model name.
+        model_parameters : dict
+            FETorch material constitutive model parameters.
+        state_features : dict, default={}
+            FETorch material constitutive model state variables (key, str) and
+            corresponding dimensionality (item, int) for which the path history
+            is additionally included in the data set. Tensorial state variables
+            stored in matricial form are included in the data set without any
+            matricial form coefficients (true components are extracted).
+            Unavailable state variables are ignored.
+        is_verbose : bool, default=False
+            If True, enable verbose output.
+
+        Returns
+        -------
+        dataset : torch.utils.data.Dataset
+            Time series data set. Each sample is stored as a dictionary where
+            each feature (key, str) data is a torch.Tensor(2d) of shape
+            (sequence_length, n_features).
+        """
+        start_time_sec = time.time()
+        if is_verbose:
+            print('\nGenerate material response data set from strain data set'
+                  '\n--------------------------------------------------------')
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Check data set file path
+        if not os.path.isfile(dataset_path):
+            raise RuntimeError(f'Data set file \'{dataset_path}\' has not '
+                               f'been found.')
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Load strain data set
+        dataset = load_dataset(dataset_path)
+        # Get number of strain paths
+        n_path = len(dataset)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Initialize constitutive model
+        if model_name == 'elastic':
+            constitutive_model = Elastic(
+                self._strain_formulation, self._problem_type, model_parameters)
+        elif model_name == 'von_mises':
+            constitutive_model = VonMises(
+                self._strain_formulation, self._problem_type, model_parameters)
+        elif model_name == 'drucker_prager':
+            constitutive_model = DruckerPrager(
+                self._strain_formulation, self._problem_type, model_parameters)
+        elif model_name == 'lou_zhang_yoon':
+            constitutive_model = LouZhangYoon(
+                self._strain_formulation, self._problem_type, model_parameters)
+        else:
+            raise RuntimeError(f'Unknown material constitutive model '
+                               f'\'{model_name}\'.')
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Initialize time series data set samples
+        dataset_samples = []
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        if is_verbose:
+            print('\n> Starting stress paths computation process...\n')
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Loop over samples
+        for i in tqdm.tqdm(range(n_path),
+                           desc='> Computing stress paths: ',
+                           disable=not is_verbose):
+            # Get strain path sample
+            sample = dataset[i]
+            # Get strain components order
+            strain_comps_order = sample['strain_comps_order']
+            # Get strain path
+            strain_path = sample['strain_path'].numpy()
+            # Get discrete time history
+            time_hist = sample['time_hist'].numpy().flatten()                
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Compute material response
+            stress_comps_order, stress_path, state_path, \
+                is_stress_path_fail = self.compute_stress_path(
+                    strain_comps_order, time_hist, strain_path,
+                    constitutive_model, state_features=state_features,
+                    is_verbose=is_verbose)
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Check material response stress computation failure
+            if is_stress_path_fail:
+                raise RuntimeError(f'Stress path computation failed '
+                                   f'for sample {i}. Handling of state update '
+                                   f'failure is not implemented in this '
+                                   f'context.')
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Initialize material response path data
+            response_path = {}
+            # Assemble strain-stress material response path
+            response_path['strain_comps_order'] = strain_comps_order
+            response_path['strain_path'] = \
+                torch.tensor(strain_path, dtype=torch.get_default_dtype())
+            response_path['stress_comps_order'] = stress_comps_order
+            response_path['stress_path'] = \
+                torch.tensor(stress_path, dtype=torch.get_default_dtype())
+            # Assemble time path
+            response_path['time_hist'] = torch.tensor(
+                time_hist, dtype=torch.get_default_dtype()).reshape(-1, 1)
+            # Assemble state variables path
+            for state_var in state_path.keys():
+                response_path[state_var] = torch.tensor(
+                    state_path[state_var], dtype=torch.get_default_dtype())
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Store material response path (in memory)
+            dataset_samples.append(response_path)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        if is_verbose:
+            print('\n> Finished stress paths computation process!\n')
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Create strain-stress material response path data set
+        dataset = TimeSeriesDatasetInMemory(dataset_samples)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Compute total generation time and average generation time per path
+        total_time_sec = time.time() - start_time_sec
+        avg_time_sec = total_time_sec/n_path
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        if is_verbose:
+            print(f'\n> Total computation time: '
+                  f'{str(datetime.timedelta(seconds=int(total_time_sec)))} | '
+                  f'Avg. computation time per path: '
+                  f'{str(datetime.timedelta(seconds=int(avg_time_sec)))}\n')
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         return dataset
     # -------------------------------------------------------------------------
     @classmethod
