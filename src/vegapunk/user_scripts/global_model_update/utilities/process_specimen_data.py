@@ -168,7 +168,7 @@ def plot_reaction_forces_history(specimen_name, specimen_history_dir, n_dim=3,
     """
     # Build Dirichlet sets reaction forces history
     dirichlet_sets_reaction_hist, dirichlet_sets_data_labels, \
-        nodes_disps_mesh_hist = build_dirichlet_sets_reaction_history(
+        nodes_disps_mesh_hist, _ = build_dirichlet_sets_reaction_history(
             specimen_name, specimen_history_dir, n_dim)    
     # Get total number of Dirichlet boundary constraint labels
     n_labels_total = dirichlet_sets_reaction_hist.shape[0]
@@ -245,6 +245,9 @@ def build_dirichlet_sets_reaction_history(specimen_name, specimen_history_dir,
     nodes_disps_mesh_hist : numpy.ndarray(3d)
         Nodes displacements history stored as numpy.ndarray(3d) of shape
         (n_node_mesh, n_dim, n_time).
+    dirichlet_sets_node_lists : list[list]
+        List of nodes belonging to each Dirichlet boundary set. Nodes are
+        labeled from 1 to n_node_mesh.
     """
     # Get specimen history data file paths
     specimen_history_paths = \
@@ -276,6 +279,9 @@ def build_dirichlet_sets_reaction_history(specimen_name, specimen_history_dir,
     dirichlet_sets_reaction_hist = torch.zeros(n_labels_total, 1, n_time)
     # Initialize Dirichlet sets data labels
     dirichlet_sets_data_labels = []
+    # Initialize Dirichlet sets node lists
+    dirichlet_sets_node_lists = []
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Initialize assembly index
     assembly_index = 0
     # Loop over dimensions
@@ -296,6 +302,9 @@ def build_dirichlet_sets_reaction_history(specimen_name, specimen_history_dir,
             # Store Dirichlet sets data labels
             dirichlet_sets_data_labels.append(
                 f'dim_{i + 1}_label_{label.item()}')
+            # Store Dirichlet set node list
+            dirichlet_sets_node_lists.append((label_mask + 1).tolist())
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Increment assembly index
             assembly_index += 1
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -306,7 +315,7 @@ def build_dirichlet_sets_reaction_history(specimen_name, specimen_history_dir,
         nodes_disps_mesh_hist.detach().cpu().numpy()
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     return dirichlet_sets_reaction_hist, dirichlet_sets_data_labels, \
-        nodes_disps_mesh_hist
+        nodes_disps_mesh_hist, dirichlet_sets_node_lists
 # =============================================================================
 def compare_reaction_forces_history(dirichlet_sets_reaction_hist,
                                     dirichlet_sets_data_labels=None,
@@ -364,6 +373,7 @@ def compare_reaction_forces_history(dirichlet_sets_reaction_hist,
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Plot Dirichlet boundary sets reaction forces history
     figure, _ = plot_xy_data(data_array, data_labels=data_labels,
+                             is_reference_data=True,
                              x_lims=x_lims, y_lims=y_lims, x_label=x_label,
                              y_label=y_label, is_latex=True)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -434,44 +444,46 @@ if __name__ == '__main__':
                'plot_reaction_forces_history',
                'compare_reaction_forces_history',
                'plot_optimization_reaction_forces_history',
-               'copy_dbc_labels')[3]
+               'copy_dbc_labels',
+               'extract_dirichlet_sets_node_lists')[5]
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Plot nodes displacement history or reaction forces history
     if process in ('plot_nodes_displacement_history',
                    'plot_reaction_forces_history'):
         # Set specimen name
-        specimen_name = 'Ti6242_HIP2_UT_Specimen2_J2'
+        specimen_name = 'Ti6242_HIP2_UT_Specimen_1'
         # Set specimen history data directory
         specimen_history_dir = \
             ('/home/bernardoferreira/Documents/brown/projects/'
-             'colaboration_antonios/dtp_validation/3_dtp1_j2_rowan_data/'
-             '1_DTP1U_data/loss_dirichlet_sets/'
-             '0_abaqus_simulation_hexa8_8GP_gt_parameters/0_simulation/'
+             'colaboration_antonios/dtp_validation/4_dtp1_exp_rowan_data/'
+             '0_DTP1U_Case_2/0_DTP1_case2_data/0_specimen_data/'
              'specimen_history_data')
         # Set number of spatial dimensions
         n_dim = 3
         # Set plots directory
         save_dir = \
             ('/home/bernardoferreira/Documents/brown/projects/'
-             'colaboration_antonios/dtp_validation/3_dtp1_j2_rowan_data/'
-             '1_DTP1U_data/loss_dirichlet_sets/'
-             '0_abaqus_simulation_hexa8_8GP_gt_parameters/0_simulation/'
-             'debug_plots_2')
+             'colaboration_antonios/dtp_validation/4_dtp1_exp_rowan_data/'
+             '0_DTP1U_Case_2/0_DTP1_case2_data/0_specimen_data/plots_test')
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        # Set nodes labels
-        nodes_labels = [131, 1301]
-        # Plot nodes displacement history
-        plot_nodes_displacement_history(
-            specimen_name, specimen_history_dir, nodes_labels=nodes_labels,
-            n_dim=n_dim, save_dir=save_dir)
+        if process == 'plot_nodes_displacement_history':
+            # Set nodes labels
+            nodes_labels = [1,]
+            nodes_labels = list(np.arange(1, 3215, 50))
+            nodes_labels = list(range(1, 3215))
+            # Plot nodes displacement history
+            plot_nodes_displacement_history(
+                specimen_name, specimen_history_dir, nodes_labels=nodes_labels,
+                n_dim=n_dim, save_dir=save_dir)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        # Set reference node displacement history
-        reference_displacement_node = (131, 1)
-        # Plot reaction forces history
-        plot_reaction_forces_history(
-            specimen_name, specimen_history_dir, n_dim=n_dim,
-            reference_displacement_node=reference_displacement_node,
-            save_dir=save_dir)
+        if process == 'plot_reaction_forces_history':
+            # Set reference node displacement history
+            reference_displacement_node = (1, 1)
+            # Plot reaction forces history
+            plot_reaction_forces_history(
+                specimen_name, specimen_history_dir, n_dim=n_dim,
+                reference_displacement_node=reference_displacement_node,
+                save_dir=save_dir)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     elif process == 'compare_reaction_forces_history':
         # Set plots directory
@@ -497,7 +509,7 @@ if __name__ == '__main__':
         # Set number of spatial dimensions
         n_dim = 3
         # Build Dirichlet sets reaction forces history
-        dirichlet_sets_reaction_hist, _, _ = \
+        dirichlet_sets_reaction_hist, _, _, _ = \
             build_dirichlet_sets_reaction_history(
                 specimen_name, specimen_history_dir, n_dim=n_dim)
         # Store Dirichlet sets reaction forces history data
@@ -538,7 +550,7 @@ if __name__ == '__main__':
         # Set number of spatial dimensions
         n_dim = 3
         # Build Dirichlet sets reaction forces history
-        dirichlet_sets_reaction_hist, _, _ = \
+        dirichlet_sets_reaction_hist, _, _, _ = \
             build_dirichlet_sets_reaction_history(
                 specimen_name, specimen_history_dir, n_dim=n_dim)
         # Store Dirichlet sets reaction forces history data
@@ -605,7 +617,7 @@ if __name__ == '__main__':
         # Set number of spatial dimensions
         n_dim = 3
         # Build Dirichlet sets reaction forces history
-        dirichlet_sets_reaction_hist, _, _ = \
+        dirichlet_sets_reaction_hist, _, _, _ = \
             build_dirichlet_sets_reaction_history(
                 specimen_name, specimen_history_dir, n_dim=n_dim)
         # Store Dirichlet sets reaction forces history data
@@ -678,6 +690,29 @@ if __name__ == '__main__':
         # Copy Dirichlet boundary constraints labels from source to target
         copy_dbc_labels(specimen_name, src_specimen_history_dir,
                         target_specimen_history_dir)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    elif process == 'extract_dirichlet_sets_node_lists':
+        # Set specimen name
+        specimen_name = 'Ti6242_HIP2_UT_Specimen_1'
+        # Set specimen history data directory
+        specimen_history_dir = \
+            ('/home/bernardoferreira/Documents/brown/projects/'
+             'colaboration_antonios/dtp_validation/4_dtp1_exp_rowan_data/'
+             '0_DTP1U_Case_2/0_DTP1_case2_data/0_specimen_data/'
+             'specimen_history_data')
+        # Set number of spatial dimensions
+        n_dim = 3
+        # Build Dirichlet sets reaction forces history
+        _, dirichlet_sets_data_labels, _, dirichlet_sets_node_lists = \
+            build_dirichlet_sets_reaction_history(
+                specimen_name, specimen_history_dir, n_dim=n_dim)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Display Dirichlet sets node lists (exclude label 0 set)
+        for i, node_list in enumerate(dirichlet_sets_node_lists):
+            if 'label_0' in dirichlet_sets_data_labels[i]:
+                continue
+            print(f'\nSet {dirichlet_sets_data_labels[i]} ({len(node_list)}): '
+                  f'{node_list}')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     else:
         raise RuntimeError(f'Unknown computation process: {process}')
