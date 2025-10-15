@@ -42,7 +42,8 @@ import matplotlib.pyplot as plt
 from ioput.iostandard import make_directory
 from ioput.plots import plot_xy_data, save_figure
 from user_scripts.global_model_update.material_finder.gen_specimen_data \
-    import get_specimen_history_paths, get_specimen_numerical_data
+    import get_specimen_mesh_from_inp_file, get_specimen_history_paths, \
+        get_specimen_numerical_data
 #
 #                                                          Authorship & Credits
 # =============================================================================
@@ -694,6 +695,12 @@ if __name__ == '__main__':
     elif process == 'extract_dirichlet_sets_node_lists':
         # Set specimen name
         specimen_name = 'Ti6242_HIP2_UT_Specimen_1'
+        # Set specimen mesh file path
+        specimen_mesh_file_path = \
+            ('/home/bernardoferreira/Documents/brown/projects/'
+             'colaboration_antonios/dtp_validation/4_dtp1_exp_rowan_data/'
+             '0_DTP1U_Case_2/0_DTP1_case2_data/0_specimen_data/'
+             'Ti6242_HIP2_UT_Specimen1.inp')
         # Set specimen history data directory
         specimen_history_dir = \
             ('/home/bernardoferreira/Documents/brown/projects/'
@@ -702,17 +709,48 @@ if __name__ == '__main__':
              'specimen_history_data')
         # Set number of spatial dimensions
         n_dim = 3
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Build Dirichlet sets reaction forces history
         _, dirichlet_sets_data_labels, _, dirichlet_sets_node_lists = \
             build_dirichlet_sets_reaction_history(
                 specimen_name, specimen_history_dir, n_dim=n_dim)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Get specimen mesh connectivities
+        _, _, connectivities, _ = \
+            get_specimen_mesh_from_inp_file(specimen_mesh_file_path, n_dim)
+        # Convert mesh connectivities to arrays (for vectorized operations)
+        elems_id = np.array(list(connectivities.keys()), dtype=int)
+        elems_nodes = np.array(list(connectivities.values()), dtype=int)
+        # Initialize Dirichlet sets element lists
+        dirichlet_sets_element_lists = []
+        # Loop over Dirichlet sets
+        for dirichlet_nodes in dirichlet_sets_node_lists:
+            # Get Dirichlet nodes array
+            dirichlet_nodes = np.array(dirichlet_nodes, dtype=int)
+            # Check if any node of element connectivities belongs to the
+            # Dirichlet set
+            mask = np.isin(elems_nodes, dirichlet_nodes).any(axis=1)
+            # Extract elements that have at least one node in the Dirichlet set
+            elems_in_set = elems_id[mask].tolist()
+            # Append to Dirichlet sets element lists
+            dirichlet_sets_element_lists.append(elems_in_set)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Display Dirichlet sets node lists (exclude label 0 set)
-        for i, node_list in enumerate(dirichlet_sets_node_lists):
-            if 'label_0' in dirichlet_sets_data_labels[i]:
+        for i in range(len(dirichlet_sets_node_lists)):
+            # Get Dirichlet set label
+            label = dirichlet_sets_data_labels[i]
+            # Get Dirichlet set node list
+            node_list = dirichlet_sets_node_lists[i]
+            # Get Dirichlet set element list
+            element_list = dirichlet_sets_element_lists[i]
+            # Skip display of label Dirichlet set 0
+            if 'label_0' in label:
                 continue
-            print(f'\nSet {dirichlet_sets_data_labels[i]} ({len(node_list)}): '
-                  f'{node_list}')
+            # Display Dirichlet set label, node list and element list
+            print(f'\nSet {label}:')
+            print(f'\n Nodes ({len(node_list)}): {node_list}')
+            print(f'\n Elements ({len(element_list)}): {element_list}')
+            print('')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     else:
         raise RuntimeError(f'Unknown computation process: {process}')
