@@ -823,7 +823,7 @@ def get_model_parameters(model_name, temperature, composition):
         a2, b2, c2 = -0.091, 0.018, 0.883
         a3, b3, c3, d3, e3 = 20.025, 29.518, -121.669, -74.391, 541.225
         # Compute yield strength (MPa)
-        s0 = (polynomial([c1, b1, a1], c_norm)**(
+        s0 = (polynomial([c1, b1, a1], c_norm)*np.exp(
               -polynomial([c2, b2, a2], c_norm)*t_norm)
               + polynomial([e3, d3, c3, b3, a3], c_norm))
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
