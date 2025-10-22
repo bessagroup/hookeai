@@ -60,6 +60,8 @@ import matplotlib.pyplot as plt
 from time_series_data.time_dataset import TimeSeriesDatasetInMemory, \
     save_dataset, load_dataset
 from data_generation.strain_paths.random_path import RandomStrainPathGenerator
+from data_generation.strain_paths.proportional_path import \
+    ProportionalStrainPathGenerator
 from simulators.fetorch.math.matrixops import get_problem_type_parameters
 from simulators.fetorch.material.models.standard.von_mises import VonMises
 from simulators.fetorch.material.models.standard.hardening import \
@@ -81,8 +83,8 @@ __status__ = 'Stable'
 # =============================================================================
 def generate_material_data(lmu_dir, strain_formulation, problem_type,
                            model_name, temperatures=[], compositions=[],
-                           n_sample_type={}, is_save_dataset_plots=True,
-                           is_verbose=False):
+                           n_sample_type={}, rnd_strain_path_ratio={},
+                           is_save_dataset_plots=True, is_verbose=False):
     """Generate material response data sets with multiple dependencies.
     
     Generates strain-stress material response data sets for given set of
@@ -107,6 +109,11 @@ def generate_material_data(lmu_dir, strain_formulation, problem_type,
     n_sample_type : dict, default={}
         Number of samples (item, int) per data set type (str, key) for each
         set of material parameters.
+    rnd_strain_path_ratio : dict, default={}
+        Ratio of random strain path samples (item, float) per data set type
+        (key, str). The remaining samples will be proportional strain path
+        samples. If not specified, all samples will be random strain path
+        samples.
     is_save_dataset_plots : bool, default=False
         If True, generate and save data set plots.
     is_verbose : bool, default=False
@@ -129,10 +136,38 @@ def generate_material_data(lmu_dir, strain_formulation, problem_type,
     # Set strain components order
     strain_comps_order = comp_order_sym
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Set strain path generator
-    strain_path_generator, strain_path_gen_kwargs = \
+    # Set random strain path generator
+    rnd_strain_path_generator, rnd_strain_path_gen_kwargs = \
         set_strain_path_generator(strain_formulation, n_dim,
-                                  strain_comps_order)
+                                  strain_comps_order,
+                                  strain_path_type='random')
+    # Set proportional strain path generator
+    prp_strain_path_generator, prp_strain_path_gen_kwargs = \
+        set_strain_path_generator(strain_formulation, n_dim,
+                                  strain_comps_order,
+                                  strain_path_type='proportional')
+    # Set default ratio of random strain path samples for each data set type
+    # (remaining samples will be proportional strain path samples)
+    for dataset_type in n_sample_type.keys():
+        # All samples are random strain path samples by default
+        if dataset_type not in rnd_strain_path_ratio.keys():
+            rnd_strain_path_ratio[dataset_type] = 1.0
+        # Check minimum number of samples per data set type
+        n_rnd_sample = int(n_sample_type[dataset_type]
+                           *rnd_strain_path_ratio[dataset_type])
+        n_prp_sample = n_sample_type[dataset_type] - n_rnd_sample
+        if n_rnd_sample < 1:
+            raise RuntimeError(f'Number of random strain path samples for '
+                               f'data set type "{dataset_type}" is less than '
+                               f'1. Please increase the total number of '
+                               f'samples or the ratio of random strain path '
+                               f'samples.')
+        if n_prp_sample < 1:
+            raise RuntimeError(f'Number of proportional strain path samples '
+                               f'for data set type "{dataset_type}" is less '
+                               f'than 1. Please increase the total number of '
+                               f'samples or decrease the ratio of random '
+                               f'strain path samples.')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Initialize material response path generator
     material_response_generator = \
@@ -169,7 +204,7 @@ def generate_material_data(lmu_dir, strain_formulation, problem_type,
             # Initialize data set samples
             dataset_samples = []
             # Loop over samples
-            for _ in tqdm.tqdm(range(n_sample),
+            for i in tqdm.tqdm(range(n_sample),
                                desc=f'  > Generating {dataset_type} data set',
                                disable=not is_verbose):
                 # Set effective temperature and composition
@@ -190,6 +225,19 @@ def generate_material_data(lmu_dir, strain_formulation, problem_type,
                 else:
                     eff_temperature = temperature
                     eff_composition = composition
+                # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                # Get number of random strain path samples
+                n_rnd_sample = \
+                    int(n_sample*rnd_strain_path_ratio[dataset_type])
+                # Set strain path generator
+                if i < n_rnd_sample:
+                    # Random strain path
+                    strain_path_generator = rnd_strain_path_generator
+                    strain_path_gen_kwargs = rnd_strain_path_gen_kwargs
+                else:
+                    # Proportional strain path
+                    strain_path_generator = prp_strain_path_generator
+                    strain_path_gen_kwargs = prp_strain_path_gen_kwargs
                 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                 # Set data constitutive model
                 constitutive_model, state_features = set_data_material_model(
@@ -680,7 +728,8 @@ def set_dataset_type_dir(target_dir, dataset_type, dir_basename=None):
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     return dataset_type_dir
 # =============================================================================
-def set_strain_path_generator(strain_formulation, n_dim, strain_comps_order):
+def set_strain_path_generator(strain_formulation, n_dim, strain_comps_order,
+                              strain_path_type='random'):
     """Set strain path generator and generation parameters.
     
     Parameters
@@ -691,6 +740,8 @@ def set_strain_path_generator(strain_formulation, n_dim, strain_comps_order):
         Number of spatial dimensions.
     strain_comps_order : tuple
         Strain components order.
+    strain_path_type : {'random', 'proportional'}, default='random'
+        Strain path type that sets the corresponding generator.
         
     Returns
     -------
@@ -700,13 +751,17 @@ def set_strain_path_generator(strain_formulation, n_dim, strain_comps_order):
         Strain path generation parameters.
     """
     # Initialize strain path generator
-    strain_path_generator = \
-        RandomStrainPathGenerator(strain_formulation, n_dim)
+    if strain_path_type == 'random':
+        strain_path_generator = \
+            RandomStrainPathGenerator(strain_formulation, n_dim)
+    elif strain_path_type == 'proportional':
+        strain_path_generator = \
+            ProportionalStrainPathGenerator(strain_formulation, n_dim)
+    else:
+        raise RuntimeError(f'Unknown strain path type: {strain_path_type}')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set strain components bounds
     strain_bounds = {x: (-0.05, 0.05) for x in strain_comps_order}
-    # Set number of control points
-    n_control = (4, 7)
     # Set number of time steps
     n_time = 200
     # Set initial and end time
@@ -714,13 +769,19 @@ def set_strain_path_generator(strain_formulation, n_dim, strain_comps_order):
     time_end = 1.0
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set strain path generation parameters
-    strain_path_gen_kwargs = \
-        {'n_control': n_control,
-         'strain_bounds': strain_bounds,
-         'n_time': n_time,
-         'generative_type': 'polynomial',
-         'time_init': time_init,
-         'time_end': time_end}
+    if strain_path_type == 'random':
+        strain_path_gen_kwargs = {'n_control': (4, 7),
+                                  'strain_bounds': strain_bounds,
+                                  'n_time': n_time,
+                                  'generative_type': 'polynomial',
+                                  'time_init': time_init,
+                                  'time_end': time_end}
+    elif strain_path_type == 'proportional':
+        strain_path_gen_kwargs = {'strain_bounds': strain_bounds,
+                                  'n_time': n_time,
+                                  'time_init': time_init,
+                                  'time_end': time_end,
+                                  'n_cycle': None}
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     return strain_path_generator, strain_path_gen_kwargs
 # =============================================================================
@@ -1034,7 +1095,9 @@ if __name__ == '__main__':
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set base directory
     base_dir = ('/home/bernardoferreira/Documents/brown/projects/'
-                'colaboration_antonios/contigency_plan_b/j2_dependencies')
+                'colaboration_antonios/contigency_plan_b/'
+                'j2_parameters_2025_10_15/debug/'
+                '2_dataset_proportional_augmentation')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set strain formulation and problem type
     strain_formulation = 'infinitesimal'
@@ -1052,12 +1115,17 @@ if __name__ == '__main__':
     n_sample_type = {'training': 20,
                      'validation': 4,
                      'testing_id': 2}
+    # Set ratio of random strain path samples for each data set type (remaining
+    # samples will be proportional strain path samples)
+    rnd_strain_path_ratio = {'training': 0.75,
+                             'validation': 0.5,
+                             'testing_id': 0.5}
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set whether to generate data set plots
     is_save_dataset_plots = True
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set number of model samples (uncertainty quantification)
-    n_model_sample = 5
+    n_model_sample = 1
     # Set whether to perform model training
     is_model_training = True
     # Set whether to generate uncertainty quantification plots
@@ -1077,6 +1145,7 @@ if __name__ == '__main__':
                                model_name, temperatures=temperatures,
                                compositions=compositions,
                                n_sample_type=n_sample_type,
+                               rnd_strain_path_ratio=rnd_strain_path_ratio,
                                is_save_dataset_plots=False, is_verbose=True)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Assemble material response data sets

@@ -564,7 +564,10 @@ def evaluate_gru_material_model():
     # Set plots directory
     plots_dir = ('/home/bernardoferreira/Documents/brown/projects/'
                  'colaboration_antonios/contigency_plan_b/'
-                 'j2_parameters_2025_10_15/debug/plots')
+                 'j2_parameters_2025_10_15/debug/'
+                 '2_dataset_proportional_augmentation/model_performance/plots')
+    # Create plots directory
+    plots_dir = make_directory(plots_dir, is_overwrite=False)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set strain formulation and problem type
     strain_formulation = 'infinitesimal'
@@ -580,16 +583,17 @@ def evaluate_gru_material_model():
     model_name = 'gru'
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set MISSION test case
-    test_case = 1
+    test_case = 2
     # Get MISSION dataset file path temperatures and compositions
     _, temperatures, compositions = \
         get_dataset_file_paths(test_case) 
     # Set uniaxial stress dataset file path
-    dataset_file_path = ('/home/bernardoferreira/Documents/brown/projects/'
-                         'colaboration_antonios/contigency_plan_b/'
-                         'j2_parameters_2025_10_15/debug/'
-                         'uniaxial_stress_datasets/'
-                         f'uniaxial_stress_dataset_test_case_{test_case}.pkl')
+    dataset_file_path = (
+        '/home/bernardoferreira/Documents/brown/projects/'
+        'colaboration_antonios/contigency_plan_b/'
+        'j2_parameters_2025_10_15/debug/'
+        f'0_vm_uniaxial_stress_datasets/test_case_{test_case}/'
+        f'uniaxial_stress_dataset_test_case_{test_case}.pkl')
     # Load uniaxial stress dataset
     with open(dataset_file_path, 'rb') as file:
         uniaxial_stress_dataset = pickle.load(file)
@@ -632,7 +636,10 @@ def evaluate_gru_material_model():
                     model_directory = (
                         '/home/bernardoferreira/Documents/brown/projects/'
                         'colaboration_antonios/contigency_plan_b/'
-                        'j2_parameters_2025_10_15/debug/model_2/3_model')
+                        'j2_parameters_2025_10_15/debug/'
+                        '2_dataset_proportional_augmentation/'
+                        'local_model_update/uncertainty_quantification/'
+                        'model_0/3_model')
                     # Get GRU material model
                     model = get_gru_material_model(model_directory,
                                                    model_load_state='best',
@@ -667,9 +674,88 @@ def evaluate_gru_material_model():
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             # Set figure file path
             fig_file_path = pathlib.Path(plots_dir) / \
-                f'stress_vs_strain_T_{int(temperature)}.pdf'
+                f'stress_vs_strain_T_{int(temperature)}'
             # Save figure
-            save_figure(figure, fig_file_path)
+            save_figure(figure, fig_file_path, format='pdf')
+            # Close figure
+            plt.close(figure)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    elif test_case == 2:
+        # Loop over compositions
+        for composition in compositions:
+            # Initialize strain and stress component paths
+            strain_comp_paths = []
+            stress_comp_paths = []
+            # Initialize data labels
+            data_labels = []
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Loop over temperatures
+            for temperature in temperatures:
+                print(f'\nProcessing: T={temperature}°C | '
+                      f'C={int(composition*100)}% ...')
+                # Set temperature-composition key
+                temp_comp_key = f'T_{temperature}_C_{int(composition*100)}'
+                # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                # Load strain path from uniaxial stress dataset
+                strain_path = torch.tensor(
+                    uniaxial_stress_dataset[temp_comp_key]['strain_path'],
+                    dtype=torch.get_default_dtype(), device=device)
+                ref_stress_path = torch.tensor(
+                    uniaxial_stress_dataset[temp_comp_key]['stress_path'],
+                    dtype=torch.get_default_dtype(), device=device)
+                # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                # Set material model
+                if model_name == 'von_mises':
+                    model = get_vm_material_model(strain_formulation,
+                                                  problem_type, temperature,
+                                                  composition,
+                                                  device_type=device_type)
+                elif model_name == 'gru':
+                    # Set model directory
+                    model_directory = (
+                        '/home/bernardoferreira/Documents/brown/projects/'
+                        'colaboration_antonios/contigency_plan_b/'
+                        'j2_parameters_2025_10_15/debug/'
+                        '2_dataset_proportional_augmentation/'
+                        'local_model_update/uncertainty_quantification/'
+                        'model_0/3_model')
+                    # Get GRU material model
+                    model = get_gru_material_model(model_directory,
+                                                   model_load_state='best',
+                                                   device_type=device_type)
+                # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                # Forward material model to compute stress path
+                stress_path = forward_material_model(
+                    model_name, model, strain_path, temperature, composition,
+                    requires_grad=False)
+                # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                # Store strain and stress component paths
+                strain_comp_paths.append(strain_path[:, strain_idx].numpy())
+                stress_comp_paths.append(stress_path[:, stress_idx].numpy())
+                # Store data label
+                data_labels.append(f'{temperature}°C')
+                # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                # Store reference strain and stress component path
+                strain_comp_paths.append(strain_path[:, strain_idx].numpy())
+                stress_comp_paths.append(
+                    ref_stress_path[:, stress_idx].numpy())
+                # Store reference data label
+                data_labels.append(f'{temperature}°C (J2)')
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Set plot title
+            plot_title = f'C = {int(composition*100)}\%'
+            # Plot stress vs strain component paths
+            figure, _ = plot_strain_stress_paths(
+                strain_comp_paths=strain_comp_paths,
+                stress_comp_paths=stress_comp_paths,
+                data_labels=data_labels,
+                title=plot_title)
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Set figure file path
+            fig_file_path = pathlib.Path(plots_dir) / \
+                f'stress_vs_strain_C_{int(composition*100)}'
+            # Save figure
+            save_figure(figure, fig_file_path, format='pdf')
             # Close figure
             plt.close(figure)
 # =============================================================================
@@ -682,7 +768,8 @@ def build_uniaxial_stress_dataset():
     # Set uniaxial stress dataset directory
     dataset_dir = ('/home/bernardoferreira/Documents/brown/projects/'
                    'colaboration_antonios/contigency_plan_b/'
-                   'j2_parameters_2025_10_15/debug/uniaxial_stress_datasets_')
+                   'j2_parameters_2025_10_15/debug/'
+                   '0_vm_uniaxial_stress_datasets/test_case_2')
     # Check dataset directory
     if not pathlib.Path(dataset_dir).exists():
         raise RuntimeError('Uniaxial stress dataset directory does not exist: '
@@ -709,7 +796,7 @@ def build_uniaxial_stress_dataset():
     total_strain = 0.05
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set MISSION test case
-    test_case = 1
+    test_case = 2
     # Get MISSION dataset file path temperatures and compositions
     _, temperatures, compositions = get_dataset_file_paths(test_case)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
