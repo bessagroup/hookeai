@@ -93,13 +93,21 @@ HookeAI is a free and open-source software published under a :doc:`MIT License <
 
 
 .. toctree::
-   :name: guidelinestoc
-   :caption: Guidelines
-   :maxdepth: 3
+   :name: featurestoc
+   :caption: Features
+   :maxdepth: 4
    :hidden:
    :includehidden:
 
-   rst_doc_files/guidelines/roadmap.rst
+   rst_doc_files/features/overview.rst
+   rst_doc_files/features/data_generation.rst
+   rst_doc_files/features/material_models.rst
+   rst_doc_files/features/local_model_updating.rst
+   rst_doc_files/features/global_model_updating.rst
+   rst_doc_files/features/data_analysis.rst
+   rst_doc_files/features/tensor_matrix.rst
+   rst_doc_files/features/other.rst
+   
 
 
 .. toctree::
@@ -107,5 +115,5 @@ HookeAI is a free and open-source software published under a :doc:`MIT License <
    :caption: API
    :hidden:
 
-   Code <_autosummary/hookeai>
+   Code <_autosummary/vegapunk>
   

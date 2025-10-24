@@ -1,4 +1,4 @@
-vegapunk.miscellaneous.dataset\_processing.read\_csv\_response\_dataset.MaterialResponseDatasetGenerator
+﻿vegapunk.miscellaneous.dataset\_processing.read\_csv\_response\_dataset.MaterialResponseDatasetGenerator
 ========================================================================================================
 
 .. currentmodule:: vegapunk.miscellaneous.dataset_processing.read_csv_response_dataset
@@ -20,6 +20,7 @@ vegapunk.miscellaneous.dataset\_processing.read\_csv\_response\_dataset.Material
       ~MaterialResponseDatasetGenerator.compute_stress_invariants
       ~MaterialResponseDatasetGenerator.compute_stress_path
       ~MaterialResponseDatasetGenerator.gen_response_dataset_from_csv
+      ~MaterialResponseDatasetGenerator.gen_response_dataset_from_strain_dataset
       ~MaterialResponseDatasetGenerator.generate_response_dataset
       ~MaterialResponseDatasetGenerator.plot_material_response_path
       ~MaterialResponseDatasetGenerator.plot_state_history

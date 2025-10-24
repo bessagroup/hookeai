@@ -1,4 +1,4 @@
-vegapunk.miscellaneous.materials.compare\_material\_models.MaterialResponseDatasetGenerator
+﻿vegapunk.miscellaneous.materials.compare\_material\_models.MaterialResponseDatasetGenerator
 ===========================================================================================
 
 .. currentmodule:: vegapunk.miscellaneous.materials.compare_material_models
@@ -20,6 +20,7 @@ vegapunk.miscellaneous.materials.compare\_material\_models.MaterialResponseDatas
       ~MaterialResponseDatasetGenerator.compute_stress_invariants
       ~MaterialResponseDatasetGenerator.compute_stress_path
       ~MaterialResponseDatasetGenerator.gen_response_dataset_from_csv
+      ~MaterialResponseDatasetGenerator.gen_response_dataset_from_strain_dataset
       ~MaterialResponseDatasetGenerator.generate_response_dataset
       ~MaterialResponseDatasetGenerator.plot_material_response_path
       ~MaterialResponseDatasetGenerator.plot_state_history
