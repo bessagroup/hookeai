@@ -9,7 +9,13 @@ HookeAI
 
 Summary
 -------
-**HookeAI** is an open-source Python package built on `PyTorch <https://pytorch.org/>`_ to perform material model updating at the intersection of **computational mechanics**, **machine learning** and **scientific computing**. At its core lies the **Automatically Differentiable Model Updating (ADiMU)** framework, which enables **finding general history-dependent material models** - conventional (physics-based), neural network (data-driven), or hybrid - from different data sources (e.g., strain-stress data, displacement-force data). It also includes numerous computational resources to support **material modeling research**, namely data generation methods, highly-customizable material model architectures, and data analysis and visualization tools.
+**HookeAI** is an open-source Python package built on `PyTorch <https://pytorch.org/>`_ to perform material model updating at the intersection of **computational mechanics**, **machine learning** and **scientific computing**. At its core lies the `Automatically Differentiable Model Updating (ADiMU) <https://arxiv.org/abs/2505.07801>`_ framework, which enables **finding general history-dependent material models** - conventional (physics-based), neural network (data-driven), or hybrid - from different data sources (e.g., strain-stress data, displacement-force data). It also includes numerous computational resources to support **material modeling research**, namely data generation methods, highly-customizable material model architectures, and data analysis and visualization tools.
+
+.. image:: ../media/schematics/adimu_global_discovery.png
+   :width: 70 %
+   :align: center
+
+|
 
 ----
 

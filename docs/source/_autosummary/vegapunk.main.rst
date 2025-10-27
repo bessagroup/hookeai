@@ -1,4 +1,4 @@
-﻿vegapunk.main
+vegapunk.main
 =============
 
 .. automodule:: vegapunk.main

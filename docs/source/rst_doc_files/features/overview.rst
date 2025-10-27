@@ -11,7 +11,7 @@ HookeAI is built around the `Automatically Differentiable Model Updating (ADiMU)
 
 * **Global material model updating**. Have experimental displacement-force data and want to find a material model that explains the material behavior? HookeAI includes all the required tools to perform global, indirect model updating.
 
-* **Data analysis and visualization tools**. Need to better understand your data sets or the performance of your material models? HookeAI provides several material-related data analysis tools as well as a complete toolkit for data visualization.
+* **Data analysis and visualization tools**. Need to better understand your data sets or the performance of your material models? HookeAI provides material-related data analysis tools as well as a complete toolkit for data visualization.
 
 * **Tensorial algebra and matrix operations**. Want to implement your own material model procedures and architectures without losing time with tensorial algebra and matrix operations? HookeAI has you covered, as it includes a comprehensive set of algebraic and matricial operations commonly used in material modeling.
 

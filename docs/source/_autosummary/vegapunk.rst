@@ -35,7 +35,6 @@
    vegapunk.miscellaneous
    vegapunk.model_architectures
    vegapunk.simulators
-   vegapunk.test
    vegapunk.time_series_data
    vegapunk.utilities
 

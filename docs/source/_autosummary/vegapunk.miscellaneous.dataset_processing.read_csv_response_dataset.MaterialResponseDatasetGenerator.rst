@@ -1,4 +1,4 @@
-﻿vegapunk.miscellaneous.dataset\_processing.read\_csv\_response\_dataset.MaterialResponseDatasetGenerator
+vegapunk.miscellaneous.dataset\_processing.read\_csv\_response\_dataset.MaterialResponseDatasetGenerator
 ========================================================================================================
 
 .. currentmodule:: vegapunk.miscellaneous.dataset_processing.read_csv_response_dataset

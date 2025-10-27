@@ -1,4 +1,4 @@
-﻿vegapunk.miscellaneous.materials.compare\_material\_models.MaterialResponseDatasetGenerator
+vegapunk.miscellaneous.materials.compare\_material\_models.MaterialResponseDatasetGenerator
 ===========================================================================================
 
 .. currentmodule:: vegapunk.miscellaneous.materials.compare_material_models
