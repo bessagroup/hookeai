@@ -80,7 +80,7 @@ Please refer to HookeAI's `Code of Conduct <https://github.com/bessagroup/hookea
 
 License
 -------
-Copyright 2020, Bernardo Ferreira
+Copyright 2025, Bernardo Ferreira
 
 All rights reserved.
 

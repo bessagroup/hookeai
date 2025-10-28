@@ -1,4 +1,4 @@
-vegapunk.main
+﻿vegapunk.main
 =============
 
 .. automodule:: vegapunk.main
@@ -15,6 +15,8 @@ vegapunk.main
       :toctree:
    
       plot_model_parameters
+      plot_training_loss_history
+      read_loss_history_from_file
    
    
 

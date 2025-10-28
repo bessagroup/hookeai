@@ -47,6 +47,13 @@ The **material finder forward model** (:code:`MaterialModelFinder`) is the core 
 
 The training procedure is **highly customizable**, allowing the user to select different **optimization algorithms**, learning rate schedulers, **loss functions**, and other hyperparameters. It also provides a detailed logging and a set of output files that summarize the training process and results.
 
+.. image:: ../../../media/schematics/hookeai_global_training.png
+   :width: 100 %
+   :align: center
+
+|
+
+
 
 ----
 

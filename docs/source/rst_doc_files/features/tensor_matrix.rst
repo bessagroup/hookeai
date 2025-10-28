@@ -1,7 +1,7 @@
 Tensorial algebra and matrix operations
 =======================================
 
-HookeAI includes a comprehensive set of tensorial algebra and matrix operations commonly used in material modeling. This toolkit is designed to enable the consistent handling of material modeling data structures and to streamline the implementation of material modeling procedures.
+HookeAI includes a comprehensive set of **tensorial algebra and matrix operations** commonly used in material modeling. This toolkit is designed to enable the consistent handling of **material modeling data structures** and to streamline the implementation of **material modeling procedures**.
 
 
 ----
@@ -9,11 +9,19 @@ HookeAI includes a comprehensive set of tensorial algebra and matrix operations 
 Key resources
 -------------
 
-* :code:`hookeai/simulators/fetorch/math/tensorops.py`: Fundamental tensorial operators and operations commonly used in material modeling.
+.. list-table::
+   :header-rows: 1
+   :widths: 40 60
 
-* :code:`hookeai/simulators/fetorch/math/matrixops.py`: Fundamental procedures associated with the matricial storage of strain/stress-based tensorial quantities and related manipulations.
+   * - **Source file/directory**
+     - **Description**
+   * - ``hookeai/simulators/fetorch/math/tensorops.py``
+     - Fundamental **tensorial operators and operations** commonly used in material modeling.
+   * - ``hookeai/simulators/fetorch/math/matrixops.py``
+     - Fundamental procedures associated with the **matricial storage** of strain/stress-based tensorial quantities and related manipulations.
+   * - ``hookeai/simulators/fetorch/math/voigt_notation.py``
+     - **Matricial storage** of strain/stress-based tensorial quantities following **Voigt notation**.
 
-* :code:`hookeai/simulators/fetorch/math/voigt_notation.py`: Matricial storage of strain/stress-based tensorial quantities following the Voigt notation.
 
 
 

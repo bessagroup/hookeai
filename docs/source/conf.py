@@ -22,9 +22,9 @@ for path in src_dir:
 # Source: https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
 project = 'vegapunk'
 author = 'Bernardo Ferreira'
-copyright = '2023, Bernardo Ferreira'
-version = '0.0.1'
-release = '0.0.1'
+copyright = '2025, Bernardo Ferreira'
+version = '1.0.0'
+release = '1.0.0'
 
 
 # -- General configuration ----------------------------------------------------
