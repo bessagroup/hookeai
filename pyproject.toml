@@ -1,5 +1,30 @@
 [build-system]
-requires = ["setuptools>=43.0.0", "wheel"]
+requires = ["setuptools>=65.5.1", "wheel"]
 build-backend = "setuptools.build_meta"
 
+[project]
+name = "hookeai"
+version = "1.0.0"
+description = "HookeAI: An open-source ADiMU framework"
+authors = [
+    {name = "Bernardo Ferreira", email = "bernardoferreiraacc@gmail.com"}
+]
+license = "MIT"
+readme = "README.md"
+requires-python = ">=3.8"
+keywords = ["material model", "model updating", "automatic differentiation"]
+# Optional: non-deprecated classifiers only
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Intended Audience :: Manufacturing",
+    "Topic :: Scientific/Engineering",
+    "Programming Language :: Python :: 3",
+    "Natural Language :: English"
+]
 
+[tool.setuptools]
+license-files = ["LICENSE"]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+include = ["*"]

@@ -1,6 +1,0 @@
-vegapunk.simulators.fetorch.element.type.tetra4.gauss\_quadrature
-=================================================================
-
-.. currentmodule:: vegapunk.simulators.fetorch.element.type.tetra4
-
-.. autofunction:: gauss_quadrature

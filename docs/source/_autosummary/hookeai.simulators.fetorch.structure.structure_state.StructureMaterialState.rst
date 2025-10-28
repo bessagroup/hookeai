@@ -1,0 +1,91 @@
+hookeai.simulators.fetorch.structure.structure\_state.StructureMaterialState
+============================================================================
+
+.. currentmodule:: hookeai.simulators.fetorch.structure.structure_state
+
+.. autoclass:: StructureMaterialState
+   :members:
+   :show-inheritance:
+   :inherited-members:
+   :special-members: __call__, __add__, __mul__
+
+   
+   
+   .. rubric:: List of Public Methods
+
+   .. autosummary::
+      :nosignatures:
+   
+      ~StructureMaterialState.add_module
+      ~StructureMaterialState.apply
+      ~StructureMaterialState.bfloat16
+      ~StructureMaterialState.buffers
+      ~StructureMaterialState.children
+      ~StructureMaterialState.cpu
+      ~StructureMaterialState.cuda
+      ~StructureMaterialState.double
+      ~StructureMaterialState.eval
+      ~StructureMaterialState.extra_repr
+      ~StructureMaterialState.float
+      ~StructureMaterialState.forward
+      ~StructureMaterialState.get_buffer
+      ~StructureMaterialState.get_element_model_recurrency
+      ~StructureMaterialState.get_element_state
+      ~StructureMaterialState.get_elements_material
+      ~StructureMaterialState.get_extra_state
+      ~StructureMaterialState.get_material_models
+      ~StructureMaterialState.get_n_element_material_type
+      ~StructureMaterialState.get_parameter
+      ~StructureMaterialState.get_problem_type
+      ~StructureMaterialState.get_strain_formulation
+      ~StructureMaterialState.get_submodule
+      ~StructureMaterialState.half
+      ~StructureMaterialState.init_elements_model
+      ~StructureMaterialState.ipu
+      ~StructureMaterialState.load_state_dict
+      ~StructureMaterialState.modules
+      ~StructureMaterialState.named_buffers
+      ~StructureMaterialState.named_children
+      ~StructureMaterialState.named_modules
+      ~StructureMaterialState.named_parameters
+      ~StructureMaterialState.parameters
+      ~StructureMaterialState.register_backward_hook
+      ~StructureMaterialState.register_buffer
+      ~StructureMaterialState.register_forward_hook
+      ~StructureMaterialState.register_forward_pre_hook
+      ~StructureMaterialState.register_full_backward_hook
+      ~StructureMaterialState.register_full_backward_pre_hook
+      ~StructureMaterialState.register_load_state_dict_post_hook
+      ~StructureMaterialState.register_module
+      ~StructureMaterialState.register_parameter
+      ~StructureMaterialState.register_state_dict_pre_hook
+      ~StructureMaterialState.requires_grad_
+      ~StructureMaterialState.set_extra_state
+      ~StructureMaterialState.share_memory
+      ~StructureMaterialState.state_dict
+      ~StructureMaterialState.to
+      ~StructureMaterialState.to_empty
+      ~StructureMaterialState.train
+      ~StructureMaterialState.type
+      ~StructureMaterialState.update_converged_elements_state
+      ~StructureMaterialState.update_element_state
+      ~StructureMaterialState.update_material_models_device
+      ~StructureMaterialState.xpu
+      ~StructureMaterialState.zero_grad
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~StructureMaterialState.T_destination
+      ~StructureMaterialState.call_super_init
+      ~StructureMaterialState.dump_patches
+      ~StructureMaterialState.training
+   
+   
+
+   .. rubric:: Methods

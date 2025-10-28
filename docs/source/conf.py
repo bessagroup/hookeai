@@ -20,7 +20,7 @@ for path in src_dir:
 
 # -- Project information ------------------------------------------------------
 # Source: https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
-project = 'vegapunk'
+project = 'hookeai'
 author = 'Bernardo Ferreira'
 copyright = '2025, Bernardo Ferreira'
 version = '1.0.0'

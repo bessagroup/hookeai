@@ -38,21 +38,20 @@ HookeAI was originally developed by Bernardo P. Ferreira [#]_.
 
 If you use HookeAI in your research or in a scientific publication, please cite:
 
-**Journal of the Mechanics and Physics of Solids** (`paper <>`_):
+**Journal of the Mechanics and Physics of Solids** (`paper <https://www.sciencedirect.com/science/article/pii/S0022509625003825?via%3Dihub>`_):
 
 .. code-block:: python
 
     @article{ferreira2025a,
-      title = {Automatically Differentiable Model Updating (ADiMU): conventional, hybrid, and neural network material model discovery including history-dependency},
-      author = {Bernardo P. Ferreira and Miguel A. Bessa}
-      doi = {???},
-      url = {???},
+      title = {Automatically Differentiable Model Updating (ADiMU): Conventional, hybrid, and neural network material model discovery including history-dependency},
+      journal = {Journal of the Mechanics and Physics of Solids},
+      pages = {106408},
       year = {2025},
-      publisher = {Elsevier},
-      volume = {???},
-      number = {???},
-      pages = {???},
-      journal = {Journal of the Mechanics and Physics of Solids}
+      issn = {0022-5096},
+      doi = {https://doi.org/10.1016/j.jmps.2025.106408},
+      url = {https://www.sciencedirect.com/science/article/pii/S0022509625003825},
+      author = {Bernardo P. Ferreira and Miguel A. Bessa},
+      keywords = {Material model, Model updating, Automatic differentiation, History-dependency, Recurrent neural network, Hybrid material model, ADiMU, Open-source},
     }
 
 
@@ -121,5 +120,14 @@ HookeAI is a free and open-source software published under a :doc:`MIT License <
    :caption: API
    :hidden:
 
-   Code <_autosummary/vegapunk>
+   Code <_autosummary/hookeai>
   
+
+.. toctree::
+   :name: licensetoc
+   :caption: License
+   :maxdepth: 3
+   :hidden:
+   :includehidden:
+
+   license.rst

@@ -1,6 +1,0 @@
-vegapunk.miscellaneous.dataset\_processing.tsdataset\_splitter.load\_dataset
-============================================================================
-
-.. currentmodule:: vegapunk.miscellaneous.dataset_processing.tsdataset_splitter
-
-.. autofunction:: load_dataset
