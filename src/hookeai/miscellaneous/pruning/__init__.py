@@ -1,4 +1,1 @@
-"""Data: Pruning of time series data set."""
-#
-#                                                                       Modules
-# =============================================================================
+"""Time series data set pruning algorithm."""

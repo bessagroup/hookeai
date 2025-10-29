@@ -1,4 +1,1 @@
-"""Material constitutive modeling utilities."""
-#
-#                                                                       Modules
-# =============================================================================
+"""Material constitutive modeling numerical and visualization utilities."""

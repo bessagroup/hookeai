@@ -1,6 +1,1 @@
-"""FETorch: Material constitutive modeling."""
-#
-#                                                                       Modules
-# =============================================================================
-from simulators.fetorch.material import models
-from simulators.fetorch.material import material_su
+"""Material constitutive models."""

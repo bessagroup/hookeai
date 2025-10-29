@@ -6,11 +6,11 @@
 import pytest
 import torch
 # Local
-from src.vegapunk.simulators.fetorch.element.type.quad4 import FEQuad4
-from src.vegapunk.simulators.fetorch.element.type.hexa8 import FEHexa8
-from src.vegapunk.simulators.fetorch.element.derivatives.gradients import \
+from src.hookeai.simulators.fetorch.element.type.quad4 import FEQuad4
+from src.hookeai.simulators.fetorch.element.type.hexa8 import FEHexa8
+from src.hookeai.simulators.fetorch.element.derivatives.gradients import \
     build_discrete_sym_gradient, build_discrete_gradient, eval_shapefun_deriv
-from src.vegapunk.simulators.fetorch.element.derivatives.jacobian import \
+from src.hookeai.simulators.fetorch.element.derivatives.jacobian import \
     eval_jacobian
 # =============================================================================
 #

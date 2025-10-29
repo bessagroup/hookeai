@@ -6,7 +6,7 @@
 import pytest
 import torch
 # Local
-from src.vegapunk.simulators.fetorch.math.voigt_notation import \
+from src.hookeai.simulators.fetorch.math.voigt_notation import \
     get_strain_from_vmf, get_stress_vmf
 # =============================================================================
 #

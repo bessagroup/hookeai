@@ -5,7 +5,7 @@
 # Third-party
 import pytest
 # Local
-from src.vegapunk.projects.gnn_material_patch.discretization.finite_element \
+from src.hookeai.projects.gnn_material_patch.discretization.finite_element \
     import FiniteElement
 # =============================================================================
 #

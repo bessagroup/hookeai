@@ -1,4 +1,1 @@
-"""Data: Handling of noisy data."""
-#
-#                                                                       Modules
-# =============================================================================
+"""Noisy data handling utilities."""

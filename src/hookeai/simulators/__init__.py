@@ -1,6 +1,1 @@
-"""Simulators."""
-#
-#                                                                       Modules
-# =============================================================================
-from simulators import links
-from simulators import fetorch
+"""Finite Element Method simulation technologies."""

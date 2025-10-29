@@ -2,7 +2,7 @@ HookeAI
 =======
 
 .. image:: ../media/logo/hookeai_logo_horizontal_white.png
-   :width: 70 %
+   :width: 50 %
    :align: center
 
 |
@@ -25,7 +25,13 @@ In an era where a multidisciplinary approach is increasingly essential for scien
 
 In a **teaching environment**, HookeAI extensive documentation, pre-built material models, user-friendly interfaces, and data visualization tools make it an excellent resource for advanced courses in computational solid mechanics with machine learning, namely to enable hands-on learning and experience. In a **research setting**, HookeAI provides a comprehensive end-to-end platform for developing and testing new material model architectures, setting up reproducible benchmarks, comparing the performance of optimization algorithms, conducting rigorous analyses of material data sets, and much more. Its extensive out-of-the-box functionalities, combined with a modular and highly-customizable design, greatly reduce the time and effort needed to implement new ideas, allowing researchers to focus on scientific innovation. In an **industrial context**, HookeAI enables the discovery of a wide range of material models from numerical or experimental data, providing practical solutions to real-world material modeling challenges. Applications include designing novel material systems with disruptive properties, tailoring material performance for specific uses, improving the accuracy of product design and analysis simulations, supporting multi-objective topology optimization, and beyond.
 
-Consider leaving a star if you think HookeAI is useful for the community!
+Consider **leaving a star** if you think HookeAI is useful for the community!
+
+.. image:: ../media/schematics/hookeai_workflow.png
+   :width: 90 %
+   :align: center
+
+|
 
 ----
 

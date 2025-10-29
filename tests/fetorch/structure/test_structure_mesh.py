@@ -6,7 +6,7 @@
 import pytest
 import torch
 # Local
-from src.vegapunk.simulators.fetorch.structure.structure_mesh import StructureMesh
+from src.hookeai.simulators.fetorch.structure.structure_mesh import StructureMesh
 # =============================================================================
 #
 #                                                          Authorship & Credits

@@ -1,14 +1,15 @@
 
 <p align="center">
-  <a href=""><img alt="logo" src="https://private-user-images.githubusercontent.com/25851824/492778208-2e8896e2-6eb9-4d94-b632-7385ca7c2ffc.png?jwt=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJnaXRodWIuY29tIiwiYXVkIjoicmF3LmdpdGh1YnVzZXJjb250ZW50LmNvbSIsImtleSI6ImtleTUiLCJleHAiOjE3NTg2MjY1MjAsIm5iZiI6MTc1ODYyNjIyMCwicGF0aCI6Ii8yNTg1MTgyNC80OTI3NzgyMDgtMmU4ODk2ZTItNmViOS00ZDk0LWI2MzItNzM4NWNhN2MyZmZjLnBuZz9YLUFtei1BbGdvcml0aG09QVdTNC1ITUFDLVNIQTI1NiZYLUFtei1DcmVkZW50aWFsPUFLSUFWQ09EWUxTQTUzUFFLNFpBJTJGMjAyNTA5MjMlMkZ1cy1lYXN0LTElMkZzMyUyRmF3czRfcmVxdWVzdCZYLUFtei1EYXRlPTIwMjUwOTIzVDExMTcwMFomWC1BbXotRXhwaXJlcz0zMDAmWC1BbXotU2lnbmF0dXJlPThjMmUyOTQzYzAxYmNjNjk4ODg1ZDk5NzNkYzc0NjU3YTczODU4NjlhMzUzZmVlNGIwZjZmZWZmZGJhMzkxZDUmWC1BbXotU2lnbmVkSGVhZGVycz1ob3N0In0.lrCDFAwpBfWPsrPYK-ErqHkoiOjfphd4Au2s8hIwHRE" width="70%"></a>
+  <a href=""><img alt="logo" src="https://private-user-images.githubusercontent.com/25851824/492778208-2e8896e2-6eb9-4d94-b632-7385ca7c2ffc.png?jwt=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJnaXRodWIuY29tIiwiYXVkIjoicmF3LmdpdGh1YnVzZXJjb250ZW50LmNvbSIsImtleSI6ImtleTUiLCJleHAiOjE3NjE3Mzc1NTMsIm5iZiI6MTc2MTczNzI1MywicGF0aCI6Ii8yNTg1MTgyNC80OTI3NzgyMDgtMmU4ODk2ZTItNmViOS00ZDk0LWI2MzItNzM4NWNhN2MyZmZjLnBuZz9YLUFtei1BbGdvcml0aG09QVdTNC1ITUFDLVNIQTI1NiZYLUFtei1DcmVkZW50aWFsPUFLSUFWQ09EWUxTQTUzUFFLNFpBJTJGMjAyNTEwMjklMkZ1cy1lYXN0LTElMkZzMyUyRmF3czRfcmVxdWVzdCZYLUFtei1EYXRlPTIwMjUxMDI5VDExMjczM1omWC1BbXotRXhwaXJlcz0zMDAmWC1BbXotU2lnbmF0dXJlPWFkMDJkNjY2ODk2ZTZhMGYxNDQ2OTVkNTgxOWIzMGFiMjJhZmY1N2FlZTE1MGFkZWYzY2Y4ZmYwMjU3Y2Y4M2EmWC1BbXotU2lnbmVkSGVhZGVycz1ob3N0In0.71Z1Wce9Ni1Kii6kPoSH7j6bAk2OwPa8dvDvgUvR0J8" width="70%"></a>
 </p>
+
 
 # What is HookeAI?
 
 [**Docs**](https://bessagroup.github.io/hookeai/)
 | [**Installation**](https://bessagroup.github.io/hookeai/rst_doc_files/getting_started/installation.html)
 | [**GitHub**](https://github.com/bessagroup/hookeai)
-| [**Paper**](https://)
+| [**Paper**](https://doi.org/10.1016/j.jmps.2025.106408)
 
 ### Summary
 **HookeAI** is an open-source Python package built on [PyTorch](https://pytorch.org/) to perform material model updating at the intersection of **computational mechanics**, **machine learning** and **scientific computing**. At its core lies the **Automatically Differentiable Model Updating (ADiMU)** framework, which enables **finding general history-dependent material models** - conventional (physics-based), neural network (data-driven), or hybrid - from different data sources (e.g., strain-stress data, displacement-force data). It also includes numerous computational resources to support **material modeling research**, namely data generation methods, highly-customizable material model architectures, and data analysis and visualization tools.
@@ -28,19 +29,18 @@ HookeAI was originally developed by Bernardo P. Ferreira<sup>[1](#f1)</sup>.
 
 If you use HookeAI in your research or in a scientific publication, please cite:
 
-**Journal of the Mechanics and Physics of Solids** ([paper]()):
+**Journal of the Mechanics and Physics of Solids** ([paper](https://doi.org/10.1016/j.jmps.2025.106408)):
 ```
 @article{ferreira2025a,
-    title = {Automatically Differentiable Model Updating (ADiMU): conventional, hybrid, and neural network material model discovery including history-dependency},
-    author = {Bernardo P. Ferreira and Miguel A. Bessa}
-    doi = {???},
-    url = {???},
+    title = {Automatically Differentiable Model Updating (ADiMU): Conventional, hybrid, and neural network material model discovery including history-dependency},
+    journal = {Journal of the Mechanics and Physics of Solids},
+    pages = {106408},
     year = {2025},
-    publisher = {Elsevier},
-    volume = {???},
-    number = {???},
-    pages = {???},
-    journal = {Journal of the Mechanics and Physics of Solids}
+    issn = {0022-5096},
+    doi = {https://doi.org/10.1016/j.jmps.2025.106408},
+    url = {https://www.sciencedirect.com/science/article/pii/S0022509625003825},
+    author = {Bernardo P. Ferreira and Miguel A. Bessa},
+    keywords = {Material model, Model updating, Automatic differentiation, History-dependency, Recurrent neural network, Hybrid material model, ADiMU, Open-source},
 }
 ```
 
@@ -51,7 +51,7 @@ If you use HookeAI in your research or in a scientific publication, please cite:
 You can find everything you need to know in [HookeAI documentation](https://bessagroup.github.io/hookeai/)!
 
 <p align="center">
-  <a href=""><img alt="logo" src="https://" width="80%"></a>
+  <a href=""><img alt="logo" src="https://private-user-images.githubusercontent.com/25851824/507056571-42659c1b-5abf-4aa2-95ff-c67a203527cd.png?jwt=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJnaXRodWIuY29tIiwiYXVkIjoicmF3LmdpdGh1YnVzZXJjb250ZW50LmNvbSIsImtleSI6ImtleTUiLCJleHAiOjE3NjE3Mzc2ODcsIm5iZiI6MTc2MTczNzM4NywicGF0aCI6Ii8yNTg1MTgyNC81MDcwNTY1NzEtNDI2NTljMWItNWFiZi00YWEyLTk1ZmYtYzY3YTIwMzUyN2NkLnBuZz9YLUFtei1BbGdvcml0aG09QVdTNC1ITUFDLVNIQTI1NiZYLUFtei1DcmVkZW50aWFsPUFLSUFWQ09EWUxTQTUzUFFLNFpBJTJGMjAyNTEwMjklMkZ1cy1lYXN0LTElMkZzMyUyRmF3czRfcmVxdWVzdCZYLUFtei1EYXRlPTIwMjUxMDI5VDExMjk0N1omWC1BbXotRXhwaXJlcz0zMDAmWC1BbXotU2lnbmF0dXJlPWY4MjRkNTc3NjZmYjQwZjZiMDRmYzcwNTQ2NzlkMjQ3YzU3NTI1NzQ5YjE5MWI2NjM5MGI3YjVlZTMzYjQ1YzcmWC1BbXotU2lnbmVkSGVhZGVycz1ob3N0In0.B35hMeK3vDihu5AM1Z9633ttEHZaU5hA5spvdhp3u3M" width="80%"></a>
 </p>
 
 ----

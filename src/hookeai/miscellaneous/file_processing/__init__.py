@@ -1,4 +1,1 @@
-"""Data: Processing model directories."""
-#
-#                                                                       Modules
-# =============================================================================
+"""Model directories processing."""

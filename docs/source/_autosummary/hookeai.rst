@@ -30,7 +30,6 @@
 
    hookeai.data_generation
    hookeai.ioput
-   hookeai.main
    hookeai.material_model_finder
    hookeai.miscellaneous
    hookeai.model_architectures

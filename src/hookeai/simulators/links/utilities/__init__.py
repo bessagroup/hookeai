@@ -1,4 +1,1 @@
-"""Links: Utilities."""
-#
-#                                                                       Modules
-# =============================================================================
+"""I/O utilities (files and visualization)."""
