@@ -1,3 +1,10 @@
+# Include all main dependencies
+-r ../requirements.txt
+
+# Add torch only for building API docs (needed for autodoc)
+torch==2.1.0
+
+# Documentation-specific dependencies
 sphinx
 sphinx_rtd_theme
 sphinx_autodoc_typehints
