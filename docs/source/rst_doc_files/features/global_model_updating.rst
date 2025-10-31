@@ -1,7 +1,7 @@
 Global material model updating
 ==============================
 
-One of the distinguishing functionalities of HookeAI is the ability to perform **global, indirect material model updating**. Given a **specimen's displacement-force data**, obtained from experimental tests or numerical simulations, and a given **parametric material model**, the `Automatically Differentiable Model Updating (ADiMU) <https://arxiv.org/abs/2505.07801>`_ framework is leveraged to **identify the optimal parameters** of the material model that best explain the material response observed in the data.
+One of the distinguishing functionalities of HookeAI is the ability to perform **global, indirect material model updating**. Given a **specimen's displacement-force data**, obtained from experimental tests or numerical simulations, and a given **parametric material model**, the `Automatically Differentiable Model Updating (ADiMU) <https://doi.org/10.1016/j.jmps.2025.106408>`_ framework is leveraged to **identify the optimal parameters** of the material model that best explain the material response observed in the data.
 
 .. image:: ../../../media/schematics/hookeai_global_optimization.png
    :width: 80 %
@@ -44,6 +44,11 @@ The specimen's data is encoded in a dedicated class (:code:`SpecimenNumericalDat
 |
 
 The **material finder forward model** (:code:`MaterialModelFinder`) is the core piece of the global model updating procedure. It consists of a **fully implicit, automatically differentiable finite element model** that essentially computes the specimen's internal forces history based on the provided displacement field history and the selected material model architecture. These internal forces are then assembled together with the provided reaction forces history to finally compute the **force equilibrium loss** that drives the material model updating process. The material finder model parameters are the parameters of the selected material model architecture, which can be any conventional (physics-based), neural network (data-driven), or hybrid material model, and is integrated by means of a dedicated class (:code:`StructureMaterialState`).
+
+.. note ::
+
+    The **material finder forward model** (:code:`MaterialModelFinder`) involves three different types of forward propagation: (i) a standard **time-wise approach** where each time step is processed sequentially, (ii) an **element-wise sequential approach** where each element is processed sequentially taking into account its whole deformation history, and (iii) an **element-wise sequential approach** leveraging **PyTorch's vectorizing maps** to significantly improve processing time and memory efficiency (check `Figure 4 <https://doi.org/10.1016/j.jmps.2025.106408>`_). Despite requiring that the material model architecture implementation is compatible with PyTorch vectorizing requirements, the latest approach is recommended for a **feasible, efficient** global model updating process.
+
 
 The training procedure is **highly customizable**, allowing the user to select different **optimization algorithms**, learning rate schedulers, **loss functions**, and other hyperparameters. It also provides a detailed logging and a set of output files that summarize the training process and results.
 

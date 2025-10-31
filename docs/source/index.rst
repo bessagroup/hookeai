@@ -9,7 +9,7 @@ HookeAI
 
 Summary
 -------
-**HookeAI** is an open-source Python package built on `PyTorch <https://pytorch.org/>`_ to perform material model updating at the intersection of **computational mechanics**, **machine learning** and **scientific computing**. At its core lies the `Automatically Differentiable Model Updating (ADiMU) <https://arxiv.org/abs/2505.07801>`_ framework, which enables **finding general history-dependent material models** - conventional (physics-based), neural network (data-driven), or hybrid - from different data sources (e.g., strain-stress data, displacement-force data). It also includes numerous computational resources to support **material modeling research**, namely data generation methods, highly-customizable material model architectures, and data analysis and visualization tools.
+**HookeAI** is an open-source Python package built on `PyTorch <https://pytorch.org/>`_ to perform material model updating at the intersection of **computational mechanics**, **machine learning** and **scientific computing**. At its core lies the `Automatically Differentiable Model Updating (ADiMU) <https://doi.org/10.1016/j.jmps.2025.106408>`_ framework, which enables **finding general history-dependent material models** - conventional (physics-based), neural network (data-driven), or hybrid - from different data sources (e.g., strain-stress data, displacement-force data). It also includes numerous computational resources to support **material modeling research**, namely data generation methods, highly-customizable material model architectures, and data analysis and visualization tools.
 
 .. image:: ../media/schematics/adimu_global_discovery.png
    :width: 70 %
@@ -44,20 +44,21 @@ HookeAI was originally developed by Bernardo P. Ferreira [#]_.
 
 If you use HookeAI in your research or in a scientific publication, please cite:
 
-**Journal of the Mechanics and Physics of Solids** (`paper <https://www.sciencedirect.com/science/article/pii/S0022509625003825?via%3Dihub>`_):
+**Journal of the Mechanics and Physics of Solids** (`paper <https://doi.org/10.1016/j.jmps.2025.106408>`_):
 
-.. code-block:: python
+.. code-block::
 
     @article{ferreira2025a,
       title = {Automatically Differentiable Model Updating (ADiMU): Conventional, hybrid, and neural network material model discovery including history-dependency},
       journal = {Journal of the Mechanics and Physics of Solids},
+      volume = {206},
       pages = {106408},
-      year = {2025},
+      year = {2026},
       issn = {0022-5096},
       doi = {https://doi.org/10.1016/j.jmps.2025.106408},
       url = {https://www.sciencedirect.com/science/article/pii/S0022509625003825},
       author = {Bernardo P. Ferreira and Miguel A. Bessa},
-      keywords = {Material model, Model updating, Automatic differentiation, History-dependency, Recurrent neural network, Hybrid material model, ADiMU, Open-source},
+      keywords = {Material model, Model updating, Automatic differentiation, History-dependency, Recurrent neural network, Hybrid material model, ADiMU, Open-source}
     }
 
 
@@ -78,7 +79,7 @@ If you find any **issues**, **bugs** or **problems** with HookeAI, please use th
 
 You are also welcome to post any **questions**, **comments** or **suggestions** for improvement in the `GitHub discussions <https://github.com/bessagroup/hookeai/discussions>`_ space!
 
-Please refer to HookeAI's `Code of Conduct <https://github.com/bessagroup/hookeai/blob/master/CODE_OF_CONDUCT.md>`_.
+Please refer to HookeAI's `Code of Conduct <https://github.com/bessagroup/hookeai/blob/main/CODE_OF_CONDUCT.md>`_.
 
 
 ----

@@ -1,7 +1,7 @@
 Overview
 ========
 
-HookeAI is built around the `Automatically Differentiable Model Updating (ADiMU) <https://arxiv.org/abs/2505.07801>`_ framework for material model updating, but it’s also a flexible, general-purpose library for **AI-driven material modeling research**. It includes a wide range of features and functionalities, such as:
+HookeAI is built around the `Automatically Differentiable Model Updating (ADiMU) <https://doi.org/10.1016/j.jmps.2025.106408>`_ framework for material model updating, but it’s also a flexible, general-purpose library for **AI-driven material modeling research**. It includes a wide range of features and functionalities, such as:
 
 * **Data generation methods**. Need to generate synthetic data to test your material model architectures? HookeAI includes tools to generate diverse strain-stress data sets as well as material patches undergoing all sorts of deformations!
 

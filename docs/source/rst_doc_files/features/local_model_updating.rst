@@ -1,7 +1,7 @@
 Local material model updating
 =============================
 
-One of the core functionalities of HookeAI is the ability to perform **local, direct material model updating**. Given a **data set of strain-stress paths**, often obtained from numerical simulations, and a given **parametric material model**, the `Automatically Differentiable Model Updating (ADiMU) <https://arxiv.org/abs/2505.07801>`_ framework is leveraged to **identify the optimal parameters** of the material model that best explain the material behavior observed in the data.
+One of the core functionalities of HookeAI is the ability to perform **local, direct material model updating**. Given a **data set of strain-stress paths**, often obtained from numerical simulations, and a given **parametric material model**, the `Automatically Differentiable Model Updating (ADiMU) <https://doi.org/10.1016/j.jmps.2025.106408>`_ framework is leveraged to **identify the optimal parameters** of the material model that best explain the material behavior observed in the data.
 
 .. image:: ../../../media/schematics/hookeai_local_optimization.png
    :width: 80 %

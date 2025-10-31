@@ -1,11 +1,11 @@
 Material model architectures
 ============================
 
-Material models are at the very core of the `Automatically Differentiable Model Updating (ADiMU) <https://arxiv.org/abs/2505.07801>`_ framework. Despite handling **any type of parametric material model**, HookeAI includes a variety of **pre-built** **conventional** (physics-based), **neural network** (data-driven), and **hybrid** material models.
+Material models are at the very core of the `Automatically Differentiable Model Updating (ADiMU) <https://doi.org/10.1016/j.jmps.2025.106408>`_ framework. Despite handling **any type of parametric material model**, HookeAI includes a variety of **pre-built** **conventional** (physics-based), **neural network** (data-driven), and **hybrid** material models.
 
 .. note ::
 
-    At the moment, HookeAI does **not** provide a formal interface to implement material model architectures. Nonetheless, all the pre-built models provide clear blueprints to implement and integrate custom architectures.
+    At the moment, HookeAI **does not** provide a formal interface to implement material model architectures. Nonetheless, all the pre-built models provide clear blueprints to implement and integrate custom architectures.
 
 ----
 
@@ -36,7 +36,7 @@ Instead of demanding tailored implementations to fit within the ADiMU framework,
 
 .. warning ::
 
-    In order to enable an efficient updating process, HookeAI's material model updating leverages `PyTorch's vectorizing maps <https://docs.pytorch.org/docs/stable/generated/torch.vmap.html>`_. This requires that the conventional material model's implementation is compatible with **PyTorch vectorization requirements**.
+    In order to enable an efficient updating process, HookeAI's material model updating leverages `PyTorch's vectorizing maps <https://docs.pytorch.org/docs/stable/generated/torch.vmap.html>`_. This requires that the conventional material model's implementation is compatible with **PyTorch vectorization requirements**. Both **standard** and **VMAP-compatible** versions of each conventional material model are provided in the FETorch material library.
 
 .. image:: ../../../media/schematics/hookeai_conventional_models.png
    :width: 100 %
@@ -53,7 +53,7 @@ HookeAI provides a **pre-built neural network material model** that consists of 
 
 .. note ::
 
-    While the low-level GRU architecture is imported from `PyTorch <https://pytorch.org/docs/stable/generated/torch.nn.GRU.html>`_ by default, HookeAI also provides a fully custom implementation of the same architecture (:code:`GRU`).
+    While the low-level GRU architecture is imported from `PyTorch <https://pytorch.org/docs/stable/generated/torch.nn.GRU.html>`_ by default, HookeAI also provides a **fully custom implementation** of the same architecture (:code:`GRU`). Despite being less computationally efficient, this custom implementation is compatible with PyTorch's vectorization requirements.
 
 
 .. image:: ../../../media/schematics/hookeai_nn_models.png

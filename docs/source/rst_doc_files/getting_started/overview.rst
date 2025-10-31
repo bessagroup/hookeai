@@ -8,7 +8,7 @@ A quick overview over HookeAI's conceptual and computational frameworks.
 Conceptual framework
 --------------------
 
-HookeAI's conceptual framework lies at the intersection of **computational mechanics**, **machine learning** and **scientific computing**. In particular, it is centered around the `Automatically Differentiable Model Updating (ADiMU) <https://arxiv.org/abs/2505.07801>`_ framework, a unified approach for material model updating in computational solid mechanics. Accurate material models are crucial for the design and analysis of engineering systems, as they directly impact the reliability of numerical simulations.
+HookeAI's conceptual framework lies at the intersection of **computational mechanics**, **machine learning** and **scientific computing**. In particular, it is centered around the `Automatically Differentiable Model Updating (ADiMU) <https://doi.org/10.1016/j.jmps.2025.106408>`_ framework, a unified approach for material model updating in computational solid mechanics. Accurate material models are crucial for the design and analysis of engineering systems, as they directly impact the reliability of numerical simulations.
 
 A **material model** is a mathematical representation of the constitutive behavior of a material, establishing a relationship between strain and stress that, in the general case, is nonlinear and history-dependent. These models must be expressive enough to capture the material behavior and are typically parametrized by a **set of parameters** that need to be found from **available data**. The process of determining the optimal set of parameters that best explain the material behavior from available data is known as **model updating**.
 
@@ -27,7 +27,7 @@ Beyond the core ADiMU framework, HookeAI includes numerous computational resourc
 Computational framework
 -----------------------
 
-HookeAI is developed entirely in **Python** using an object-oriented design. Its core, the `Automatically Differentiable Model Updating (ADiMU) <https://arxiv.org/abs/2505.07801>`_ framework, is built on **PyTorch**, leveraging automatic differentiation, vectorized operations, and GPU acceleration. The software also integrates widely used scientific libraries such as **NumPy**, **SciPy**, and **Scikit-learn**, as well as **Pandas** and **Matplotlib** for data analysis and visualization.
+HookeAI is developed entirely in **Python** using an object-oriented design. Its core, the `Automatically Differentiable Model Updating (ADiMU) <https://doi.org/10.1016/j.jmps.2025.106408>`_ framework, is built on **PyTorch**, leveraging automatic differentiation, vectorized operations, and GPU acceleration. The software also integrates widely used scientific libraries such as **NumPy**, **SciPy**, and **Scikit-learn**, as well as **Pandas** and **Matplotlib** for data analysis and visualization.
 
 Moreover, HookeAI was developed with a strong emphasis on **code readability, maintainability, and extensibility**. Consistent naming conventions, thorough documentation, and demonstrative user scripts facilitate understanding of both functionality and implementation. A modular architecture, based on well-structured classes, functions and interfaces, ensures that HookeAI can be readily extended and customized for diverse user needs.
 

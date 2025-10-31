@@ -42,15 +42,16 @@ If you use HookeAI in your research or in a scientific publication, please cite:
 **Journal of the Mechanics and Physics of Solids** ([paper](https://doi.org/10.1016/j.jmps.2025.106408)):
 ```
 @article{ferreira2025a,
-    title = {Automatically Differentiable Model Updating (ADiMU): Conventional, hybrid, and neural network material model discovery including history-dependency},
-    journal = {Journal of the Mechanics and Physics of Solids},
-    pages = {106408},
-    year = {2025},
-    issn = {0022-5096},
-    doi = {https://doi.org/10.1016/j.jmps.2025.106408},
-    url = {https://www.sciencedirect.com/science/article/pii/S0022509625003825},
-    author = {Bernardo P. Ferreira and Miguel A. Bessa},
-    keywords = {Material model, Model updating, Automatic differentiation, History-dependency, Recurrent neural network, Hybrid material model, ADiMU, Open-source},
+  title = {Automatically Differentiable Model Updating (ADiMU): Conventional, hybrid, and neural network material model discovery including history-dependency},
+  journal = {Journal of the Mechanics and Physics of Solids},
+  volume = {206},
+  pages = {106408},
+  year = {2026},
+  issn = {0022-5096},
+  doi = {https://doi.org/10.1016/j.jmps.2025.106408},
+  url = {https://www.sciencedirect.com/science/article/pii/S0022509625003825},
+  author = {Bernardo P. Ferreira and Miguel A. Bessa},
+  keywords = {Material model, Model updating, Automatic differentiation, History-dependency, Recurrent neural network, Hybrid material model, ADiMU, Open-source}
 }
 ```
 

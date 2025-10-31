@@ -46,13 +46,20 @@ The strain loading paths can then be coupled with an available material model to
 Material patches
 ----------------
 
-HookeAI includes a method called `Stochastic Patch Deformation Generator (SPDG) <https://arxiv.org/abs/2505.07801>`_ to generate **synthetic data sets of material patches** discretized in a finite element mesh and subject to **random boundary deformations** (:code:`FiniteElementPatch`, :code:`FiniteElementPatchGenerator`).
+HookeAI includes a method called `Stochastic Patch Deformation Generator (SPDG) <https://doi.org/10.1016/j.jmps.2025.106408>`_ to generate **synthetic data sets of material patches** discretized in a finite element mesh and subject to **random boundary deformations** (:code:`FiniteElementPatch`, :code:`FiniteElementPatchGenerator`).
 
 These material patches can be directly translated into a finite element simulation with Dirichlet boundary conditions, which can be solved with an external solver to **obtain structural level data** (e.g., displacements, internal forces, reaction forces) as well as **material level data** (e.g., strains, stresses, internal variables from integration points). Hence, SPDG can be leveraged to generate a wide variety of synthetic data sets to support the development of **data-driven material and/or structural models**.
 
 .. image:: ../../../media/schematics/hookeai_material_patches.png
    :width: 90 %
    :align: center
+
+|
+
+.. note ::
+
+    HookeAI **does not** include a built-in finite element solver to perform the simulations over the generated material patches with SPDG. The material patch object (:code:`FiniteElementPatch`) contains all the required information to set up the corresponding **finite element simulation with Dirichlet boundary conditions**, which must be performed with an **external solver**. 
+    
 
 ----
 
