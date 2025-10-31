@@ -55,7 +55,7 @@ def convert_dict_to_tensor(data_dict, is_inplace=True):
             # Perform type conversion
             if isinstance(value, dict):
                 # Process nested dictionary recursively
-                data_dict[key] = convert_dict_to_tensor(value)
+                data_dict[key] = convert_dict_to_tensor(value, in_place=True)
             elif (isinstance(value, (int, float, bool))
                 and not isinstance(value, torch.Tensor)):
                 # Convert to torch tensor
@@ -68,7 +68,8 @@ def convert_dict_to_tensor(data_dict, is_inplace=True):
             # Perform type conversion
             if isinstance(value, dict):
                 # Process nested dictionary recursively
-                local_data_dict[key] = convert_dict_to_tensor(value)
+                local_data_dict[key] = \
+                    convert_dict_to_tensor(value, in_place=False)
             elif (isinstance(value, (int, float, bool))
                 and not isinstance(value, torch.Tensor)):
                 # Convert to torch tensor

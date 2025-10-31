@@ -231,8 +231,8 @@ def train_model(n_max_epochs, dataset, model_init_args, lr_init,
             is_normalized_loss = False
         else:
             # Fit model data scalers 
-            if not model.check_data_scaler(features_type='features_out'):
-                fit_data_scalers(model, dataset)
+            if model._data_scalers['features_out'] is None:
+                fit_data_scalers(model, dataset)         
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Save model initial state
     save_model_state(model, state_type='init')
