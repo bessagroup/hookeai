@@ -125,7 +125,7 @@ def gen_specimen_local_dataset(specimen_data_path,
         loss_scaling_factor = None
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set loss time weights flag
-    is_loss_time_weights = True
+    is_loss_time_weights = False
     # Set loss time weights
     if is_loss_time_weights:
         loss_time_weights = 201*[0.005,]
@@ -140,20 +140,6 @@ def gen_specimen_local_dataset(specimen_data_path,
     # Compute force equilibrium history loss
     force_equilibrium_hist_loss = \
         material_finder(sequential_mode='sequential_element_vmap')
-    # Check force equilibrium history loss
-    if is_force_normalization and force_equilibrium_hist_loss > 1.0e-6:
-        raise RuntimeError('Warning: Check force equilibrium history loss! '
-                           f'\n\n Loss = {force_equilibrium_hist_loss:11.4e}'
-                           '\n\nTip: Make sure to set the ground-truth '
-                           'material model and the corresponding material '
-                           'parameters when generating the specimen material '
-                           'state.')
-    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Get number of degrees of freedom subject to Dirichlet boundary conditions
-    n_dirichlet_dof = specimen_data.specimen_mesh.get_n_dirichlet_dof()
-    # Compute average force inbalance (average per Dirichlet degree of freedom)
-    avg_force_inbalance = \
-        torch.sqrt(force_equilibrium_hist_loss)/n_dirichlet_dof
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set data set directory
     dataset_directory = os.path.join(os.path.normpath(model_directory),
@@ -173,17 +159,13 @@ def gen_specimen_local_dataset(specimen_data_path,
     # Display results
     if is_verbose:
         print('')
-        print('DARPA METALS PROJECT: Generate specimen local strain-stress '
-              'paths data set')
-        print('------------------------------------------------------------'
-              '--------------')
+        print('Generate specimen local strain-stress paths data set')
+        print('----------------------------------------------------')
         print(f'Specimen numerical data: {specimen_data_path}')
         print(f'\nSpecimen material state: {specimen_material_state_path}')
         print(f'\nForce equilibrium history loss: '
               f'{force_equilibrium_hist_loss:.4e}')
         print(f'Force normalization:  {str(False):>15s}')
-        print(f'\nAvg. force inbalance (per Dirichlet dof): '
-              f'{avg_force_inbalance:.4e}')
         print(f'\nSpecimen local data set: {dataset_file_path}')
         print('-------------------------------------------------------------'
               '--------------')

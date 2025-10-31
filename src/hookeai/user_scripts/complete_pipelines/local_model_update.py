@@ -1,4 +1,4 @@
-"""DARPA METALS: Contigency plan B.
+"""Find GRU material model capturing temperature and composition dependencies.
 
 Functions
 ---------

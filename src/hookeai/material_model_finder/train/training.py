@@ -1,4 +1,4 @@
-"""DARPA METALS PROJECT: Material model finder learning procedure.
+"""Material model finder learning procedure.
 
 Functions
 ---------

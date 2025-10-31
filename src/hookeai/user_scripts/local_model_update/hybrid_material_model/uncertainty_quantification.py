@@ -1,4 +1,4 @@
-"""DARPA METALS PROJECT: Uncertainty quantification of hybrid material model.
+"""Uncertainty quantification of hybrid material model.
 
 Functions
 ---------
