@@ -270,13 +270,13 @@ def generate_prediction_plots(dataset_file_path, predict_subdir):
         if is_plot_candidate_model:
             # Set candidate model testing data set file path
             candidate_dataset_file_path = \
-                ('/home/bernardoferreira/Documents/brown/projects/'
+                ('/home/username/Documents/brown/projects/'
                  'darpa_project/7_local_hybrid_training/'
                  'case_erroneous_von_mises_properties/'
                  '1_candidate_rc_von_mises_model/5_testing_id_dataset/'
                  'ss_paths_dataset_n512.pkl')
             candidate_predict_subdir = \
-                ('/home/bernardoferreira/Documents/brown/projects/'
+                ('/home/username/Documents/brown/projects/'
                  'darpa_project/7_local_hybrid_training/'
                  'case_erroneous_von_mises_properties/'
                  '1_candidate_rc_von_mises_model/7_prediction/'
@@ -360,7 +360,7 @@ if __name__ == "__main__":
                     'out_distribution')[2]
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set case studies base directory
-    base_dir = ('/home/bernardoferreira/Documents/brown/projects/'
+    base_dir = ('/home/username/Documents/brown/projects/'
                 'darpa_paper_examples/local/hybrid_models/dp_plus_gru/n10')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Initialize case study directories

@@ -161,15 +161,15 @@ if __name__ == '__main__':
     is_save_dataset_plots = True
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set data set directory
-    dataset_dir = ('/home/bernardoferreira/Desktop/test_fortran/'
+    dataset_dir = ('/home/username/Desktop/test_fortran/'
                    'test_links_lou/3D_HEXA8_LOU_Mixed')
     # Set Links Gauss points '.out' data file paths
     links_out_file_paths = \
-        ('/home/bernardoferreira/Desktop/test_fortran/test_links_lou/'
+        ('/home/username/Desktop/test_fortran/test_links_lou/'
          '3D_HEXA8_LOU_Mixed/3D_HEXA8_LOU_Mixed_ELEM_1_GP_5.out',
-         '/home/bernardoferreira/Desktop/test_fortran/test_links_lou/'
+         '/home/username/Desktop/test_fortran/test_links_lou/'
          '3D_HEXA8_LOU_Mixed/3D_HEXA8_LOU_Mixed_ELEM_1_GP_7.out',
-         '/home/bernardoferreira/Desktop/test_fortran/test_links_lou/'
+         '/home/username/Desktop/test_fortran/test_links_lou/'
          '3D_HEXA8_LOU_Mixed/3D_HEXA8_LOU_Mixed_ELEM_1_GP_8.out')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set strain formulation

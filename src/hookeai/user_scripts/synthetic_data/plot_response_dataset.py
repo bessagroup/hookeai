@@ -36,7 +36,7 @@ if __name__ == '__main__':
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set data set file path
     dataset_file_path = (
-        '/home/bernardoferreira/Documents/brown/projects/'
+        '/home/username/Documents/brown/projects/'
         'colaboration_antonios/dtp_validation/4_dtp1_exp_rowan_data/'
         '0_DTP1U_Case_2/1_adimu_forward_hexa8_1GP_synthetic_parameters/'
         '2_discover_rc_von_mises_adimu_force_displacement_test/'

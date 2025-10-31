@@ -592,7 +592,7 @@ if __name__ == "__main__":
         # Set training data set sizes
         training_sizes = (10, 20, 40, 80, 160, 320, 640, 1280, 2560)
         # Set convergence analysis base directory
-        base_dir = ('/home/bernardoferreira/Documents/brown/projects/'
+        base_dir = ('/home/username/Documents/brown/projects/'
                     'test_output_metric/strain_to_stress')
         # Set saving directory
         save_dir = os.path.join(os.path.normpath(base_dir),
@@ -647,7 +647,7 @@ if __name__ == "__main__":
             is_latex=True)
     else:
         # Set predictions directory
-        predictions_dir = ('/home/bernardoferreira/Documents/brown/projects/'
+        predictions_dir = ('/home/username/Documents/brown/projects/'
                            'test_output_metric/prediction_set_0')
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Compute mean prediction metrics for given prediction directory
@@ -662,7 +662,7 @@ if __name__ == "__main__":
     Change the number of colors to number of labels!
 
     # Set reference data file path
-    data_file_path = ('/home/bernardoferreira/Documents/brown/projects/'
+    data_file_path = ('/home/username/Documents/brown/projects/'
                       'darpa_paper_examples/local/hybrid_models/dp_plus_gru/'
                       'dp_2d50_plus_gru/prediction_metrics_gru_reference_data/'
                       'plot_data/mean_rmse_convergence_data.pkl')

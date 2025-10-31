@@ -1535,7 +1535,7 @@ if __name__ == "__main__":
     is_display_pruning_data = False
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set pruning main directory
-    pruning_dir = ('/home/bernardoferreira/Documents/brown/projects/'
+    pruning_dir = ('/home/username/Documents/brown/projects/'
                    'test_pruning/polynomial')
     # Set types of testing data sets
     testing_types = ('in_distribution', 'unused_data')

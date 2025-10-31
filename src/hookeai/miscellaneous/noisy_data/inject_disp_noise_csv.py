@@ -141,7 +141,7 @@ def inject_displacements_noise(csv_data_dir, noise_parameters):
 # =============================================================================
 if __name__ == "__main__":
     # Set directory with data files
-    csv_data_dir = ('/home/bernardoferreira/Documents/brown/projects/'
+    csv_data_dir = ('/home/username/Documents/brown/projects/'
                     'darpa_paper_examples/global/tensile_dogbone_von_mises/'
                     'hexa8_n6493_e1200/1_discover_rc_von_mises/'
                     'E_v_s0_a_b/noisy_displacements/noiseless/'

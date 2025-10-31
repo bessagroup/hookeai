@@ -455,7 +455,7 @@ if __name__ == '__main__':
         specimen_name = 'Ti6242_HIP2_UT_Specimen_1'
         # Set specimen history data directory
         specimen_history_dir = \
-            ('/home/bernardoferreira/Documents/brown/projects/'
+            ('/home/username/Documents/brown/projects/'
              'colaboration_antonios/dtp_validation/4_dtp1_exp_rowan_data/'
              '0_DTP1U_Case_2/0_DTP1_case2_data/0_specimen_data/'
              'specimen_history_data')
@@ -463,7 +463,7 @@ if __name__ == '__main__':
         n_dim = 3
         # Set plots directory
         save_dir = \
-            ('/home/bernardoferreira/Documents/brown/projects/'
+            ('/home/username/Documents/brown/projects/'
              'colaboration_antonios/dtp_validation/4_dtp1_exp_rowan_data/'
              '0_DTP1U_Case_2/0_DTP1_case2_data/0_specimen_data/plots_test')
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -489,7 +489,7 @@ if __name__ == '__main__':
     elif process == 'compare_reaction_forces_history':
         # Set plots directory
         save_dir = \
-            ('/home/bernardoferreira/Documents/brown/projects/'
+            ('/home/username/Documents/brown/projects/'
              'colaboration_antonios/dtp_validation/3_dtp1_j2_rowan_data/'
              '2_DTP1U_V2_data/loss_dirichlet_sets/'
              '3_comparison_with_synthetic_dtp1v4')
@@ -502,7 +502,7 @@ if __name__ == '__main__':
         specimen_name = 'Ti6242_HIP2_UT_Specimen2_J2'
         # Set specimen history data directory
         specimen_history_dir = \
-            ('/home/bernardoferreira/Documents/brown/projects/'
+            ('/home/username/Documents/brown/projects/'
              'colaboration_antonios/dtp_validation/3_dtp1_j2_rowan_data/'
              '0_DTP1_V4_data/loss_dirichlet_sets/'
              '0_abaqus_simulation_hexa8_8GP_gt_parameters/0_simulation/'
@@ -521,7 +521,7 @@ if __name__ == '__main__':
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Set Dirichlet sets reaction forces history file
         dirichlet_sets_reaction_hist_file_path = \
-            ('/home/bernardoferreira/Documents/brown/projects/'
+            ('/home/username/Documents/brown/projects/'
              'colaboration_antonios/dtp_validation/3_dtp1_j2_rowan_data/'
              '0_DTP1_V4_data/loss_dirichlet_sets/'
              '2_adimu_forward_hexa8_1GP_opt_parameters/'
@@ -542,7 +542,7 @@ if __name__ == '__main__':
         specimen_name = 'Ti6242_HIP2_UT_Specimen2_J2'
         # Set specimen history data directory
         specimen_history_dir = \
-            ('/home/bernardoferreira/Documents/brown/projects/'
+            ('/home/username/Documents/brown/projects/'
              'colaboration_antonios/dtp_validation/3_dtp1_j2_rowan_data/'
              '2_DTP1U_V2_data/loss_dirichlet_sets/'
              '2_adimu_forward_hexa8_1GP_opt_parameters/'
@@ -562,7 +562,7 @@ if __name__ == '__main__':
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Set Dirichlet sets reaction forces history file
         dirichlet_sets_reaction_hist_file_path = \
-            ('/home/bernardoferreira/Documents/brown/projects/'
+            ('/home/username/Documents/brown/projects/'
              'colaboration_antonios/dtp_validation/3_dtp1_j2_rowan_data/'
              '2_DTP1U_V2_data/loss_dirichlet_sets/'
              '2_adimu_forward_hexa8_1GP_opt_parameters/'
@@ -591,7 +591,7 @@ if __name__ == '__main__':
     elif process == 'plot_optimization_reaction_forces_history':
         # Set hyperparameter optimization jobs output directory
         hyperopt_jobs_dir = \
-            ('/home/bernardoferreira/Documents/brown/projects/'
+            ('/home/username/Documents/brown/projects/'
              'colaboration_antonios/dtp_validation/3_dtp1_j2_rowan_data/'
              '2_DTP1U_V2_data/loss_dirichlet_sets/'
              '4_hyperparameter_optimization/optimize_von_mises_parameters/'
@@ -610,7 +610,7 @@ if __name__ == '__main__':
         specimen_name = 'Ti6242_HIP2_UT_Specimen2_J2'
         # Set specimen history (source) data directory
         specimen_history_dir = \
-            ('/home/bernardoferreira/Documents/brown/projects/'
+            ('/home/username/Documents/brown/projects/'
              'colaboration_antonios/dtp_validation/3_dtp1_j2_rowan_data/'
              '2_DTP1U_V2_data/loss_dirichlet_sets/'
              '4_hyperparameter_optimization/0_simulation_src/'
@@ -679,12 +679,12 @@ if __name__ == '__main__':
         specimen_name = 'Ti6242_HIP2_UT_Specimen2_J2'
         # Set source specimen history data directory
         src_specimen_history_dir = \
-            ('/home/bernardoferreira/Documents/brown/projects/'
+            ('/home/username/Documents/brown/projects/'
              'colaboration_antonios/dtp_validation/'
              '3_dtp1_j2_rowan_data/testing/dtp1u/specimen_history_data')
         # Set target specimen history data directory
         target_specimen_history_dir = \
-            ('/home/bernardoferreira/Documents/brown/projects/'
+            ('/home/username/Documents/brown/projects/'
              'colaboration_antonios/dtp_validation/3_dtp1_j2_rowan_data/'
              'testing/dtp1v4/specimen_history_data')
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -697,13 +697,13 @@ if __name__ == '__main__':
         specimen_name = 'Ti6242_HIP2_UT_Specimen_1'
         # Set specimen mesh file path
         specimen_mesh_file_path = \
-            ('/home/bernardoferreira/Documents/brown/projects/'
+            ('/home/username/Documents/brown/projects/'
              'colaboration_antonios/dtp_validation/4_dtp1_exp_rowan_data/'
              '0_DTP1U_Case_2/0_DTP1_case2_data/0_specimen_data/'
              'Ti6242_HIP2_UT_Specimen1.inp')
         # Set specimen history data directory
         specimen_history_dir = \
-            ('/home/bernardoferreira/Documents/brown/projects/'
+            ('/home/username/Documents/brown/projects/'
              'colaboration_antonios/dtp_validation/4_dtp1_exp_rowan_data/'
              '0_DTP1U_Case_2/0_DTP1_case2_data/0_specimen_data/'
              'specimen_history_data')

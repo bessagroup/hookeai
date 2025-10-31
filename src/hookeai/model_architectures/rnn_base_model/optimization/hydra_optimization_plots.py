@@ -264,10 +264,10 @@ if __name__ == "__main__":
     # Set optimization processes
     optim_history = {}
     optim_history['label'] = \
-        ('/home/bernardoferreira/Documents/hyperparameter_opt/'
+        ('/home/username/Documents/hyperparameter_opt/'
          'optimize_gru_material_model_composite_rve/2025-01-23/18-56-06')
     # Set plot directory
-    save_dir = ('/home/bernardoferreira/Documents/hyperparameter_opt')
+    save_dir = ('/home/username/Documents/hyperparameter_opt')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set optimization metric
     optim_metric = 'objective'

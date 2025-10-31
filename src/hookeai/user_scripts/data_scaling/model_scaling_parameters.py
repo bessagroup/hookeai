@@ -26,7 +26,7 @@ __status__ = 'Stable'
 # =============================================================================
 if __name__ == '__main__':
     # Set model initialization file path
-    model_init_file_path = ('/home/bernardoferreira/Documents/brown/projects/'
+    model_init_file_path = ('/home/username/Documents/brown/projects/'
                             'darpa_project/2_local_rnn_training/composite_rve/'
                             'dataset_07_2024/2_training_strain_vf_to_stress/'
                             '3_model/model_init_file.pkl')

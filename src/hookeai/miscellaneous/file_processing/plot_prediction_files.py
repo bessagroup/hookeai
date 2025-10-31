@@ -106,7 +106,7 @@ if __name__ == '__main__':
     sample_ids = random.sample(range(0, 512), 20)
     # Set testing data set file path
     dataset_file_path = \
-        ('/home/bernardoferreira/Documents/brown/projects/'
+        ('/home/username/Documents/brown/projects/'
          'darpa_paper_examples/global/random_material_patch_von_mises/'
          'deformation_bounds_0d1/global/gru_model/'
          'lr_exp_0d001_0d00001_32000_epochs/material_model_performance/'
@@ -114,21 +114,21 @@ if __name__ == '__main__':
     # Set models prediction directories
     models_prediction_dirs = {}
     models_prediction_dirs['GRU'] = \
-        ('/home/bernardoferreira/Documents/brown/projects/'
+        ('/home/username/Documents/brown/projects/'
          'darpa_paper_examples/global/random_material_patch_von_mises/'
          'deformation_bounds_0d1/global/'
          'gru_model/lr_exp_0d001_0d00001_32000_epochs/'
          'material_model_performance/7_prediction/out_distribution/'
          'prediction_set_1')
     models_prediction_dirs['Hybrid'] = \
-        ('/home/bernardoferreira/Documents/brown/projects/'
+        ('/home/username/Documents/brown/projects/'
          'darpa_paper_examples/global/random_material_patch_von_mises/'
          'deformation_bounds_0d1/global/hybrid_model/vm_candidate_1/'
          'lr_exp_0d001_0d00001_32000_epochs/material_model_performance/'
          '7_prediction/out_distribution/prediction_set_1')
     # Set plots directory
     plots_dir = \
-        ('/home/bernardoferreira/Documents/brown/projects/'
+        ('/home/username/Documents/brown/projects/'
          'darpa_paper_examples/global/random_material_patch_von_mises/'
          'deformation_bounds_0d1/global/local_paths_comparison_plots')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

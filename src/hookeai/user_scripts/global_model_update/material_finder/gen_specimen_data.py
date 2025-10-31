@@ -803,7 +803,7 @@ def set_material_model_parameters():
         hyb_indices = (1, 0)
         # Set scaling data set file path (testing data set)
         scaling_dataset_file_path = \
-            ('/home/bernardoferreira/Documents/brown/projects/'
+            ('/home/username/Documents/brown/projects/'
              'darpa_paper_examples/global/random_material_patch_von_mises/'
              'deformation_bounds_0d1/local/polynomial/datasets/'
              'single_precision/n10/5_testing_id_dataset/'
@@ -845,7 +845,7 @@ if __name__ == "__main__":
     is_save_specimen_material_state = True
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set case study base directory
-    base_dir = ('/home/bernardoferreira/Documents/brown/projects/'
+    base_dir = ('/home/username/Documents/brown/projects/'
                 'darpa_project/5_global_specimens/rowan_specimen_ti6242_hip2/'
                 '1_preliminary_discovery_E')
     # Set case study directory

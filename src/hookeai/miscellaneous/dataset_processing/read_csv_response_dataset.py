@@ -31,7 +31,7 @@ __status__ = 'Stable'
 if __name__ == '__main__':
     # Set response paths data directory
     response_path_files_dir = \
-        ('/home/bernardoferreira/Documents/brown/projects/'
+        ('/home/username/Documents/brown/projects/'
          'colaboration_antonios/dtp_validation/0_rowan_data/'
          'Ti-6242 HIP2 DTP for Brown v4/DTP2')
     # Set response file basename

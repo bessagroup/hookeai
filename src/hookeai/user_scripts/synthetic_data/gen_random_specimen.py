@@ -586,7 +586,7 @@ def perform_links_simulation(simulations_dir, patch, patch_material_params):
         Links simulation output directory.
     """
     # Set Links binary absolute path
-    links_bin_path = ('/home/bernardoferreira/Documents/repositories/external/'
+    links_bin_path = ('/home/username/Documents/repositories/external/'
                       'LINKS/bin/LINKS')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set Links strain formulation
@@ -674,7 +674,7 @@ def perform_links_simulation(simulations_dir, patch, patch_material_params):
 # =============================================================================
 if __name__ == "__main__":
     # Set base directory
-    base_dir = ('/home/bernardoferreira/Documents/brown/projects/'
+    base_dir = ('/home/username/Documents/brown/projects/'
                 'darpa_paper_examples/global/specimens/random_material_patch/'
                 'meshes')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

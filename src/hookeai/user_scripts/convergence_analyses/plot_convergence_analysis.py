@@ -133,7 +133,7 @@ if __name__ == "__main__":
     testing_type = ('in_distribution', 'out_distribution')[0]
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set convergence analysis base directory
-    base_dir = ('/home/bernardoferreira/Documents/brown/projects/'
+    base_dir = ('/home/username/Documents/brown/projects/'
                 'darpa_project/8_global_random_specimen/von_mises/'
                 '1_local_vanilla_GRU/strain_to_stress')
     # Set training data set sizes

@@ -28,7 +28,7 @@ __status__ = 'Stable'
 # =============================================================================
 if __name__ == '__main__':
     # Set TimeSeriesDatasetInMemory data set file path
-    im_dataset_file_path = ('/home/bernardoferreira/Desktop/test_dataset/n10/'
+    im_dataset_file_path = ('/home/username/Desktop/test_dataset/n10/'
                             '1_training_dataset/ss_paths_dataset_n10.pkl')
     # Set sample file base name
     sample_basename = 'ss_response_path'

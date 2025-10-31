@@ -1094,7 +1094,7 @@ if __name__ == '__main__':
                  'plot_model_parameters': False}
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set base directory
-    base_dir = ('/home/bernardoferreira/Documents/brown/projects/'
+    base_dir = ('/home/username/Documents/brown/projects/'
                 'colaboration_antonios/contigency_plan_b/'
                 'j2_parameters_2025_10_15/debug/'
                 '2_dataset_proportional_augmentation')

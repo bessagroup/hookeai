@@ -297,17 +297,17 @@ if __name__ == "__main__":
         datasets_paths['training'] = None
     elif process == 'training-testing':
         datasets_paths['training'] = \
-            ('/home/bernardoferreira/Documents/brown/projects/darpa_project/'
+            ('/home/username/Documents/brown/projects/darpa_project/'
              '2_local_rnn_training/composite_rve/dataset_01_2025/'
              '2_training_strain_vf_to_stress/1_training_dataset/'
              'ss_paths_dataset_n7333.pkl')
         datasets_paths['validation'] = \
-            ('/home/bernardoferreira/Documents/brown/projects/darpa_project/'
+            ('/home/username/Documents/brown/projects/darpa_project/'
              '2_local_rnn_training/composite_rve/dataset_01_2025/'
              '2_training_strain_vf_to_stress/2_validation_dataset/'
              'ss_paths_dataset_n916.pkl')
         datasets_paths['testing'] = \
-            ('/home/bernardoferreira/Documents/brown/projects/darpa_project/'
+            ('/home/username/Documents/brown/projects/darpa_project/'
              '2_local_rnn_training/composite_rve/dataset_01_2025/'
              '2_training_strain_vf_to_stress/5_testing_id_dataset/'
              'ss_paths_dataset_n916.pkl')

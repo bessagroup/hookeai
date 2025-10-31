@@ -527,7 +527,7 @@ if __name__ == "__main__":
     testing_type = ('in_distribution', 'out_distribution')[0]
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set convergence analyses base directory
-    base_dir = ('/home/bernardoferreira/Documents/brown/projects/'
+    base_dir = ('/home/username/Documents/brown/projects/'
                 'darpa_paper_examples/local/ml_models/polynomial/'
                 'convergence_analysis_noise/'
                 'convergence_analyses_heteroscedastic_spiked_gaussian')

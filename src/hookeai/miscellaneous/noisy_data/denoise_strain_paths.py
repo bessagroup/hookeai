@@ -32,13 +32,13 @@ __status__ = 'Stable'
 if __name__ == '__main__':
     # Set reference noiseless strain-stress data set file path
     noiseless_dataset_file_path = \
-        ('/home/bernardoferreira/Documents/brown/projects/darpa_project/'
+        ('/home/username/Documents/brown/projects/darpa_project/'
          '6_local_rnn_training_noisy/von_mises/'
          'convergence_analyses_homoscedastic_gaussian/noiseless/n10/'
          '1_training_dataset/ss_paths_dataset_n10.pkl')
     # Set noisy strain-stress data set file path
     noisy_dataset_file_path = \
-        ('/home/bernardoferreira/Documents/brown/projects/darpa_project/'
+        ('/home/username/Documents/brown/projects/darpa_project/'
          '6_local_rnn_training_noisy/von_mises/'
          'convergence_analyses_homoscedastic_gaussian/homgau_noise_1e-1/n10/'
          '1_training_dataset/ss_paths_dataset_n10.pkl')

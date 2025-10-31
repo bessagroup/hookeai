@@ -41,7 +41,7 @@ if __name__ == '__main__':
     ref_node_label = 607
     # Set Links simulation output directory
     links_output_directory = (
-        '/home/bernardoferreira/Documents/brown/projects/darpa_project/'
+        '/home/username/Documents/brown/projects/darpa_project/'
         '5_global_specimens/rowan_specimen_tension_bv_hexa8_rc_von_mises/'
         'links_simulation/3D_rowan_specimen_tension_bv')
     # Set display figure flag

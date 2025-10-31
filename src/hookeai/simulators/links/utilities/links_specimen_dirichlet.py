@@ -327,7 +327,7 @@ if __name__ == "__main__":
     # Set specimen label
     specimen_label = '3d_tensile_dogbone'
     # Set storage directory
-    save_dir = ('/home/bernardoferreira/Documents/brown/projects/'
+    save_dir = ('/home/username/Documents/brown/projects/'
                 'darpa_paper_examples/global/specimens/tensile_dogbone/'
                 'meshes/hexa8_n6493_e1200/0_links_simulation')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -335,7 +335,7 @@ if __name__ == "__main__":
     if specimen_label == '3d_tensile_double_notched':
         # Set specimen Links input data file
         specimen_links_data_file = \
-            ('/home/bernardoferreira/Documents/brown/projects/'
+            ('/home/username/Documents/brown/projects/'
              'darpa_paper_examples/global/specimens/tensile_double_notched/'
              'meshes/hexa8_n760_e504/0_links_simulation/'
              'tensile_double_notched.dat')
@@ -346,7 +346,7 @@ if __name__ == "__main__":
     elif specimen_label == '3d_tensile_dogbone':
         # Set specimen Links input data file
         specimen_links_data_file = \
-            ('/home/bernardoferreira/Documents/brown/projects/'
+            ('/home/username/Documents/brown/projects/'
              'darpa_paper_examples/global/specimens/tensile_dogbone/meshes/'
              'hexa8_n6493_e1200/0_links_simulation/tensile_dogbone.dat')
         # Set specimen top coordinate

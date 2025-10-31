@@ -32,7 +32,7 @@ __status__ = 'Stable'
 # =============================================================================
 if __name__ == '__main__':
     # Set strain paths directory
-    strain_paths_dir = ('/home/bernardoferreira/Documents/brown/projects/'
+    strain_paths_dir = ('/home/username/Documents/brown/projects/'
                         'colaboration_bazant_m7/2_test_bazant_su_fail/'
                         'random_strain_paths_dataset')
     # Set strain path basename

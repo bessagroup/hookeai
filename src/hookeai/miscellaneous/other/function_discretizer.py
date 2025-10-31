@@ -41,7 +41,7 @@ if __name__ == '__main__':
     # Set save file flag
     is_save_file = True
     # Set save directory
-    save_dir = '/home/bernardoferreira/Downloads'
+    save_dir = '/home/username/Downloads'
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set function option
     fun_option = ('custom', 'linear_hardening', 'nadai_ludwik_hardening')[0]

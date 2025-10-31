@@ -110,7 +110,7 @@ def links_node_output_to_csv(links_output_dir):
 if __name__ == "__main__":
     # Set Links simulation output directory
     links_output_dir = \
-        ('/home/bernardoferreira/Documents/brown/projects/darpa_project/'
+        ('/home/username/Documents/brown/projects/darpa_project/'
          '11_global_learning_lou/'
          'rowan_specimen_tension_bv_hexa8_rc_drucker_prager_vmap/'
          '0_links_simulation/3D_rowan_specimen_tension_bv')

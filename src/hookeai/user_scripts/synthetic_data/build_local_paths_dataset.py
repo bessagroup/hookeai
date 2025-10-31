@@ -466,7 +466,7 @@ def gen_patch_local_dataset(model_finder_dir, patch_data_path,
 # =============================================================================
 if __name__ == "__main__":
     # Set directory where material patches data and simulations are stored
-    patches_data_dir = ('/home/bernardoferreira/Documents/brown/projects/'
+    patches_data_dir = ('/home/username/Documents/brown/projects/'
                         'test_patches/base_directory/'
                         'material_patches_generation')
     # Set material patch name

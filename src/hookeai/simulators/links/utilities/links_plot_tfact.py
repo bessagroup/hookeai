@@ -254,7 +254,7 @@ if __name__ == "__main__":
     if is_plot_links_tfact_hist:
         # Set Links simulation input data file
         links_input_file_path = \
-            ('/home/bernardoferreira/Documents/brown/projects/'
+            ('/home/username/Documents/brown/projects/'
              'darpa_paper_examples/global/specimens/tensile_double_notched/'
              'meshes/hexa8_n760_e504/0_links_simulation/'
              'tensile_double_notched.dat')
@@ -271,7 +271,7 @@ if __name__ == "__main__":
     if is_generate_links_tfact_hist:
         # Set saving directory
         save_dir = \
-            ('/home/bernardoferreira/Documents/brown/projects/'
+            ('/home/username/Documents/brown/projects/'
              'darpa_paper_examples/global/specimens/tensile_double_notched/'
              'meshes/hexa8_n760_e504/0_links_simulation')
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

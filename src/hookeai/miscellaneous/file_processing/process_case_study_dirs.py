@@ -36,7 +36,7 @@ if __name__ == '__main__':
     task = available_tasks['4']
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set source directory
-    src_dir = ('/home/bernardoferreira/Documents/brown/projects/'
+    src_dir = ('/home/username/Documents/brown/projects/'
                'darpa_paper_examples/local/ml_models/polynomial/'
                'convergence_analysis_noise/'
                'convergence_analyses_homoscedastic_gaussian/noiseless')

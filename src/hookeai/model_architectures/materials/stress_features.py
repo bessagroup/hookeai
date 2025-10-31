@@ -244,7 +244,7 @@ def store_stress_comps(stress_comps_order, stress, device=None):
 # =============================================================================
 if __name__ == '__main__':
     # Set data set file path
-    dataset_file_path = ('/home/bernardoferreira/Desktop/test/'
+    dataset_file_path = ('/home/username/Desktop/test/'
                          '1_training_dataset/ss_paths_dataset_n10.pkl')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Load data set

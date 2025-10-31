@@ -83,14 +83,14 @@ def get_dataset_file_paths(test_case):
         List of weight fractions of Ti4822 in the dataset.
     """
     if test_case == 1:
-        dataset_file_path = ('/home/bernardoferreira/Documents/brown/projects/'
+        dataset_file_path = ('/home/username/Documents/brown/projects/'
                              'colaboration_antonios/contigency_plan_b/'
                              'j2_parameters_2025_10_15/extracted data/'
                              'extracted data/data_fractions.npz')
         temperatures = [25, 325, 625]
         compositions = [0, 0.25, 0.5, 0.75, 1.0]
     elif test_case == 2:
-        dataset_file_path = ('/home/bernardoferreira/Documents/brown/projects/'
+        dataset_file_path = ('/home/username/Documents/brown/projects/'
                              'colaboration_antonios/contigency_plan_b/'
                              'j2_parameters_2025_10_15/extracted data/'
                              'extracted data/data_temperatures.npz')
@@ -562,7 +562,7 @@ def evaluate_gru_material_model():
     device = torch.device(device_type)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set plots directory
-    plots_dir = ('/home/bernardoferreira/Documents/brown/projects/'
+    plots_dir = ('/home/username/Documents/brown/projects/'
                  'colaboration_antonios/contigency_plan_b/'
                  'j2_parameters_2025_10_15/debug/'
                  '2_dataset_proportional_augmentation/model_performance/plots')
@@ -589,7 +589,7 @@ def evaluate_gru_material_model():
         get_dataset_file_paths(test_case) 
     # Set uniaxial stress dataset file path
     dataset_file_path = (
-        '/home/bernardoferreira/Documents/brown/projects/'
+        '/home/username/Documents/brown/projects/'
         'colaboration_antonios/contigency_plan_b/'
         'j2_parameters_2025_10_15/debug/'
         f'0_vm_uniaxial_stress_datasets/test_case_{test_case}/'
@@ -634,7 +634,7 @@ def evaluate_gru_material_model():
                 elif model_name == 'gru':
                     # Set model directory
                     model_directory = (
-                        '/home/bernardoferreira/Documents/brown/projects/'
+                        '/home/username/Documents/brown/projects/'
                         'colaboration_antonios/contigency_plan_b/'
                         'j2_parameters_2025_10_15/debug/'
                         '2_dataset_proportional_augmentation/'
@@ -713,7 +713,7 @@ def evaluate_gru_material_model():
                 elif model_name == 'gru':
                     # Set model directory
                     model_directory = (
-                        '/home/bernardoferreira/Documents/brown/projects/'
+                        '/home/username/Documents/brown/projects/'
                         'colaboration_antonios/contigency_plan_b/'
                         'j2_parameters_2025_10_15/debug/'
                         '2_dataset_proportional_augmentation/'
@@ -766,7 +766,7 @@ def build_uniaxial_stress_dataset():
     device = torch.device(device_type)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set uniaxial stress dataset directory
-    dataset_dir = ('/home/bernardoferreira/Documents/brown/projects/'
+    dataset_dir = ('/home/username/Documents/brown/projects/'
                    'colaboration_antonios/contigency_plan_b/'
                    'j2_parameters_2025_10_15/debug/'
                    '0_vm_uniaxial_stress_datasets/test_case_2')

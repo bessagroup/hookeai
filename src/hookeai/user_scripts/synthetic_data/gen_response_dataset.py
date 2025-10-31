@@ -646,7 +646,7 @@ class MaterialResponseDatasetGenerator():
         # Gather volume fraction data
         if is_input_volume_fraction:
             # Set volume fraction data file path
-            vf_data_file_path = ('/home/bernardoferreira/Documents/brown/'
+            vf_data_file_path = ('/home/username/Documents/brown/'
                                  'projects/darpa_project/2_local_rnn_training/'
                                  'composite_rve/dataset_07_2024/0_yaga_files/'
                                  'exp_Ti6Al4V_3D_input.csv')
@@ -1886,7 +1886,7 @@ if __name__ == '__main__':
     for i, n_path in enumerate(n_paths):
         # Set data sets base directory
         datasets_base_dir = \
-            ('/home/bernardoferreira/Documents/brown/projects/darpa_project/'
+            ('/home/username/Documents/brown/projects/darpa_project/'
              '8_global_random_specimen/von_mises/0_local_datasets')
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Check data sets directory

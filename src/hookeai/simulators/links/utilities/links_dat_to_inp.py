@@ -405,7 +405,7 @@ def abaqus_inp_to_links_dat(specimen_inp_path, n_dim=3):
 # =============================================================================
 if __name__ == "__main__":
     # Set Links simulation input data file
-    links_input_file_path = ('/home/bernardoferreira/Documents/brown/projects/'
+    links_input_file_path = ('/home/username/Documents/brown/projects/'
                             'darpa_project/8_global_random_specimen/von_mises/'
                             '2_random_specimen_hexa8/'
                             'voids_lattice/'

@@ -215,7 +215,7 @@ if __name__ == "__main__":
     # Set reference stress path flag
     is_reference_stress_path = False
     # Set plots directory
-    plots_dir = ('/home/bernardoferreira/Documents/brown/projects/'
+    plots_dir = ('/home/username/Documents/brown/projects/'
                  'darpa_paper_examples/global/tensile_dogbone_von_mises/'
                  'hexa8_n6493_e1200/1_discover_rc_von_mises/s0_a_b/'
                  'noisy_displacements/micro_resolution/'
@@ -234,7 +234,7 @@ if __name__ == "__main__":
     if strain_path_source == 'dataset':
         # Set data set file path
         dataset_file_path = \
-            ('/home/bernardoferreira/Documents/brown/projects/'
+            ('/home/username/Documents/brown/projects/'
              'darpa_paper_examples/global/tensile_dogbone_von_mises/'
              'hexa8_n6493_e1200/1_discover_rc_von_mises/E_v_s0_a_b/'
              'noisy_displacements/noiseless/material_model_finder/'

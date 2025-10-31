@@ -54,7 +54,7 @@ if __name__ == '__main__':
     rect_search_domain = ((-3.5, 2.5), (-1.5, 1.5))
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set plots directory
-    plots_dir = ('/home/bernardoferreira/Downloads/generate_plots/vm')
+    plots_dir = ('/home/username/Downloads/generate_plots/vm')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set parameter name prefix
     is_global_optimization = False
@@ -64,7 +64,7 @@ if __name__ == '__main__':
         model_prefix = ''
     # Set model parameters history record file path
     parameters_record_path = \
-        ('/home/bernardoferreira/Documents/brown/projects/'
+        ('/home/username/Documents/brown/projects/'
          'darpa_paper_examples/local/standard_models/lou/polynomial/n8/'
          'uncertainty_quantification/model_0/3_model/'
          'parameters_history_record.pkl')
@@ -88,7 +88,7 @@ if __name__ == '__main__':
     rect_search_domain = ((-3.5, 2.5), (-1.5, 1.5))
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set plots directory
-    plots_dir = ('/home/bernardoferreira/Documents/brown/projects/'
+    plots_dir = ('/home/username/Documents/brown/projects/'
                  'darpa_paper_examples/local/standard_models/lou/'
                  'double_precision/polynomial_strain_bounds_4/s0_a_b_b_c_d/'
                  'n8_lr_exp_10_0d1_sample_2/3_model/plots')

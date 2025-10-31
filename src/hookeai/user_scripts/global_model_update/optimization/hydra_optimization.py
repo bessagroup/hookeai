@@ -316,7 +316,7 @@ if __name__ == "__main__":
     # Set specimen name
     specimen_name = 'Ti6242_HIP2_UT_Specimen2_J2'
     # Set source simulation data directory
-    src_simulation_dir = ('/home/bernardoferreira/Documents/brown/projects/'
+    src_simulation_dir = ('/home/username/Documents/brown/projects/'
                           'colaboration_antonios/dtp_validation/'
                           '3_dtp1_j2_rowan_data/2_DTP1U_V2_data/'
                           'loss_dirichlet_sets/4_hyperparameter_optimization/'

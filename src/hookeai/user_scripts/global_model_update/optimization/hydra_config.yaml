@@ -52,7 +52,7 @@ hydra:
   # Hydra single-run mode
   run:
     # Output directory (grouped by date)
-    dir: /home/bernardoferreira/Documents/brown/projects/colaboration_antonios/dtp_validation/3_dtp1_j2_rowan_data/2_DTP1U_V2_data/loss_dirichlet_sets/4_hyperparameter_optimization/${hydra.job.name}${now:%Y-%m-%d}/${now:%H-%M-%S}
+    dir: /home/username/Documents/brown/projects/colaboration_antonios/dtp_validation/3_dtp1_j2_rowan_data/2_DTP1U_V2_data/loss_dirichlet_sets/4_hyperparameter_optimization/${hydra.job.name}${now:%Y-%m-%d}/${now:%H-%M-%S}
   
   # Hydra multi-run sweep (multi-run mode, -m flag)
   sweep:
@@ -60,7 +60,7 @@ hydra:
     # 1. Formatting: ${now:%Y-%m-%d}, ${now:%H-%M-%S},
     #                ${hydra.job.name}, ${hydra.job.num}
     # Output directory common to all jobs in the multi-run sweep
-    dir: /home/bernardoferreira/Documents/brown/projects/colaboration_antonios/dtp_validation/3_dtp1_j2_rowan_data/2_DTP1U_V2_data/loss_dirichlet_sets/4_hyperparameter_optimization/${hydra.job.name}/${now:%Y-%m-%d}/${now:%H-%M-%S}
+    dir: /home/username/Documents/brown/projects/colaboration_antonios/dtp_validation/3_dtp1_j2_rowan_data/2_DTP1U_V2_data/loss_dirichlet_sets/4_hyperparameter_optimization/${hydra.job.name}/${now:%Y-%m-%d}/${now:%H-%M-%S}
     # Pattern of job-specific output subdirectory
     subdir: ${hydra.job.num}
   
@@ -119,7 +119,7 @@ hydra:
     _target_: hydra_plugins.hydra_optuna_sweeper.optuna_sweeper.OptunaSweeper
     # Store Optuna dashboard file
     #(python package sqlalchemy==1.4.44, delete old optuna_dashboard.db!)
-    storage: 'sqlite:////home/bernardoferreira/Documents/optuna_dashboard.db'
+    storage: 'sqlite:////home/username/Documents/optuna_dashboard.db'
 
     # Maximum number of function evaluations to perform
     n_trials: 200

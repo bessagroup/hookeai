@@ -315,7 +315,7 @@ if __name__ == "__main__":
         torch.set_default_dtype(torch.float32)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set case study base directory
-    base_dir = ('/home/bernardoferreira/Documents/brown/projects/'
+    base_dir = ('/home/username/Documents/brown/projects/'
                 'darpa_project/5_global_specimens/'
                 'rowan_specimen_tension_bv_hexa8_rc_von_mises_vmap/'
                 '2_learning_parameters/4_elastoplastic_properties_E_v_s0_a')

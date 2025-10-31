@@ -28,7 +28,7 @@ if __name__ == "__main__":
     # Set multi-run optimization process jobs directories
     optim_history = {}
     optim_history['Standard'] = \
-        ('/home/bernardoferreira/Documents/brown/projects/'
+        ('/home/username/Documents/brown/projects/'
          'colaboration_antonios/dtp_validation/3_dtp1_j2_rowan_data/'
          '2_DTP1U_V2_data/loss_dirichlet_sets/4_hyperparameter_optimization/'
          'optimize_von_mises_parameters/2025-09-19/18-31-54')

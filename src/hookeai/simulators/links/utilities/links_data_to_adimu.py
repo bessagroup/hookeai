@@ -751,21 +751,21 @@ if __name__ == '__main__':
     if process == 'generate_adimu_data_from_links':
         # Set Links input data file path
         links_input_file_path = (
-            '/home/bernardoferreira/Documents/brown/projects/'
+            '/home/username/Documents/brown/projects/'
             'colaboration_antonios/dtp_validation/2_dtp1_j2_validation/'
             '2_debug_new_loss_type/links_boundary_conditions/links_simulation/'
             'force_equilibrium_loss_dirichlet_sets/0_links_simulation/'
             'Ti6242_HIP2_UT_Specimen2_J2.dat')
         # Set Links simulation output directory
         links_output_dir = (
-            '/home/bernardoferreira/Documents/brown/projects/'
+            '/home/username/Documents/brown/projects/'
             'colaboration_antonios/dtp_validation/2_dtp1_j2_validation/'
             '2_debug_new_loss_type/links_boundary_conditions/links_simulation/'
             'force_equilibrium_loss_dirichlet_sets/0_links_simulation/'
             'Ti6242_HIP2_UT_Specimen2_J2')
         # Set data storage directory
         save_dir = (
-            '/home/bernardoferreira/Documents/brown/projects/'
+            '/home/username/Documents/brown/projects/'
             'colaboration_antonios/dtp_validation/2_dtp1_j2_validation/'
             '2_debug_new_loss_type/links_boundary_conditions/links_simulation/'
             'force_equilibrium_loss_dirichlet_sets/0_links_simulation')
@@ -791,7 +791,7 @@ if __name__ == '__main__':
         force_equilibrium_loss_type = ('pointwise', 'dirichlet_sets')[0]
         # Set ADiMU mesh history data directory
         specimen_history_dir = (
-            '/home/bernardoferreira/Documents/brown/projects/'
+            '/home/username/Documents/brown/projects/'
             'colaboration_antonios/dtp_validation/2_dtp1_j2_validation/'
             '2_debug_new_loss_type/links_boundary_conditions/'
             'abaqus_simulation/force_equilibrium_pointwise/'

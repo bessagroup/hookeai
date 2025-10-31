@@ -77,7 +77,7 @@ if __name__ == "__main__":
             for n_path in training_sizes:
                 # Set case studies base directory
                 base_dir = (
-                    '/home/bernardoferreira/Documents/brown/projects/'
+                    '/home/username/Documents/brown/projects/'
                     'darpa_paper_examples/local/ml_models/polynomial/'
                     'convergence_analysis_noise/convergence_analyses_'
                     f'{noise_variability}_{noise_distribution}/'

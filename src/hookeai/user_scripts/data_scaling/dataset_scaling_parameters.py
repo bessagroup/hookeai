@@ -26,7 +26,7 @@ __status__ = 'Stable'
 # =============================================================================
 if __name__ == '__main__':
     # Set data set file path
-    dataset_file_path = ('/home/bernardoferreira/Documents/brown/projects/'
+    dataset_file_path = ('/home/username/Documents/brown/projects/'
                          'darpa_paper_examples/global/'
                          'random_material_patch_von_mises/local/datasets/n10/'
                          '1_training_dataset/ss_paths_dataset_n10.pkl')

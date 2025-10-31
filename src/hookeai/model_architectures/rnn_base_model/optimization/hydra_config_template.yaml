@@ -48,7 +48,7 @@ hydra:
   # Hydra single-run mode
   run:
     # Output directory (grouped by date)
-    dir: /home/bernardoferreira/Desktop/${hydra.job.name}${now:%Y-%m-%d}/${now:%H-%M-%S}
+    dir: /home/username/Desktop/${hydra.job.name}${now:%Y-%m-%d}/${now:%H-%M-%S}
   
   # Hydra multi-run sweep (multi-run mode, -m flag)
   sweep:
@@ -56,7 +56,7 @@ hydra:
     # 1. Formatting: ${now:%Y-%m-%d}, ${now:%H-%M-%S},
     #                ${hydra.job.name}, ${hydra.job.num}
     # Output directory common to all jobs in the multi-run sweep
-    dir: /home/bernardoferreira/Desktop/${hydra.job.name}/${now:%Y-%m-%d}/${now:%H-%M-%S}
+    dir: /home/username/Desktop/${hydra.job.name}/${now:%Y-%m-%d}/${now:%H-%M-%S}
     # Pattern of job-specific output subdirectory
     subdir: ${hydra.job.num}
   
@@ -116,7 +116,7 @@ hydra:
     # Optuna sweeper settings
     _target_: hydra_plugins.hydra_optuna_sweeper.optuna_sweeper.OptunaSweeper
     # Store Optuna dashboard file (python package sqlalchemy==1.4.44)
-    storage: 'sqlite:////home/bernardoferreira/Desktop/optuna_dashboard.db'
+    storage: 'sqlite:////home/username/Desktop/optuna_dashboard.db'
 
     # Maximum number of function evaluations to perform
     n_trials: 10

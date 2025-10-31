@@ -31,12 +31,12 @@ if __name__ == '__main__':
     is_set_shared_testing_dataset = True
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set source directory
-    src_dir = ('/home/bernardoferreira/Documents/brown/projects/darpa_project/'
+    src_dir = ('/home/username/Documents/brown/projects/darpa_project/'
                '7_local_hybrid_training/'
                'case_learning_drucker_prager_pressure_dependency/'
                'datasets_base')
     # Set destination directory
-    dest_dir = ('/home/bernardoferreira/Documents/brown/projects/'
+    dest_dir = ('/home/username/Documents/brown/projects/'
                 'darpa_project/7_local_hybrid_training/'
                 'case_learning_drucker_prager_pressure_dependency/0_datasets')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -96,7 +96,7 @@ if __name__ == '__main__':
     if is_set_shared_testing_dataset:
         # Set source testing data set directory
         src_testing_dataset_dir = \
-            ('/home/bernardoferreira/Documents/brown/projects/darpa_project/'
+            ('/home/username/Documents/brown/projects/darpa_project/'
              '7_local_hybrid_training/'
              'case_learning_drucker_prager_pressure_dependency/'
              'datasets_base/n512/noiseless/5_testing_id_dataset')

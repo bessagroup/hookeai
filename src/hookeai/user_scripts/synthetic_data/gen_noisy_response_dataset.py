@@ -747,7 +747,7 @@ if __name__ == '__main__':
     # Set reference noiseless data set directory
     if is_reference_noiseless:
         reference_noiseless_dir = \
-            ('/home/bernardoferreira/Documents/brown/projects/'
+            ('/home/username/Documents/brown/projects/'
              'darpa_paper_examples/local/ml_models/polynomial/'
              'convergence_analysis')
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -769,7 +769,7 @@ if __name__ == '__main__':
     for i, n_path in enumerate(n_paths):
         # Set data sets base directory
         datasets_base_dir = \
-            ('/home/bernardoferreira/Documents/brown/projects/'
+            ('/home/username/Documents/brown/projects/'
              'darpa_paper_examples/local/ml_models/polynomial/'
              'convergence_analysis_noise/datasets_base')
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

@@ -26,7 +26,7 @@ __status__ = 'Stable'
 # =============================================================================
 if __name__ == '__main__':
     # Set data set file path
-    dataset_file_path = ('/home/bernardoferreira/Documents/brown/projects/'
+    dataset_file_path = ('/home/username/Documents/brown/projects/'
                          'darpa_project/8_global_random_specimen/von_mises/'
                          '2_random_specimen_hexa8/solid/'
                          '1_local_vanilla_GRU_specimen_dataset/'

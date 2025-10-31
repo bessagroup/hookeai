@@ -34,7 +34,7 @@ if __name__ == '__main__':
     src_dataset_file_paths = []
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Set source data sets base directories
-    src_base_dirs = ('/home/bernardoferreira/Documents/brown/projects/'
+    src_base_dirs = ('/home/username/Documents/brown/projects/'
                      'colaboration_shunyu/deliverable_07_17_2025/Main_design/'
                      'n10240',)
     # Loop over base directories
